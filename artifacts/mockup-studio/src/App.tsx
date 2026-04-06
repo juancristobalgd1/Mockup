@@ -40,14 +40,16 @@ function Editor() {
 
           <div className="flex items-center gap-2">
             <span className="text-xs" style={{ color: '#4b5563' }}>
-              {state.deviceType === 'iphone' && 'iPhone 15 Pro'}
+              {state.deviceType === 'iphone' && `iPhone 15 Pro (${state.deviceColor})`}
               {state.deviceType === 'android' && 'Android Phone'}
               {state.deviceType === 'ipad' && 'iPad'}
               {state.deviceType === 'macbook' && 'MacBook'}
-              {state.deviceType === 'browser' && 'Browser'}
+              {state.deviceType === 'imac' && 'iMac'}
+              {state.deviceType === 'browser' && `Browser (${state.browserMode})`}
               {state.deviceType === 'watch' && 'Apple Watch'}
-              {state.deviceType !== 'browser' && state.deviceType !== 'watch'
+              {(state.deviceType === 'iphone' || state.deviceType === 'android' || state.deviceType === 'ipad')
                 && ` — ${state.deviceLandscape ? 'Landscape' : 'Portrait'}`}
+              {state.canvasRatio !== 'free' && ` · ${state.canvasRatio}`}
             </span>
           </div>
         </div>

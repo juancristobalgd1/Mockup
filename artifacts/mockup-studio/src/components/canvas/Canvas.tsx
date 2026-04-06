@@ -25,11 +25,11 @@ const DeviceComponents = {
   imac: IMac,
 };
 
-const RATIO_ASPECT: Record<string, string> = {
-  '1:1': '1 / 1',
-  '4:5': '4 / 5',
-  '16:9': '16 / 9',
-  '9:16': '9 / 16',
+const RATIO_VALUES: Record<string, number> = {
+  '1:1': 1,
+  '4:5': 4 / 5,
+  '16:9': 16 / 9,
+  '9:16': 9 / 16,
 };
 
 export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, onUpdateText }, ref) => {
@@ -75,44 +75,36 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
   };
 
   const getDeviceTransform = () => {
-    let parts = [`scale(${state.scale})`, `rotate(${state.rotation}deg)`];
     if (state.is3D) {
-      parts = [
+      return [
         `perspective(900px)`,
         `rotateX(${state.tiltX}deg)`,
         `rotateY(${state.tiltY}deg)`,
         `scale(${state.scale})`,
         `rotate(${state.rotation}deg)`,
-      ];
+      ].join(' ');
     }
-    return parts.join(' ');
+    return `scale(${state.scale}) rotate(${state.rotation}deg)`;
   };
 
   const getShadow = () => {
     const s = state.shadowIntensity;
     if (state.shadowStyle === 'none' || s === 0) return 'none';
-
     const rad = (state.shadowDirection * Math.PI) / 180;
     const offsetX = Math.round(Math.sin(rad) * s * 0.15);
     const offsetY = Math.round(-Math.cos(rad) * s * 0.4);
     const alpha = Math.min(0.85, s * 0.01);
-
     if (state.shadowStyle === 'hug') {
-      const blur = s * 0.2;
-      const spread = s * 0.05;
-      return `${offsetX}px ${offsetY}px ${blur}px ${spread}px rgba(0,0,0,${alpha + 0.1})`;
+      return `${offsetX}px ${offsetY}px ${s * 0.2}px ${s * 0.05}px rgba(0,0,0,${alpha + 0.1})`;
     }
-
-    // spread
-    const blur = s * 0.8;
-    const spread = s * 0.05;
-    return `${offsetX}px ${offsetY}px ${blur}px ${spread}px rgba(0,0,0,${alpha})`;
+    return `${offsetX}px ${offsetY}px ${s * 0.8}px ${s * 0.05}px rgba(0,0,0,${alpha})`;
   };
 
   const DeviceComponent = DeviceComponents[state.deviceType] ?? IPhone15Pro;
 
   const handleTextDrag = (id: string, e: React.MouseEvent) => {
-    const container = (e.currentTarget as HTMLElement).closest('[data-canvas-area]') as HTMLElement;
+    // Walk up to find the outer canvas ref div
+    const container = (e.currentTarget as HTMLElement).closest('[data-canvas-root]') as HTMLElement;
     if (!container) return;
     const rect = container.getBoundingClientRect();
     const startX = e.clientX;
@@ -139,14 +131,19 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
     document.addEventListener('mouseup', onUp);
   };
 
-  const hasFixedRatio = state.canvasRatio !== 'free';
+  const hasRatio = state.canvasRatio !== 'free';
+  const ratioValue = hasRatio ? RATIO_VALUES[state.canvasRatio] : null;
 
   return (
+    // Outer div — always captures background, ref attached here for export
     <div
+      ref={ref}
+      data-canvas-root="true"
       className="relative w-full h-full flex items-center justify-center overflow-hidden"
       style={getBackground()}
+      data-testid="canvas-area"
     >
-      {/* Background overlay */}
+      {/* Background color overlay */}
       {state.overlayEnabled && (
         <div
           style={{
@@ -160,32 +157,47 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
         />
       )}
 
-      {/* Fixed ratio box or full-bleed */}
+      {/* Canvas ratio guide overlay — dims areas outside the crop frame */}
+      {hasRatio && ratioValue && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 3,
+            pointerEvents: 'none',
+          }}
+        >
+          {/* The guide frame itself uses box-shadow to dim outside */}
+          <div
+            style={{
+              position: 'relative',
+              aspectRatio: ratioValue,
+              height: '100%',
+              maxWidth: '100%',
+              maxHeight: '100%',
+              width: `${ratioValue * 100}%`,
+              boxShadow: '0 0 0 9999px rgba(0,0,0,0.35)',
+              border: '1.5px dashed rgba(255,255,255,0.2)',
+              borderRadius: 4,
+            }}
+          />
+        </div>
+      )}
+
+      {/* Device wrapper centered within canvas, with optional padding */}
       <div
-        ref={ref}
-        data-canvas-area="true"
         style={{
-          position: hasFixedRatio ? 'relative' : 'absolute',
-          inset: hasFixedRatio ? undefined : 0,
-          aspectRatio: hasFixedRatio ? RATIO_ASPECT[state.canvasRatio] : undefined,
-          maxWidth: hasFixedRatio ? '100%' : undefined,
-          maxHeight: hasFixedRatio ? '100%' : undefined,
-          width: hasFixedRatio ? 'auto' : '100%',
-          height: hasFixedRatio ? 'auto' : '100%',
+          position: 'relative',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           padding: state.canvasPadding,
-          boxSizing: 'border-box',
-          overflow: 'hidden',
           zIndex: 2,
-          ...(hasFixedRatio ? {
-            background: 'inherit',
-            outline: '2px dashed rgba(255,255,255,0.1)',
-          } : {}),
         }}
       >
-        {/* Device */}
         <div
           className={getAnimationClass()}
           style={{
@@ -200,34 +212,34 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
         >
           <DeviceComponent />
         </div>
-
-        {/* Text overlays */}
-        {textOverlays.map(overlay => (
-          <div
-            key={overlay.id}
-            style={{
-              position: 'absolute',
-              left: `${overlay.x}%`,
-              top: `${overlay.y}%`,
-              transform: 'translate(-50%, -50%)',
-              fontSize: overlay.fontSize,
-              color: overlay.color,
-              fontWeight: overlay.isBold ? 700 : 400,
-              fontStyle: overlay.isItalic ? 'italic' : 'normal',
-              cursor: 'move',
-              userSelect: 'none',
-              textShadow: '0 1px 4px rgba(0,0,0,0.5)',
-              whiteSpace: 'pre',
-              zIndex: 20,
-              fontFamily: 'Inter, sans-serif',
-            }}
-            onMouseDown={(e) => handleTextDrag(overlay.id, e)}
-            data-testid={`text-overlay-${overlay.id}`}
-          >
-            {overlay.text}
-          </div>
-        ))}
       </div>
+
+      {/* Text overlays — positioned relative to the full canvas */}
+      {textOverlays.map(overlay => (
+        <div
+          key={overlay.id}
+          style={{
+            position: 'absolute',
+            left: `${overlay.x}%`,
+            top: `${overlay.y}%`,
+            transform: 'translate(-50%, -50%)',
+            fontSize: overlay.fontSize,
+            color: overlay.color,
+            fontWeight: overlay.isBold ? 700 : 400,
+            fontStyle: overlay.isItalic ? 'italic' : 'normal',
+            cursor: 'move',
+            userSelect: 'none',
+            textShadow: '0 1px 4px rgba(0,0,0,0.5)',
+            whiteSpace: 'pre',
+            zIndex: 10,
+            fontFamily: 'Inter, sans-serif',
+          }}
+          onMouseDown={(e) => handleTextDrag(overlay.id, e)}
+          data-testid={`text-overlay-${overlay.id}`}
+        >
+          {overlay.text}
+        </div>
+      ))}
     </div>
   );
 });
