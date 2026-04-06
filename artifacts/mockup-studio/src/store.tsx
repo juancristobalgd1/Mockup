@@ -1,7 +1,11 @@
 import { useState, createContext, useContext } from "react";
 
-export type DeviceType = "iphone" | "android" | "ipad" | "macbook" | "browser" | "watch";
-export type BackgroundType = "solid" | "gradient" | "mesh" | "pattern" | "image";
+export type DeviceType = "iphone" | "android" | "ipad" | "macbook" | "browser" | "watch" | "imac";
+export type DeviceColor = "titanium" | "black" | "white" | "blue";
+export type BrowserMode = "dark" | "light";
+export type BackgroundType = "solid" | "gradient" | "mesh" | "pattern" | "image" | "wallpaper";
+export type ShadowStyle = "none" | "spread" | "hug";
+export type CanvasRatio = "free" | "1:1" | "4:5" | "16:9" | "9:16";
 
 export interface TextOverlay {
   id: string;
@@ -17,21 +21,33 @@ export interface TextOverlay {
 export interface AppState {
   deviceType: DeviceType;
   deviceLandscape: boolean;
+  deviceColor: DeviceColor;
+  browserMode: BrowserMode;
   screenshotUrl: string | null;
-  
+
   bgType: BackgroundType;
-  bgColor: string; // Used for solid and gradient (as preset ID)
+  bgColor: string;
   bgImage: string | null;
   bgPattern: string;
 
   scale: number;
   rotation: number;
-  shadowIntensity: number;
   borderRadius: number;
+
+  shadowStyle: ShadowStyle;
+  shadowIntensity: number;
+  shadowDirection: number;
+
+  canvasPadding: number;
+  canvasRatio: CanvasRatio;
 
   is3D: boolean;
   tiltX: number;
   tiltY: number;
+
+  overlayEnabled: boolean;
+  overlayColor: string;
+  overlayOpacity: number;
 
   animation: "none" | "float" | "spin" | "pulse" | "slide-in";
 
@@ -41,8 +57,10 @@ export interface AppState {
 export const defaultState: AppState = {
   deviceType: "iphone",
   deviceLandscape: false,
+  deviceColor: "titanium",
+  browserMode: "dark",
   screenshotUrl: null,
-  
+
   bgType: "gradient",
   bgColor: "purple-blue",
   bgImage: null,
@@ -50,12 +68,22 @@ export const defaultState: AppState = {
 
   scale: 0.85,
   rotation: -5,
+  borderRadius: 44,
+
+  shadowStyle: "spread",
   shadowIntensity: 65,
-  borderRadius: 32,
+  shadowDirection: 180,
+
+  canvasPadding: 0,
+  canvasRatio: "free",
 
   is3D: true,
   tiltX: -8,
   tiltY: 10,
+
+  overlayEnabled: false,
+  overlayColor: "#000000",
+  overlayOpacity: 30,
 
   animation: "float",
 

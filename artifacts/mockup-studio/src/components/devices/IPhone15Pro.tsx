@@ -2,10 +2,34 @@ import { useRef } from 'react';
 import { Upload } from 'lucide-react';
 import { useApp } from '../../store';
 
+const COLOR_FRAMES: Record<string, { body: string; border: string; button: string }> = {
+  titanium: {
+    body: 'linear-gradient(145deg, #3a3a3a 0%, #1e1e1e 50%, #111 100%)',
+    border: '#4a4a4a',
+    button: '#3a3a3a',
+  },
+  black: {
+    body: 'linear-gradient(145deg, #1a1a1a 0%, #0a0a0a 50%, #050505 100%)',
+    border: '#2a2a2a',
+    button: '#1a1a1a',
+  },
+  white: {
+    body: 'linear-gradient(145deg, #d8d8d8 0%, #c4c4c4 50%, #b0b0b0 100%)',
+    border: '#b8b8b8',
+    button: '#c8c8c8',
+  },
+  blue: {
+    body: 'linear-gradient(145deg, #2a3f6f 0%, #1a2f5f 50%, #0f1e40 100%)',
+    border: '#3a5080',
+    button: '#2a3f6f',
+  },
+};
+
 export function IPhone15Pro() {
   const { state, updateState } = useApp();
   const fileRef = useRef<HTMLInputElement>(null);
   const isLandscape = state.deviceLandscape;
+  const frame = COLOR_FRAMES[state.deviceColor] ?? COLOR_FRAMES.titanium;
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -34,13 +58,13 @@ export function IPhone15Pro() {
           position: 'absolute',
           inset: 0,
           borderRadius: BR,
-          background: 'linear-gradient(145deg, #3a3a3a 0%, #1e1e1e 50%, #111 100%)',
-          border: '1.5px solid #4a4a4a',
-          boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.08), 0 ${state.shadowIntensity * 0.6}px ${state.shadowIntensity * 1.2}px rgba(0,0,0,${state.shadowIntensity * 0.01})`,
+          background: frame.body,
+          border: `1.5px solid ${frame.border}`,
+          boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.08)`,
         }}
       />
 
-      {/* Titanium frame highlight */}
+      {/* Frame highlight */}
       <div
         style={{
           position: 'absolute',
@@ -54,20 +78,20 @@ export function IPhone15Pro() {
       {/* Side buttons portrait */}
       {!isLandscape && (
         <>
-          <div style={{ position: 'absolute', left: -3, top: 96, width: 3, height: 32, background: '#3a3a3a', borderRadius: '2px 0 0 2px' }} />
-          <div style={{ position: 'absolute', left: -3, top: 140, width: 3, height: 32, background: '#3a3a3a', borderRadius: '2px 0 0 2px' }} />
-          <div style={{ position: 'absolute', left: -3, top: 68, width: 3, height: 20, background: '#3a3a3a', borderRadius: '2px 0 0 2px' }} />
-          <div style={{ position: 'absolute', right: -3, top: 104, width: 3, height: 56, background: '#3a3a3a', borderRadius: '0 2px 2px 0' }} />
+          <div style={{ position: 'absolute', left: -3, top: 96, width: 3, height: 32, background: frame.button, borderRadius: '2px 0 0 2px' }} />
+          <div style={{ position: 'absolute', left: -3, top: 140, width: 3, height: 32, background: frame.button, borderRadius: '2px 0 0 2px' }} />
+          <div style={{ position: 'absolute', left: -3, top: 68, width: 3, height: 20, background: frame.button, borderRadius: '2px 0 0 2px' }} />
+          <div style={{ position: 'absolute', right: -3, top: 104, width: 3, height: 56, background: frame.button, borderRadius: '0 2px 2px 0' }} />
         </>
       )}
 
       {/* Side buttons landscape */}
       {isLandscape && (
         <>
-          <div style={{ position: 'absolute', top: -3, left: 80, height: 3, width: 28, background: '#3a3a3a', borderRadius: '2px 2px 0 0' }} />
-          <div style={{ position: 'absolute', top: -3, left: 120, height: 3, width: 28, background: '#3a3a3a', borderRadius: '2px 2px 0 0' }} />
-          <div style={{ position: 'absolute', top: -3, left: 58, height: 3, width: 16, background: '#3a3a3a', borderRadius: '2px 2px 0 0' }} />
-          <div style={{ position: 'absolute', bottom: -3, right: 80, height: 3, width: 48, background: '#3a3a3a', borderRadius: '0 0 2px 2px' }} />
+          <div style={{ position: 'absolute', top: -3, left: 80, height: 3, width: 28, background: frame.button, borderRadius: '2px 2px 0 0' }} />
+          <div style={{ position: 'absolute', top: -3, left: 120, height: 3, width: 28, background: frame.button, borderRadius: '2px 2px 0 0' }} />
+          <div style={{ position: 'absolute', top: -3, left: 58, height: 3, width: 16, background: frame.button, borderRadius: '2px 2px 0 0' }} />
+          <div style={{ position: 'absolute', bottom: -3, right: 80, height: 3, width: 48, background: frame.button, borderRadius: '0 0 2px 2px' }} />
         </>
       )}
 
