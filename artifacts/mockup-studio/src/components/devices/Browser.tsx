@@ -1,16 +1,9 @@
-import { useRef } from 'react';
-import { Upload } from 'lucide-react';
 import { useApp } from '../../store';
+import { ScreenContent } from './ScreenContent';
 
 export function Browser() {
-  const { state, updateState } = useApp();
-  const fileRef = useRef<HTMLInputElement>(null);
+  const { state } = useApp();
   const isDark = state.browserMode === 'dark';
-
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) updateState({ screenshotUrl: URL.createObjectURL(file) });
-  };
 
   const W = 540;
   const H = 360;
@@ -23,28 +16,17 @@ export function Browser() {
   return (
     <div
       style={{
-        width: W,
-        height: H,
-        position: 'relative',
-        flexShrink: 0,
-        borderRadius: 10,
-        overflow: 'hidden',
-        background: chrome.body,
-        border: `1.5px solid ${chrome.border}`,
+        width: W, height: H, position: 'relative', flexShrink: 0,
+        borderRadius: 10, overflow: 'hidden',
+        background: chrome.body, border: `1.5px solid ${chrome.border}`,
       }}
     >
       {/* Chrome bar */}
       <div
         style={{
-          width: '100%',
-          height: chromeH,
-          background: chrome.bar,
+          width: '100%', height: chromeH, background: chrome.bar,
           borderBottom: `1px solid ${chrome.border}`,
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 12px',
-          gap: 8,
-          flexShrink: 0,
+          display: 'flex', alignItems: 'center', padding: '0 12px', gap: 8, flexShrink: 0,
         }}
       >
         {/* Traffic lights */}
@@ -57,20 +39,10 @@ export function Browser() {
         {/* Active tab */}
         <div
           style={{
-            height: 28,
-            padding: '0 12px',
-            borderRadius: '6px 6px 0 0',
-            background: chrome.tabActive,
-            border: `1px solid ${chrome.tabBorder}`,
-            borderBottom: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            fontSize: 11,
-            color: chrome.tabText,
-            whiteSpace: 'nowrap',
-            maxWidth: 140,
-            overflow: 'hidden',
-            gap: 6,
+            height: 28, padding: '0 12px', borderRadius: '6px 6px 0 0',
+            background: chrome.tabActive, border: `1px solid ${chrome.tabBorder}`, borderBottom: 'none',
+            display: 'flex', alignItems: 'center', fontSize: 11, color: chrome.tabText,
+            whiteSpace: 'nowrap', maxWidth: 140, overflow: 'hidden', gap: 6,
           }}
         >
           <div style={{ width: 14, height: 14, borderRadius: 3, background: 'rgba(139,92,246,0.5)', flexShrink: 0 }} />
@@ -82,15 +54,9 @@ export function Browser() {
         {/* URL bar */}
         <div
           style={{
-            flex: 3,
-            height: 26,
-            borderRadius: 6,
-            background: chrome.urlBg,
-            border: `1px solid ${chrome.urlBorder}`,
-            display: 'flex',
-            alignItems: 'center',
-            padding: '0 10px',
-            gap: 6,
+            flex: 3, height: 26, borderRadius: 6,
+            background: chrome.urlBg, border: `1px solid ${chrome.urlBorder}`,
+            display: 'flex', alignItems: 'center', padding: '0 10px', gap: 6,
           }}
         >
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', flexShrink: 0 }} />
@@ -110,33 +76,12 @@ export function Browser() {
       {/* Page content */}
       <div
         style={{
-          flex: 1,
-          height: H - chromeH,
-          overflow: 'hidden',
-          background: state.screenshotUrl ? 'transparent' : (isDark ? '#080810' : '#f8fafc'),
-          cursor: 'pointer',
-          position: 'relative',
+          flex: 1, height: H - chromeH, overflow: 'hidden',
+          background: isDark ? '#080810' : '#f8fafc', position: 'relative',
         }}
-        onClick={() => !state.screenshotUrl && fileRef.current?.click()}
       >
-        {state.screenshotUrl ? (
-          <div className="relative w-full h-full group" onClick={() => fileRef.current?.click()}>
-            <img src={state.screenshotUrl} alt="Screenshot" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <span className="text-white text-xs font-medium bg-black/50 px-3 py-1.5 rounded-full">Replace</span>
-            </div>
-          </div>
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(59,130,246,0.15)' }}>
-              <Upload size={18} style={{ color: '#60a5fa' }} />
-            </div>
-            <span className="text-xs" style={{ color: isDark ? '#6b7280' : '#9ca3af' }}>Upload screenshot</span>
-          </div>
-        )}
+        <ScreenContent accentColor="#60a5fa" iconBg="rgba(59,130,246,0.15)" />
       </div>
-
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
     </div>
   );
 }

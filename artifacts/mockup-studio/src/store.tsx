@@ -6,6 +6,7 @@ export type BrowserMode = "dark" | "light";
 export type BackgroundType = "solid" | "gradient" | "mesh" | "pattern" | "image" | "wallpaper";
 export type ShadowStyle = "none" | "spread" | "hug";
 export type CanvasRatio = "free" | "1:1" | "4:5" | "16:9" | "9:16";
+export type ContentType = "image" | "video" | null;
 
 export interface TextOverlay {
   id: string;
@@ -23,7 +24,10 @@ export interface AppState {
   deviceLandscape: boolean;
   deviceColor: DeviceColor;
   browserMode: BrowserMode;
+
   screenshotUrl: string | null;
+  videoUrl: string | null;
+  contentType: ContentType;
 
   bgType: BackgroundType;
   bgColor: string;
@@ -59,7 +63,10 @@ export const defaultState: AppState = {
   deviceLandscape: false,
   deviceColor: "titanium",
   browserMode: "dark",
+
   screenshotUrl: null,
+  videoUrl: null,
+  contentType: null,
 
   bgType: "gradient",
   bgColor: "purple-blue",
@@ -110,7 +117,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addText = () => {
     const newText: TextOverlay = {
       id: Math.random().toString(36).substr(2, 9),
-      text: "Double click to edit",
+      text: "Double-click to edit",
       x: 50,
       y: 50,
       fontSize: 24,
