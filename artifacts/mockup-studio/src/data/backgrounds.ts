@@ -17,7 +17,7 @@ export const GRADIENTS: BackgroundGradient[] = [
   { id: 'night', label: 'Night', css: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)' },
   { id: 'golden', label: 'Golden', css: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)' },
   { id: 'candy', label: 'Candy', css: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)' },
-  { id: 'coral', label: 'Coral', css: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)' },
+  { id: 'coral', label: 'Coral', css: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)' },
   { id: 'dark-blue', label: 'Deep Sea', css: 'linear-gradient(135deg, #141E30 0%, #243B55 100%)' },
   { id: 'neon', label: 'Neon', css: 'linear-gradient(135deg, #08AEEA 0%, #2AF598 100%)' },
 ];
@@ -97,18 +97,103 @@ export const PATTERNS: PatternOption[] = [
   },
 ];
 
+export interface WallpaperOption {
+  id: string;
+  label: string;
+  css: string;
+  thumb: string;
+}
+
+export const WALLPAPERS: WallpaperOption[] = [
+  {
+    id: 'tahoe-light',
+    label: 'Tahoe Light',
+    css: `radial-gradient(ellipse at 50% 0%, #bfdbfe 0%, #93c5fd 30%, #60a5fa 60%, #dbeafe 100%)`,
+    thumb: '#93c5fd',
+  },
+  {
+    id: 'tahoe-dark',
+    label: 'Tahoe Dark',
+    css: `radial-gradient(ellipse at 40% 20%, #1e3a5f 0%, #0c1e3b 40%, #081022 70%, #0a1628 100%)`,
+    thumb: '#1e3a5f',
+  },
+  {
+    id: 'sunset-shore',
+    label: 'Sunset Shore',
+    css: `linear-gradient(180deg, #1a0533 0%, #6b21a8 25%, #c2410c 55%, #ea580c 75%, #fbbf24 90%, #fef3c7 100%)`,
+    thumb: '#ea580c',
+  },
+  {
+    id: 'pine-forest',
+    label: 'Pine Forest',
+    css: `radial-gradient(ellipse at 50% 100%, #052e16 0%, #14532d 40%, #166534 70%, #4ade80 100%)`,
+    thumb: '#166534',
+  },
+  {
+    id: 'golden-hour',
+    label: 'Golden Hour',
+    css: `linear-gradient(160deg, #7c2d12 0%, #c2410c 20%, #ea580c 40%, #f59e0b 65%, #fde68a 85%, #fff7ed 100%)`,
+    thumb: '#f59e0b',
+  },
+  {
+    id: 'arctic-ice',
+    label: 'Arctic Ice',
+    css: `radial-gradient(ellipse at 50% 30%, #f0f9ff 0%, #bae6fd 30%, #7dd3fc 55%, #0ea5e9 80%, #0284c7 100%)`,
+    thumb: '#bae6fd',
+  },
+  {
+    id: 'lava-field',
+    label: 'Lava Field',
+    css: `radial-gradient(ellipse at 30% 80%, #7f1d1d 0%, #991b1b 30%, #b91c1c 50%, #c2410c 70%, #1c0503 100%)`,
+    thumb: '#991b1b',
+  },
+  {
+    id: 'rose-bloom',
+    label: 'Rose Bloom',
+    css: `radial-gradient(ellipse at 60% 40%, #fce7f3 0%, #fbcfe8 25%, #f9a8d4 50%, #ec4899 75%, #be185d 100%)`,
+    thumb: '#f9a8d4',
+  },
+  {
+    id: 'night-sky',
+    label: 'Night Sky',
+    css: `radial-gradient(ellipse at 50% 0%, #1e1b4b 0%, #312e81 20%, #1e3a5f 50%, #0f172a 80%, #020617 100%)`,
+    thumb: '#312e81',
+  },
+  {
+    id: 'citrus',
+    label: 'Citrus',
+    css: `linear-gradient(135deg, #fef9c3 0%, #fde047 25%, #facc15 50%, #eab308 75%, #ca8a04 100%)`,
+    thumb: '#fde047',
+  },
+  {
+    id: 'lavender',
+    label: 'Lavender Fields',
+    css: `radial-gradient(ellipse at 50% 60%, #ede9fe 0%, #ddd6fe 25%, #c4b5fd 50%, #7c3aed 80%, #4c1d95 100%)`,
+    thumb: '#c4b5fd',
+  },
+  {
+    id: 'sand-dunes',
+    label: 'Sand Dunes',
+    css: `linear-gradient(160deg, #fef3c7 0%, #fde68a 20%, #f59e0b 45%, #d97706 65%, #92400e 85%, #451a03 100%)`,
+    thumb: '#f59e0b',
+  },
+];
+
 interface PresetState {
   deviceType: DeviceType;
-  deviceLandscape: boolean;
-  bgType: 'gradient' | 'mesh' | 'solid' | 'pattern' | 'image';
+  deviceLandscape?: boolean;
+  bgType: 'gradient' | 'mesh' | 'solid' | 'pattern' | 'image' | 'wallpaper';
   bgColor: string;
   scale: number;
   rotation: number;
   shadowIntensity: number;
+  shadowStyle?: 'none' | 'spread' | 'hug';
   is3D: boolean;
   tiltX: number;
   tiltY: number;
   animation: 'none' | 'float' | 'pulse' | 'spin' | 'slide-in';
+  canvasPadding?: number;
+  borderRadius?: number;
 }
 
 export interface Preset {
@@ -131,6 +216,7 @@ export const PRESETS: Preset[] = [
       scale: 0.85,
       rotation: -5,
       shadowIntensity: 60,
+      shadowStyle: 'spread',
       is3D: true,
       tiltX: -8,
       tiltY: 10,
@@ -149,6 +235,7 @@ export const PRESETS: Preset[] = [
       scale: 0.8,
       rotation: 0,
       shadowIntensity: 80,
+      shadowStyle: 'hug',
       is3D: true,
       tiltX: -5,
       tiltY: 0,
@@ -161,12 +248,13 @@ export const PRESETS: Preset[] = [
     thumb: 'sunset',
     state: {
       deviceType: 'iphone',
-      deviceLandscape: true,
+      deviceLandscape: false,
       bgType: 'gradient',
       bgColor: 'sunset',
       scale: 0.75,
       rotation: 3,
       shadowIntensity: 70,
+      shadowStyle: 'spread',
       is3D: false,
       tiltX: 0,
       tiltY: 0,
@@ -185,6 +273,7 @@ export const PRESETS: Preset[] = [
       scale: 0.78,
       rotation: 0,
       shadowIntensity: 50,
+      shadowStyle: 'spread',
       is3D: true,
       tiltX: -10,
       tiltY: 5,
@@ -203,6 +292,7 @@ export const PRESETS: Preset[] = [
       scale: 0.9,
       rotation: 0,
       shadowIntensity: 65,
+      shadowStyle: 'hug',
       is3D: false,
       tiltX: 0,
       tiltY: 0,
@@ -221,9 +311,46 @@ export const PRESETS: Preset[] = [
       scale: 0.88,
       rotation: 8,
       shadowIntensity: 75,
+      shadowStyle: 'spread',
       is3D: true,
       tiltX: -5,
       tiltY: -8,
+      animation: 'float',
+    }
+  },
+  {
+    id: 'imac-tahoe',
+    label: 'iMac Showcase',
+    thumb: 'tahoe-light',
+    state: {
+      deviceType: 'imac',
+      bgType: 'wallpaper',
+      bgColor: 'tahoe-light',
+      scale: 0.8,
+      rotation: 0,
+      shadowIntensity: 60,
+      shadowStyle: 'spread',
+      is3D: true,
+      tiltX: -8,
+      tiltY: 5,
+      animation: 'none',
+    }
+  },
+  {
+    id: 'night-city',
+    label: 'Night City',
+    thumb: 'night-sky',
+    state: {
+      deviceType: 'iphone',
+      bgType: 'wallpaper',
+      bgColor: 'night-sky',
+      scale: 0.85,
+      rotation: -4,
+      shadowIntensity: 80,
+      shadowStyle: 'hug',
+      is3D: true,
+      tiltX: -6,
+      tiltY: 8,
       animation: 'float',
     }
   },
