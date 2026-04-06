@@ -10,15 +10,21 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 A device mockup creator web app inspired by PostSpark.app. Built with React + Vite, Framer Motion, and html2canvas.
 
 **Features:**
-- 6 device frames: iPhone 15 Pro, Android Phone, iPad, MacBook, Browser (Chrome-style), Apple Watch
+- 7 device frames: iPhone 15 Pro, Android Phone, iPad, MacBook, iMac, Browser (Chrome-style), Apple Watch
+- iPhone 15 Pro color variants: Titanium, Black, White, Blue
+- Browser frame Dark/Light mode toggle
 - Portrait & landscape orientation for phones and tablets
-- Background types: solid color, 12 gradient presets, 6 mesh gradients, 3 patterns, custom image upload
-- Canvas transform: scale, rotation, shadow intensity
-- 3D perspective tilt (X/Y axes)
+- Background types: solid color, 12 gradient presets, 6 mesh gradients, 12 wallpapers, 3 patterns, custom image upload
+- Auto background: extracts dominant colors from uploaded screenshot → mesh gradient
+- Shuffle button: randomizes background from current type
+- Background overlay: color tint + opacity over any background
+- Canvas transform: scale, rotation, 3D tilt (X/Y axes), canvas padding
+- Canvas aspect ratio guide: Free / 1:1 / 4:5 / 16:9 / 9:16 (dashed overlay)
+- Advanced shadow: None / Spread / Hug styles + Intensity + Direction (angle slider)
 - Animations: float, pulse, spin, slide-in
-- Draggable text overlays with styling
-- 6 preset templates (App Store, Twitter Banner, Product Hunt, LinkedIn, Instagram, Dark Mode)
-- PNG export with 4 size options (1:1, 4:5, 16:9, 9:16)
+- Draggable text overlays with font size, color, bold, italic controls
+- 8 preset templates
+- PNG export: Download + Copy to Clipboard, 4 size options
 
 **Stack:** React 18, Vite, Framer Motion, html2canvas, Tailwind CSS v4, shadcn/ui
 **State:** React Context (no backend/persistence needed)
