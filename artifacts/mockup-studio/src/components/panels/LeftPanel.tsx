@@ -1,10 +1,15 @@
 import { useState, useRef } from 'react';
-import { Smartphone, Tablet, Laptop, Globe, Watch, Monitor, Shuffle, Wand2 } from 'lucide-react';
+import {
+  Smartphone, Tablet, Laptop, Globe, Watch, Monitor,
+  Shuffle, Wand2, Image as ImageIcon, Sliders, Type, Play,
+  LayoutGrid, Link2, Video, X
+} from 'lucide-react';
 import { useApp } from '../../store';
 import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS, PRESETS } from '../../data/backgrounds';
 import type { DeviceType, DeviceColor } from '../../store';
 
-const DEVICES: { id: DeviceType; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
+type IconProps = { size?: number; strokeWidth?: number; style?: React.CSSProperties; className?: string };
+const DEVICES: { id: DeviceType; label: string; icon: React.ComponentType<IconProps> }[] = [
   { id: 'iphone', label: 'iPhone 15 Pro', icon: Smartphone },
   { id: 'android', label: 'Android', icon: Smartphone },
   { id: 'ipad', label: 'iPad', icon: Tablet },
@@ -35,7 +40,16 @@ const CANVAS_RATIOS = [
   { id: '9:16', label: '9:16' },
 ] as const;
 
-type Tab = 'device' | 'background' | 'canvas' | 'text' | 'animation' | 'presets';
+type Tab = 'presets' | 'device' | 'background' | 'canvas' | 'text' | 'animation';
+
+const TAB_ICONS: { id: Tab; icon: React.ComponentType<IconProps>; label: string }[] = [
+  { id: 'presets', icon: LayoutGrid, label: 'Presets' },
+  { id: 'device', icon: Smartphone, label: 'Device' },
+  { id: 'background', icon: ImageIcon, label: 'Background' },
+  { id: 'canvas', icon: Sliders, label: 'Transform' },
+  { id: 'text', icon: Type, label: 'Text' },
+  { id: 'animation', icon: Play, label: 'Animate' },
+];
 
 function extractColorsFromImage(imgSrc: string): Promise<string[]> {
   return new Promise((resolve) => {
@@ -43,8 +57,7 @@ function extractColorsFromImage(imgSrc: string): Promise<string[]> {
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = 20;
-      canvas.height = 20;
+      canvas.width = 20; canvas.height = 20;
       const ctx = canvas.getContext('2d');
       if (!ctx) { resolve([]); return; }
       ctx.drawImage(img, 0, 0, 20, 20);
@@ -59,15 +72,20 @@ function extractColorsFromImage(imgSrc: string): Promise<string[]> {
         buckets[key] = (buckets[key] || 0) + 1;
       }
       const sorted = Object.entries(buckets).sort((a, b) => b[1] - a[1]);
-      const colors = sorted.slice(0, 4).map(([key]) => {
+      resolve(sorted.slice(0, 4).map(([key]) => {
         const [r, g, b] = key.split(',').map(Number);
         return `rgb(${r},${g},${b})`;
-      });
-      resolve(colors);
+      }));
     };
     img.onerror = () => resolve([]);
     img.src = imgSrc;
   });
+}
+
+function getApiBase() {
+  const { protocol, hostname, port } = window.location;
+  const base = port ? `${protocol}//${hostname}:${port}` : `${protocol}//${hostname}`;
+  return `${base}/api-server/api`;
 }
 
 export function LeftPanel() {
@@ -75,21 +93,13 @@ export function LeftPanel() {
   const [activeTab, setActiveTab] = useState<Tab>('device');
   const bgFileRef = useRef<HTMLInputElement>(null);
   const [extracting, setExtracting] = useState(false);
-
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'presets', label: 'Presets' },
-    { id: 'device', label: 'Device' },
-    { id: 'background', label: 'Background' },
-    { id: 'canvas', label: 'Transform' },
-    { id: 'text', label: 'Text' },
-    { id: 'animation', label: 'Animation' },
-  ];
+  const [urlInput, setUrlInput] = useState('');
+  const [capturing, setCapturing] = useState(false);
+  const [captureError, setCaptureError] = useState('');
 
   const handleBgImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      updateState({ bgType: 'image', bgImage: URL.createObjectURL(file) });
-    }
+    if (file) updateState({ bgType: 'image', bgImage: URL.createObjectURL(file) });
   };
 
   const handleShuffle = () => {
@@ -123,613 +133,589 @@ export function LeftPanel() {
         '#0a0a14',
       ].filter(Boolean).join(', ');
       updateState({ bgType: 'mesh', bgColor: '__auto__' });
-      MESH_GRADIENTS.push({ id: '__auto__', label: 'Auto', css: meshCss });
-    } finally {
-      setExtracting(false);
-    }
+      const existing = MESH_GRADIENTS.find(m => m.id === '__auto__');
+      if (existing) { existing.css = meshCss; }
+      else MESH_GRADIENTS.push({ id: '__auto__', label: 'Auto', css: meshCss });
+    } finally { setExtracting(false); }
+  };
+
+  const handleUrlCapture = async () => {
+    if (!urlInput.trim()) return;
+    setCaptureError('');
+    setCapturing(true);
+    try {
+      let url = urlInput.trim();
+      if (!url.startsWith('http')) url = 'https://' + url;
+      const apiBase = getApiBase();
+      const proxyUrl = `${apiBase}/screenshot?url=${encodeURIComponent(url)}`;
+      const res = await fetch(proxyUrl);
+      if (!res.ok) throw new Error('Screenshot failed');
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      updateState({ screenshotUrl: blobUrl, videoUrl: null, contentType: 'image' });
+    } catch {
+      setCaptureError('Could not capture. Check the URL and try again.');
+    } finally { setCapturing(false); }
   };
 
   const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-    <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#6b7280' }}>
+    <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: '#4b5563', letterSpacing: '0.08em' }}>
       {children}
     </div>
   );
 
-  const SliderControl = ({
-    label,
-    value,
-    min,
-    max,
-    step = 1,
-    onChange,
-    unit = '',
-  }: {
-    label: string;
-    value: number;
-    min: number;
-    max: number;
-    step?: number;
-    onChange: (v: number) => void;
-    unit?: string;
+  const SliderControl = ({ label, value, min, max, step = 1, onChange, unit = '' }: {
+    label: string; value: number; min: number; max: number; step?: number; onChange: (v: number) => void; unit?: string;
   }) => (
     <div className="mb-4">
       <div className="flex justify-between items-center mb-1.5">
         <span className="text-xs" style={{ color: '#9ca3af' }}>{label}</span>
-        <span className="text-xs font-mono" style={{ color: '#6b7280' }}>{value}{unit}</span>
+        <span className="text-xs font-mono tabular-nums" style={{ color: '#6b7280' }}>{value}{unit}</span>
       </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={e => onChange(Number(e.target.value))}
-        className="w-full"
-      />
+      <input type="range" min={min} max={max} step={step} value={value}
+        onChange={e => onChange(Number(e.target.value))} className="ms-range w-full" />
     </div>
   );
 
   const ToggleButton = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
-    <button
-      onClick={onClick}
-      className="flex-1 py-2 rounded-xl text-xs font-medium capitalize transition-all"
+    <button onClick={onClick} className="flex-1 py-2 rounded-xl text-xs font-medium capitalize transition-all"
       style={{
-        background: active ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.03)',
-        border: active ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.06)',
-        color: active ? '#c4b5fd' : '#9ca3af',
-      }}
-    >
+        background: active ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.03)',
+        border: active ? '1px solid rgba(124,58,237,0.45)' : '1px solid rgba(255,255,255,0.07)',
+        color: active ? '#c4b5fd' : '#6b7280',
+      }}>
       {children}
     </button>
   );
 
-  return (
-    <div
-      className="flex flex-col h-full"
-      style={{
-        width: 280,
-        background: 'rgba(10,12,22,0.92)',
-        backdropFilter: 'blur(16px)',
-        borderRight: '1px solid rgba(255,255,255,0.06)',
-        flexShrink: 0,
-      }}
-    >
-      {/* Logo */}
-      <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="flex items-center gap-2">
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-sm"
-            style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}
-          >
-            M
-          </div>
-          <span className="font-semibold text-sm" style={{ color: '#e2e8f0' }}>MockupStudio</span>
-        </div>
-      </div>
+  const Toggle = ({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) => (
+    <button onClick={onToggle} className="relative w-9 h-5 rounded-full transition-all flex-shrink-0"
+      style={{ background: enabled ? '#7c3aed' : 'rgba(255,255,255,0.12)' }}>
+      <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all"
+        style={{ left: enabled ? '1.1rem' : '2px' }} />
+    </button>
+  );
 
-      {/* Tabs */}
-      <div className="px-3 py-2 flex flex-wrap gap-1" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        {tabs.map(tab => (
+  return (
+    <div className="left-panel flex h-full overflow-hidden" style={{ flexShrink: 0 }}>
+      {/* Icon rail */}
+      <div
+        className="flex flex-col items-center py-3 gap-1"
+        style={{
+          width: 56,
+          background: 'rgba(7,9,20,0.98)',
+          borderRight: '1px solid rgba(255,255,255,0.05)',
+          flexShrink: 0,
+        }}
+      >
+        {/* Logo mark */}
+        <div className="mb-3 w-8 h-8 rounded-xl flex items-center justify-center text-white font-black text-sm"
+          style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', flexShrink: 0 }}>
+          M
+        </div>
+        {/* Tab icons */}
+        {TAB_ICONS.map(({ id, icon: Icon, label }) => (
           <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className="px-2.5 py-1 rounded-md text-xs font-medium transition-all"
+            key={id}
+            onClick={() => setActiveTab(id)}
+            title={label}
+            className="w-10 h-10 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all group"
             style={{
-              background: activeTab === tab.id ? 'rgba(124,58,237,0.25)' : 'transparent',
-              color: activeTab === tab.id ? '#a78bfa' : '#6b7280',
-              border: activeTab === tab.id ? '1px solid rgba(124,58,237,0.4)' : '1px solid transparent',
+              background: activeTab === id ? 'rgba(124,58,237,0.2)' : 'transparent',
+              border: activeTab === id ? '1px solid rgba(124,58,237,0.4)' : '1px solid transparent',
             }}
           >
-            {tab.label}
+            <Icon size={18} strokeWidth={activeTab === id ? 2 : 1.5}
+              style={{ color: activeTab === id ? '#a78bfa' : '#4b5563', transition: 'color 0.15s' }} />
           </button>
         ))}
       </div>
 
-      {/* Panel content */}
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+      {/* Content panel */}
+      <div className="flex flex-col h-full" style={{ width: 248, background: 'rgba(10,12,24,0.96)', borderRight: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
+        {/* Panel header */}
+        <div className="px-4 py-3.5 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <span className="text-sm font-bold" style={{ color: '#e2e8f0' }}>
+            {TAB_ICONS.find(t => t.id === activeTab)?.label}
+          </span>
+        </div>
 
-        {/* ── PRESETS ── */}
-        {activeTab === 'presets' && (
-          <div>
-            <SectionLabel>Templates</SectionLabel>
-            <div className="grid grid-cols-2 gap-2">
-              {PRESETS.map(preset => {
-                const allBgs = [...GRADIENTS, ...MESH_GRADIENTS, ...WALLPAPERS];
-                const bg = allBgs.find(g => g.id === preset.thumb);
-                const bgCss = bg ? ('css' in bg ? bg.css : '') : '';
-                return (
-                  <button
-                    key={preset.id}
-                    onClick={() => {
-                      const s = preset.state;
-                      updateState({
-                        deviceType: s.deviceType,
-                        deviceLandscape: s.deviceLandscape ?? false,
-                        bgType: s.bgType,
-                        bgColor: s.bgColor,
-                        scale: s.scale,
-                        rotation: s.rotation,
-                        shadowIntensity: s.shadowIntensity,
-                        shadowStyle: s.shadowStyle ?? 'spread',
-                        is3D: s.is3D,
-                        tiltX: s.tiltX,
-                        tiltY: s.tiltY,
-                        animation: s.animation,
-                        canvasPadding: s.canvasPadding ?? 0,
-                        ...(s.borderRadius ? { borderRadius: s.borderRadius } : {}),
-                      });
-                    }}
-                    className="rounded-xl overflow-hidden transition-transform hover:scale-105 relative"
-                    style={{
-                      height: 80,
-                      background: bgCss || '#1a1a2e',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                    }}
-                  >
-                    <div className="absolute inset-0 flex items-end p-2">
-                      <span className="text-[10px] font-semibold text-white/90 text-left leading-tight"
-                        style={{ textShadow: '0 1px 4px rgba(0,0,0,0.7)' }}>
-                        {preset.label}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 styled-scroll">
 
-        {/* ── DEVICE ── */}
-        {activeTab === 'device' && (
-          <div>
-            <SectionLabel>Device Type</SectionLabel>
-            <div className="flex flex-col gap-1.5 mb-4">
-              {DEVICES.map(dev => {
-                const Icon = dev.icon;
-                return (
-                  <button
-                    key={dev.id}
-                    onClick={() => updateState({ deviceType: dev.id })}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all"
-                    style={{
-                      background: state.deviceType === dev.id ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.03)',
-                      border: state.deviceType === dev.id ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.06)',
-                      color: state.deviceType === dev.id ? '#c4b5fd' : '#9ca3af',
-                    }}
-                  >
-                    <Icon size={15} />
-                    <span className="text-xs font-medium">{dev.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* iPhone color variants */}
-            {state.deviceType === 'iphone' && (
-              <>
-                <SectionLabel>Color</SectionLabel>
-                <div className="flex gap-2 mb-4">
-                  {IPHONE_COLORS.map(c => (
+          {/* ── PRESETS ── */}
+          {activeTab === 'presets' && (
+            <div>
+              <SectionLabel>Templates</SectionLabel>
+              <div className="grid grid-cols-2 gap-2">
+                {PRESETS.map(preset => {
+                  const allBgs = [...GRADIENTS, ...MESH_GRADIENTS, ...WALLPAPERS];
+                  const bg = allBgs.find(g => g.id === preset.thumb);
+                  const bgCss = bg ? ('css' in bg ? bg.css : '') : '';
+                  return (
                     <button
-                      key={c.id}
-                      title={c.label}
-                      onClick={() => updateState({ deviceColor: c.id })}
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: '50%',
-                        background: c.bg,
-                        border: state.deviceColor === c.id ? `2px solid #a78bfa` : `2px solid ${c.border}`,
-                        boxShadow: state.deviceColor === c.id ? '0 0 0 2px rgba(167,139,250,0.4)' : 'none',
-                        flexShrink: 0,
-                        transition: 'all 0.15s',
+                      key={preset.id}
+                      onClick={() => {
+                        const s = preset.state;
+                        updateState({
+                          deviceType: s.deviceType, deviceLandscape: s.deviceLandscape ?? false,
+                          bgType: s.bgType, bgColor: s.bgColor, scale: s.scale,
+                          rotation: s.rotation, shadowIntensity: s.shadowIntensity,
+                          shadowStyle: s.shadowStyle ?? 'spread', is3D: s.is3D,
+                          tiltX: s.tiltX, tiltY: s.tiltY, animation: s.animation,
+                          canvasPadding: s.canvasPadding ?? 0,
+                          ...(s.borderRadius ? { borderRadius: s.borderRadius } : {}),
+                        });
                       }}
-                    />
-                  ))}
-                </div>
-                <p className="text-[10px] mb-4" style={{ color: '#4b5563' }}>
-                  {IPHONE_COLORS.find(c => c.id === state.deviceColor)?.label ?? 'Titanium'}
-                </p>
-              </>
-            )}
-
-            {/* Browser dark/light mode */}
-            {state.deviceType === 'browser' && (
-              <>
-                <SectionLabel>Browser Theme</SectionLabel>
-                <div className="flex gap-2 mb-4">
-                  <ToggleButton active={state.browserMode === 'dark'} onClick={() => updateState({ browserMode: 'dark' })}>Dark</ToggleButton>
-                  <ToggleButton active={state.browserMode === 'light'} onClick={() => updateState({ browserMode: 'light' })}>Light</ToggleButton>
-                </div>
-              </>
-            )}
-
-            {/* Orientation (not for watch/browser/iMac) */}
-            {state.deviceType !== 'browser' && state.deviceType !== 'watch' && state.deviceType !== 'imac' && state.deviceType !== 'macbook' && (
-              <>
-                <SectionLabel>Orientation</SectionLabel>
-                <div className="flex gap-2 mb-4">
-                  <ToggleButton active={!state.deviceLandscape} onClick={() => updateState({ deviceLandscape: false })}>Portrait</ToggleButton>
-                  <ToggleButton active={state.deviceLandscape} onClick={() => updateState({ deviceLandscape: true })}>Landscape</ToggleButton>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* ── BACKGROUND ── */}
-        {activeTab === 'background' && (
-          <div>
-            {/* Type + Shuffle row */}
-            <div className="flex items-center justify-between mb-2">
-              <SectionLabel>Type</SectionLabel>
-              <button
-                onClick={handleShuffle}
-                title="Shuffle background"
-                className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs transition-all"
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  color: '#6b7280',
-                }}
-              >
-                <Shuffle size={11} />
-                Shuffle
-              </button>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5 mb-4">
-              {(['solid', 'gradient', 'mesh', 'wallpaper', 'pattern', 'image'] as const).map(t => (
-                <button
-                  key={t}
-                  onClick={() => updateState({ bgType: t })}
-                  className="px-3 py-1.5 rounded-lg text-xs capitalize transition-all"
-                  style={{
-                    background: state.bgType === t ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.04)',
-                    border: state.bgType === t ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.07)',
-                    color: state.bgType === t ? '#c4b5fd' : '#6b7280',
-                  }}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-
-            {/* Solid */}
-            {state.bgType === 'solid' && (
-              <>
-                <SectionLabel>Color</SectionLabel>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="relative">
-                    <div
-                      className="w-10 h-10 rounded-xl border cursor-pointer"
-                      style={{ background: state.bgColor, borderColor: 'rgba(255,255,255,0.1)' }}
-                    />
-                    <input
-                      type="color"
-                      value={state.bgColor}
-                      onChange={e => updateState({ bgColor: e.target.value })}
-                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    value={state.bgColor}
-                    onChange={e => updateState({ bgColor: e.target.value })}
-                    className="flex-1 bg-transparent border rounded-lg px-3 py-1.5 text-xs font-mono"
-                    style={{ borderColor: 'rgba(255,255,255,0.1)', color: '#9ca3af' }}
-                  />
-                </div>
-              </>
-            )}
-
-            {/* Gradient */}
-            {state.bgType === 'gradient' && (
-              <>
-                <SectionLabel>Gradient Presets</SectionLabel>
-                <div className="grid grid-cols-4 gap-2 mb-4">
-                  {GRADIENTS.map(g => (
-                    <button
-                      key={g.id}
-                      onClick={() => updateState({ bgColor: g.id })}
-                      className="rounded-xl transition-transform hover:scale-110"
-                      title={g.label}
-                      style={{
-                        height: 44,
-                        background: g.css,
-                        border: state.bgColor === g.id ? '2px solid #a78bfa' : '1.5px solid rgba(255,255,255,0.08)',
-                        boxShadow: state.bgColor === g.id ? '0 0 0 2px rgba(167,139,250,0.3)' : 'none',
-                      }}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-
-            {/* Mesh */}
-            {state.bgType === 'mesh' && (
-              <>
-                <SectionLabel>Mesh Gradients</SectionLabel>
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                  {MESH_GRADIENTS.filter(m => m.id !== '__auto__').map(m => (
-                    <button
-                      key={m.id}
-                      onClick={() => updateState({ bgColor: m.id })}
-                      className="rounded-xl transition-transform hover:scale-105"
-                      title={m.label}
-                      style={{
-                        height: 52,
-                        background: m.css,
-                        border: state.bgColor === m.id ? '2px solid #a78bfa' : '1.5px solid rgba(255,255,255,0.08)',
-                      }}
-                    />
-                  ))}
-                </div>
-
-                {/* Auto background from screenshot */}
-                {state.screenshotUrl && (
-                  <button
-                    onClick={handleAutoBackground}
-                    disabled={extracting}
-                    className="w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 mb-4 transition-all"
-                    style={{
-                      background: 'rgba(124,58,237,0.15)',
-                      border: '1px solid rgba(124,58,237,0.3)',
-                      color: '#c4b5fd',
-                    }}
-                  >
-                    <Wand2 size={13} />
-                    {extracting ? 'Extracting...' : 'Auto from Screenshot'}
-                  </button>
-                )}
-              </>
-            )}
-
-            {/* Wallpaper */}
-            {state.bgType === 'wallpaper' && (
-              <>
-                <SectionLabel>Wallpapers</SectionLabel>
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                  {WALLPAPERS.map(w => (
-                    <button
-                      key={w.id}
-                      onClick={() => updateState({ bgColor: w.id })}
-                      className="rounded-xl transition-transform hover:scale-105 relative overflow-hidden"
-                      title={w.label}
-                      style={{
-                        height: 52,
-                        background: w.css,
-                        border: state.bgColor === w.id ? '2px solid #a78bfa' : '1.5px solid rgba(255,255,255,0.08)',
-                      }}
+                      className="rounded-xl overflow-hidden transition-all hover:scale-105 hover:brightness-110 relative"
+                      style={{ height: 76, background: bgCss || '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)' }}
                     >
-                      <div className="absolute inset-x-0 bottom-0 px-1 py-0.5"
-                        style={{ background: 'rgba(0,0,0,0.5)' }}>
-                        <span className="text-[9px] text-white/80 leading-none">{w.label}</span>
+                      <div className="absolute inset-0 flex items-end p-2">
+                        <span className="text-[10px] font-bold text-white/90 text-left leading-tight"
+                          style={{ textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}>
+                          {preset.label}
+                        </span>
                       </div>
                     </button>
-                  ))}
-                </div>
-              </>
-            )}
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-            {/* Pattern */}
-            {state.bgType === 'pattern' && (
-              <>
-                <SectionLabel>Pattern</SectionLabel>
-                <div className="flex flex-col gap-2 mb-4">
-                  {PATTERNS.map(p => (
-                    <button
-                      key={p.id}
-                      onClick={() => updateState({ bgPattern: p.id })}
-                      className="h-12 rounded-xl transition-all flex items-center justify-center"
-                      style={{
-                        ...p.bgStyle('#1a1a2e'),
-                        border: state.bgPattern === p.id ? '2px solid #a78bfa' : '1.5px solid rgba(255,255,255,0.08)',
-                      }}
-                    >
-                      <span className="text-xs text-white/50">{p.label}</span>
+          {/* ── DEVICE ── */}
+          {activeTab === 'device' && (
+            <div>
+              {/* URL Capture */}
+              <SectionLabel>Capture from URL</SectionLabel>
+              <div className="mb-4 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+                <div className="flex items-center gap-2 p-2.5">
+                  <Link2 size={13} style={{ color: '#6b7280', flexShrink: 0 }} />
+                  <input
+                    type="url"
+                    value={urlInput}
+                    onChange={e => { setUrlInput(e.target.value); setCaptureError(''); }}
+                    onKeyDown={e => e.key === 'Enter' && handleUrlCapture()}
+                    placeholder="https://example.com"
+                    className="flex-1 bg-transparent text-xs outline-none"
+                    style={{ color: '#e2e8f0' }}
+                  />
+                  {urlInput && (
+                    <button onClick={() => { setUrlInput(''); setCaptureError(''); }} style={{ color: '#4b5563' }}>
+                      <X size={12} />
                     </button>
-                  ))}
+                  )}
                 </div>
-                <SectionLabel>Pattern Color</SectionLabel>
-                <div className="relative mb-4">
-                  <div className="w-full h-10 rounded-xl border cursor-pointer" style={{ background: state.bgColor, borderColor: 'rgba(255,255,255,0.1)' }} />
-                  <input type="color" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" />
-                </div>
-              </>
-            )}
-
-            {/* Image upload */}
-            {state.bgType === 'image' && (
-              <>
-                <SectionLabel>Background Image</SectionLabel>
-                {state.bgImage && (
-                  <div className="w-full h-24 rounded-xl overflow-hidden mb-2" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <img src={state.bgImage} className="w-full h-full object-cover" alt="bg" />
-                  </div>
-                )}
                 <button
-                  onClick={() => bgFileRef.current?.click()}
-                  className="w-full py-3 rounded-xl text-xs transition-all mb-4"
+                  onClick={handleUrlCapture}
+                  disabled={capturing || !urlInput.trim()}
+                  className="w-full py-2 text-xs font-semibold transition-all"
                   style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px dashed rgba(255,255,255,0.12)',
-                    color: '#6b7280',
+                    borderTop: '1px solid rgba(255,255,255,0.06)',
+                    background: capturing ? 'rgba(124,58,237,0.1)' : urlInput ? 'rgba(124,58,237,0.15)' : 'transparent',
+                    color: urlInput ? '#a78bfa' : '#4b5563',
+                    cursor: capturing || !urlInput.trim() ? 'not-allowed' : 'pointer',
                   }}
                 >
-                  {state.bgImage ? 'Change Image' : 'Upload Image'}
-                </button>
-                <input ref={bgFileRef} type="file" accept="image/*" className="hidden" onChange={handleBgImage} />
-              </>
-            )}
-
-            {/* Overlay section */}
-            <div className="border-t pt-4 mt-2" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-              <div className="flex items-center justify-between mb-3">
-                <SectionLabel>Overlay</SectionLabel>
-                <button
-                  onClick={() => updateState({ overlayEnabled: !state.overlayEnabled })}
-                  className="relative w-10 h-5 rounded-full transition-all"
-                  style={{ background: state.overlayEnabled ? 'rgba(124,58,237,0.8)' : 'rgba(255,255,255,0.1)' }}
-                >
-                  <div
-                    className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all"
-                    style={{ left: state.overlayEnabled ? '1.25rem' : '2px' }}
-                  />
+                  {capturing ? '⏳ Capturing...' : '📸 Capture Screenshot'}
                 </button>
               </div>
+              {captureError && (
+                <p className="text-[11px] mb-3 px-1" style={{ color: '#f87171' }}>{captureError}</p>
+              )}
 
-              {state.overlayEnabled && (
+              {/* Upload media */}
+              <SectionLabel>Upload Media</SectionLabel>
+              <div className="flex gap-2 mb-4">
+                <UploadTile icon={<ImageIcon size={14} />} label="Image" accept="image/*" color="#a78bfa"
+                  onFile={(file) => {
+                    const url = URL.createObjectURL(file);
+                    updateState({ screenshotUrl: url, videoUrl: null, contentType: 'image' });
+                  }}
+                />
+                <UploadTile icon={<Video size={14} />} label="Video" accept="video/*" color="#4ade80"
+                  onFile={(file) => {
+                    const url = URL.createObjectURL(file);
+                    updateState({ videoUrl: url, screenshotUrl: null, contentType: 'video' });
+                  }}
+                />
+              </div>
+
+              {/* Current content indicator */}
+              {(state.screenshotUrl || state.videoUrl) && (
+                <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
+                  {state.contentType === 'video' ? <Video size={12} style={{ color: '#4ade80' }} /> : <ImageIcon size={12} style={{ color: '#4ade80' }} />}
+                  <span className="text-xs" style={{ color: '#4ade80' }}>
+                    {state.contentType === 'video' ? 'Video loaded' : 'Image loaded'}
+                  </span>
+                  <button
+                    className="ml-auto text-xs"
+                    style={{ color: '#374151' }}
+                    onClick={() => updateState({ screenshotUrl: null, videoUrl: null, contentType: null })}
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              )}
+
+              {/* Device type */}
+              <SectionLabel>Device</SectionLabel>
+              <div className="flex flex-col gap-1.5 mb-4">
+                {DEVICES.map(dev => {
+                  const Icon = dev.icon;
+                  return (
+                    <button
+                      key={dev.id}
+                      onClick={() => updateState({ deviceType: dev.id })}
+                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all"
+                      style={{
+                        background: state.deviceType === dev.id ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.025)',
+                        border: state.deviceType === dev.id ? '1px solid rgba(124,58,237,0.45)' : '1px solid rgba(255,255,255,0.06)',
+                        color: state.deviceType === dev.id ? '#c4b5fd' : '#6b7280',
+                      }}
+                    >
+                      <Icon size={14} strokeWidth={1.5} />
+                      <span className="text-xs font-medium">{dev.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* iPhone color variants */}
+              {state.deviceType === 'iphone' && (
                 <>
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="text-xs" style={{ color: '#9ca3af' }}>Color</span>
-                    <div className="relative">
-                      <div className="w-8 h-8 rounded-lg border cursor-pointer" style={{ background: state.overlayColor, borderColor: 'rgba(255,255,255,0.1)' }} />
-                      <input type="color" value={state.overlayColor} onChange={e => updateState({ overlayColor: e.target.value })} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" />
-                    </div>
-                    <div className="flex-1 flex gap-1">
-                      {['#000000', '#ffffff', '#7c3aed', '#0ea5e9', '#ec4899'].map(col => (
-                        <button
-                          key={col}
-                          onClick={() => updateState({ overlayColor: col })}
-                          style={{ width: 20, height: 20, borderRadius: '50%', background: col, border: state.overlayColor === col ? '2px solid #a78bfa' : '1px solid rgba(255,255,255,0.2)', flexShrink: 0 }}
-                        />
-                      ))}
-                    </div>
+                  <SectionLabel>Frame Color</SectionLabel>
+                  <div className="flex gap-2 mb-4 items-center">
+                    {IPHONE_COLORS.map(c => (
+                      <button key={c.id} title={c.label} onClick={() => updateState({ deviceColor: c.id })}
+                        style={{
+                          width: 26, height: 26, borderRadius: '50%', background: c.bg,
+                          border: state.deviceColor === c.id ? `2px solid #a78bfa` : `2px solid ${c.border}`,
+                          boxShadow: state.deviceColor === c.id ? '0 0 0 2px rgba(167,139,250,0.35)' : 'none',
+                          transition: 'all 0.15s',
+                        }}
+                      />
+                    ))}
+                    <span className="text-[10px] ml-1" style={{ color: '#4b5563' }}>
+                      {IPHONE_COLORS.find(c => c.id === state.deviceColor)?.label}
+                    </span>
                   </div>
-                  <SliderControl
-                    label="Opacity"
-                    value={state.overlayOpacity}
-                    min={0}
-                    max={90}
-                    onChange={v => updateState({ overlayOpacity: v })}
-                    unit="%"
-                  />
+                </>
+              )}
+
+              {/* Browser dark/light mode */}
+              {state.deviceType === 'browser' && (
+                <>
+                  <SectionLabel>Browser Theme</SectionLabel>
+                  <div className="flex gap-2 mb-4">
+                    <ToggleButton active={state.browserMode === 'dark'} onClick={() => updateState({ browserMode: 'dark' })}>Dark</ToggleButton>
+                    <ToggleButton active={state.browserMode === 'light'} onClick={() => updateState({ browserMode: 'light' })}>Light</ToggleButton>
+                  </div>
+                </>
+              )}
+
+              {/* Orientation */}
+              {state.deviceType !== 'browser' && state.deviceType !== 'watch' && state.deviceType !== 'imac' && state.deviceType !== 'macbook' && (
+                <>
+                  <SectionLabel>Orientation</SectionLabel>
+                  <div className="flex gap-2 mb-4">
+                    <ToggleButton active={!state.deviceLandscape} onClick={() => updateState({ deviceLandscape: false })}>Portrait</ToggleButton>
+                    <ToggleButton active={state.deviceLandscape} onClick={() => updateState({ deviceLandscape: true })}>Landscape</ToggleButton>
+                  </div>
                 </>
               )}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ── TRANSFORM ── */}
-        {activeTab === 'canvas' && (
-          <div>
-            {/* Canvas Ratio */}
-            <SectionLabel>Canvas Ratio</SectionLabel>
-            <div className="flex gap-1.5 flex-wrap mb-4">
-              {CANVAS_RATIOS.map(r => (
-                <button
-                  key={r.id}
-                  onClick={() => updateState({ canvasRatio: r.id })}
-                  className="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
-                  style={{
-                    background: state.canvasRatio === r.id ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.04)',
-                    border: state.canvasRatio === r.id ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.07)',
-                    color: state.canvasRatio === r.id ? '#c4b5fd' : '#6b7280',
-                  }}
-                >
-                  {r.label}
+          {/* ── BACKGROUND ── */}
+          {activeTab === 'background' && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <SectionLabel>Type</SectionLabel>
+                <button onClick={handleShuffle} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-all"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#6b7280' }}>
+                  <Shuffle size={11} /> Shuffle
                 </button>
-              ))}
-            </div>
+              </div>
 
-            <SliderControl label="Scale" value={Math.round(state.scale * 100)} min={30} max={120} onChange={v => updateState({ scale: v / 100 })} unit="%" />
-            <SliderControl label="Rotation" value={state.rotation} min={-45} max={45} onChange={v => updateState({ rotation: v })} unit="°" />
-            <SliderControl label="Padding" value={state.canvasPadding} min={0} max={80} onChange={v => updateState({ canvasPadding: v })} unit="px" />
-
-            {/* Shadow */}
-            <div className="mt-2 mb-4">
-              <SectionLabel>Shadow Style</SectionLabel>
-              <div className="flex gap-1.5 mb-3">
-                {SHADOW_STYLES.map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => updateState({ shadowStyle: s.id })}
-                    className="flex-1 py-2 rounded-xl text-xs font-medium transition-all"
+              <div className="flex flex-wrap gap-1.5 mb-5">
+                {(['solid', 'gradient', 'mesh', 'wallpaper', 'pattern', 'image'] as const).map(t => (
+                  <button key={t} onClick={() => updateState({ bgType: t })}
+                    className="px-3 py-1.5 rounded-lg text-xs capitalize transition-all"
                     style={{
-                      background: state.shadowStyle === s.id ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.03)',
-                      border: state.shadowStyle === s.id ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.06)',
-                      color: state.shadowStyle === s.id ? '#c4b5fd' : '#9ca3af',
-                    }}
-                  >
-                    {s.label}
+                      background: state.bgType === t ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.04)',
+                      border: state.bgType === t ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.07)',
+                      color: state.bgType === t ? '#c4b5fd' : '#6b7280',
+                    }}>
+                    {t}
                   </button>
                 ))}
               </div>
-              {state.shadowStyle !== 'none' && (
+
+              {state.bgType === 'solid' && (
                 <>
-                  <SliderControl label="Intensity" value={state.shadowIntensity} min={0} max={100} onChange={v => updateState({ shadowIntensity: v })} />
-                  <SliderControl label="Direction" value={state.shadowDirection} min={0} max={360} onChange={v => updateState({ shadowDirection: v })} unit="°" />
+                  <SectionLabel>Color</SectionLabel>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="relative">
+                      <div className="w-10 h-10 rounded-xl border cursor-pointer"
+                        style={{ background: state.bgColor, borderColor: 'rgba(255,255,255,0.12)' }} />
+                      <input type="color" value={state.bgColor}
+                        onChange={e => updateState({ bgColor: e.target.value })}
+                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" />
+                    </div>
+                    <input type="text" value={state.bgColor}
+                      onChange={e => updateState({ bgColor: e.target.value })}
+                      className="flex-1 bg-transparent border rounded-lg px-3 py-1.5 text-xs font-mono outline-none"
+                      style={{ borderColor: 'rgba(255,255,255,0.1)', color: '#9ca3af' }} />
+                  </div>
                 </>
               )}
-            </div>
 
-            {/* 3D Perspective */}
-            <div className="mt-2">
-              <div className="flex items-center justify-between mb-3">
-                <SectionLabel>3D Perspective</SectionLabel>
-                <button
-                  onClick={() => updateState({ is3D: !state.is3D })}
-                  className="relative w-10 h-5 rounded-full transition-all"
-                  style={{ background: state.is3D ? 'rgba(124,58,237,0.8)' : 'rgba(255,255,255,0.1)' }}
-                >
-                  <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" style={{ left: state.is3D ? '1.25rem' : '2px' }} />
-                </button>
+              {state.bgType === 'gradient' && (
+                <>
+                  <SectionLabel>Gradients</SectionLabel>
+                  <div className="grid grid-cols-4 gap-2 mb-4">
+                    {GRADIENTS.map(g => (
+                      <button key={g.id} onClick={() => updateState({ bgColor: g.id })}
+                        className="rounded-xl transition-all hover:scale-110" title={g.label}
+                        style={{
+                          height: 42, background: g.css,
+                          border: state.bgColor === g.id ? '2px solid #a78bfa' : '1.5px solid rgba(255,255,255,0.07)',
+                          boxShadow: state.bgColor === g.id ? '0 0 0 2px rgba(167,139,250,0.3)' : 'none',
+                        }} />
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {state.bgType === 'mesh' && (
+                <>
+                  <SectionLabel>Mesh Gradients</SectionLabel>
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    {MESH_GRADIENTS.filter(m => m.id !== '__auto__').map(m => (
+                      <button key={m.id} onClick={() => updateState({ bgColor: m.id })}
+                        className="rounded-xl transition-all hover:scale-105" title={m.label}
+                        style={{
+                          height: 50, background: m.css,
+                          border: state.bgColor === m.id ? '2px solid #a78bfa' : '1.5px solid rgba(255,255,255,0.07)',
+                        }} />
+                    ))}
+                  </div>
+                  {state.screenshotUrl && (
+                    <button onClick={handleAutoBackground} disabled={extracting}
+                      className="w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 mb-4 transition-all"
+                      style={{ background: 'rgba(124,58,237,0.14)', border: '1px solid rgba(124,58,237,0.3)', color: '#c4b5fd' }}>
+                      <Wand2 size={13} />
+                      {extracting ? 'Extracting...' : 'Auto from Screenshot'}
+                    </button>
+                  )}
+                </>
+              )}
+
+              {state.bgType === 'wallpaper' && (
+                <>
+                  <SectionLabel>Wallpapers</SectionLabel>
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    {WALLPAPERS.map(w => (
+                      <button key={w.id} onClick={() => updateState({ bgColor: w.id })}
+                        className="rounded-xl transition-all hover:scale-105 relative overflow-hidden" title={w.label}
+                        style={{
+                          height: 50, background: w.css,
+                          border: state.bgColor === w.id ? '2px solid #a78bfa' : '1.5px solid rgba(255,255,255,0.07)',
+                        }}>
+                        <div className="absolute inset-x-0 bottom-0 px-1 py-0.5" style={{ background: 'rgba(0,0,0,0.55)' }}>
+                          <span className="text-[9px] text-white/80 leading-none">{w.label}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {state.bgType === 'pattern' && (
+                <>
+                  <SectionLabel>Pattern</SectionLabel>
+                  <div className="flex flex-col gap-2 mb-4">
+                    {PATTERNS.map(p => (
+                      <button key={p.id} onClick={() => updateState({ bgPattern: p.id })}
+                        className="h-12 rounded-xl transition-all flex items-center justify-center"
+                        style={{ ...p.bgStyle('#1a1a2e'), border: state.bgPattern === p.id ? '2px solid #a78bfa' : '1.5px solid rgba(255,255,255,0.08)' }}>
+                        <span className="text-xs text-white/50">{p.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <SectionLabel>Pattern Color</SectionLabel>
+                  <div className="relative mb-4">
+                    <div className="w-full h-10 rounded-xl border cursor-pointer" style={{ background: state.bgColor, borderColor: 'rgba(255,255,255,0.1)' }} />
+                    <input type="color" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" />
+                  </div>
+                </>
+              )}
+
+              {state.bgType === 'image' && (
+                <>
+                  <SectionLabel>Background Image</SectionLabel>
+                  {state.bgImage && (
+                    <div className="w-full h-24 rounded-xl overflow-hidden mb-2" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <img src={state.bgImage} className="w-full h-full object-cover" alt="bg" />
+                    </div>
+                  )}
+                  <button onClick={() => bgFileRef.current?.click()}
+                    className="w-full py-3 rounded-xl text-xs transition-all mb-4"
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.12)', color: '#6b7280' }}>
+                    {state.bgImage ? 'Change Image' : '+ Upload Image'}
+                  </button>
+                  <input ref={bgFileRef} type="file" accept="image/*" className="hidden" onChange={handleBgImage} />
+                </>
+              )}
+
+              {/* Overlay */}
+              <div className="pt-4 mt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <SectionLabel>Color Overlay</SectionLabel>
+                  <Toggle enabled={state.overlayEnabled} onToggle={() => updateState({ overlayEnabled: !state.overlayEnabled })} />
+                </div>
+                {state.overlayEnabled && (
+                  <>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xs" style={{ color: '#9ca3af' }}>Color</span>
+                      <div className="relative">
+                        <div className="w-7 h-7 rounded-lg border cursor-pointer" style={{ background: state.overlayColor, borderColor: 'rgba(255,255,255,0.1)' }} />
+                        <input type="color" value={state.overlayColor} onChange={e => updateState({ overlayColor: e.target.value })} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" />
+                      </div>
+                      <div className="flex gap-1 flex-1">
+                        {['#000000', '#ffffff', '#7c3aed', '#0ea5e9', '#ec4899'].map(col => (
+                          <button key={col} onClick={() => updateState({ overlayColor: col })}
+                            style={{ width: 18, height: 18, borderRadius: '50%', background: col, border: state.overlayColor === col ? '2px solid #a78bfa' : '1px solid rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                        ))}
+                      </div>
+                    </div>
+                    <SliderControl label="Opacity" value={state.overlayOpacity} min={0} max={90} onChange={v => updateState({ overlayOpacity: v })} unit="%" />
+                  </>
+                )}
               </div>
-              {state.is3D && (
-                <>
-                  <SliderControl label="Tilt X" value={state.tiltX} min={-30} max={30} onChange={v => updateState({ tiltX: v })} unit="°" />
-                  <SliderControl label="Tilt Y" value={state.tiltY} min={-30} max={30} onChange={v => updateState({ tiltY: v })} unit="°" />
-                </>
-              )}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ── TEXT ── */}
-        {activeTab === 'text' && (
-          <div>
-            <button
-              onClick={addText}
-              className="w-full py-2.5 rounded-xl text-xs font-semibold mb-4 transition-all"
-              style={{
-                background: 'linear-gradient(135deg, rgba(124,58,237,0.4), rgba(79,70,229,0.4))',
-                border: '1px solid rgba(124,58,237,0.5)',
-                color: '#c4b5fd',
-              }}
-            >
-              + Add Text Overlay
-            </button>
-            <p className="text-xs text-center" style={{ color: '#4b5563' }}>
-              Drag text overlays on the canvas to reposition. Edit text content in the export panel.
-            </p>
-          </div>
-        )}
+          {/* ── TRANSFORM ── */}
+          {activeTab === 'canvas' && (
+            <div>
+              <SectionLabel>Canvas Ratio</SectionLabel>
+              <div className="flex gap-1.5 flex-wrap mb-5">
+                {CANVAS_RATIOS.map(r => (
+                  <button key={r.id} onClick={() => updateState({ canvasRatio: r.id })}
+                    className="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
+                    style={{
+                      background: state.canvasRatio === r.id ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.04)',
+                      border: state.canvasRatio === r.id ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.07)',
+                      color: state.canvasRatio === r.id ? '#c4b5fd' : '#6b7280',
+                    }}>
+                    {r.label}
+                  </button>
+                ))}
+              </div>
 
-        {/* ── ANIMATION ── */}
-        {activeTab === 'animation' && (
-          <div>
-            <SectionLabel>Entrance & Loop</SectionLabel>
-            <div className="flex flex-col gap-2">
-              {(['none', 'float', 'pulse', 'spin', 'slide-in'] as const).map(anim => (
-                <button
-                  key={anim}
-                  onClick={() => updateState({ animation: anim })}
-                  className="px-4 py-2.5 rounded-xl text-xs font-medium capitalize text-left transition-all"
-                  style={{
-                    background: state.animation === anim ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.03)',
-                    border: state.animation === anim ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.06)',
-                    color: state.animation === anim ? '#c4b5fd' : '#9ca3af',
-                  }}
-                >
-                  {anim === 'none' ? 'No Animation' : anim === 'slide-in' ? 'Slide In' : anim.charAt(0).toUpperCase() + anim.slice(1)}
-                </button>
-              ))}
+              <SliderControl label="Scale" value={Math.round(state.scale * 100)} min={30} max={120} onChange={v => updateState({ scale: v / 100 })} unit="%" />
+              <SliderControl label="Rotation" value={state.rotation} min={-45} max={45} onChange={v => updateState({ rotation: v })} unit="°" />
+              <SliderControl label="Padding" value={state.canvasPadding} min={0} max={80} onChange={v => updateState({ canvasPadding: v })} unit="px" />
+
+              <div className="mt-1 mb-4" style={{ paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                <SectionLabel>Shadow</SectionLabel>
+                <div className="flex gap-1.5 mb-3">
+                  {SHADOW_STYLES.map(s => (
+                    <button key={s.id} onClick={() => updateState({ shadowStyle: s.id })}
+                      className="flex-1 py-2 rounded-xl text-xs font-medium transition-all"
+                      style={{
+                        background: state.shadowStyle === s.id ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.03)',
+                        border: state.shadowStyle === s.id ? '1px solid rgba(124,58,237,0.45)' : '1px solid rgba(255,255,255,0.06)',
+                        color: state.shadowStyle === s.id ? '#c4b5fd' : '#9ca3af',
+                      }}>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+                {state.shadowStyle !== 'none' && (
+                  <>
+                    <SliderControl label="Intensity" value={state.shadowIntensity} min={0} max={100} onChange={v => updateState({ shadowIntensity: v })} />
+                    <SliderControl label="Direction" value={state.shadowDirection} min={0} max={360} onChange={v => updateState({ shadowDirection: v })} unit="°" />
+                  </>
+                )}
+              </div>
+
+              <div style={{ paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <SectionLabel>3D Perspective</SectionLabel>
+                  <Toggle enabled={state.is3D} onToggle={() => updateState({ is3D: !state.is3D })} />
+                </div>
+                {state.is3D && (
+                  <>
+                    <SliderControl label="Tilt X" value={state.tiltX} min={-30} max={30} onChange={v => updateState({ tiltX: v })} unit="°" />
+                    <SliderControl label="Tilt Y" value={state.tiltY} min={-30} max={30} onChange={v => updateState({ tiltY: v })} unit="°" />
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
+          {/* ── TEXT ── */}
+          {activeTab === 'text' && (
+            <div>
+              <button onClick={addText}
+                className="w-full py-3 rounded-xl text-xs font-semibold mb-4 transition-all flex items-center justify-center gap-2"
+                style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.35), rgba(79,70,229,0.35))', border: '1px solid rgba(124,58,237,0.45)', color: '#c4b5fd' }}>
+                <Type size={13} /> Add Text Overlay
+              </button>
+              <p className="text-xs text-center" style={{ color: '#374151' }}>
+                Drag text overlays on the canvas to reposition. Edit content in the Export panel.
+              </p>
+            </div>
+          )}
+
+          {/* ── ANIMATION ── */}
+          {activeTab === 'animation' && (
+            <div>
+              <SectionLabel>Entrance & Loop</SectionLabel>
+              <div className="flex flex-col gap-2">
+                {(['none', 'float', 'pulse', 'spin', 'slide-in'] as const).map(anim => (
+                  <button key={anim} onClick={() => updateState({ animation: anim })}
+                    className="px-4 py-2.5 rounded-xl text-xs font-medium capitalize text-left transition-all flex items-center gap-2.5"
+                    style={{
+                      background: state.animation === anim ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.025)',
+                      border: state.animation === anim ? '1px solid rgba(124,58,237,0.45)' : '1px solid rgba(255,255,255,0.06)',
+                      color: state.animation === anim ? '#c4b5fd' : '#6b7280',
+                    }}>
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: state.animation === anim ? '#a78bfa' : '#374151', flexShrink: 0 }} />
+                    {anim === 'none' ? 'No Animation' : anim === 'slide-in' ? 'Slide In' : anim.charAt(0).toUpperCase() + anim.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
+  );
+}
+
+function UploadTile({ icon, label, accept, color, onFile }: {
+  icon: React.ReactNode;
+  label: string;
+  accept: string;
+  color: string;
+  onFile: (file: File) => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <button
+      onClick={() => ref.current?.click()}
+      className="flex-1 py-3 rounded-xl flex flex-col items-center gap-1.5 transition-all hover:scale-105"
+      style={{ background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.12)' }}
+    >
+      <span style={{ color }}>{icon}</span>
+      <span className="text-[11px] font-medium" style={{ color: '#6b7280' }}>{label}</span>
+      <input ref={ref} type="file" accept={accept} className="hidden"
+        onChange={e => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
+    </button>
   );
 }

@@ -1,75 +1,167 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { AppProvider, useApp } from './store';
 import { Canvas } from './components/canvas/Canvas';
 import { LeftPanel } from './components/panels/LeftPanel';
 import { RightPanel } from './components/panels/RightPanel';
+import { Download, Layers, ChevronUp, X } from 'lucide-react';
 
 function Editor() {
   const { state, updateText, removeText } = useApp();
   const canvasRef = useRef<HTMLDivElement>(null);
+  const [mobileSheet, setMobileSheet] = useState<'controls' | 'export' | null>(null);
+
+  const deviceLabel =
+    state.deviceType === 'iphone' ? `iPhone 15 Pro · ${state.deviceColor}`
+    : state.deviceType === 'android' ? 'Android Phone'
+    : state.deviceType === 'ipad' ? 'iPad'
+    : state.deviceType === 'macbook' ? 'MacBook'
+    : state.deviceType === 'imac' ? 'iMac'
+    : state.deviceType === 'browser' ? `Browser · ${state.browserMode}`
+    : 'Apple Watch';
 
   return (
-    <div
-      className="flex h-screen w-screen overflow-hidden"
-      style={{ background: '#080c18' }}
-    >
-      <LeftPanel />
+    <div className="app-root" style={{ background: '#070912' }}>
+      {/* Desktop layout */}
+      <div className="desktop-layout">
+        <LeftPanel />
 
-      {/* Main canvas area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top bar */}
-        <div
-          className="flex items-center justify-between px-5 py-3 flex-shrink-0"
-          style={{
-            background: 'rgba(10,12,22,0.8)',
-            backdropFilter: 'blur(12px)',
-            borderBottom: '1px solid rgba(255,255,255,0.05)',
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className="w-2 h-2 rounded-full"
-              style={{ background: state.animation !== 'none' ? '#22c55e' : '#4b5563' }}
-            />
-            <span className="text-xs font-medium" style={{ color: '#6b7280' }}>
-              {state.animation !== 'none'
-                ? `Animated: ${state.animation}`
-                : 'Static'}
-            </span>
+        {/* Center */}
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {/* Top bar */}
+          <div className="topbar flex items-center justify-between px-5 py-3 flex-shrink-0"
+            style={{
+              background: 'rgba(8,10,22,0.85)',
+              backdropFilter: 'blur(12px)',
+              borderBottom: '1px solid rgba(255,255,255,0.05)',
+            }}>
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full transition-all"
+                style={{ background: state.animation !== 'none' ? '#22c55e' : '#1f2937' }} />
+              <span className="text-xs font-medium" style={{ color: '#374151' }}>
+                {state.animation !== 'none' ? `${state.animation} animation` : 'Static'}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {state.contentType && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                  style={{
+                    background: state.contentType === 'video' ? 'rgba(34,197,94,0.1)' : 'rgba(124,58,237,0.1)',
+                    color: state.contentType === 'video' ? '#4ade80' : '#a78bfa',
+                    border: state.contentType === 'video' ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(124,58,237,0.2)',
+                  }}>
+                  {state.contentType === 'video' ? '▶ Video' : '⬛ Image'}
+                </span>
+              )}
+              <span className="text-xs font-medium" style={{ color: '#6b7280' }}>{deviceLabel}</span>
+              {(state.deviceType === 'iphone' || state.deviceType === 'android' || state.deviceType === 'ipad') && (
+                <span className="text-xs" style={{ color: '#374151' }}>
+                  · {state.deviceLandscape ? 'Landscape' : 'Portrait'}
+                </span>
+              )}
+              {state.canvasRatio !== 'free' && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full"
+                  style={{ background: 'rgba(255,255,255,0.05)', color: '#4b5563', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  {state.canvasRatio}
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs" style={{ color: '#4b5563' }}>
-              {state.deviceType === 'iphone' && `iPhone 15 Pro (${state.deviceColor})`}
-              {state.deviceType === 'android' && 'Android Phone'}
-              {state.deviceType === 'ipad' && 'iPad'}
-              {state.deviceType === 'macbook' && 'MacBook'}
-              {state.deviceType === 'imac' && 'iMac'}
-              {state.deviceType === 'browser' && `Browser (${state.browserMode})`}
-              {state.deviceType === 'watch' && 'Apple Watch'}
-              {(state.deviceType === 'iphone' || state.deviceType === 'android' || state.deviceType === 'ipad')
-                && ` — ${state.deviceLandscape ? 'Landscape' : 'Portrait'}`}
-              {state.canvasRatio !== 'free' && ` · ${state.canvasRatio}`}
-            </span>
+          {/* Canvas */}
+          <div className="flex-1 overflow-hidden relative">
+            <Canvas ref={canvasRef} textOverlays={state.texts} onUpdateText={updateText} />
           </div>
         </div>
 
-        {/* Canvas */}
-        <div className="flex-1 overflow-hidden relative">
-          <Canvas
-            ref={canvasRef}
-            textOverlays={state.texts}
-            onUpdateText={updateText}
-          />
-        </div>
+        <RightPanel
+          canvasRef={canvasRef}
+          textOverlays={state.texts}
+          onUpdateText={updateText}
+          onRemoveText={removeText}
+        />
       </div>
 
-      <RightPanel
-        canvasRef={canvasRef}
-        textOverlays={state.texts}
-        onUpdateText={updateText}
-        onRemoveText={removeText}
-      />
+      {/* Mobile layout */}
+      <div className="mobile-layout">
+        {/* Mobile topbar */}
+        <div className="flex items-center justify-between px-4 py-2.5 flex-shrink-0"
+          style={{ background: 'rgba(8,10,22,0.95)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs text-white"
+              style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}>M</div>
+            <span className="text-sm font-bold" style={{ color: '#e2e8f0' }}>MockupStudio</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {state.contentType && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full"
+                style={{ background: 'rgba(124,58,237,0.15)', color: '#a78bfa', border: '1px solid rgba(124,58,237,0.25)' }}>
+                {state.contentType}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile canvas */}
+        <div className="flex-1 overflow-hidden relative">
+          <Canvas ref={canvasRef} textOverlays={state.texts} onUpdateText={updateText} />
+        </div>
+
+        {/* Mobile bottom bar */}
+        <div className="flex items-center gap-2 px-4 py-3 flex-shrink-0"
+          style={{ background: 'rgba(8,10,22,0.98)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <button
+            onClick={() => setMobileSheet(mobileSheet === 'controls' ? null : 'controls')}
+            className="flex-1 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+            style={{
+              background: mobileSheet === 'controls' ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.05)',
+              border: mobileSheet === 'controls' ? '1px solid rgba(124,58,237,0.45)' : '1px solid rgba(255,255,255,0.08)',
+              color: mobileSheet === 'controls' ? '#c4b5fd' : '#6b7280',
+            }}>
+            <Layers size={14} />
+            Controls
+          </button>
+          <button
+            onClick={() => setMobileSheet(mobileSheet === 'export' ? null : 'export')}
+            className="flex-1 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+            style={{
+              background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+              color: '#fff',
+              boxShadow: '0 4px 16px rgba(124,58,237,0.35)',
+            }}>
+            <Download size={14} />
+            Export
+          </button>
+        </div>
+
+        {/* Mobile bottom sheet */}
+        {mobileSheet && (
+          <>
+            <div className="fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,0.5)' }}
+              onClick={() => setMobileSheet(null)} />
+            <div className="mobile-sheet fixed bottom-0 left-0 right-0 z-50 overflow-hidden"
+              style={{ maxHeight: '75vh', background: 'rgba(10,12,24,0.98)', borderRadius: '20px 20px 0 0', border: '1px solid rgba(255,255,255,0.08)', borderBottom: 'none' }}>
+              <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
+                <span className="text-sm font-bold" style={{ color: '#e2e8f0' }}>
+                  {mobileSheet === 'controls' ? 'Controls' : 'Export'}
+                </span>
+                <button onClick={() => setMobileSheet(null)} style={{ color: '#6b7280' }}>
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="flex items-center justify-center pb-2">
+                <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
+              </div>
+              <div className="overflow-y-auto" style={{ maxHeight: 'calc(75vh - 80px)' }}>
+                {mobileSheet === 'controls' && <LeftPanel />}
+                {mobileSheet === 'export' && (
+                  <RightPanel canvasRef={canvasRef} textOverlays={state.texts} onUpdateText={updateText} onRemoveText={removeText} />
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
