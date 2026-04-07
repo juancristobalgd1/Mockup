@@ -184,16 +184,10 @@ interface PresetState {
   deviceLandscape?: boolean;
   bgType: 'gradient' | 'mesh' | 'solid' | 'pattern' | 'image' | 'wallpaper';
   bgColor: string;
-  scale: number;
-  rotation: number;
-  shadowIntensity: number;
-  shadowStyle?: 'none' | 'spread' | 'hug';
-  is3D: boolean;
-  tiltX: number;
-  tiltY: number;
   animation: 'none' | 'float' | 'pulse' | 'spin' | 'slide-in';
-  canvasPadding?: number;
-  borderRadius?: number;
+  autoRotate?: boolean;
+  envPreset?: 'studio' | 'warehouse' | 'sunset' | 'city' | 'forest' | 'night';
+  contactShadowOpacity?: number;
 }
 
 export interface Preset {
@@ -213,14 +207,8 @@ export const PRESETS: Preset[] = [
       deviceLandscape: false,
       bgType: 'gradient',
       bgColor: 'purple-blue',
-      scale: 0.85,
-      rotation: -5,
-      shadowIntensity: 60,
-      shadowStyle: 'spread',
-      is3D: true,
-      tiltX: -8,
-      tiltY: 10,
       animation: 'float',
+      envPreset: 'studio',
     }
   },
   {
@@ -232,14 +220,9 @@ export const PRESETS: Preset[] = [
       deviceLandscape: false,
       bgType: 'gradient',
       bgColor: 'night',
-      scale: 0.8,
-      rotation: 0,
-      shadowIntensity: 80,
-      shadowStyle: 'hug',
-      is3D: true,
-      tiltX: -5,
-      tiltY: 0,
       animation: 'none',
+      envPreset: 'city',
+      contactShadowOpacity: 80,
     }
   },
   {
@@ -251,14 +234,8 @@ export const PRESETS: Preset[] = [
       deviceLandscape: false,
       bgType: 'gradient',
       bgColor: 'sunset',
-      scale: 0.75,
-      rotation: 3,
-      shadowIntensity: 70,
-      shadowStyle: 'spread',
-      is3D: false,
-      tiltX: 0,
-      tiltY: 0,
       animation: 'none',
+      envPreset: 'sunset',
     }
   },
   {
@@ -270,14 +247,9 @@ export const PRESETS: Preset[] = [
       deviceLandscape: false,
       bgType: 'mesh',
       bgColor: 'mesh-ocean',
-      scale: 0.78,
-      rotation: 0,
-      shadowIntensity: 50,
-      shadowStyle: 'spread',
-      is3D: true,
-      tiltX: -10,
-      tiltY: 5,
       animation: 'none',
+      envPreset: 'warehouse',
+      contactShadowOpacity: 50,
     }
   },
   {
@@ -289,14 +261,8 @@ export const PRESETS: Preset[] = [
       deviceLandscape: false,
       bgType: 'gradient',
       bgColor: 'fire',
-      scale: 0.9,
-      rotation: 0,
-      shadowIntensity: 65,
-      shadowStyle: 'hug',
-      is3D: false,
-      tiltX: 0,
-      tiltY: 0,
-      animation: 'pulse',
+      animation: 'float',
+      envPreset: 'studio',
     }
   },
   {
@@ -308,14 +274,9 @@ export const PRESETS: Preset[] = [
       deviceLandscape: false,
       bgType: 'mesh',
       bgColor: 'mesh-aurora',
-      scale: 0.88,
-      rotation: 8,
-      shadowIntensity: 75,
-      shadowStyle: 'spread',
-      is3D: true,
-      tiltX: -5,
-      tiltY: -8,
       animation: 'float',
+      envPreset: 'night',
+      contactShadowOpacity: 75,
     }
   },
   {
@@ -326,14 +287,9 @@ export const PRESETS: Preset[] = [
       deviceType: 'iphone',
       bgType: 'wallpaper',
       bgColor: 'night-sky',
-      scale: 0.85,
-      rotation: -4,
-      shadowIntensity: 80,
-      shadowStyle: 'hug',
-      is3D: true,
-      tiltX: -6,
-      tiltY: 8,
       animation: 'float',
+      envPreset: 'night',
+      contactShadowOpacity: 80,
     }
   },
 ];

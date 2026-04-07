@@ -19,6 +19,8 @@ export interface TextOverlay {
   isItalic: boolean;
 }
 
+export type EnvPreset = 'studio' | 'warehouse' | 'sunset' | 'city' | 'forest' | 'night';
+
 export interface AppState {
   deviceModel: string;
   deviceType: DeviceType;
@@ -35,26 +37,16 @@ export interface AppState {
   bgImage: string | null;
   bgPattern: string;
 
-  scale: number;
-  rotation: number;
-  borderRadius: number;
-
-  shadowStyle: ShadowStyle;
-  shadowIntensity: number;
-  shadowDirection: number;
-
-  canvasPadding: number;
   canvasRatio: CanvasRatio;
-
-  is3D: boolean;
-  tiltX: number;
-  tiltY: number;
 
   overlayEnabled: boolean;
   overlayColor: string;
   overlayOpacity: number;
 
   animation: "none" | "float" | "spin" | "pulse" | "slide-in";
+  autoRotate: boolean;
+  envPreset: EnvPreset;
+  contactShadowOpacity: number;
 
   texts: TextOverlay[];
 }
@@ -75,26 +67,16 @@ export const defaultState: AppState = {
   bgImage: null,
   bgPattern: "dots",
 
-  scale: 0.85,
-  rotation: -5,
-  borderRadius: 44,
-
-  shadowStyle: "spread",
-  shadowIntensity: 65,
-  shadowDirection: 180,
-
-  canvasPadding: 0,
   canvasRatio: "free",
-
-  is3D: true,
-  tiltX: -8,
-  tiltY: 10,
 
   overlayEnabled: false,
   overlayColor: "#000000",
   overlayOpacity: 30,
 
   animation: "float",
+  autoRotate: false,
+  envPreset: "studio",
+  contactShadowOpacity: 65,
 
   texts: []
 };

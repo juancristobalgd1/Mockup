@@ -1,13 +1,13 @@
 import { useState, useRef } from 'react';
 import {
   Smartphone, Shuffle, Wand2, Image as ImageIcon, Sliders, Type,
-  LayoutGrid, Link2, Video, X
+  LayoutGrid, Link2, Video, X, RefreshCw, Sun, RotateCcw,
 } from 'lucide-react';
 import { useApp } from '../../store';
 import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS, PRESETS } from '../../data/backgrounds';
 import { DEVICE_MODELS, DEVICE_GROUPS, GROUP_ICONS, getModelById } from '../../data/devices';
 import type { DeviceGroup } from '../../data/devices';
-import type { DeviceColor } from '../../store';
+import type { DeviceColor, EnvPreset } from '../../store';
 
 type IconProps = { size?: number; strokeWidth?: number; style?: React.CSSProperties; className?: string };
 
@@ -18,11 +18,14 @@ const IPHONE_COLORS: { id: DeviceColor; label: string; bg: string; border: strin
   { id: 'blue', label: 'Blue', bg: 'linear-gradient(135deg, #2a3f6f, #0f1e40)', border: '#3a5080' },
 ];
 
-const SHADOW_STYLES = [
-  { id: 'none', label: 'None' },
-  { id: 'spread', label: 'Spread' },
-  { id: 'hug', label: 'Hug' },
-] as const;
+const ENV_PRESETS: { id: 'studio' | 'warehouse' | 'sunset' | 'city' | 'forest' | 'night'; label: string; icon: string }[] = [
+  { id: 'studio', label: 'Studio', icon: '🎬' },
+  { id: 'warehouse', label: 'Warehouse', icon: '🏭' },
+  { id: 'city', label: 'City', icon: '🌆' },
+  { id: 'sunset', label: 'Sunset', icon: '🌅' },
+  { id: 'forest', label: 'Forest', icon: '🌲' },
+  { id: 'night', label: 'Night', icon: '🌙' },
+];
 
 const CANVAS_RATIOS = [
   { id: 'free', label: 'Free' },
@@ -38,7 +41,7 @@ const TAB_ICONS: { id: Tab; icon: React.ComponentType<IconProps>; label: string 
   { id: 'presets', icon: LayoutGrid, label: 'Presets' },
   { id: 'device', icon: Smartphone, label: 'Device' },
   { id: 'background', icon: ImageIcon, label: 'Background' },
-  { id: 'canvas', icon: Sliders, label: 'Transform' },
+  { id: 'canvas', icon: Sliders, label: 'Scene' },
   { id: 'text', icon: Type, label: 'Text' },
 ];
 
@@ -331,12 +334,12 @@ export function LeftPanel() {
                           deviceType: s.deviceType,
                           deviceModel: defaultModel?.id ?? 'iphone-17-pro',
                           deviceLandscape: s.deviceLandscape ?? false,
-                          bgType: s.bgType, bgColor: s.bgColor, scale: s.scale,
-                          rotation: s.rotation, shadowIntensity: s.shadowIntensity,
-                          shadowStyle: s.shadowStyle ?? 'spread', is3D: s.is3D,
-                          tiltX: s.tiltX, tiltY: s.tiltY, animation: s.animation,
-                          canvasPadding: s.canvasPadding ?? 0,
-                          ...(s.borderRadius ? { borderRadius: s.borderRadius } : {}),
+                          bgType: s.bgType,
+                          bgColor: s.bgColor,
+                          animation: s.animation,
+                          autoRotate: s.autoRotate ?? false,
+                          envPreset: (s.envPreset ?? 'studio') as EnvPreset,
+                          contactShadowOpacity: s.contactShadowOpacity ?? 65,
                         });
                       }}
                       className="rounded-xl overflow-hidden transition-all hover:scale-105 hover:brightness-110 relative"
@@ -695,9 +698,10 @@ export function LeftPanel() {
             </div>
           )}
 
-          {/* ── TRANSFORM ── */}
+          {/* ── SCENE (3D) ── */}
           {activeTab === 'canvas' && (
             <div>
+              {/* Canvas ratio */}
               <SectionLabel>Canvas Ratio</SectionLabel>
               <div className="flex gap-1.5 flex-wrap mb-5">
                 {CANVAS_RATIOS.map(r => (
@@ -713,44 +717,60 @@ export function LeftPanel() {
                 ))}
               </div>
 
-              <SliderControl label="Scale" value={Math.round(state.scale * 100)} min={30} max={120} onChange={v => updateState({ scale: v / 100 })} unit="%" />
-              <SliderControl label="Rotation" value={state.rotation} min={-45} max={45} onChange={v => updateState({ rotation: v })} unit="°" />
-              <SliderControl label="Padding" value={state.canvasPadding} min={0} max={80} onChange={v => updateState({ canvasPadding: v })} unit="px" />
+              {/* Motion */}
+              <div className="mb-5" style={{ paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <SectionLabel>Motion</SectionLabel>
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <div className="flex items-center gap-2">
+                    <RefreshCw size={13} style={{ color: '#6b7280' }} />
+                    <span className="text-xs" style={{ color: '#9ca3af' }}>Auto Rotate</span>
+                  </div>
+                  <Toggle enabled={state.autoRotate} onToggle={() => updateState({ autoRotate: !state.autoRotate })} />
+                </div>
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex items-center gap-2">
+                    <RotateCcw size={13} style={{ color: '#6b7280' }} />
+                    <span className="text-xs" style={{ color: '#9ca3af' }}>Float Effect</span>
+                  </div>
+                  <Toggle
+                    enabled={state.animation === 'float'}
+                    onToggle={() => updateState({ animation: state.animation === 'float' ? 'none' : 'float' })}
+                  />
+                </div>
+              </div>
 
-              <div className="mt-1 mb-4" style={{ paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                <SectionLabel>Shadow</SectionLabel>
-                <div className="flex gap-1.5 mb-3">
-                  {SHADOW_STYLES.map(s => (
-                    <button key={s.id} onClick={() => updateState({ shadowStyle: s.id })}
-                      className="flex-1 py-2 rounded-xl text-xs font-medium transition-all"
+              {/* Environment lighting */}
+              <div className="mb-5" style={{ paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <Sun size={12} style={{ color: '#6b7280' }} />
+                  <SectionLabel>Environment</SectionLabel>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {ENV_PRESETS.map(env => (
+                    <button key={env.id} onClick={() => updateState({ envPreset: env.id })}
+                      className="flex flex-col items-center gap-1 py-2.5 rounded-xl text-xs font-medium transition-all"
                       style={{
-                        background: state.shadowStyle === s.id ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.03)',
-                        border: state.shadowStyle === s.id ? '1px solid rgba(124,58,237,0.45)' : '1px solid rgba(255,255,255,0.06)',
-                        color: state.shadowStyle === s.id ? '#c4b5fd' : '#9ca3af',
+                        background: state.envPreset === env.id ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.03)',
+                        border: state.envPreset === env.id ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.07)',
+                        color: state.envPreset === env.id ? '#c4b5fd' : '#6b7280',
                       }}>
-                      {s.label}
+                      <span style={{ fontSize: 16 }}>{env.icon}</span>
+                      <span style={{ fontSize: 9 }}>{env.label}</span>
                     </button>
                   ))}
                 </div>
-                {state.shadowStyle !== 'none' && (
-                  <>
-                    <SliderControl label="Intensity" value={state.shadowIntensity} min={0} max={100} onChange={v => updateState({ shadowIntensity: v })} />
-                    <SliderControl label="Direction" value={state.shadowDirection} min={0} max={360} onChange={v => updateState({ shadowDirection: v })} unit="°" />
-                  </>
-                )}
               </div>
 
-              <div style={{ paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                <div className="flex items-center justify-between mb-3">
-                  <SectionLabel>3D Perspective</SectionLabel>
-                  <Toggle enabled={state.is3D} onToggle={() => updateState({ is3D: !state.is3D })} />
-                </div>
-                {state.is3D && (
-                  <>
-                    <SliderControl label="Tilt X" value={state.tiltX} min={-30} max={30} onChange={v => updateState({ tiltX: v })} unit="°" />
-                    <SliderControl label="Tilt Y" value={state.tiltY} min={-30} max={30} onChange={v => updateState({ tiltY: v })} unit="°" />
-                  </>
-                )}
+              {/* Shadow */}
+              <div>
+                <SectionLabel>Shadow</SectionLabel>
+                <SliderControl
+                  label="Intensity"
+                  value={state.contactShadowOpacity}
+                  min={0} max={100}
+                  onChange={v => updateState({ contactShadowOpacity: v })}
+                  unit="%"
+                />
               </div>
             </div>
           )}
