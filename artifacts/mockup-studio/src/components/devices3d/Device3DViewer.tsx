@@ -260,63 +260,47 @@ function DeviceScene({
     state.deviceType === 'ipad'    ? 2.2 :
     state.deviceType === 'watch'   ? 0.9 : 1.65;
 
-  // ── Icon style helpers (must be defined before htmlIcon uses them) ─
-  const iconStyle = (): React.CSSProperties => ({
-    width: 28, height: 28, borderRadius: '50%',
-    background: 'rgba(0,0,0,0.52)',
-    border: '1.5px dashed rgba(255,255,255,0.35)',
-    backdropFilter: 'blur(10px)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    cursor: 'pointer', userSelect: 'none',
-    transition: 'background 0.15s, border-color 0.15s, border-style 0.15s',
-  });
+  // ── Icon: ref for imperative hover styling (no pointer events on Html) ─
+  const iconDivRef = useRef<HTMLDivElement>(null);
+  const { gl } = useThree();
 
-  const applyHover = (e: React.MouseEvent, entering: boolean) => {
-    const el = e.currentTarget as HTMLElement;
-    el.style.background = entering ? 'rgba(124,58,237,0.85)' : 'rgba(0,0,0,0.52)';
-    el.style.borderColor = entering ? 'rgba(196,181,253,0.7)' : 'rgba(255,255,255,0.35)';
-    el.style.borderStyle = entering ? 'solid' : 'dashed';
+  const iconBaseStyle: React.CSSProperties = {
+    width: 18, height: 18, borderRadius: '50%',
+    background: 'rgba(0,0,0,0.55)',
+    border: '1px dashed rgba(255,255,255,0.40)',
+    backdropFilter: 'blur(8px)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    userSelect: 'none',
+    pointerEvents: 'none',
+    transition: 'background 0.12s, border-color 0.12s, border-style 0.12s',
   };
 
-  // ── UI elements rendered into the Html portal ───────────────────
-  const htmlIcon = (() => {
-    // No content → always show "+" to invite upload
-    if (!hasContent) {
-      return (
-        <div
-          onClick={() => fileRef.current?.click()}
-          title="Subir imagen o video"
-          style={iconStyle()}
-          onMouseEnter={e => applyHover(e, true)}
-          onMouseLeave={e => applyHover(e, false)}
-        >
-          <svg width="12" height="12" viewBox="0 0 18 18" fill="none">
-            <line x1="9" y1="3" x2="9" y2="15" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
-            <line x1="3" y1="9" x2="15" y2="9" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
-          </svg>
-        </div>
-      );
-    }
-    // Has content + pencil visible → show pencil to replace
-    if (pencilVisible) {
-      return (
-        <div
-          onClick={() => fileRef.current?.click()}
-          title="Reemplazar imagen o video"
-          style={iconStyle()}
-          onMouseEnter={e => applyHover(e, true)}
-          onMouseLeave={e => applyHover(e, false)}
-        >
-          <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
-            <path d="M11.5 2.5l2 2L5 13l-2.5.5.5-2.5L11.5 2.5z"
-              stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
-      );
-    }
-    // Has content, pencil hidden → nothing (clean view)
-    return null;
-  })();
+  const applyHoverImperative = (entering: boolean) => {
+    if (!iconDivRef.current) return;
+    iconDivRef.current.style.background = entering ? 'rgba(124,58,237,0.85)' : 'rgba(0,0,0,0.55)';
+    iconDivRef.current.style.borderColor = entering ? 'rgba(196,181,253,0.7)' : 'rgba(255,255,255,0.40)';
+    iconDivRef.current.style.borderStyle = entering ? 'solid' : 'dashed';
+    gl.domElement.style.cursor = entering ? 'pointer' : '';
+  };
+
+  // Icon size in 3D units for the small click mesh
+  const iconMeshR = 0.055; // half-size of the small icon click area
+
+  // ── Which icon SVG to show ────────────────────────────────────────
+  const iconSVG = pencilVisible ? (
+    <svg width="9" height="9" viewBox="0 0 16 16" fill="none">
+      <path d="M11.5 2.5l2 2L5 13l-2.5.5.5-2.5L11.5 2.5z"
+        stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ) : (
+    <svg width="9" height="9" viewBox="0 0 18 18" fill="none">
+      <line x1="9" y1="3" x2="9" y2="15" stroke="white" strokeWidth="2.4" strokeLinecap="round"/>
+      <line x1="3" y1="9" x2="15" y2="9" stroke="white" strokeWidth="2.4" strokeLinecap="round"/>
+    </svg>
+  );
+
+  // ── Show icon? (always for no-content; only when pencilVisible for has-content) ─
+  const showIcon = !hasContent || pencilVisible;
 
   const inner = (() => {
     // Real GLB model — any device that has a glbUrl defined
@@ -434,33 +418,7 @@ function DeviceScene({
     }
   })();
 
-  // ── Invisible screen click-plane (shown only when hasContent) ───
-  // Captures pointer events on the device screen area; clicking it
-  // reveals the pencil icon. It is disabled when pencilVisible so
-  // the Html overlay can receive its own click events.
-  const clickPlane = hasContent && !pencilVisible ? (
-    <mesh
-      position={iconPos}
-      onClick={e => { e.stopPropagation(); onShowPencil(); }}
-    >
-      <planeGeometry args={[planeW, planeH]} />
-      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-    </mesh>
-  ) : null;
-
-  // ── Html icon overlay (+ or pencil) ─────────────────────────────
-  // `transform` makes the Html element live in 3D space and orbit with
-  // the device — the icon appears "painted on" the screen surface.
-  // `distanceFactor` keeps the icon at a consistent visual size.
-  const sharedHtmlProps = {
-    center: true as const,
-    position: iconPos,
-    transform: true,
-    distanceFactor: 5.5,
-    zIndexRange: [100, 0] as [number, number],
-    style: { pointerEvents: 'none' } as React.CSSProperties,
-  };
-
+  // Hidden file input — triggered programmatically from mesh onClick
   const fileInput = (
     <input
       ref={fileRef}
@@ -475,30 +433,67 @@ function DeviceScene({
     />
   );
 
-  const overlay = htmlIcon ? (
-    <Html {...sharedHtmlProps}>
-      <div style={{ pointerEvents: 'auto' }}>
-        {htmlIcon}
+  // ── Html visual icon — purely decorative, NO pointer events ──────
+  // occlude="blending" automatically hides/fades it when camera
+  // is looking from behind (device body occludes the icon position).
+  const overlay = (
+    <Html
+      center
+      position={iconPos}
+      transform
+      distanceFactor={5.5}
+      zIndexRange={[100, 0]}
+      occlude="blending"
+      style={{ pointerEvents: 'none' }}
+    >
+      <div style={{ pointerEvents: 'none' }}>
+        {showIcon && (
+          <div ref={iconDivRef} style={iconBaseStyle}>
+            {iconSVG}
+          </div>
+        )}
         {fileInput}
       </div>
     </Html>
-  ) : (
-    // Keep hidden input even when icon is hidden so drag-n-drop still works
-    <Html {...sharedHtmlProps}>
-      {fileInput}
-    </Html>
   );
+
+  // ── Mesh click handlers (R3F events — always reliable) ───────────
+  // Small mesh: opens file picker (active when icon is visible)
+  const iconClickMesh = showIcon ? (
+    <mesh
+      position={iconPos}
+      onClick={e => { e.stopPropagation(); fileRef.current?.click(); }}
+      onPointerEnter={() => applyHoverImperative(true)}
+      onPointerLeave={() => applyHoverImperative(false)}
+    >
+      <planeGeometry args={[iconMeshR * 2, iconMeshR * 2]} />
+      <meshBasicMaterial transparent opacity={0} depthWrite={false} side={THREE.FrontSide} />
+    </mesh>
+  ) : null;
+
+  // Large mesh: covers full screen area, reveals pencil on click
+  // (active only when content loaded and pencil not yet showing)
+  const screenClickMesh = (hasContent && !pencilVisible) ? (
+    <mesh
+      position={iconPos}
+      onClick={e => { e.stopPropagation(); onShowPencil(); }}
+    >
+      <planeGeometry args={[planeW, planeH]} />
+      <meshBasicMaterial transparent opacity={0} depthWrite={false} side={THREE.FrontSide} />
+    </mesh>
+  ) : null;
 
   if (floatEnabled) {
     return (
       <Float speed={1.4} rotationIntensity={0.06} floatIntensity={0.16} floatingRange={[-0.06, 0.06]}>
         {inner}
-        {clickPlane}
+        {screenClickMesh}
+        {iconClickMesh}
         {overlay}
       </Float>
     );
   }
-  return <>{inner}{clickPlane}{overlay}</>;
+  return <>{inner}{screenClickMesh}{iconClickMesh}{overlay}</>;
 }
 
 // ── Browser: screen content mesh (texture updated every frame) ────
