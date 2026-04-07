@@ -18,9 +18,11 @@ import { Tablet3DModel } from './Tablet3DModel';
 import { MacBook3DModel } from './MacBook3DModel';
 import { Watch3DModel } from './Watch3DModel';
 
-// Preload GLB models so they're ready before user selects them
-useGLTF.preload('/models/iphone13pro.glb');
+// Preload all GLB models so they're ready before user selects them
+useGLTF.preload('/models/iphone17pro.glb');
+useGLTF.preload('/models/iphone16.glb');
 useGLTF.preload('/models/iphone14pro.glb');
+useGLTF.preload('/models/iphone13pro.glb');
 
 export interface Device3DViewerHandle {
   getGLElement: () => HTMLCanvasElement | null;

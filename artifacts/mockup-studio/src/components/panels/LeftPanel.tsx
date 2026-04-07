@@ -340,7 +340,7 @@ export function LeftPanel() {
                         const defaultModel = DEVICE_MODELS.find(m => m.storeType === s.deviceType);
                         updateState({
                           deviceType: s.deviceType,
-                          deviceModel: defaultModel?.id ?? 'iphone-15-pro',
+                          deviceModel: defaultModel?.id ?? 'iphone-17-pro',
                           deviceLandscape: s.deviceLandscape ?? false,
                           bgType: s.bgType, bgColor: s.bgColor, scale: s.scale,
                           rotation: s.rotation, shadowIntensity: s.shadowIntensity,
