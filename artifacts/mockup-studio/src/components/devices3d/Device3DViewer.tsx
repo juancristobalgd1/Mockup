@@ -81,6 +81,27 @@ function SceneCapturer({ onGlReady }: { onGlReady: (gl: THREE.WebGLRenderer) => 
   return null;
 }
 
+// ── Reactive exposure control ──────────────────────────────────────
+// Updating gl.toneMappingExposure must happen inside the canvas context.
+function ExposureControl({ exposure }: { exposure: number }) {
+  const { gl } = useThree();
+  useEffect(() => {
+    gl.toneMappingExposure = exposure;
+  }, [gl, exposure]);
+  return null;
+}
+
+// ── Per-preset HDR environment intensity ───────────────────────────
+// Higher values = more prominent reflections on metallic surfaces.
+const ENV_INTENSITY: Record<string, number> = {
+  studio:    3.0,
+  warehouse: 3.5,
+  city:      2.8,
+  sunset:    3.2,
+  forest:    2.5,
+  night:     2.0,
+};
+
 // ── Per-environment light configs ─────────────────────────────────
 const ENV_LIGHTS: Record<string, {
   ambient: number;
@@ -469,18 +490,24 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
         >
           <SceneCapturer onGlReady={handleGlReady} />
 
+          {/* Reactively update renderer exposure from store */}
+          <ExposureControl exposure={state.lightExposure} />
+
           {/* Studio lighting rig — adapts colours to the active env preset */}
           <StudioLights deviceType={state.deviceType} envPreset={state.envPreset} />
 
           {/* High-quality HDR environment map for photorealistic reflections.
-              key={envPreset} forces a full remount so the new HDR actually loads. */}
-          <Suspense key={state.envPreset} fallback={null}>
-            <Environment
-              preset={state.envPreset as 'studio' | 'warehouse' | 'sunset' | 'city' | 'forest' | 'night'}
-              environmentIntensity={1.6}
-              background={false}
-            />
-          </Suspense>
+              key={envPreset} forces a full remount so the new HDR actually loads.
+              environmentIntensity drives how strongly the IBL affects materials. */}
+          {state.envEnabled !== false && (
+            <Suspense key={state.envPreset} fallback={null}>
+              <Environment
+                preset={state.envPreset as 'studio' | 'warehouse' | 'sunset' | 'city' | 'forest' | 'night'}
+                environmentIntensity={ENV_INTENSITY[state.envPreset] ?? 2.8}
+                background={false}
+              />
+            </Suspense>
+          )}
 
           {/* Soft contact shadow on ground plane */}
           <ContactShadows
