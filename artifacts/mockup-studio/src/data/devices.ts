@@ -160,6 +160,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasColors: true, hasOrientation: true,
     accent: '#94a3b8',
     glbUrl: '/models/ipadpro129.glb',
+    skipOverlay: true,
   },
   {
     id: 'ipad-mini-6',
@@ -175,6 +176,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasColors: true, hasOrientation: true,
     accent: '#64748b',
     glbUrl: '/models/ipadmini6.glb',
+    screenFacesBack: true,
   },
   // ── Desktop ───────────────────────────────────────────────────────
   {
