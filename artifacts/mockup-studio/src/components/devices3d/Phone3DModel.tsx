@@ -42,6 +42,16 @@ function ScreenContent({
   const ctRef = useRef(contentType);
   ctRef.current = contentType;
 
+  // Re-apply texture after every render (catches R3F material resets on color change).
+  useEffect(() => {
+    const tex = screenTexture.current;
+    if (tex && (mat.map !== tex || mat.color.r < 0.99)) {
+      mat.map = tex;
+      mat.color.set('#ffffff');
+      mat.needsUpdate = true;
+    }
+  });
+
   useFrame(() => {
     const tex = screenTexture.current;
     if (tex) {
