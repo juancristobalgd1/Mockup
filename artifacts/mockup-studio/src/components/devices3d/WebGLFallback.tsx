@@ -4,7 +4,6 @@ import { TabletDevice } from '../devices/TabletDevice';
 import { MacBookDevice } from '../devices/MacBookDevice';
 import { Browser } from '../devices/Browser';
 import { AppleWatch } from '../devices/AppleWatch';
-import { IMac } from '../devices/IMac';
 import { useApp } from '../../store';
 
 function CSSDeviceFallback() {
@@ -17,7 +16,6 @@ function CSSDeviceFallback() {
       case 'macbook': return <MacBookDevice />;
       case 'browser': return <Browser />;
       case 'watch': return <AppleWatch />;
-      case 'imac': return <IMac />;
       default: return <PhoneDevice />;
     }
   };

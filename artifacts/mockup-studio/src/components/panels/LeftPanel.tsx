@@ -86,7 +86,7 @@ function DeviceThumbnail({ modelId, isSelected }: { modelId: string; isSelected:
   const isPhone = def.storeType === 'iphone' || def.storeType === 'android';
   const isTablet = def.storeType === 'ipad';
   const isWatch = def.storeType === 'watch';
-  const isMac = def.storeType === 'macbook' || def.storeType === 'imac';
+  const isMac = def.storeType === 'macbook';
   const isBrowser = def.storeType === 'browser';
 
   const accent = isSelected ? '#7c3aed' : def.accent;
@@ -133,22 +133,12 @@ function DeviceThumbnail({ modelId, isSelected }: { modelId: string; isSelected:
     );
   }
   if (isMac) {
-    const isIMac = def.storeType === 'imac';
     return (
       <svg width="44" height="36" viewBox="0 0 44 36" fill="none">
-        {isIMac
-          ? <>
-              <rect x="2" y="1" width="40" height="26" rx="2" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
-              <rect x="5" y="4" width="34" height="20" rx="1" fill={isSelected ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.04)'} />
-              <rect x="16" y="27" width="12" height="4" rx="1" fill={accent} opacity="0.5" />
-              <rect x="10" y="31" width="24" height="3" rx="1" fill={accent} opacity="0.35" />
-            </>
-          : <>
-              <rect x="4" y="1" width="36" height="24" rx="2" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
-              <rect x="7" y="4" width="30" height="18" rx="1" fill={isSelected ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.04)'} />
-              <rect x="1" y="25" width="42" height="5" rx="1.5" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
-              <rect x="14" y="27" width="16" height="2" rx="1" fill={accent} opacity="0.4" />
-            </>}
+        <rect x="4" y="1" width="36" height="24" rx="2" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
+        <rect x="7" y="4" width="30" height="18" rx="1" fill={isSelected ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.04)'} />
+        <rect x="1" y="25" width="42" height="5" rx="1.5" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
+        <rect x="14" y="27" width="16" height="2" rx="1" fill={accent} opacity="0.4" />
       </svg>
     );
   }

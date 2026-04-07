@@ -1,6 +1,6 @@
 import { useState, createContext, useContext } from "react";
 
-export type DeviceType = "iphone" | "android" | "ipad" | "macbook" | "browser" | "watch" | "imac";
+export type DeviceType = "iphone" | "android" | "ipad" | "macbook" | "browser" | "watch";
 export type DeviceColor = "titanium" | "black" | "white" | "blue";
 export type BrowserMode = "dark" | "light";
 export type BackgroundType = "solid" | "gradient" | "mesh" | "pattern" | "image" | "wallpaper";

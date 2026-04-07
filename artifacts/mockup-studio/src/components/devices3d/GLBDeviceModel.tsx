@@ -261,15 +261,38 @@ function metalMat(color: string, roughness = 0.10, metalness = 0.88) {
 }
 
 /**
- * Normalise a screen mesh's UV coordinates to the [0, 1] range so that any
- * user texture fills the entire screen regardless of the original UV layout
- * (texture atlas, sub-region, etc.).  Safe no-op when UVs are already [0, 1].
+ * Ensure a screen mesh has normalised UV coordinates in [0, 1] so that any
+ * user texture fills the entire screen.
+ *
+ * Strategy A – mesh already has UVs: remap their min/max to [0, 1].
+ * Strategy B – mesh has NO UVs (e.g. MacBook Pro): generate planar UVs by
+ *   projecting from position X/Y (works for any flat-panel screen).
  */
 function normalizeScreenUVs(obj: THREE.Mesh) {
   const geom = obj.geometry;
-  const uvAttr = geom.attributes.uv as THREE.BufferAttribute | undefined;
-  if (!uvAttr) return;
 
+  // ── Strategy B: generate planar UVs from position XY ──────────────
+  if (!geom.attributes.uv) {
+    const pos = geom.attributes.position as THREE.BufferAttribute | undefined;
+    if (!pos) return;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), y = pos.getY(i);
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }
+    const rX = maxX - minX || 1, rY = maxY - minY || 1;
+    const uvs = new Float32Array(pos.count * 2);
+    for (let i = 0; i < pos.count; i++) {
+      uvs[i * 2]     = (pos.getX(i) - minX) / rX;
+      uvs[i * 2 + 1] = (pos.getY(i) - minY) / rY;
+    }
+    geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+    return;
+  }
+
+  // ── Strategy A: remap existing UVs to [0, 1] ──────────────────────
+  const uvAttr = geom.attributes.uv as THREE.BufferAttribute;
   let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
   for (let i = 0; i < uvAttr.count; i++) {
     const u = uvAttr.getX(i), v = uvAttr.getY(i);
@@ -277,9 +300,9 @@ function normalizeScreenUVs(obj: THREE.Mesh) {
     if (v < minV) minV = v; if (v > maxV) maxV = v;
   }
   const rU = maxU - minU, rV = maxV - minV;
-  if (rU < 0.001 || rV < 0.001) return; // degenerate UV island, skip
+  if (rU < 0.001 || rV < 0.001) return; // degenerate UV island – skip
 
-  // Skip if already (approximately) [0,1]
+  // Skip if already approximately [0, 1]
   if (Math.abs(minU) < 0.005 && Math.abs(1 - maxU) < 0.005 &&
       Math.abs(minV) < 0.005 && Math.abs(1 - maxV) < 0.005) return;
 

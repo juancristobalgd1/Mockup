@@ -319,24 +319,6 @@ export const PRESETS: Preset[] = [
     }
   },
   {
-    id: 'imac-tahoe',
-    label: 'iMac Showcase',
-    thumb: 'tahoe-light',
-    state: {
-      deviceType: 'imac',
-      bgType: 'wallpaper',
-      bgColor: 'tahoe-light',
-      scale: 0.8,
-      rotation: 0,
-      shadowIntensity: 60,
-      shadowStyle: 'spread',
-      is3D: true,
-      tiltX: -8,
-      tiltY: 5,
-      animation: 'none',
-    }
-  },
-  {
     id: 'night-city',
     label: 'Night City',
     thumb: 'night-sky',
