@@ -20,6 +20,47 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import type { DeviceModelDef } from '../../data/devices';
 
+// ── Geometry helpers ──────────────────────────────────────────────────
+
+/** Parse a CSS border-radius string (rem or px) to pixels (assumes 16px/rem). */
+function parseScreenBrPx(br: string): number {
+  const m = br.match(/^([\d.]+)(rem|px)?$/);
+  if (!m) return 0;
+  const v = parseFloat(m[1]);
+  return m[2] === 'rem' ? v * 16 : v;
+}
+
+/**
+ * Build a ShapeGeometry for a rounded rectangle and remap UVs so that a
+ * texture fills the entire shape (U=0..1 maps to X=-w/2..w/2, etc.).
+ */
+function makeRoundedRectGeom(w: number, h: number, r: number): THREE.ShapeGeometry {
+  const safeR = Math.min(r, w / 2 - 0.0001, h / 2 - 0.0001);
+  const shape = new THREE.Shape();
+  const hw = w / 2, hh = h / 2;
+  shape.moveTo(-hw + safeR, -hh);
+  shape.lineTo( hw - safeR, -hh);
+  shape.quadraticCurveTo( hw, -hh,  hw, -hh + safeR);
+  shape.lineTo( hw,  hh - safeR);
+  shape.quadraticCurveTo( hw,  hh,  hw - safeR,  hh);
+  shape.lineTo(-hw + safeR,  hh);
+  shape.quadraticCurveTo(-hw,  hh, -hw,  hh - safeR);
+  shape.lineTo(-hw, -hh + safeR);
+  shape.quadraticCurveTo(-hw, -hh, -hw + safeR, -hh);
+
+  const geom = new THREE.ShapeGeometry(shape, 8);
+
+  // ShapeGeometry uses shape-space UVs; remap to [0,1] across the rectangle.
+  const pos = geom.attributes.position as THREE.BufferAttribute;
+  const uv  = new Float32Array(pos.count * 2);
+  for (let i = 0; i < pos.count; i++) {
+    uv[i * 2]     = pos.getX(i) / w + 0.5;
+    uv[i * 2 + 1] = pos.getY(i) / h + 0.5;
+  }
+  geom.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  return geom;
+}
+
 const TARGET_H = 2.5;
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -156,13 +197,30 @@ function computeTransform(sceneObj: THREE.Object3D, def: DeviceModelDef): ModelT
   }
 
   // Y-up standard glTF
-  const rotation: [number,number,number] = [0, 0, 0];
+  //
+  // Some Sketchfab exports have the screen facing -Z (away from the camera).
+  // When def.screenFacesBack is true we rotate the model 180° around Y so
+  // the screen ends up facing the camera (+Z direction).  After that rotation,
+  // the screen face (originally at box.min.z) maps to world +Z.
+  const facesBack = !!def.screenFacesBack;
+  const rotation: [number,number,number] = [0, facesBack ? Math.PI : 0, 0];
+  //
+  // For facesBack models, Y-rotation = 180°, which negates local X and Z.
+  // To keep the model center at world origin we must FLIP the sign of position.z:
+  //   world.z = position.z + scale * (-local.z)
+  //   model center: position.z + s*(-center.z) = 0  →  position.z = +center.z*s
+  // Without flip: position.z = -center.z*s  (standard Y-up case)
   const position: [number,number,number] = [
     -center.x * s,
     -center.y * s,
-    -center.z * s,
+    facesBack ? center.z * s : -center.z * s,
   ];
-  const screenFaceZ = (box.max.z - center.z) * s;
+  // Screen-face world Z (always positive, toward camera at +Z):
+  //   Normal  : screen is at box.max.z  →  (max.z - center.z) * s
+  //   FacesBack (after flip): screen was at box.min.z  →  (center.z - min.z) * s
+  const screenFaceZ = facesBack
+    ? (center.z - box.min.z) * s
+    : (box.max.z - center.z) * s;
 
   // Try to detect screen mesh and compute overlay dims in local space → world space
   let detectedScreen: ScreenOverlayDims | null = null;
@@ -343,12 +401,23 @@ interface OverlayProps {
   sW: number; sH: number; sOffY: number;
   screenFaceZ: number;
   facesNeg: boolean;
+  /** Corner radius in Three.js world units (0 = rectangular). */
+  cornerRadius: number;
   screenTexture: React.MutableRefObject<THREE.Texture | null>;
   contentType: 'image' | 'video' | null;
 }
 
-function ScreenOverlay({ sW, sH, sOffY, screenFaceZ, facesNeg, screenTexture, contentType }: OverlayProps) {
+function ScreenOverlay({ sW, sH, sOffY, screenFaceZ, facesNeg, cornerRadius, screenTexture, contentType }: OverlayProps) {
   const meshRef = useRef<THREE.Mesh>(null);
+
+  // Build a rounded-rectangle geometry with correct UVs.
+  // Dispose the previous geometry whenever dimensions change.
+  const geom = useMemo(() => {
+    if (cornerRadius <= 0.001) return new THREE.PlaneGeometry(sW, sH);
+    return makeRoundedRectGeom(sW, sH, cornerRadius);
+  }, [sW, sH, cornerRadius]);
+
+  useEffect(() => () => { geom.dispose(); }, [geom]);
 
   useFrame(() => {
     if (!meshRef.current) return;
@@ -376,11 +445,11 @@ function ScreenOverlay({ sW, sH, sOffY, screenFaceZ, facesNeg, screenTexture, co
   return (
     <mesh
       ref={meshRef}
+      geometry={geom}
       position={[0, sOffY, zPos]}
       rotation={[rotX, 0, 0]}
       renderOrder={4}
     >
-      <planeGeometry args={[sW, sH]} />
       <meshBasicMaterial
         color="#000000"
         toneMapped={false}
@@ -471,6 +540,14 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
     sOffY = -TARGET_H * topHeavy;
   }
 
+  // ── Corner radius for the overlay ────────────────────────────────
+  // Convert def.screenBr (CSS) to Three.js world units using screen width.
+  const screenBrPx    = parseScreenBrPx(def.screenBr);
+  const screenWidthPx = def.w - def.insetSide * 2;
+  const cornerRadius  = screenBrPx > 0 && screenWidthPx > 0
+    ? Math.min(screenBrPx * (sW / screenWidthPx), Math.min(sW, sH) * 0.45)
+    : 0;
+
   return (
     <>
       {/* 3D model */}
@@ -485,6 +562,7 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
         sOffY={sOffY}
         screenFaceZ={screenFaceZ}
         facesNeg={screenFacesNeg}
+        cornerRadius={cornerRadius}
         screenTexture={screenTexture}
         contentType={contentType}
       />
