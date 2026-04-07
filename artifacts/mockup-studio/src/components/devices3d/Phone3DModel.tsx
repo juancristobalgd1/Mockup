@@ -71,12 +71,12 @@ function Lens({ r = 0.042, x = 0, y = 0, z = 0 }: {
       {/* Outer chrome ring */}
       <mesh>
         <torusGeometry args={[r, r * 0.20, 16, 48]} />
-        <meshStandardMaterial color="#888" metalness={0.95} roughness={0.05} envMapIntensity={2.5} />
+        <meshStandardMaterial color="#888" metalness={0.95} roughness={0.05} envMapIntensity={1.1} />
       </mesh>
       {/* Lens glass */}
       <mesh position={[0, 0, 0.002]}>
         <circleGeometry args={[r * 0.80, 40]} />
-        <meshStandardMaterial color="#060c1a" roughness={0.04} metalness={0.5} envMapIntensity={3.0} />
+        <meshStandardMaterial color="#060c1a" roughness={0.04} metalness={0.5} envMapIntensity={1.2} />
       </mesh>
       {/* Inner iris */}
       <mesh position={[0, 0, 0.004]}>
@@ -127,7 +127,7 @@ function TripleTriModule({ pW, pH, pD, color, metal, rough }: {
   return (
     <group position={[-pW * 0.17, pH * 0.31, bZ]}>
       <RoundedBox args={[mW, mH, 0.020]} radius={0.030} smoothness={6}>
-        <meshStandardMaterial color={color} metalness={metal + 0.04} roughness={rough - 0.02} envMapIntensity={1.8} />
+        <meshStandardMaterial color={color} metalness={metal + 0.04} roughness={rough - 0.02} envMapIntensity={0.9} />
       </RoundedBox>
       <Lens r={0.050} x={-mW * 0.25} y={ mH * 0.22} z={0.013} />
       <Lens r={0.050} x={ mW * 0.25} y={ mH * 0.22} z={0.013} />
@@ -146,7 +146,7 @@ function DualVertModule({ pW, pH, pD, color, metal, rough }: {
   return (
     <group position={[-pW * 0.14, pH * 0.33, bZ]}>
       <RoundedBox args={[mW, mH, 0.018]} radius={0.024} smoothness={5}>
-        <meshStandardMaterial color={color} metalness={metal + 0.02} roughness={rough} envMapIntensity={1.6} />
+        <meshStandardMaterial color={color} metalness={metal + 0.02} roughness={rough} envMapIntensity={0.8} />
       </RoundedBox>
       <Lens r={0.047} x={0} y={ mH * 0.21} z={0.012} />
       <Lens r={0.047} x={0} y={-mH * 0.19} z={0.012} />
@@ -163,7 +163,7 @@ function DualDiagModule({ pW, pH, pD, color, metal, rough }: {
   return (
     <group position={[-pW * 0.15, pH * 0.33, bZ]}>
       <RoundedBox args={[mW, mH, 0.015]} radius={0.026} smoothness={5}>
-        <meshStandardMaterial color={color} metalness={metal} roughness={rough} envMapIntensity={1.4} />
+        <meshStandardMaterial color={color} metalness={metal} roughness={rough} envMapIntensity={0.7} />
       </RoundedBox>
       <Lens r={0.044} x={-mW * 0.22} y={ mH * 0.22} z={0.010} />
       <Lens r={0.044} x={ mW * 0.22} y={-mH * 0.22} z={0.010} />
@@ -400,7 +400,7 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
           color={bodyHex}
           metalness={metalness}
           roughness={roughness}
-          envMapIntensity={2.4}
+          envMapIntensity={1.0}
         />
       </RoundedBox>
 
@@ -443,7 +443,7 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
           color={bodyHex}
           metalness={metalness + 0.06}
           roughness={roughness - 0.04}
-          envMapIntensity={3.0}
+          envMapIntensity={1.3}
         />
       </mesh>
 

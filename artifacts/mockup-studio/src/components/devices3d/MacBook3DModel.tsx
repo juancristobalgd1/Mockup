@@ -128,7 +128,7 @@ function Trackpad({ baseW, baseH, baseD, isPro, bodyColor }: {
       {/* Trackpad surface */}
       <mesh>
         <planeGeometry args={[tpW, tpH]} />
-        <meshStandardMaterial color={tpColor} roughness={0.25} metalness={0.35} envMapIntensity={0.8} />
+        <meshStandardMaterial color={tpColor} roughness={0.25} metalness={0.35} envMapIntensity={0.5} />
       </mesh>
       {/* Force Touch border */}
       <mesh position={[0, 0, 0.0001]}>
@@ -228,7 +228,7 @@ export function MacBook3DModel({ def, screenTexture, contentType, lidAngle = 112
           castShadow receiveShadow
           position={[0, 0, 0]}
         >
-          <meshStandardMaterial {...bodyMat} envMapIntensity={1.4} />
+          <meshStandardMaterial {...bodyMat} envMapIntensity={0.8} />
         </RoundedBox>
 
         {/* Keyboard area */}
@@ -267,7 +267,7 @@ export function MacBook3DModel({ def, screenTexture, contentType, lidAngle = 112
       <group position={[0, baseD / 2, -baseH / 2]} rotation={[-lidRad, 0, 0]}>
         <group position={[0, lidH / 2, 0]}>
           <RoundedBox args={[lidW, lidH, lidD]} radius={0.038} smoothness={6} castShadow>
-            <meshStandardMaterial {...bodyMat} envMapIntensity={1.4} />
+            <meshStandardMaterial {...bodyMat} envMapIntensity={0.8} />
           </RoundedBox>
 
           {/* Apple logo on back */}
@@ -278,7 +278,7 @@ export function MacBook3DModel({ def, screenTexture, contentType, lidAngle = 112
                 color={bodyColor}
                 metalness={metalness + 0.08}
                 roughness={roughness - 0.06}
-                envMapIntensity={2.0}
+                envMapIntensity={1.0}
               />
             </mesh>
           </group>
@@ -290,7 +290,7 @@ export function MacBook3DModel({ def, screenTexture, contentType, lidAngle = 112
             smoothness={6}
             position={[0, 0, lidD / 2 + 0.001]}
           >
-            <meshStandardMaterial color="#030306" roughness={0.06} metalness={0} envMapIntensity={1.2} />
+            <meshStandardMaterial color="#030306" roughness={0.06} metalness={0} envMapIntensity={0.6} />
           </RoundedBox>
 
           {/* Screen content base */}

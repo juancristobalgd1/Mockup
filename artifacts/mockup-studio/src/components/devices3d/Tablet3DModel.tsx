@@ -64,7 +64,7 @@ export function Tablet3DModel({ def, screenTexture, contentType, isLandscape }: 
     <group rotation={isLandscape ? [0, 0, -Math.PI / 2] : [0, 0, 0]}>
       {/* Body */}
       <RoundedBox args={[pW, pH, pD]} radius={0.06} smoothness={6} castShadow>
-        <meshStandardMaterial color={bodyColor} metalness={0.75} roughness={0.15} envMapIntensity={1.2} />
+        <meshStandardMaterial color={bodyColor} metalness={0.75} roughness={0.15} envMapIntensity={0.8} />
       </RoundedBox>
 
       {/* Screen black */}

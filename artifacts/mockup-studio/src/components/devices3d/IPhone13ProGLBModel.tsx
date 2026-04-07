@@ -71,19 +71,19 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
       } else if (name.startsWith('screen2')) {
         obj.material = new THREE.MeshPhysicalMaterial({
           color: '#a0c0e0', transmission: 0.8, roughness: 0,
-          metalness: 0, transparent: true, opacity: 0.07, envMapIntensity: 2.0,
+          metalness: 0, transparent: true, opacity: 0.07, envMapIntensity: 0.9,
         });
 
       } else if (name.startsWith('lens') || name.startsWith('still') || name.startsWith('led')) {
         obj.material = new THREE.MeshPhysicalMaterial({
           color: '#040810', roughness: 0.02, metalness: 0.1,
-          transmission: 0.15, transparent: true, opacity: 0.95, envMapIntensity: 3.5,
+          transmission: 0.15, transparent: true, opacity: 0.95, envMapIntensity: 1.4,
         });
 
       } else if (name.startsWith('glass')) {
         obj.material = new THREE.MeshPhysicalMaterial({
           color: deviceColor || '#71717a', metalness: 0.08, roughness: 0.06,
-          transmission: 0.15, transparent: true, opacity: 0.98, envMapIntensity: 3.0,
+          transmission: 0.15, transparent: true, opacity: 0.98, envMapIntensity: 1.3,
         });
 
       } else if (name.startsWith('plastic')) {
@@ -98,7 +98,7 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
 
       } else if (name.startsWith('logo')) {
         obj.material = new THREE.MeshStandardMaterial({
-          color: deviceColor || '#8a8a8e', metalness: 0.96, roughness: 0.05, envMapIntensity: 2.8,
+          color: deviceColor || '#8a8a8e', metalness: 0.96, roughness: 0.05, envMapIntensity: 1.2,
         });
 
       } else if (name.startsWith('balck') || name.startsWith('123')) {
@@ -109,7 +109,7 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
       } else {
         // Korean-named chassis meshes → device color
         obj.material = new THREE.MeshStandardMaterial({
-          color: deviceColor || '#71717a', metalness: 0.88, roughness: 0.10, envMapIntensity: 2.2,
+          color: deviceColor || '#71717a', metalness: 0.88, roughness: 0.10, envMapIntensity: 1.0,
         });
       }
     });
