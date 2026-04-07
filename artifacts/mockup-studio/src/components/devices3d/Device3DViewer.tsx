@@ -23,7 +23,7 @@ useGLTF.preload('/models/iphone17pro.glb');
 useGLTF.preload('/models/iphone16.glb');
 useGLTF.preload('/models/macbookpro.glb');
 useGLTF.preload('/models/samsungs25ultra.glb');
-useGLTF.preload('/models/samsungs21ultra.glb');
+useGLTF.preload('/models/oneplus12.glb');
 useGLTF.preload('/models/ipadpro129.glb');
 useGLTF.preload('/models/ipadmini6.glb');
 useGLTF.preload('/models/applewatch.glb');
