@@ -60,7 +60,7 @@ export interface AppState {
 }
 
 export const defaultState: AppState = {
-  deviceModel: "iphone-15-pro",
+  deviceModel: "iphone-16-pro",
   deviceType: "iphone",
   deviceLandscape: false,
   deviceColor: "titanium",

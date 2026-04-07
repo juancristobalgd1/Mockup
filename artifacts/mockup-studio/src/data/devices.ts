@@ -1,5 +1,15 @@
 export type DeviceGroup = 'iPhone' | 'Android' | 'Tablet' | 'Desktop' | 'Browser' | 'Watch';
 
+/** Back camera layout configuration */
+export type CameraLayout =
+  | 'triple-tri'    // iPhone Pro: triangular arrangement
+  | 'triple-bar'    // Pixel: full-width camera bar
+  | 'triple-round'  // OnePlus: large circular module
+  | 'dual-v'        // iPhone base / older models
+  | 'dual-diag'     // Diagonal dual (iPhone 13 style)
+  | 'quad-samsung'  // Samsung Ultra: 4 lenses in rectangle module
+  | 'none';
+
 export interface DeviceModelDef {
   id: string;
   label: string;
@@ -12,24 +22,120 @@ export interface DeviceModelDef {
   insetTop: number;
   insetBottom: number;
   insetSide: number;
-  /** Border radius of device body (rem string or px number) */
+  /** Border radius of device body */
   br: string;
   /** Border radius of screen inner corners */
   screenBr: string;
-  /** Camera style inside screen */
+  /** Front camera / notch style */
   camera: 'dynamic-island' | 'punch-hole' | 'notch' | 'none';
+  /** Back camera arrangement */
+  cameraLayout: CameraLayout;
   /** Frame material style */
   frame: 'titanium' | 'aluminum' | 'glass' | 'light';
-  /** Whether device supports color variants */
+  /** Extra hardware features */
+  hasActionButton?: boolean;    // iPhone 15 Pro+, 16+
+  hasCameraControl?: boolean;   // iPhone 16+
+  hasSPen?: boolean;            // Samsung Ultra
   hasColors?: boolean;
-  /** Whether device supports orientation */
   hasOrientation?: boolean;
   /** Thumbnail accent color for picker */
   accent: string;
 }
 
 export const DEVICE_MODELS: DeviceModelDef[] = [
-  // ── iPhone ────────────────────────────────────────────────────────
+  // ── iPhone 17 ─────────────────────────────────────────────────────
+  {
+    id: 'iphone-17-pro-max',
+    label: 'iPhone 17 Pro Max',
+    group: 'iPhone',
+    storeType: 'iphone',
+    w: 220, h: 476,
+    insetTop: 11, insetBottom: 11, insetSide: 11,
+    br: '2.9rem', screenBr: '2.4rem',
+    camera: 'dynamic-island',
+    cameraLayout: 'triple-tri',
+    frame: 'titanium',
+    hasActionButton: true, hasCameraControl: true,
+    hasColors: true, hasOrientation: true,
+    accent: '#71717a',
+  },
+  {
+    id: 'iphone-17-pro',
+    label: 'iPhone 17 Pro',
+    group: 'iPhone',
+    storeType: 'iphone',
+    w: 200, h: 434,
+    insetTop: 11, insetBottom: 11, insetSide: 11,
+    br: '2.7rem', screenBr: '2.2rem',
+    camera: 'dynamic-island',
+    cameraLayout: 'triple-tri',
+    frame: 'titanium',
+    hasActionButton: true, hasCameraControl: true,
+    hasColors: true, hasOrientation: true,
+    accent: '#a8a29e',
+  },
+  {
+    id: 'iphone-17',
+    label: 'iPhone 17',
+    group: 'iPhone',
+    storeType: 'iphone',
+    w: 196, h: 425,
+    insetTop: 11, insetBottom: 11, insetSide: 11,
+    br: '2.6rem', screenBr: '2.1rem',
+    camera: 'dynamic-island',
+    cameraLayout: 'dual-v',
+    frame: 'aluminum',
+    hasActionButton: true, hasCameraControl: true,
+    hasColors: true, hasOrientation: true,
+    accent: '#f9a8d4',
+  },
+  // ── iPhone 16 ─────────────────────────────────────────────────────
+  {
+    id: 'iphone-16-pro-max',
+    label: 'iPhone 16 Pro Max',
+    group: 'iPhone',
+    storeType: 'iphone',
+    w: 218, h: 472,
+    insetTop: 11, insetBottom: 11, insetSide: 11,
+    br: '2.85rem', screenBr: '2.35rem',
+    camera: 'dynamic-island',
+    cameraLayout: 'triple-tri',
+    frame: 'titanium',
+    hasActionButton: true, hasCameraControl: true,
+    hasColors: true, hasOrientation: true,
+    accent: '#c2a882',
+  },
+  {
+    id: 'iphone-16-pro',
+    label: 'iPhone 16 Pro',
+    group: 'iPhone',
+    storeType: 'iphone',
+    w: 198, h: 430,
+    insetTop: 11, insetBottom: 11, insetSide: 11,
+    br: '2.65rem', screenBr: '2.15rem',
+    camera: 'dynamic-island',
+    cameraLayout: 'triple-tri',
+    frame: 'titanium',
+    hasActionButton: true, hasCameraControl: true,
+    hasColors: true, hasOrientation: true,
+    accent: '#78716c',
+  },
+  {
+    id: 'iphone-16',
+    label: 'iPhone 16',
+    group: 'iPhone',
+    storeType: 'iphone',
+    w: 196, h: 425,
+    insetTop: 11, insetBottom: 11, insetSide: 11,
+    br: '2.6rem', screenBr: '2.1rem',
+    camera: 'dynamic-island',
+    cameraLayout: 'dual-v',
+    frame: 'aluminum',
+    hasActionButton: true, hasCameraControl: true,
+    hasColors: true, hasOrientation: true,
+    accent: '#38bdf8',
+  },
+  // ── iPhone 15 ─────────────────────────────────────────────────────
   {
     id: 'iphone-15-pro-max',
     label: 'iPhone 15 Pro Max',
@@ -39,7 +145,9 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     insetTop: 12, insetBottom: 12, insetSide: 12,
     br: '2.8rem', screenBr: '2.3rem',
     camera: 'dynamic-island',
+    cameraLayout: 'triple-tri',
     frame: 'titanium',
+    hasActionButton: true,
     hasColors: true, hasOrientation: true,
     accent: '#9ca3af',
   },
@@ -52,7 +160,9 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     insetTop: 12, insetBottom: 12, insetSide: 12,
     br: '2.6rem', screenBr: '2.1rem',
     camera: 'dynamic-island',
+    cameraLayout: 'triple-tri',
     frame: 'titanium',
+    hasActionButton: true,
     hasColors: true, hasOrientation: true,
     accent: '#a8a29e',
   },
@@ -65,22 +175,10 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     insetTop: 12, insetBottom: 12, insetSide: 12,
     br: '2.6rem', screenBr: '2.1rem',
     camera: 'dynamic-island',
+    cameraLayout: 'dual-diag',
     frame: 'aluminum',
     hasColors: true, hasOrientation: true,
     accent: '#60a5fa',
-  },
-  {
-    id: 'iphone-14-pro',
-    label: 'iPhone 14 Pro',
-    group: 'iPhone',
-    storeType: 'iphone',
-    w: 194, h: 420,
-    insetTop: 12, insetBottom: 12, insetSide: 12,
-    br: '2.5rem', screenBr: '2.0rem',
-    camera: 'dynamic-island',
-    frame: 'titanium',
-    hasColors: true, hasOrientation: true,
-    accent: '#854d0e',
   },
   {
     id: 'iphone-13',
@@ -91,6 +189,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     insetTop: 14, insetBottom: 14, insetSide: 14,
     br: '2.4rem', screenBr: '1.9rem',
     camera: 'notch',
+    cameraLayout: 'dual-diag',
     frame: 'aluminum',
     hasColors: true, hasOrientation: true,
     accent: '#6b7280',
@@ -105,7 +204,9 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     insetTop: 10, insetBottom: 10, insetSide: 10,
     br: '1.6rem', screenBr: '1.2rem',
     camera: 'punch-hole',
+    cameraLayout: 'quad-samsung',
     frame: 'titanium',
+    hasSPen: true,
     hasOrientation: true,
     accent: '#475569',
   },
@@ -118,6 +219,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     insetTop: 10, insetBottom: 10, insetSide: 10,
     br: '1.8rem', screenBr: '1.4rem',
     camera: 'punch-hole',
+    cameraLayout: 'triple-round',
     frame: 'aluminum',
     hasOrientation: true,
     accent: '#1e40af',
@@ -131,9 +233,10 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     insetTop: 11, insetBottom: 11, insetSide: 11,
     br: '2.0rem', screenBr: '1.6rem',
     camera: 'punch-hole',
+    cameraLayout: 'triple-bar',
     frame: 'aluminum',
     hasOrientation: true,
-    accent: '#065f46',
+    accent: '#4ade80',
   },
   {
     id: 'oneplus-12',
@@ -144,9 +247,10 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     insetTop: 10, insetBottom: 10, insetSide: 10,
     br: '1.9rem', screenBr: '1.5rem',
     camera: 'punch-hole',
+    cameraLayout: 'triple-round',
     frame: 'glass',
     hasOrientation: true,
-    accent: '#7c3aed',
+    accent: '#c084fc',
   },
   // ── Tablet ────────────────────────────────────────────────────────
   {
@@ -155,9 +259,10 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     group: 'Tablet',
     storeType: 'ipad',
     w: 320, h: 426,
-    insetTop: 28, insetBottom: 36, insetSide: 24,
+    insetTop: 28, insetBottom: 28, insetSide: 24,
     br: '1.4rem', screenBr: '0.7rem',
     camera: 'none',
+    cameraLayout: 'none',
     frame: 'aluminum',
     hasOrientation: true,
     accent: '#94a3b8',
@@ -168,9 +273,10 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     group: 'Tablet',
     storeType: 'ipad',
     w: 264, h: 377,
-    insetTop: 24, insetBottom: 32, insetSide: 20,
+    insetTop: 24, insetBottom: 24, insetSide: 20,
     br: '1.2rem', screenBr: '0.6rem',
     camera: 'none',
+    cameraLayout: 'none',
     frame: 'aluminum',
     hasOrientation: true,
     accent: '#64748b',
@@ -184,6 +290,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     insetTop: 28, insetBottom: 36, insetSide: 18,
     br: '1.3rem', screenBr: '0.5rem',
     camera: 'none',
+    cameraLayout: 'none',
     frame: 'aluminum',
     hasOrientation: true,
     accent: '#f59e0b',
@@ -198,18 +305,20 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     insetTop: 14, insetBottom: 10, insetSide: 18,
     br: '0.75rem', screenBr: '0.4rem',
     camera: 'none',
+    cameraLayout: 'none',
     frame: 'aluminum',
     accent: '#6b7280',
   },
   {
     id: 'macbook-air',
-    label: 'MacBook Air M2',
+    label: 'MacBook Air M3',
     group: 'Desktop',
     storeType: 'macbook',
     w: 520, h: 336,
     insetTop: 14, insetBottom: 10, insetSide: 18,
     br: '0.6rem', screenBr: '0.35rem',
     camera: 'none',
+    cameraLayout: 'none',
     frame: 'aluminum',
     accent: '#e5c07b',
   },
@@ -222,6 +331,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     insetTop: 16, insetBottom: 30, insetSide: 10,
     br: '1rem', screenBr: '0.4rem',
     camera: 'none',
+    cameraLayout: 'none',
     frame: 'light',
     accent: '#93c5fd',
   },
@@ -235,6 +345,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     insetTop: 46, insetBottom: 0, insetSide: 0,
     br: '0.625rem', screenBr: '0',
     camera: 'none',
+    cameraLayout: 'none',
     frame: 'glass',
     accent: '#374151',
   },
@@ -247,6 +358,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     insetTop: 46, insetBottom: 0, insetSide: 0,
     br: '0.625rem', screenBr: '0',
     camera: 'none',
+    cameraLayout: 'none',
     frame: 'light',
     accent: '#d1d5db',
   },
@@ -260,6 +372,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     insetTop: 12, insetBottom: 12, insetSide: 12,
     br: '35%', screenBr: '28%',
     camera: 'none',
+    cameraLayout: 'none',
     frame: 'titanium',
     accent: '#f97316',
   },
@@ -272,6 +385,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     insetTop: 12, insetBottom: 12, insetSide: 12,
     br: '36%', screenBr: '30%',
     camera: 'none',
+    cameraLayout: 'none',
     frame: 'aluminum',
     accent: '#e11d48',
   },
@@ -289,11 +403,11 @@ export const GROUP_ICONS: Record<DeviceGroup, string> = {
 };
 
 export function getModelById(id: string): DeviceModelDef {
-  return DEVICE_MODELS.find(m => m.id === id) ?? DEVICE_MODELS[1];
+  return DEVICE_MODELS.find(m => m.id === id) ?? DEVICE_MODELS[4]; // default: iPhone 16 Pro
 }
 
 export function getModelsInGroup(group: DeviceGroup): DeviceModelDef[] {
   return DEVICE_MODELS.filter(m => m.group === group);
 }
 
-export const DEFAULT_MODEL_ID = 'iphone-15-pro';
+export const DEFAULT_MODEL_ID = 'iphone-16-pro';
