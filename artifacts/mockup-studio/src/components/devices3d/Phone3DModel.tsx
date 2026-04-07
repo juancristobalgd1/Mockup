@@ -418,15 +418,18 @@ interface Props {
 
 export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isLandscape }: Props) {
   const isAndroid = def.storeType === 'android';
+  const isPro = def.id.includes('pro') || def.id.includes('ultra');
 
   // Normalize: phone height = 2.0 units
   const scale = 2.0 / (def.h / 100);
   const pW = (def.w / 100) * scale;
   const pH = (def.h / 100) * scale;
   const pD = 0.115;
+
+  // Border radius: Pro iPhones have flatter sides (titanium chamfer)
   const br = isAndroid
-    ? (def.id.includes('ultra') ? 0.06 : 0.085)
-    : (def.id.includes('13') ? 0.10 : 0.11);
+    ? (def.id.includes('ultra') ? 0.055 : 0.082)
+    : (def.id.includes('13') ? 0.105 : isPro ? 0.108 : 0.112);
 
   const mat = isAndroid
     ? (ANDROID_FRAME[def.frame] ?? ANDROID_FRAME.titanium)
@@ -435,7 +438,12 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
   const bodyColor = mat.body;
   const { metalness, roughness } = mat;
 
-  // Screen geometry (portrait)
+  // Glass back color — slightly warmer/different from the frame
+  const glassBackColor = isAndroid
+    ? (def.frame === 'glass' ? '#0e0e14' : bodyColor)
+    : (deviceColor === 'white' ? '#e8e8e8' : deviceColor === 'blue' ? '#131c40' : '#1a1a1e');
+
+  // Screen geometry
   const insetTopPx  = (def.insetTop    / 100) * scale;
   const insetBotPx  = (def.insetBottom / 100) * scale;
   const insetSidePx = (def.insetSide   / 100) * scale;
@@ -443,87 +451,109 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
   const sH = pH - insetTopPx - insetBotPx;
   const sOffY = -(insetTopPx - insetBotPx) / 2;
   const sZ = pD / 2 + 0.001;
-
-  // For landscape: swap W/H and adjust
-  const [displayW, displayH] = isLandscape ? [pH, pW] : [pW, pH];
-  const [screenW, screenH] = isLandscape ? [sH, sW] : [sW, sH];
+  const backZ = -pD / 2;
 
   const cameraModuleProps = { pW, pH, pD, bodyColor, metalness, roughness };
 
   return (
     <group rotation={isLandscape ? [0, 0, -Math.PI / 2] : [0, 0, 0]}>
-      {/* ── Body ────────────────────────────────────────────────── */}
-      <RoundedBox args={[pW, pH, pD]} radius={br} smoothness={8} castShadow receiveShadow>
+
+      {/* ── 1. BODY / FRAME ─────────────────────────────────────── */}
+      {/* Main titanium/aluminum frame body */}
+      <RoundedBox args={[pW, pH, pD]} radius={br} smoothness={10} castShadow receiveShadow>
         <meshStandardMaterial
           color={bodyColor}
           metalness={metalness}
           roughness={roughness}
-          envMapIntensity={1.8}
+          envMapIntensity={2.2}
         />
       </RoundedBox>
 
-      {/* ── Front face: screen assembly ─────────────────────────── */}
-      {/* Screen black base */}
+      {/* ── 2. FRONT GLASS FACE ──────────────────────────────────── */}
+      {/* Ceramic/glass front panel — very dark, very reflective */}
+      <mesh position={[0, 0, sZ - 0.002]}>
+        <planeGeometry args={[pW - 0.004, pH - 0.004]} />
+        <meshStandardMaterial
+          color="#050508"
+          roughness={0.04}
+          metalness={0.0}
+          envMapIntensity={2.0}
+        />
+      </mesh>
+
+      {/* Screen content area */}
       <mesh position={[0, sOffY, sZ]}>
         <planeGeometry args={[sW, sH]} />
-        <meshStandardMaterial color="#050510" roughness={0.05} metalness={0} />
+        <meshStandardMaterial color="#030308" roughness={0.02} metalness={0} />
       </mesh>
 
       {/* Screen content texture */}
-      <group position={[0, sOffY, sZ + 0.001]}>
+      <group position={[0, sOffY, sZ + 0.0012]}>
         <ScreenPlane w={sW} h={sH} screenTexture={screenTexture} contentType={contentType} />
       </group>
 
-      {/* Screen glass gloss */}
-      <mesh position={[0, sOffY, sZ + 0.004]}>
-        <planeGeometry args={[sW + 0.01, sH + 0.01]} />
-        <meshStandardMaterial color="#fff" transparent opacity={0.03} roughness={0.01} metalness={0} />
+      {/* Screen protective glass (slight specular) */}
+      <mesh position={[0, sOffY, sZ + 0.003]}>
+        <planeGeometry args={[sW, sH]} />
+        <meshStandardMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.028}
+          roughness={0.0}
+          metalness={0}
+        />
       </mesh>
 
-      {/* Front face black bezel */}
-      <mesh position={[0, 0, sZ - 0.0005]}>
-        <planeGeometry args={[pW - 0.005, pH - 0.005]} />
-        <meshStandardMaterial color="#030308" roughness={0.1} metalness={0} transparent opacity={0.95} />
-      </mesh>
-
-      {/* ── Front camera ─────────────────────────────────────────── */}
-      <group position={[0, sOffY, sZ + 0.003]}>
+      {/* ── 3. FRONT CAMERA ─────────────────────────────────────── */}
+      <group position={[0, sOffY, sZ + 0.004]}>
         {def.camera === 'dynamic-island' && <DynamicIsland sH={sH} isLandscape={false} />}
-        {def.camera === 'punch-hole' && <PunchHole sH={sH} sW={sW} isLandscape={false} />}
-        {def.camera === 'notch' && <Notch sH={sH} isLandscape={false} />}
+        {def.camera === 'punch-hole'     && <PunchHole sH={sH} sW={sW} isLandscape={false} />}
+        {def.camera === 'notch'          && <Notch sH={sH} isLandscape={false} />}
       </group>
 
-      {/* ── Side buttons ──────────────────────────────────────────── */}
+      {/* ── 4. BACK GLASS FACE ───────────────────────────────────── */}
+      {/* Glass/matte back panel */}
+      <mesh position={[0, 0, backZ + 0.002]}>
+        <planeGeometry args={[pW - 0.004, pH - 0.004]} />
+        <meshStandardMaterial
+          color={glassBackColor}
+          roughness={isPro ? 0.12 : 0.06}
+          metalness={isPro ? 0.0 : 0.1}
+          envMapIntensity={isPro ? 0.8 : 1.5}
+        />
+      </mesh>
+
+      {/* Back glass gradient shimmer (specular strip) */}
+      <mesh position={[-pW * 0.1, pH * 0.1, backZ + 0.003]}>
+        <planeGeometry args={[pW * 0.6, pH * 0.4]} />
+        <meshStandardMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.015}
+          roughness={0}
+          metalness={0}
+        />
+      </mesh>
+
+      {/* ── 5. SIDE BUTTONS ──────────────────────────────────────── */}
       <SideButtons
         {...cameraModuleProps}
         hasActionButton={def.hasActionButton}
         hasCameraControl={def.hasCameraControl}
       />
 
-      {/* ── S-Pen slot (Samsung Ultra) ───────────────────────────── */}
+      {/* ── 6. S-PEN SLOT (Samsung Ultra) ────────────────────────── */}
       {def.hasSPen && <SPenSlot pW={pW} pH={pH} pD={pD} bodyColor={bodyColor} />}
 
-      {/* ── Back camera module ─────────────────────────────────────── */}
-      {def.cameraLayout === 'triple-tri'    && <TripleTriModule {...cameraModuleProps} />}
-      {def.cameraLayout === 'dual-v'        && <DualVertModule {...cameraModuleProps} />}
-      {def.cameraLayout === 'dual-diag'     && <DualDiagModule {...cameraModuleProps} />}
-      {def.cameraLayout === 'quad-samsung'  && <QuadSamsungModule {...cameraModuleProps} />}
-      {def.cameraLayout === 'triple-bar'    && <PixelBarModule {...cameraModuleProps} />}
-      {def.cameraLayout === 'triple-round'  && (
+      {/* ── 7. BACK CAMERA MODULE ────────────────────────────────── */}
+      {def.cameraLayout === 'triple-tri'   && <TripleTriModule {...cameraModuleProps} />}
+      {def.cameraLayout === 'dual-v'       && <DualVertModule {...cameraModuleProps} />}
+      {def.cameraLayout === 'dual-diag'    && <DualDiagModule {...cameraModuleProps} />}
+      {def.cameraLayout === 'quad-samsung' && <QuadSamsungModule {...cameraModuleProps} />}
+      {def.cameraLayout === 'triple-bar'   && <PixelBarModule {...cameraModuleProps} />}
+      {def.cameraLayout === 'triple-round' && (
         <CircularModule {...cameraModuleProps} isOnePlus={def.id.includes('oneplus')} />
       )}
-
-      {/* ── Rear face highlight ─────────────────────────────────────── */}
-      <mesh position={[0, 0, -pD / 2]}>
-        <planeGeometry args={[pW - 0.01, pH - 0.01]} />
-        <meshStandardMaterial color="#ffffff" transparent opacity={0.02} roughness={0} metalness={0} />
-      </mesh>
-
-      {/* ── Frame edge highlight ─────────────────────────────────────── */}
-      <mesh position={[0, 0, 0]}>
-        <torusGeometry args={[Math.max(pW, pH) / 2 * 0.01, 0.002, 4, 4]} />
-        <meshStandardMaterial color="#ffffff" transparent opacity={0} />
-      </mesh>
     </group>
   );
 }
