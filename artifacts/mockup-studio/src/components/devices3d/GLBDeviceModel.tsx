@@ -717,30 +717,32 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
       detectAndMarkScreen(root, transform.screenFaceZ, screenMeshes.current);
     }
 
-    // Force the useFrame texture-sync to re-apply the current texture to the
-    // freshly-created screen mesh materials (applyMaterials replaces them with
-    // a blank black material, so we must invalidate the cached texture ref).
-    prevTex.current = null;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceColor, transform]);
 
   // ── Sync screen texture into detected screen meshes (multi-mesh) ──
-  const prevTex = useRef<THREE.Texture | null>(null);
-  const ctRef   = useRef(contentType);
+  const ctRef = useRef(contentType);
   ctRef.current = contentType;
 
   useFrame(() => {
     const tex = screenTexture.current;
-    if (tex !== prevTex.current) {
-      prevTex.current = tex;
-      screenMeshes.current.forEach(mesh => {
-        const mat = mesh.material as THREE.MeshStandardMaterial;
-        mat.map = tex ?? null;
-        mat.color.set(tex ? '#ffffff' : '#020208');
+    screenMeshes.current.forEach(mesh => {
+      const mat = mesh.material as THREE.MeshStandardMaterial;
+      if (tex) {
+        const needMap   = mat.map !== tex;
+        const needColor = mat.color.r < 0.99;
+        if (needMap || needColor) {
+          if (needMap)   mat.map = tex;
+          if (needColor) mat.color.set('#ffffff');
+          mat.needsUpdate = true;
+        }
+        if (ctRef.current === 'video') tex.needsUpdate = true;
+      } else if (mat.map || mat.color.r > 0.04) {
+        mat.map = null;
+        mat.color.set('#020208');
         mat.needsUpdate = true;
-      });
-    }
-    if (ctRef.current === 'video' && tex) tex.needsUpdate = true;
+      }
+    });
   });
 
   if (!sceneObj || !transform) return null;
