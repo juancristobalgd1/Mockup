@@ -450,7 +450,8 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
   const sW = pW - insetSidePx * 2;
   const sH = pH - insetTopPx - insetBotPx;
   const sOffY = -(insetTopPx - insetBotPx) / 2;
-  const sZ = pD / 2 + 0.001;
+  // Front glass occupies pD/2 to pD/2+0.002, so screen content starts at pD/2+0.003
+  const sZ = pD / 2 + 0.003;
   const backZ = -pD / 2;
 
   const cameraModuleProps = { pW, pH, pD, bodyColor, metalness, roughness };
@@ -470,12 +471,14 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
       </RoundedBox>
 
       {/* ── 2. FRONT GLASS FACE ──────────────────────────────────── */}
-      {/* Use RoundedBox so corners MATCH the body — prevents screen overflow */}
+      {/* RoundedBox so corners MATCH the body — prevents screen overflow.
+          Position: center of glass = pD/2 + 0.001 so back face (pD/2+0.0005)
+          sits just above the body front face (pD/2), no z-fighting. */}
       <RoundedBox
-        args={[pW - 0.003, pH - 0.003, 0.001]}
+        args={[pW - 0.003, pH - 0.003, 0.002]}
         radius={br * 0.97}
         smoothness={8}
-        position={[0, 0, sZ - 0.001]}
+        position={[0, 0, pD / 2 + 0.001]}
       >
         <meshStandardMaterial
           color="#040407"
@@ -516,12 +519,13 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
       </group>
 
       {/* ── 4. BACK GLASS / MATTE FACE ───────────────────────────── */}
-      {/* Also RoundedBox to match body corners */}
+      {/* RoundedBox to match body corners. backZ = -pD/2, so center at
+          -pD/2 - 0.001 puts back face of glass just below body back face — no z-fight. */}
       <RoundedBox
-        args={[pW - 0.003, pH - 0.003, 0.001]}
+        args={[pW - 0.003, pH - 0.003, 0.002]}
         radius={br * 0.97}
         smoothness={8}
-        position={[0, 0, backZ + 0.001]}
+        position={[0, 0, backZ - 0.001]}
       >
         <meshStandardMaterial
           color={glassBackColor}
