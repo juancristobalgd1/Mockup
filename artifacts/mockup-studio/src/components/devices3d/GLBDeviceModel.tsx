@@ -260,6 +260,37 @@ function metalMat(color: string, roughness = 0.10, metalness = 0.88) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness, envMapIntensity: 2.2 });
 }
 
+/**
+ * Normalise a screen mesh's UV coordinates to the [0, 1] range so that any
+ * user texture fills the entire screen regardless of the original UV layout
+ * (texture atlas, sub-region, etc.).  Safe no-op when UVs are already [0, 1].
+ */
+function normalizeScreenUVs(obj: THREE.Mesh) {
+  const geom = obj.geometry;
+  const uvAttr = geom.attributes.uv as THREE.BufferAttribute | undefined;
+  if (!uvAttr) return;
+
+  let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
+  for (let i = 0; i < uvAttr.count; i++) {
+    const u = uvAttr.getX(i), v = uvAttr.getY(i);
+    if (u < minU) minU = u; if (u > maxU) maxU = u;
+    if (v < minV) minV = v; if (v > maxV) maxV = v;
+  }
+  const rU = maxU - minU, rV = maxV - minV;
+  if (rU < 0.001 || rV < 0.001) return; // degenerate UV island, skip
+
+  // Skip if already (approximately) [0,1]
+  if (Math.abs(minU) < 0.005 && Math.abs(1 - maxU) < 0.005 &&
+      Math.abs(minV) < 0.005 && Math.abs(1 - maxV) < 0.005) return;
+
+  const uv2 = new Float32Array(uvAttr.count * 2);
+  for (let i = 0; i < uvAttr.count; i++) {
+    uv2[i * 2]     = (uvAttr.getX(i) - minU) / rU;
+    uv2[i * 2 + 1] = (uvAttr.getY(i) - minV) / rV;
+  }
+  geom.setAttribute('uv', new THREE.BufferAttribute(uv2, 2));
+}
+
 /** Classify a mesh name/material key and return the right material (or null to keep original). */
 function classifyMesh(
   key: string,
@@ -270,13 +301,15 @@ function classifyMesh(
 
   // ── Screen / display ─────────────────────────────────────────────
   if ((key.includes('display') || key.includes('screen')) && !key.includes('screen2')) {
+    normalizeScreenUVs(obj);
     const mat = new THREE.MeshStandardMaterial({ color: '#020208', roughness: 0.04, metalness: 0 });
     screenMeshes.push(obj);
     return mat;
   }
 
   // ── Front glass cover (transparent) ──────────────────────────────
-  if (key.includes('glass') && !key.includes('frosted') && !key.includes('tint') && !key.includes('back')) {
+  if (key.includes('glass') && !key.includes('frosted') && !key.includes('tint')
+      && !key.includes('back') && !key.includes('camera') && !key.includes('black')) {
     return new THREE.MeshPhysicalMaterial({
       color: '#b0c8e0', metalness: 0.05, roughness: 0.02,
       transmission: 0.82, ior: 1.52, transparent: true, opacity: 0.92,
@@ -388,6 +421,7 @@ function detectAndMarkScreen(
   });
 
   if (bestMesh) {
+    normalizeScreenUVs(bestMesh as THREE.Mesh);
     (bestMesh as THREE.Mesh).material = new THREE.MeshStandardMaterial({
       color: '#020208', roughness: 0.04, metalness: 0,
     });

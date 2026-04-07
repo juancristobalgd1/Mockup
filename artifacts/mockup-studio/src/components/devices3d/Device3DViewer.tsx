@@ -22,6 +22,7 @@ import { Watch3DModel } from './Watch3DModel';
 useGLTF.preload('/models/iphone17pro.glb');
 useGLTF.preload('/models/iphone16.glb');
 useGLTF.preload('/models/macbookpro.glb');
+useGLTF.preload('/models/samsungs25ultra.glb');
 
 export interface Device3DViewerHandle {
   getGLElement: () => HTMLCanvasElement | null;
@@ -161,8 +162,24 @@ function DeviceScene({ floatEnabled }: { floatEnabled: boolean }) {
 
     switch (state.deviceType) {
       case 'iphone':
-      case 'android':
         return (
+          <Phone3DModel
+            def={def}
+            deviceColor={state.deviceColor}
+            screenTexture={screenTexture}
+            contentType={state.contentType}
+            isLandscape={isLandscape}
+          />
+        );
+      case 'android':
+        return def.glbUrl ? (
+          <GLBDeviceModel
+            def={def}
+            deviceColor={state.deviceColor}
+            screenTexture={screenTexture}
+            contentType={state.contentType}
+          />
+        ) : (
           <Phone3DModel
             def={def}
             deviceColor={state.deviceColor}
