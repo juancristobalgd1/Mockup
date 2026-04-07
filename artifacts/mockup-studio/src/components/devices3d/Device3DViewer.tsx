@@ -261,21 +261,21 @@ function DeviceScene({
     state.deviceType === 'watch'   ? 0.9 : 1.65;
 
   // ── Icon style helpers (must be defined before htmlIcon uses them) ─
-  const iconStyle = (_color: string, isPencil: boolean): React.CSSProperties => ({
+  const iconStyle = (): React.CSSProperties => ({
     width: 44, height: 44, borderRadius: '50%',
-    background: isPencil ? 'rgba(124,58,237,0.72)' : 'rgba(0,0,0,0.52)',
-    border: `1.5px ${isPencil ? 'solid' : 'dashed'} rgba(255,255,255,${isPencil ? '0.5' : '0.35'})`,
+    background: 'rgba(0,0,0,0.52)',
+    border: '1.5px dashed rgba(255,255,255,0.35)',
     backdropFilter: 'blur(10px)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     cursor: 'pointer', userSelect: 'none',
-    transition: 'background 0.15s, border-color 0.15s',
+    transition: 'background 0.15s, border-color 0.15s, border-style 0.15s',
   });
 
   const applyHover = (e: React.MouseEvent, entering: boolean) => {
     const el = e.currentTarget as HTMLElement;
-    el.style.background = entering ? 'rgba(124,58,237,0.85)' : (pencilVisible ? 'rgba(124,58,237,0.72)' : 'rgba(0,0,0,0.52)');
-    el.style.borderColor = entering ? 'rgba(196,181,253,0.7)' : (pencilVisible ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.35)');
-    el.style.borderStyle = entering || pencilVisible ? 'solid' : 'dashed';
+    el.style.background = entering ? 'rgba(124,58,237,0.85)' : 'rgba(0,0,0,0.52)';
+    el.style.borderColor = entering ? 'rgba(196,181,253,0.7)' : 'rgba(255,255,255,0.35)';
+    el.style.borderStyle = entering ? 'solid' : 'dashed';
   };
 
   // ── UI elements rendered into the Html portal ───────────────────
@@ -286,7 +286,7 @@ function DeviceScene({
         <div
           onClick={() => fileRef.current?.click()}
           title="Subir imagen o video"
-          style={iconStyle('#fff', false)}
+          style={iconStyle()}
           onMouseEnter={e => applyHover(e, true)}
           onMouseLeave={e => applyHover(e, false)}
         >
@@ -303,7 +303,7 @@ function DeviceScene({
         <div
           onClick={() => fileRef.current?.click()}
           title="Reemplazar imagen o video"
-          style={iconStyle('#fff', true)}
+          style={iconStyle()}
           onMouseEnter={e => applyHover(e, true)}
           onMouseLeave={e => applyHover(e, false)}
         >
@@ -449,42 +449,43 @@ function DeviceScene({
   ) : null;
 
   // ── Html icon overlay (+ or pencil) ─────────────────────────────
+  // `transform` makes the Html element live in 3D space and orbit with
+  // the device — the icon appears "painted on" the screen surface.
+  // `distanceFactor` keeps the icon at a consistent visual size.
+  const sharedHtmlProps = {
+    center: true as const,
+    position: iconPos,
+    transform: true,
+    distanceFactor: 5.5,
+    zIndexRange: [100, 0] as [number, number],
+    style: { pointerEvents: 'none' } as React.CSSProperties,
+  };
+
+  const fileInput = (
+    <input
+      ref={fileRef}
+      type="file"
+      accept="image/*,video/*"
+      style={{ display: 'none' }}
+      onChange={e => {
+        const f = e.target.files?.[0];
+        if (f) { applyFile(f); onHidePencil(); }
+        e.target.value = '';
+      }}
+    />
+  );
+
   const overlay = htmlIcon ? (
-    <Html
-      center
-      position={iconPos}
-      zIndexRange={[100, 0]}
-      style={{ pointerEvents: 'none' }}
-    >
+    <Html {...sharedHtmlProps}>
       <div style={{ pointerEvents: 'auto' }}>
         {htmlIcon}
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*,video/*"
-          style={{ display: 'none' }}
-          onChange={e => {
-            const f = e.target.files?.[0];
-            if (f) { applyFile(f); onHidePencil(); }
-            e.target.value = '';
-          }}
-        />
+        {fileInput}
       </div>
     </Html>
   ) : (
-    // Keep the hidden input even when icon is hidden so drag-n-drop still works
-    <Html center position={iconPos} style={{ pointerEvents: 'none' }}>
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*,video/*"
-        style={{ display: 'none' }}
-        onChange={e => {
-          const f = e.target.files?.[0];
-          if (f) { applyFile(f); onHidePencil(); }
-          e.target.value = '';
-        }}
-      />
+    // Keep hidden input even when icon is hidden so drag-n-drop still works
+    <Html {...sharedHtmlProps}>
+      {fileInput}
     </Html>
   );
 
