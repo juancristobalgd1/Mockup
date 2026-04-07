@@ -260,6 +260,24 @@ function DeviceScene({
     state.deviceType === 'ipad'    ? 2.2 :
     state.deviceType === 'watch'   ? 0.9 : 1.65;
 
+  // ── Icon style helpers (must be defined before htmlIcon uses them) ─
+  const iconStyle = (_color: string, isPencil: boolean): React.CSSProperties => ({
+    width: 44, height: 44, borderRadius: '50%',
+    background: isPencil ? 'rgba(124,58,237,0.72)' : 'rgba(0,0,0,0.52)',
+    border: `1.5px ${isPencil ? 'solid' : 'dashed'} rgba(255,255,255,${isPencil ? '0.5' : '0.35'})`,
+    backdropFilter: 'blur(10px)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    cursor: 'pointer', userSelect: 'none',
+    transition: 'background 0.15s, border-color 0.15s',
+  });
+
+  const applyHover = (e: React.MouseEvent, entering: boolean) => {
+    const el = e.currentTarget as HTMLElement;
+    el.style.background = entering ? 'rgba(124,58,237,0.85)' : (pencilVisible ? 'rgba(124,58,237,0.72)' : 'rgba(0,0,0,0.52)');
+    el.style.borderColor = entering ? 'rgba(196,181,253,0.7)' : (pencilVisible ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.35)');
+    el.style.borderStyle = entering || pencilVisible ? 'solid' : 'dashed';
+  };
+
   // ── UI elements rendered into the Html portal ───────────────────
   const htmlIcon = (() => {
     // No content → always show "+" to invite upload
@@ -299,23 +317,6 @@ function DeviceScene({
     // Has content, pencil hidden → nothing (clean view)
     return null;
   })();
-
-  const iconStyle = (_color: string, isPencil: boolean): React.CSSProperties => ({
-    width: 44, height: 44, borderRadius: '50%',
-    background: isPencil ? 'rgba(124,58,237,0.72)' : 'rgba(0,0,0,0.52)',
-    border: `1.5px ${isPencil ? 'solid' : 'dashed'} rgba(255,255,255,${isPencil ? '0.5' : '0.35'})`,
-    backdropFilter: 'blur(10px)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    cursor: 'pointer', userSelect: 'none',
-    transition: 'background 0.15s, border-color 0.15s',
-  });
-
-  const applyHover = (e: React.MouseEvent, entering: boolean) => {
-    const el = e.currentTarget as HTMLElement;
-    el.style.background = entering ? 'rgba(124,58,237,0.85)' : (pencilVisible ? 'rgba(124,58,237,0.72)' : 'rgba(0,0,0,0.52)');
-    el.style.borderColor = entering ? 'rgba(196,181,253,0.7)' : (pencilVisible ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.35)');
-    el.style.borderStyle = entering || pencilVisible ? 'solid' : 'dashed';
-  };
 
   const inner = (() => {
     // Real GLB model — any device that has a glbUrl defined
