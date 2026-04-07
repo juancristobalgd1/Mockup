@@ -36,16 +36,20 @@ function ScreenContent({
     if (!ref.current) return;
     const mat = ref.current.material as THREE.MeshBasicMaterial;
     const tex = screenTexture.current;
-    if (tex && mat.map !== tex) {
-      mat.map = tex;
-      mat.color.set('#ffffff');   // white so texture shows at full brightness
-      mat.needsUpdate = true;
-    } else if (!tex && mat.map) {
+    if (tex) {
+      const needMap   = mat.map !== tex;
+      const needColor = mat.color.r < 0.99;
+      if (needMap || needColor) {
+        if (needMap)   mat.map = tex;
+        if (needColor) mat.color.set('#ffffff');
+        mat.needsUpdate = true;
+      }
+      if (contentType === 'video') tex.needsUpdate = true;
+    } else if (mat.map || mat.color.r > 0.04) {
       mat.map = null;
-      mat.color.set('#050510');   // dark idle screen
+      mat.color.set('#050510');
       mat.needsUpdate = true;
     }
-    if (contentType === 'video' && tex) tex.needsUpdate = true;
   });
   return (
     <mesh ref={ref} renderOrder={1}>
