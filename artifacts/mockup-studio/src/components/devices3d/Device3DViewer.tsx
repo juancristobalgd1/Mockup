@@ -290,7 +290,7 @@ function HeroOrbitControls({ deviceType }: { deviceType: string }) {
       enablePan={false}
       enableZoom={true}
       enableRotate={true}
-      minDistance={isLaptop ? 3 : 2.2}
+      minDistance={isLaptop ? 2 : 1.2}
       maxDistance={isLaptop ? 9 : 7.5}
       minPolarAngle={Math.PI * 0.05}
       maxPolarAngle={Math.PI * 0.92}

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import {
-  Smartphone, Shuffle, Wand2, Image as ImageIcon, Sliders, Type, Play,
+  Smartphone, Shuffle, Wand2, Image as ImageIcon, Sliders, Type,
   LayoutGrid, Link2, Video, X
 } from 'lucide-react';
 import { useApp } from '../../store';
@@ -32,7 +32,7 @@ const CANVAS_RATIOS = [
   { id: '9:16', label: '9:16' },
 ] as const;
 
-type Tab = 'presets' | 'device' | 'background' | 'canvas' | 'text' | 'animation';
+type Tab = 'presets' | 'device' | 'background' | 'canvas' | 'text';
 
 const TAB_ICONS: { id: Tab; icon: React.ComponentType<IconProps>; label: string }[] = [
   { id: 'presets', icon: LayoutGrid, label: 'Presets' },
@@ -40,7 +40,6 @@ const TAB_ICONS: { id: Tab; icon: React.ComponentType<IconProps>; label: string 
   { id: 'background', icon: ImageIcon, label: 'Background' },
   { id: 'canvas', icon: Sliders, label: 'Transform' },
   { id: 'text', icon: Type, label: 'Text' },
-  { id: 'animation', icon: Play, label: 'Animate' },
 ];
 
 function extractColorsFromImage(imgSrc: string): Promise<string[]> {
@@ -767,27 +766,6 @@ export function LeftPanel() {
               <p className="text-xs text-center" style={{ color: '#374151' }}>
                 Drag text overlays on the canvas to reposition. Edit content in the Export panel.
               </p>
-            </div>
-          )}
-
-          {/* ── ANIMATION ── */}
-          {activeTab === 'animation' && (
-            <div>
-              <SectionLabel>Entrance & Loop</SectionLabel>
-              <div className="flex flex-col gap-2">
-                {(['none', 'float', 'pulse', 'spin', 'slide-in'] as const).map(anim => (
-                  <button key={anim} onClick={() => updateState({ animation: anim })}
-                    className="px-4 py-2.5 rounded-xl text-xs font-medium capitalize text-left transition-all flex items-center gap-2.5"
-                    style={{
-                      background: state.animation === anim ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.025)',
-                      border: state.animation === anim ? '1px solid rgba(124,58,237,0.45)' : '1px solid rgba(255,255,255,0.06)',
-                      color: state.animation === anim ? '#c4b5fd' : '#6b7280',
-                    }}>
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: state.animation === anim ? '#a78bfa' : '#374151', flexShrink: 0 }} />
-                    {anim === 'none' ? 'No Animation' : anim === 'slide-in' ? 'Slide In' : anim.charAt(0).toUpperCase() + anim.slice(1)}
-                  </button>
-                ))}
-              </div>
             </div>
           )}
 

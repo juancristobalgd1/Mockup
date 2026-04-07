@@ -35,14 +35,6 @@ function Editor() {
               backdropFilter: 'blur(12px)',
               borderBottom: '1px solid rgba(255,255,255,0.05)',
             }}>
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full transition-all"
-                style={{ background: state.animation !== 'none' ? '#22c55e' : '#1f2937' }} />
-              <span className="text-xs font-medium" style={{ color: '#374151' }}>
-                {state.animation !== 'none' ? `${state.animation} animation` : 'Static'}
-              </span>
-            </div>
-
             <div className="flex items-center gap-2">
               {state.contentType && (
                 <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
