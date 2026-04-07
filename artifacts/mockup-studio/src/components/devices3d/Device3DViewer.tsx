@@ -92,17 +92,20 @@ function ExposureControl({ exposure }: { exposure: number }) {
 }
 
 // ── Per-preset HDR environment intensity ───────────────────────────
-// Higher values = more prominent reflections on metallic surfaces.
+// Kept in the 1.0–1.6 range: enough for realistic reflections without
+// compounding with the direct lights to create overexposure.
 const ENV_INTENSITY: Record<string, number> = {
-  studio:    3.0,
-  warehouse: 3.5,
-  city:      2.8,
-  sunset:    3.2,
-  forest:    2.5,
-  night:     2.0,
+  studio:    1.4,
+  warehouse: 1.6,
+  city:      1.3,
+  sunset:    1.5,
+  forest:    1.2,
+  night:     0.9,
 };
 
 // ── Per-environment light configs ─────────────────────────────────
+// Reference: a real studio uses one key at ~1.0, fill at ~0.3, rim at ~0.5.
+// Ambient is raised slightly so dark-side surfaces stay readable.
 const ENV_LIGHTS: Record<string, {
   ambient: number;
   keyColor: string; keyIntensity: number;
@@ -111,45 +114,45 @@ const ENV_LIGHTS: Record<string, {
   screenGlow: string;
 }> = {
   studio: {
-    ambient: 0.18,
-    keyColor:  '#ffffff', keyIntensity:  2.2,
-    fillColor: '#d0e8ff', fillIntensity: 0.55,
-    rimColor:  '#ffffff', rimIntensity:  1.6,
+    ambient: 0.30,
+    keyColor:  '#ffffff', keyIntensity:  1.05,
+    fillColor: '#d0e8ff', fillIntensity: 0.28,
+    rimColor:  '#e8eeff', rimIntensity:  0.65,
     screenGlow: '#8090ff',
   },
   warehouse: {
-    ambient: 0.22,
-    keyColor:  '#ffe8c0', keyIntensity:  1.8,
-    fillColor: '#c8d8ff', fillIntensity: 0.45,
-    rimColor:  '#d0e0ff', rimIntensity:  1.2,
+    ambient: 0.32,
+    keyColor:  '#ffe8c0', keyIntensity:  0.95,
+    fillColor: '#c8d8ff', fillIntensity: 0.24,
+    rimColor:  '#d0e0ff', rimIntensity:  0.55,
     screenGlow: '#6080ff',
   },
   city: {
-    ambient: 0.14,
-    keyColor:  '#c0d8ff', keyIntensity:  1.5,
-    fillColor: '#ffd090', fillIntensity: 0.35,
-    rimColor:  '#8090ff', rimIntensity:  1.4,
+    ambient: 0.26,
+    keyColor:  '#c0d8ff', keyIntensity:  0.80,
+    fillColor: '#ffd090', fillIntensity: 0.20,
+    rimColor:  '#8090ff', rimIntensity:  0.60,
     screenGlow: '#4060ff',
   },
   sunset: {
-    ambient: 0.12,
-    keyColor:  '#ff9050', keyIntensity:  2.0,
-    fillColor: '#ffd080', fillIntensity: 0.5,
-    rimColor:  '#ff6030', rimIntensity:  1.8,
+    ambient: 0.24,
+    keyColor:  '#ff9050', keyIntensity:  1.00,
+    fillColor: '#ffd080', fillIntensity: 0.26,
+    rimColor:  '#ff7040', rimIntensity:  0.65,
     screenGlow: '#ff8040',
   },
   forest: {
-    ambient: 0.20,
-    keyColor:  '#d0ffb0', keyIntensity:  1.4,
-    fillColor: '#a0e8a0', fillIntensity: 0.35,
-    rimColor:  '#c0ffc0', rimIntensity:  1.0,
+    ambient: 0.30,
+    keyColor:  '#d0ffb0', keyIntensity:  0.80,
+    fillColor: '#a0e8a0', fillIntensity: 0.20,
+    rimColor:  '#c0ffc0', rimIntensity:  0.45,
     screenGlow: '#60c060',
   },
   night: {
-    ambient: 0.05,
-    keyColor:  '#2040a0', keyIntensity:  0.7,
-    fillColor: '#101830', fillIntensity: 0.2,
-    rimColor:  '#4060c0', rimIntensity:  0.8,
+    ambient: 0.14,
+    keyColor:  '#2040a0', keyIntensity:  0.40,
+    fillColor: '#101830', fillIntensity: 0.12,
+    rimColor:  '#4060c0', rimIntensity:  0.38,
     screenGlow: '#4060ff',
   },
 };
@@ -207,9 +210,9 @@ function PostFX({ hasContent }: { hasContent: boolean }) {
     <EffectComposer multisampling={4}>
       <SMAA />
       <Bloom
-        luminanceThreshold={0.85}
-        luminanceSmoothing={0.5}
-        intensity={hasContent ? 0.4 : 0.2}
+        luminanceThreshold={0.94}
+        luminanceSmoothing={0.4}
+        intensity={hasContent ? 0.22 : 0.08}
         mipmapBlur
       />
     </EffectComposer>
@@ -590,7 +593,7 @@ function BrowserFrame3D({
       <RoundedBox args={[W, H, D]} radius={0.09} smoothness={6} castShadow receiveShadow>
         <meshPhysicalMaterial
           color={frameColor} metalness={0.18} roughness={0.16}
-          envMapIntensity={2.5} clearcoat={0.6} clearcoatRoughness={0.08}
+          envMapIntensity={1.2} clearcoat={0.6} clearcoatRoughness={0.08}
         />
       </RoundedBox>
 

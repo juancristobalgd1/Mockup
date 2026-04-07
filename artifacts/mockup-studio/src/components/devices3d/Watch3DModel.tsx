@@ -163,7 +163,7 @@ export function Watch3DModel({ def, screenTexture, contentType }: Props) {
 
       {/* Case body */}
       <RoundedBox args={[pW, pH, pD]} radius={br} smoothness={10} castShadow receiveShadow>
-        <meshStandardMaterial color={bodyColor} metalness={metalness} roughness={roughness} envMapIntensity={2.0} />
+        <meshStandardMaterial color={bodyColor} metalness={metalness} roughness={roughness} envMapIntensity={1.0} />
       </RoundedBox>
 
       {/* Case edge ring (slight highlight) */}

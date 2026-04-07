@@ -306,7 +306,7 @@ function metalMat(color: string, roughness = 0.06, metalness = 0.95) {
   // that Apple devices have — a thin glassy layer on top of the metal.
   return new THREE.MeshPhysicalMaterial({
     color, roughness, metalness,
-    envMapIntensity: 4.5,
+    envMapIntensity: 1.8,
     clearcoat: 0.8,
     clearcoatRoughness: 0.04,
     reflectivity: 1.0,
@@ -434,7 +434,7 @@ function classifyMesh(
     return new THREE.MeshPhysicalMaterial({
       color: '#c8d8ee', metalness: 0.04, roughness: 0.01,
       transmission: 0.88, ior: 1.55, transparent: true, opacity: 0.95,
-      envMapIntensity: 4.0,
+      envMapIntensity: 1.6,
       reflectivity: 1.0,
       clearcoat: 1.0,
       clearcoatRoughness: 0.01,
@@ -446,7 +446,7 @@ function classifyMesh(
     return new THREE.MeshPhysicalMaterial({
       color: '#d8d8d8', roughness: 0.28, metalness: 0.02,
       transmission: 0.55, transparent: true, opacity: 0.97,
-      envMapIntensity: 2.5,
+      envMapIntensity: 1.1,
     });
   }
 
@@ -456,7 +456,7 @@ function classifyMesh(
     return new THREE.MeshPhysicalMaterial({
       color: '#020506', roughness: 0.01, metalness: 0.18,
       transmission: 0.22, transparent: true, opacity: 0.97,
-      envMapIntensity: 4.5,
+      envMapIntensity: 1.8,
       clearcoat: 1.0, clearcoatRoughness: 0.01,
     });
   }
@@ -469,21 +469,21 @@ function classifyMesh(
   // ── Antenna / plastic / screws ────────────────────────────────────
   if (key.includes('antena') || key.includes('plastic') || key.includes('screw')
       || key.includes('usb') || key.includes('speaker')) {
-    return new THREE.MeshStandardMaterial({ color: '#0e0e11', roughness: 0.5, metalness: 0.5, envMapIntensity: 2.0 });
+    return new THREE.MeshStandardMaterial({ color: '#0e0e11', roughness: 0.5, metalness: 0.5, envMapIntensity: 0.9 });
   }
 
   // ── Logo ──────────────────────────────────────────────────────────
   if (key.includes('logo')) {
     return new THREE.MeshPhysicalMaterial({
       color: deviceColor || '#8a8a8e', metalness: 0.98, roughness: 0.02,
-      envMapIntensity: 5.0, clearcoat: 1.0, clearcoatRoughness: 0.0, reflectivity: 1.0,
+      envMapIntensity: 2.0, clearcoat: 1.0, clearcoatRoughness: 0.0, reflectivity: 1.0,
     });
   }
 
   // ── Watch band / rubber / silicone ───────────────────────────────
   if (key.includes('rubber') || key.includes('silicone') || key.includes('band')) {
     return new THREE.MeshStandardMaterial({
-      color: deviceColor || '#1a1a1a', roughness: 0.68, metalness: 0.0, envMapIntensity: 1.0,
+      color: deviceColor || '#1a1a1a', roughness: 0.68, metalness: 0.0, envMapIntensity: 0.5,
     });
   }
 
@@ -491,13 +491,13 @@ function classifyMesh(
   if (key.includes('black') || key.includes('glossy') || key.includes('dark_chrome')) {
     return new THREE.MeshPhysicalMaterial({
       color: '#080808', roughness: 0.04, metalness: 0.88,
-      envMapIntensity: 4.5, clearcoat: 1.0, clearcoatRoughness: 0.02,
+      envMapIntensity: 1.8, clearcoat: 1.0, clearcoatRoughness: 0.02,
     });
   }
 
   // ── Sensor / cap (watch health sensors, crown cap) ───────────────
   if (key.includes('sensor') || key.includes('material_')) {
-    return new THREE.MeshStandardMaterial({ color: '#1c1c1e', roughness: 0.22, metalness: 0.60, envMapIntensity: 2.5 });
+    return new THREE.MeshStandardMaterial({ color: '#1c1c1e', roughness: 0.22, metalness: 0.60, envMapIntensity: 1.1 });
   }
 
   // ── Iron / chrome / steel (watch case) ───────────────────────────
@@ -545,7 +545,7 @@ function applyMaterials(
         const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
         mats.forEach(m => {
           const mat = m as THREE.MeshStandardMaterial;
-          mat.envMapIntensity = 3.5;
+          mat.envMapIntensity = 1.4;
           mat.needsUpdate = true;
         });
       }
