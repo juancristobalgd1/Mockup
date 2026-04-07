@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Download, Copy, Image, Check, Video, Film, Info } from 'lucide-react';
 import { useApp } from '../../store';
+import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
 
 interface RightPanelProps {
   canvasRef: React.RefObject<HTMLDivElement | null>;
+  viewerRef?: React.RefObject<Device3DViewerHandle | null>;
   textOverlays: import('../../store').TextOverlay[];
   onUpdateText: (id: string, updates: Partial<import('../../store').TextOverlay>) => void;
   onRemoveText: (id: string) => void;
@@ -18,16 +20,31 @@ const EXPORT_SIZES: ExportSizeOption[] = [
   { id: '9:16', label: '9:16 Story', w: 1080, h: 1920 },
 ];
 
-async function captureCanvas(el: HTMLDivElement) {
+async function captureCanvas(el: HTMLDivElement, glEl?: HTMLCanvasElement | null) {
   const html2canvas = (await import('html2canvas')).default;
-  return html2canvas(el, {
+
+  // Step 1: Capture CSS background (hides the WebGL canvas temporarily)
+  const bgCanvas = await html2canvas(el, {
     useCORS: true,
     allowTaint: true,
     scale: 2,
     backgroundColor: null,
     width: el.offsetWidth,
     height: el.offsetHeight,
+    ignoreElements: (element) => element.tagName === 'CANVAS',
   });
+
+  // Step 2: If we have a WebGL canvas, composite it on top
+  if (glEl) {
+    const out = document.createElement('canvas');
+    out.width = bgCanvas.width;
+    out.height = bgCanvas.height;
+    const ctx = out.getContext('2d')!;
+    ctx.drawImage(bgCanvas, 0, 0);
+    ctx.drawImage(glEl, 0, 0, out.width, out.height);
+    return out;
+  }
+  return bgCanvas;
 }
 
 function downloadBlob(url: string, filename: string) {
@@ -37,7 +54,7 @@ function downloadBlob(url: string, filename: string) {
   a.click();
 }
 
-export function RightPanel({ canvasRef, textOverlays, onUpdateText, onRemoveText }: RightPanelProps) {
+export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, onRemoveText }: RightPanelProps) {
   const { state } = useApp();
   const [exporting, setExporting] = useState(false);
   const [copying, setCopying] = useState(false);
@@ -51,7 +68,8 @@ export function RightPanel({ canvasRef, textOverlays, onUpdateText, onRemoveText
     if (!canvasRef.current) return;
     setExporting(true);
     try {
-      const canvas = await captureCanvas(canvasRef.current);
+      const glEl = viewerRef?.current?.getGLElement() ?? null;
+      const canvas = await captureCanvas(canvasRef.current, glEl);
       downloadBlob(canvas.toDataURL('image/png'), `mockup-${Date.now()}.png`);
     } catch (err) {
       console.error('Export failed', err);
