@@ -24,6 +24,8 @@ useGLTF.preload('/models/iphone16.glb');
 useGLTF.preload('/models/macbookpro.glb');
 useGLTF.preload('/models/samsungs25ultra.glb');
 useGLTF.preload('/models/samsungs21ultra.glb');
+useGLTF.preload('/models/ipadpro129.glb');
+useGLTF.preload('/models/ipadmini6.glb');
 
 export interface Device3DViewerHandle {
   getGLElement: () => HTMLCanvasElement | null;
@@ -197,7 +199,14 @@ function DeviceScene({ floatEnabled }: { floatEnabled: boolean }) {
           />
         );
       case 'ipad':
-        return (
+        return def.glbUrl ? (
+          <GLBDeviceModel
+            def={def}
+            deviceColor={state.deviceColor}
+            screenTexture={screenTexture}
+            contentType={state.contentType}
+          />
+        ) : (
           <Tablet3DModel
             def={def}
             screenTexture={screenTexture}
