@@ -5,10 +5,12 @@ import { LeftPanel } from './components/panels/LeftPanel';
 import { RightPanel } from './components/panels/RightPanel';
 import { Download, Layers, X } from 'lucide-react';
 import { getModelById } from './data/devices';
+import type { Device3DViewerHandle } from './components/devices3d/Device3DViewer';
 
 function Editor() {
   const { state, updateText, removeText } = useApp();
   const canvasRef = useRef<HTMLDivElement>(null);
+  const viewerRef = useRef<Device3DViewerHandle>(null);
   const [mobileSheet, setMobileSheet] = useState<'controls' | 'export' | null>(null);
 
   const currentModel = getModelById(state.deviceModel);
@@ -69,12 +71,13 @@ function Editor() {
 
           {/* Canvas */}
           <div className="flex-1 overflow-hidden relative">
-            <Canvas ref={canvasRef} textOverlays={state.texts} onUpdateText={updateText} />
+            <Canvas ref={canvasRef} viewerRef={viewerRef} textOverlays={state.texts} onUpdateText={updateText} />
           </div>
         </div>
 
         <RightPanel
           canvasRef={canvasRef}
+          viewerRef={viewerRef}
           textOverlays={state.texts}
           onUpdateText={updateText}
           onRemoveText={removeText}
@@ -103,7 +106,7 @@ function Editor() {
 
         {/* Mobile canvas */}
         <div className="flex-1 overflow-hidden relative">
-          <Canvas ref={canvasRef} textOverlays={state.texts} onUpdateText={updateText} />
+          <Canvas ref={canvasRef} viewerRef={viewerRef} textOverlays={state.texts} onUpdateText={updateText} />
         </div>
 
         {/* Mobile bottom bar */}
@@ -154,7 +157,7 @@ function Editor() {
               <div className="overflow-y-auto" style={{ maxHeight: 'calc(75vh - 80px)' }}>
                 {mobileSheet === 'controls' && <LeftPanel />}
                 {mobileSheet === 'export' && (
-                  <RightPanel canvasRef={canvasRef} textOverlays={state.texts} onUpdateText={updateText} onRemoveText={removeText} />
+                  <RightPanel canvasRef={canvasRef} viewerRef={viewerRef} textOverlays={state.texts} onUpdateText={updateText} onRemoveText={removeText} />
                 )}
               </div>
             </div>

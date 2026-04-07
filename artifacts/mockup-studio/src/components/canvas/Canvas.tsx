@@ -1,17 +1,15 @@
-import { forwardRef } from 'react';
+import { forwardRef, useState, useEffect } from 'react';
 import { useApp } from '../../store';
 import type { TextOverlay } from '../../store';
-import { PhoneDevice } from '../devices/PhoneDevice';
-import { TabletDevice } from '../devices/TabletDevice';
-import { MacBookDevice } from '../devices/MacBookDevice';
-import { Browser } from '../devices/Browser';
-import { AppleWatch } from '../devices/AppleWatch';
-import { IMac } from '../devices/IMac';
 import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS } from '../../data/backgrounds';
+import { Device3DViewer } from '../devices3d/Device3DViewer';
+import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
+import { CSSDeviceFallback, checkWebGL } from '../devices3d/WebGLFallback';
 
 interface CanvasProps {
   textOverlays: TextOverlay[];
   onUpdateText: (id: string, updates: Partial<TextOverlay>) => void;
+  viewerRef?: React.RefObject<Device3DViewerHandle | null>;
 }
 
 const RATIO_VALUES: Record<string, number> = {
@@ -21,29 +19,13 @@ const RATIO_VALUES: Record<string, number> = {
   '9:16': 9 / 16,
 };
 
-function DeviceRenderer() {
+export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, onUpdateText, viewerRef }, ref) => {
   const { state } = useApp();
-  switch (state.deviceType) {
-    case 'iphone':
-    case 'android':
-      return <PhoneDevice />;
-    case 'ipad':
-      return <TabletDevice />;
-    case 'macbook':
-      return <MacBookDevice />;
-    case 'browser':
-      return <Browser />;
-    case 'watch':
-      return <AppleWatch />;
-    case 'imac':
-      return <IMac />;
-    default:
-      return <PhoneDevice />;
-  }
-}
+  const [webglAvailable, setWebglAvailable] = useState<boolean | null>(null);
 
-export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, onUpdateText }, ref) => {
-  const { state } = useApp();
+  useEffect(() => {
+    setWebglAvailable(checkWebGL());
+  }, []);
 
   const getBackground = (): React.CSSProperties => {
     if (state.bgType === 'solid') return { background: state.bgColor };
@@ -72,42 +54,6 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
       };
     }
     return { background: GRADIENTS[0].css };
-  };
-
-  const getAnimationClass = () => {
-    switch (state.animation) {
-      case 'float':    return 'animate-float';
-      case 'pulse':    return 'animate-pulse-device';
-      case 'spin':     return 'animate-spin-y';
-      case 'slide-in': return 'animate-slide-in';
-      default:         return '';
-    }
-  };
-
-  const getDeviceTransform = () => {
-    if (state.is3D) {
-      return [
-        `perspective(900px)`,
-        `rotateX(${state.tiltX}deg)`,
-        `rotateY(${state.tiltY}deg)`,
-        `scale(${state.scale})`,
-        `rotate(${state.rotation}deg)`,
-      ].join(' ');
-    }
-    return `scale(${state.scale}) rotate(${state.rotation}deg)`;
-  };
-
-  const getShadow = () => {
-    const s = state.shadowIntensity;
-    if (state.shadowStyle === 'none' || s === 0) return 'none';
-    const rad = (state.shadowDirection * Math.PI) / 180;
-    const offsetX = Math.round(Math.sin(rad) * s * 0.15);
-    const offsetY = Math.round(-Math.cos(rad) * s * 0.4);
-    const alpha = Math.min(0.85, s * 0.01);
-    if (state.shadowStyle === 'hug') {
-      return `${offsetX}px ${offsetY}px ${s * 0.2}px ${s * 0.05}px rgba(0,0,0,${alpha + 0.1})`;
-    }
-    return `${offsetX}px ${offsetY}px ${s * 0.8}px ${s * 0.05}px rgba(0,0,0,${alpha})`;
   };
 
   const handleTextDrag = (id: string, e: React.MouseEvent) => {
@@ -154,7 +100,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
         <div style={{ position: 'absolute', inset: 0, background: state.overlayColor, opacity: state.overlayOpacity / 100, pointerEvents: 'none', zIndex: 1 }} />
       )}
 
-      {/* Canvas ratio guide overlay */}
+      {/* Canvas ratio guide */}
       {hasRatio && ratioValue && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3, pointerEvents: 'none' }}>
           <div style={{
@@ -166,21 +112,15 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
         </div>
       )}
 
-      {/* Device wrapper */}
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: state.canvasPadding, zIndex: 2 }}>
-        <div
-          className={getAnimationClass()}
-          style={{
-            transform: getDeviceTransform(),
-            filter: `drop-shadow(${getShadow()})`,
-            transformOrigin: 'center center',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'transform 0.3s ease',
-          }}
-        >
-          <DeviceRenderer />
-        </div>
-      </div>
+      {/* 3D Device Viewer or CSS fallback */}
+      {webglAvailable === false ? (
+        <CSSDeviceFallback />
+      ) : webglAvailable === true ? (
+        <Device3DViewer
+          ref={viewerRef}
+          style={{ position: 'absolute', inset: 0, zIndex: 2 }}
+        />
+      ) : null /* loading – will resolve synchronously */}
 
       {/* Text overlays */}
       {textOverlays.map(overlay => (
