@@ -3,21 +3,20 @@ import { AppProvider, useApp } from './store';
 import { Canvas } from './components/canvas/Canvas';
 import { LeftPanel } from './components/panels/LeftPanel';
 import { RightPanel } from './components/panels/RightPanel';
-import { Download, Layers, ChevronUp, X } from 'lucide-react';
+import { Download, Layers, X } from 'lucide-react';
+import { getModelById } from './data/devices';
 
 function Editor() {
   const { state, updateText, removeText } = useApp();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [mobileSheet, setMobileSheet] = useState<'controls' | 'export' | null>(null);
 
-  const deviceLabel =
-    state.deviceType === 'iphone' ? `iPhone 15 Pro · ${state.deviceColor}`
-    : state.deviceType === 'android' ? 'Android Phone'
-    : state.deviceType === 'ipad' ? 'iPad'
-    : state.deviceType === 'macbook' ? 'MacBook'
-    : state.deviceType === 'imac' ? 'iMac'
-    : state.deviceType === 'browser' ? `Browser · ${state.browserMode}`
-    : 'Apple Watch';
+  const currentModel = getModelById(state.deviceModel);
+  const deviceLabel = state.deviceType === 'iphone'
+    ? `${currentModel.label} · ${state.deviceColor}`
+    : state.deviceType === 'browser'
+    ? `${currentModel.label} · ${state.browserMode}`
+    : currentModel.label;
 
   return (
     <div className="app-root" style={{ background: '#070912' }}>

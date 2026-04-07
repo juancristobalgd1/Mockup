@@ -1,23 +1,15 @@
 import { useState, useRef } from 'react';
 import {
-  Smartphone, Tablet, Laptop, Globe, Watch, Monitor,
-  Shuffle, Wand2, Image as ImageIcon, Sliders, Type, Play,
+  Smartphone, Shuffle, Wand2, Image as ImageIcon, Sliders, Type, Play,
   LayoutGrid, Link2, Video, X
 } from 'lucide-react';
 import { useApp } from '../../store';
 import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS, PRESETS } from '../../data/backgrounds';
-import type { DeviceType, DeviceColor } from '../../store';
+import { DEVICE_MODELS, DEVICE_GROUPS, GROUP_ICONS, getModelById } from '../../data/devices';
+import type { DeviceGroup } from '../../data/devices';
+import type { DeviceColor } from '../../store';
 
 type IconProps = { size?: number; strokeWidth?: number; style?: React.CSSProperties; className?: string };
-const DEVICES: { id: DeviceType; label: string; icon: React.ComponentType<IconProps> }[] = [
-  { id: 'iphone', label: 'iPhone 15 Pro', icon: Smartphone },
-  { id: 'android', label: 'Android', icon: Smartphone },
-  { id: 'ipad', label: 'iPad', icon: Tablet },
-  { id: 'macbook', label: 'MacBook', icon: Laptop },
-  { id: 'imac', label: 'iMac', icon: Monitor },
-  { id: 'browser', label: 'Browser', icon: Globe },
-  { id: 'watch', label: 'Apple Watch', icon: Watch },
-];
 
 const IPHONE_COLORS: { id: DeviceColor; label: string; bg: string; border: string }[] = [
   { id: 'titanium', label: 'Titanium', bg: 'linear-gradient(135deg, #3a3a3a, #1e1e1e)', border: '#555' },
@@ -88,9 +80,97 @@ function getApiBase() {
   return `${base}/api-server/api`;
 }
 
+// Mini device thumbnail SVGs for the picker
+function DeviceThumbnail({ modelId, isSelected }: { modelId: string; isSelected: boolean }) {
+  const def = getModelById(modelId);
+  const isPhone = def.storeType === 'iphone' || def.storeType === 'android';
+  const isTablet = def.storeType === 'ipad';
+  const isWatch = def.storeType === 'watch';
+  const isMac = def.storeType === 'macbook' || def.storeType === 'imac';
+  const isBrowser = def.storeType === 'browser';
+
+  const accent = isSelected ? '#7c3aed' : def.accent;
+  const body = isSelected ? '#2d1b69' : 'rgba(255,255,255,0.06)';
+
+  if (isPhone) {
+    const r = def.storeType === 'android' ? 6 : 8;
+    return (
+      <svg width="28" height="46" viewBox="0 0 28 46" fill="none">
+        <rect x="1" y="1" width="26" height="44" rx={r} fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
+        {/* Camera */}
+        {def.camera === 'dynamic-island'
+          ? <rect x="9" y="4" width="10" height="3" rx="1.5" fill={accent} opacity="0.8" />
+          : def.camera === 'punch-hole'
+          ? <circle cx="14" cy="5.5" r="1.5" fill={accent} opacity="0.8" />
+          : def.camera === 'notch'
+          ? <rect x="7" y="0" width="14" height="4" rx="2" fill={body} stroke={accent} strokeWidth="1" />
+          : null}
+        {/* Screen */}
+        <rect x="4" y="9" width="20" height="30" rx="2" fill={isSelected ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.04)'} />
+        {/* Button */}
+        <rect x="27" y="14" width="2" height="8" rx="1" fill={accent} opacity="0.6" />
+      </svg>
+    );
+  }
+  if (isTablet) {
+    return (
+      <svg width="36" height="46" viewBox="0 0 36 46" fill="none">
+        <rect x="1" y="1" width="34" height="44" rx="4" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
+        <rect x="4" y="7" width="28" height="32" rx="2" fill={isSelected ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.04)'} />
+        <circle cx="18" cy="42" r="2" fill={accent} opacity="0.6" />
+        <circle cx="18" cy="3.5" r="1.5" fill={accent} opacity="0.5" />
+      </svg>
+    );
+  }
+  if (isWatch) {
+    return (
+      <svg width="28" height="38" viewBox="0 0 28 38" fill="none">
+        <rect x="8" y="0" width="12" height="5" rx="2" fill={accent} opacity="0.4" />
+        <rect x="8" y="33" width="12" height="5" rx="2" fill={accent} opacity="0.4" />
+        <rect x="1" y="6" width="26" height="26" rx="8" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
+        <rect x="4" y="9" width="20" height="20" rx="6" fill={isSelected ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.04)'} />
+      </svg>
+    );
+  }
+  if (isMac) {
+    const isIMac = def.storeType === 'imac';
+    return (
+      <svg width="44" height="36" viewBox="0 0 44 36" fill="none">
+        {isIMac
+          ? <>
+              <rect x="2" y="1" width="40" height="26" rx="2" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
+              <rect x="5" y="4" width="34" height="20" rx="1" fill={isSelected ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.04)'} />
+              <rect x="16" y="27" width="12" height="4" rx="1" fill={accent} opacity="0.5" />
+              <rect x="10" y="31" width="24" height="3" rx="1" fill={accent} opacity="0.35" />
+            </>
+          : <>
+              <rect x="4" y="1" width="36" height="24" rx="2" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
+              <rect x="7" y="4" width="30" height="18" rx="1" fill={isSelected ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.04)'} />
+              <rect x="1" y="25" width="42" height="5" rx="1.5" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
+              <rect x="14" y="27" width="16" height="2" rx="1" fill={accent} opacity="0.4" />
+            </>}
+      </svg>
+    );
+  }
+  if (isBrowser) {
+    return (
+      <svg width="44" height="30" viewBox="0 0 44 30" fill="none">
+        <rect x="1" y="1" width="42" height="28" rx="3" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
+        <rect x="1" y="1" width="42" height="8" rx="3" fill={accent} opacity="0.18" />
+        <rect x="4" y="3.5" width="4" height="3" rx="1.5" fill={accent} opacity="0.5" />
+        <rect x="10" y="3.5" width="4" height="3" rx="1.5" fill={accent} opacity="0.3" />
+        <rect x="16" y="3.5" width="4" height="3" rx="1.5" fill={accent} opacity="0.2" />
+        <rect x="4" y="11" width="36" height="16" rx="1" fill={isSelected ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.03)'} />
+      </svg>
+    );
+  }
+  return null;
+}
+
 export function LeftPanel() {
   const { state, updateState, addText } = useApp();
   const [activeTab, setActiveTab] = useState<Tab>('device');
+  const [selectedGroup, setSelectedGroup] = useState<DeviceGroup>('iPhone');
   const bgFileRef = useRef<HTMLInputElement>(null);
   const [extracting, setExtracting] = useState(false);
   const [urlInput, setUrlInput] = useState('');
@@ -257,8 +337,11 @@ export function LeftPanel() {
                       key={preset.id}
                       onClick={() => {
                         const s = preset.state;
+                        const defaultModel = DEVICE_MODELS.find(m => m.storeType === s.deviceType);
                         updateState({
-                          deviceType: s.deviceType, deviceLandscape: s.deviceLandscape ?? false,
+                          deviceType: s.deviceType,
+                          deviceModel: defaultModel?.id ?? 'iphone-15-pro',
+                          deviceLandscape: s.deviceLandscape ?? false,
                           bgType: s.bgType, bgColor: s.bgColor, scale: s.scale,
                           rotation: s.rotation, shadowIntensity: s.shadowIntensity,
                           shadowStyle: s.shadowStyle ?? 'spread', is3D: s.is3D,
@@ -358,24 +441,50 @@ export function LeftPanel() {
                 </div>
               )}
 
-              {/* Device type */}
+              {/* Device picker — grouped */}
               <SectionLabel>Device</SectionLabel>
-              <div className="flex flex-col gap-1.5 mb-4">
-                {DEVICES.map(dev => {
-                  const Icon = dev.icon;
+
+              {/* Group tabs */}
+              <div className="flex gap-1 mb-3 flex-wrap">
+                {DEVICE_GROUPS.map(group => (
+                  <button
+                    key={group}
+                    onClick={() => setSelectedGroup(group)}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold transition-all"
+                    style={{
+                      background: selectedGroup === group ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.04)',
+                      border: selectedGroup === group ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.07)',
+                      color: selectedGroup === group ? '#c4b5fd' : '#4b5563',
+                    }}
+                  >
+                    <span>{GROUP_ICONS[group]}</span>
+                    <span>{group}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Model grid */}
+              <div className="grid grid-cols-2 gap-1.5 mb-4">
+                {DEVICE_MODELS.filter(m => m.group === selectedGroup).map(model => {
+                  const isSelected = state.deviceModel === model.id;
                   return (
                     <button
-                      key={dev.id}
-                      onClick={() => updateState({ deviceType: dev.id })}
-                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all"
+                      key={model.id}
+                      onClick={() => updateState({ deviceModel: model.id, deviceType: model.storeType })}
+                      className="flex flex-col items-center justify-end gap-1.5 p-2.5 rounded-xl transition-all"
                       style={{
-                        background: state.deviceType === dev.id ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.025)',
-                        border: state.deviceType === dev.id ? '1px solid rgba(124,58,237,0.45)' : '1px solid rgba(255,255,255,0.06)',
-                        color: state.deviceType === dev.id ? '#c4b5fd' : '#6b7280',
+                        background: isSelected ? 'rgba(124,58,237,0.16)' : 'rgba(255,255,255,0.03)',
+                        border: isSelected ? '1.5px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.07)',
+                        minHeight: 80,
                       }}
                     >
-                      <Icon size={14} strokeWidth={1.5} />
-                      <span className="text-xs font-medium">{dev.label}</span>
+                      <div className="flex items-center justify-center flex-1">
+                        <DeviceThumbnail modelId={model.id} isSelected={isSelected} />
+                      </div>
+                      <span className="text-[9.5px] font-medium leading-tight text-center"
+                        style={{ color: isSelected ? '#c4b5fd' : '#6b7280' }}>
+                        {model.label}
+                      </span>
                     </button>
                   );
                 })}
@@ -415,7 +524,7 @@ export function LeftPanel() {
               )}
 
               {/* Orientation */}
-              {state.deviceType !== 'browser' && state.deviceType !== 'watch' && state.deviceType !== 'imac' && state.deviceType !== 'macbook' && (
+              {(state.deviceType === 'iphone' || state.deviceType === 'android' || state.deviceType === 'ipad') && (
                 <>
                   <SectionLabel>Orientation</SectionLabel>
                   <div className="flex gap-2 mb-4">
