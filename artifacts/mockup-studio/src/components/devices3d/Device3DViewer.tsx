@@ -246,16 +246,17 @@ function PostFX({ hasContent }: { hasContent: boolean }) {
 // ── Device scene (all geometry) ───────────────────────────────────
 function DeviceScene({
   floatEnabled, pencilVisible, onShowPencil, onHidePencil,
+  screenTexture,
 }: {
   floatEnabled: boolean;
   pencilVisible: boolean;
   onShowPencil: () => void;
   onHidePencil: () => void;
+  screenTexture: React.MutableRefObject<THREE.Texture | null>;
 }) {
   const { state, updateState } = useApp();
   const fileRef = useRef<HTMLInputElement>(null);
   const def = getModelById(state.deviceModel);
-  const screenTexture = useScreenTexture(state.screenshotUrl, state.videoUrl, state.contentType);
   const isLandscape = state.deviceLandscape;
   const hasContent = !!(state.screenshotUrl || state.videoUrl);
 
@@ -818,6 +819,12 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
     const [dragOver, setDragOver] = useState(false);
     const [pencilVisible, setPencilVisible] = useState(false);
 
+    // ── Texture lives HERE — outside the Canvas so it never gets
+    // disposed/reloaded when DeviceScene suspends or remounts. ──────
+    const screenTexture = useScreenTexture(
+      state.screenshotUrl, state.videoUrl, state.contentType,
+    );
+
     const handleGlReady = useCallback((gl: THREE.WebGLRenderer) => {
       glRef.current = gl;
     }, []);
@@ -922,6 +929,7 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
               pencilVisible={pencilVisible}
               onShowPencil={() => setPencilVisible(true)}
               onHidePencil={() => setPencilVisible(false)}
+              screenTexture={screenTexture}
             />
           </Suspense>
 
