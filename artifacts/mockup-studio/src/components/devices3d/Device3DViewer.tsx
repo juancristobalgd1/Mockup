@@ -260,25 +260,45 @@ function DeviceScene({
     state.deviceType === 'ipad'    ? 2.2 :
     state.deviceType === 'watch'   ? 0.9 : 1.65;
 
-  // ── Face-detection: hide icon when camera looks at the back ────────
-  // Uses a group's world quaternion to compute the screen normal in world
-  // space, then checks dot product with camera direction each frame.
-  // Updates the DOM div display imperatively — no state re-renders.
+  // ── Face-detection + icon scaling ───────────────────────────────────
+  // useFrame runs every frame to:
+  //   1. Hide the icon when the camera is looking at the back face
+  //   2. Scale the icon proportionally to the device's apparent screen size,
+  //      so it stays in visual proportion as the user zooms in/out.
+  //
+  // Scaling strategy: project two world-space points that are 1 unit apart
+  // at the device's current world position. The pixel distance between their
+  // 2D projections tells us how many pixels per world unit at the current
+  // zoom level. We use that to derive the icon diameter and apply it via
+  // CSS transform: scale() — imperatively, with no React re-renders.
   const faceGroupRef = useRef<THREE.Group>(null);
   const wrapperRef   = useRef<HTMLDivElement>(null);
-  const _wn  = useRef(new THREE.Vector3());
-  const _wp  = useRef(new THREE.Vector3());
-  const _tc  = useRef(new THREE.Vector3());
-  const _q   = useRef(new THREE.Quaternion());
+  const _wn   = useRef(new THREE.Vector3());
+  const _wp   = useRef(new THREE.Vector3());
+  const _tc   = useRef(new THREE.Vector3());
+  const _q    = useRef(new THREE.Quaternion());
+  const _pjA  = useRef(new THREE.Vector3());
+  const _pjB  = useRef(new THREE.Vector3());
 
-  useFrame(({ camera }) => {
+  useFrame(({ camera, gl }) => {
     if (!faceGroupRef.current || !wrapperRef.current) return;
     faceGroupRef.current.getWorldQuaternion(_q.current);
     faceGroupRef.current.getWorldPosition(_wp.current);
     _wn.current.set(0, 0, 1).applyQuaternion(_q.current);
     _tc.current.copy(camera.position).sub(_wp.current).normalize();
-    wrapperRef.current.style.display =
-      _wn.current.dot(_tc.current) > 0.05 ? '' : 'none';
+    const isFront = _wn.current.dot(_tc.current) > 0.05;
+    wrapperRef.current.style.display = isFront ? '' : 'none';
+
+    // Scale icon to match the device's zoom level
+    _pjA.current.copy(_wp.current).project(camera);
+    _pjB.current.set(_wp.current.x + 1, _wp.current.y, _wp.current.z).project(camera);
+    const pxPerUnit = Math.abs(_pjB.current.x - _pjA.current.x) *
+      (gl.domElement.clientWidth / 2);
+    // planeW ≈ 0.85 world units for phones; icon target ≈ 15% of that
+    // base CSS size is 16px → compute scale factor
+    const targetPx = Math.max(14, Math.min(56, pxPerUnit * 0.15));
+    const scale = targetPx / 16;
+    wrapperRef.current.style.transform = `scale(${scale.toFixed(3)})`;
   });
 
   // ── Show icon? ───────────────────────────────────────────────────
