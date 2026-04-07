@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
@@ -16,10 +16,11 @@ function ScreenPlane({ w, h, screenTexture, contentType }: {
   screenTexture: React.MutableRefObject<THREE.Texture | null>;
   contentType: 'image' | 'video' | null;
 }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const mat = useMemo(() => new THREE.MeshBasicMaterial({ color: '#050510', toneMapped: false }), []);
+  useEffect(() => () => { mat.dispose(); }, [mat]);
+  const ctRef = useRef(contentType);
+  ctRef.current = contentType;
   useFrame(() => {
-    if (!meshRef.current) return;
-    const mat = meshRef.current.material as THREE.MeshBasicMaterial;
     const tex = screenTexture.current;
     if (tex) {
       const needMap   = mat.map !== tex;
@@ -29,7 +30,7 @@ function ScreenPlane({ w, h, screenTexture, contentType }: {
         if (needColor) mat.color.set('#ffffff');
         mat.needsUpdate = true;
       }
-      if (contentType === 'video') tex.needsUpdate = true;
+      if (ctRef.current === 'video') tex.needsUpdate = true;
     } else if (mat.map || mat.color.r > 0.04) {
       mat.map = null;
       mat.color.set('#050510');
@@ -37,9 +38,8 @@ function ScreenPlane({ w, h, screenTexture, contentType }: {
     }
   });
   return (
-    <mesh ref={meshRef}>
+    <mesh material={mat}>
       <planeGeometry args={[w, h]} />
-      <meshBasicMaterial color="#050510" toneMapped={false} />
     </mesh>
   );
 }
