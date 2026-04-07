@@ -283,7 +283,7 @@ function BrowserFrame() {
 }
 
 // ── OrbitControls (simple) ────────────────────────────────────────
-function HeroOrbitControls({ deviceType }: { deviceType: string }) {
+function HeroOrbitControls({ deviceType, autoRotate }: { deviceType: string; autoRotate: boolean }) {
   const isLaptop = deviceType === 'macbook';
   return (
     <OrbitControls
@@ -298,6 +298,8 @@ function HeroOrbitControls({ deviceType }: { deviceType: string }) {
       enableDamping={true}
       rotateSpeed={0.7}
       zoomSpeed={0.75}
+      autoRotate={autoRotate}
+      autoRotateSpeed={1.5}
       target={[0, 0, 0]}
     />
   );
@@ -361,7 +363,7 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
           {/* High-quality environment map for reflections */}
           <Suspense fallback={null}>
             <Environment
-              preset="studio"
+              preset={state.envPreset === 'night' ? 'night' : state.envPreset as 'studio' | 'warehouse' | 'sunset' | 'city' | 'forest'}
               environmentIntensity={1.1}
               backgroundBlurriness={0}
             />
@@ -370,7 +372,7 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
           {/* Soft contact shadow on ground plane */}
           <ContactShadows
             position={[0, isLaptop ? -0.8 : -2.0, 0]}
-            opacity={0.65}
+            opacity={state.contactShadowOpacity / 100}
             scale={isLaptop ? 10 : 6}
             blur={isLaptop ? 3.5 : 2.2}
             far={isLaptop ? 3 : 4}
@@ -387,7 +389,7 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
           <PostFX hasContent={hasContent} />
 
           {/* Controls with Rotato hero angle */}
-          <HeroOrbitControls deviceType={state.deviceType} />
+          <HeroOrbitControls deviceType={state.deviceType} autoRotate={state.autoRotate} />
         </R3FCanvas>
 
         <RotatoHint visible={hintVisible} />
