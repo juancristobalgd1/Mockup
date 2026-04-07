@@ -43,6 +43,8 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
     screenMeshes.current = [];
     setupDone.current = false;
 
+    const isClay = deviceColor === 'clay';
+
     root.traverse((obj: THREE.Object3D) => {
       // Skip cameras/lights from 3ds Max
       if (obj instanceof THREE.Camera || obj instanceof THREE.Light) return;
@@ -59,6 +61,12 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
           color: '#020208', roughness: 0.04, metalness: 0,
         });
         screenMeshes.current.push(obj);
+
+      } else if (isClay) {
+        // Clay mode: flat matte for all non-screen surfaces
+        obj.material = new THREE.MeshStandardMaterial({
+          color: '#e0dbd0', roughness: 0.90, metalness: 0.0, envMapIntensity: 0.35,
+        });
 
       } else if (name.startsWith('screen2')) {
         obj.material = new THREE.MeshPhysicalMaterial({
@@ -117,23 +125,24 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
 
   useFrame(() => {
     const tex = screenTexture.current;
-    if (tex === prevTex.current) {
-      // Still update VideoTexture frames
-      if (ctRef.current === 'video' && tex) tex.needsUpdate = true;
-      return;
-    }
-    prevTex.current = tex;
     screenMeshes.current.forEach(mesh => {
       const mat = mesh.material as THREE.MeshStandardMaterial;
       if (tex) {
-        mat.map   = tex;
-        mat.color.set('#ffffff');  // full brightness so texture shows
-      } else {
+        const needMap   = mat.map !== tex;
+        const needColor = mat.color.r < 0.99;
+        if (needMap || needColor) {
+          if (needMap)   mat.map = tex;
+          if (needColor) mat.color.set('#ffffff');
+          mat.needsUpdate = true;
+        }
+        if (ctRef.current === 'video') tex.needsUpdate = true;
+      } else if (mat.map || mat.color.r > 0.04) {
         mat.map = null;
-        mat.color.set('#020208');  // dark OLED idle
+        mat.color.set('#020208');
+        mat.needsUpdate = true;
       }
-      mat.needsUpdate = true;
     });
+    prevTex.current = tex;
   });
 
   // Gather the GLTF scene — handle different drei return shapes

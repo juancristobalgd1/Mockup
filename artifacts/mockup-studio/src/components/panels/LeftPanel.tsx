@@ -12,10 +12,14 @@ import type { DeviceColor, EnvPreset } from '../../store';
 type IconProps = { size?: number; strokeWidth?: number; style?: React.CSSProperties; className?: string };
 
 const IPHONE_COLORS: { id: DeviceColor; label: string; bg: string; border: string }[] = [
-  { id: 'titanium', label: 'Titanium', bg: 'linear-gradient(135deg, #3a3a3a, #1e1e1e)', border: '#555' },
-  { id: 'black',    label: 'Black',    bg: 'linear-gradient(135deg, #1a1a1a, #050505)', border: '#333' },
-  { id: 'white',    label: 'White',    bg: 'linear-gradient(135deg, #d8d8d8, #b0b0b0)', border: '#aaa' },
-  { id: 'blue',     label: 'Blue',     bg: 'linear-gradient(135deg, #2a3f6f, #0f1e40)', border: '#3a5080' },
+  { id: 'titanium',     label: 'Titanium',    bg: 'linear-gradient(135deg, #3a3a3a, #1e1e1e)', border: '#555'    },
+  { id: 'black',        label: 'Black',       bg: 'linear-gradient(135deg, #1a1a1a, #050505)', border: '#333'    },
+  { id: 'white',        label: 'White',       bg: 'linear-gradient(135deg, #d8d8d8, #b0b0b0)', border: '#aaa'    },
+  { id: 'blue',         label: 'Blue',        bg: 'linear-gradient(135deg, #2a3f6f, #0f1e40)', border: '#3a5080' },
+  { id: 'naturallight', label: 'Natural',     bg: 'linear-gradient(135deg, #c2b8a3, #a8a090)', border: '#a89c8a' },
+  { id: 'desert',       label: 'Desert',      bg: 'linear-gradient(135deg, #9c8878, #7a6858)', border: '#8a7868' },
+  { id: 'sierra',       label: 'Sierra',      bg: 'linear-gradient(135deg, #6b8ca3, #4a6e8a)', border: '#5a7a90' },
+  { id: 'clay',         label: 'Clay',        bg: 'linear-gradient(135deg, #e4dfd5, #cec9bf)', border: '#c0bab0' },
 ];
 
 const ENV_PRESETS: { id: 'studio' | 'warehouse' | 'sunset' | 'city' | 'forest' | 'night'; label: string; icon: string }[] = [
@@ -243,15 +247,13 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
   };
 
   const handleShuffle = () => {
-    if (state.bgType === 'gradient') {
-      updateState({ bgColor: GRADIENTS[Math.floor(Math.random() * GRADIENTS.length)].id });
-    } else if (state.bgType === 'mesh') {
-      updateState({ bgColor: MESH_GRADIENTS[Math.floor(Math.random() * MESH_GRADIENTS.length)].id });
-    } else if (state.bgType === 'wallpaper') {
-      updateState({ bgColor: WALLPAPERS[Math.floor(Math.random() * WALLPAPERS.length)].id });
-    } else {
-      updateState({ bgType: 'gradient', bgColor: GRADIENTS[Math.floor(Math.random() * GRADIENTS.length)].id });
-    }
+    const pool = [
+      ...GRADIENTS.map(g => ({ bgType: 'gradient' as const, bgColor: g.id })),
+      ...MESH_GRADIENTS.filter(m => m.id !== '__auto__').map(m => ({ bgType: 'mesh' as const, bgColor: m.id })),
+      ...WALLPAPERS.map(w => ({ bgType: 'wallpaper' as const, bgColor: w.id })),
+    ];
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    updateState(pick);
   };
 
   const handleAutoBackground = async () => {
@@ -451,9 +453,10 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
       <>
         <Section label="Type" action={
           <button onClick={handleShuffle} style={{
-            display: 'flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 7,
-            fontSize: 10, fontWeight: 600, background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)', color: '#6b7280', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8,
+            fontSize: 10, fontWeight: 700, background: 'rgba(124,58,237,0.14)',
+            border: '1px solid rgba(124,58,237,0.3)', color: '#c4b5fd', cursor: 'pointer',
+            transition: 'all 0.12s',
           }}>
             <Shuffle size={10} /> Shuffle
           </button>

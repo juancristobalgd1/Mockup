@@ -11,13 +11,15 @@ interface RightPanelProps {
   onRemoveText: (id: string) => void;
 }
 
-type ExportSizeOption = { id: string; label: string; w: number; h: number };
+type ExportSizeOption = { id: string; label: string; platform: string; w: number; h: number };
 
 const EXPORT_SIZES: ExportSizeOption[] = [
-  { id: '1:1', label: '1:1 Square', w: 1080, h: 1080 },
-  { id: '4:5', label: '4:5 Portrait', w: 1080, h: 1350 },
-  { id: '16:9', label: '16:9 Wide', w: 1920, h: 1080 },
-  { id: '9:16', label: '9:16 Story', w: 1080, h: 1920 },
+  { id: 'ig-post',  label: 'Post',    platform: 'Instagram', w: 1080, h: 1080 },
+  { id: 'ig-story', label: 'Story',   platform: 'Instagram', w: 1080, h: 1920 },
+  { id: 'ig-port',  label: 'Portrait',platform: 'Instagram', w: 1080, h: 1350 },
+  { id: 'twitter',  label: 'Card',    platform: 'X / Twitter', w: 1200, h: 675  },
+  { id: 'linkedin', label: 'Post',    platform: 'LinkedIn',  w: 1200, h: 628  },
+  { id: 'wide',     label: 'Wide',    platform: 'YouTube / Slides', w: 1920, h: 1080 },
 ];
 
 async function captureCanvas(el: HTMLDivElement, glEl?: HTMLCanvasElement | null) {
@@ -60,7 +62,7 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
   const [copying, setCopying] = useState(false);
   const [copied, setCopied] = useState(false);
   const [recording, setRecording] = useState(false);
-  const [selectedSize, setSelectedSize] = useState('1:1');
+  const [selectedSize, setSelectedSize] = useState('ig-post');
 
   const isVideo = state.contentType === 'video';
 
@@ -199,9 +201,14 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
                     background: selectedSize === s.id ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.025)',
                     border: selectedSize === s.id ? '1px solid rgba(124,58,237,0.45)' : '1px solid rgba(255,255,255,0.06)',
                   }}>
-                  <span className="text-xs font-medium" style={{ color: selectedSize === s.id ? '#c4b5fd' : '#6b7280' }}>
-                    {s.label}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-[10px]" style={{ color: selectedSize === s.id ? '#a78bfa' : '#4b5563' }}>
+                      {s.platform}
+                    </span>
+                    <span className="text-xs font-semibold" style={{ color: selectedSize === s.id ? '#c4b5fd' : '#6b7280' }}>
+                      {s.label}
+                    </span>
+                  </div>
                   <span className="text-[10px] font-mono" style={{ color: '#374151' }}>
                     {s.w}×{s.h}
                   </span>

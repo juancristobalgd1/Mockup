@@ -395,6 +395,10 @@ function normalizeScreenUVs(obj: THREE.Mesh, flipU = false) {
   geom.setAttribute('uv', new THREE.BufferAttribute(uv2, 2));
 }
 
+const CLAY_MAT = () => new THREE.MeshStandardMaterial({
+  color: '#e0dbd0', roughness: 0.90, metalness: 0.0, envMapIntensity: 0.35,
+});
+
 /** Classify a mesh name/material key and return the right material (or null to keep original). */
 function classifyMesh(
   key: string,
@@ -403,6 +407,18 @@ function classifyMesh(
   obj: THREE.Mesh,
   flipScreenU = false,
 ): THREE.Material | null {
+
+  // ── Clay mode — everything except screen becomes flat matte ──────
+  if (deviceColor === 'clay') {
+    if ((key.includes('display') || key.includes('screen')) && !key.includes('screen2')) {
+      normalizeScreenUVs(obj, flipScreenU);
+      const mat = new THREE.MeshStandardMaterial({ color: '#020208', roughness: 0.04, metalness: 0 });
+      screenMeshes.push(obj);
+      return mat;
+    }
+    if (key.includes('defaultmaterial')) return null;
+    return CLAY_MAT();
+  }
 
   // ── Screen / display ─────────────────────────────────────────────
   if ((key.includes('display') || key.includes('screen')) && !key.includes('screen2')) {
@@ -522,13 +538,17 @@ function applyMaterials(
 
     if (key.includes('defaultmaterial')) {
       hasDefaultMat = true;
-      // Keep the original baked texture but maximise IBL response for realism
-      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-      mats.forEach(m => {
-        const mat = m as THREE.MeshStandardMaterial;
-        mat.envMapIntensity = 3.5;
-        mat.needsUpdate = true;
-      });
+      if (deviceColor === 'clay') {
+        obj.material = CLAY_MAT();
+      } else {
+        // Keep the original baked texture but maximise IBL response for realism
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+        mats.forEach(m => {
+          const mat = m as THREE.MeshStandardMaterial;
+          mat.envMapIntensity = 3.5;
+          mat.needsUpdate = true;
+        });
+      }
       return;
     }
 

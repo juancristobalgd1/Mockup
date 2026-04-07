@@ -20,6 +20,8 @@ const DEVICE_COLORS: Record<string, string> = {
   blue:         '#1e3a5f',
   naturallight: '#c2b8a3',
   sierra:       '#6b8ca3',
+  desert:       '#8c7a6e',
+  clay:         '#e0dbd0',
 };
 
 // ── Screen that updates texture every frame ──────────────────────
@@ -356,13 +358,17 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
       : 0.114;
 
   // Colors
+  const isClay      = deviceColor === 'clay';
   const framePreset = FRAME_MAT[def.frame] ?? FRAME_MAT.aluminum;
   const colorKey    = deviceColor || 'titanium';
-  const bodyHex     = isAndroid
-    ? framePreset.color
-    : (DEVICE_COLORS[colorKey] ?? framePreset.color);
+  const bodyHex     = isClay
+    ? '#e0dbd0'
+    : isAndroid
+      ? framePreset.color
+      : (DEVICE_COLORS[colorKey] ?? framePreset.color);
 
-  const { metalness, roughness } = framePreset;
+  const metalness = isClay ? 0.0 : framePreset.metalness;
+  const roughness = isClay ? 0.90 : framePreset.roughness;
 
   // Screen dimensions (inset from frame edges)
   const iTop  = (def.insetTop    / 100) * scale;
