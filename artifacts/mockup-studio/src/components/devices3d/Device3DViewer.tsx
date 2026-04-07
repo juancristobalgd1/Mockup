@@ -157,19 +157,42 @@ const ENV_LIGHTS: Record<string, {
   },
 };
 
+// ── Warmth color shift ────────────────────────────────────────────
+// Blends a base hex color toward warm orange (+) or cool blue (-).
+// warmth: -50 = max cool, 0 = neutral, +50 = max warm.
+function warmColor(hex: string, warmth: number): string {
+  const c = new THREE.Color(hex);
+  const t = warmth / 50; // -1 … +1
+  c.r = Math.min(1, Math.max(0, c.r + t * 0.30));
+  c.g = Math.min(1, Math.max(0, c.g + t * 0.04));
+  c.b = Math.min(1, Math.max(0, c.b - t * 0.38));
+  return `#${c.getHexString()}`;
+}
+
 // ── Studio lights  (Rotato-style, env-aware) ──────────────────────
-function StudioLights({ deviceType, envPreset }: { deviceType: string; envPreset: string }) {
+function StudioLights({
+  deviceType, envPreset, brightness, ambient, warmth,
+}: {
+  deviceType: string; envPreset: string;
+  brightness: number; ambient: number; warmth: number;
+}) {
   const isLaptop = deviceType === 'macbook';
   const cfg = ENV_LIGHTS[envPreset] ?? ENV_LIGHTS.studio;
+
+  // brightness 0-100 → multiplier (50 = 1.0×, 0 = 0×, 100 = 2.0×)
+  const bMul = brightness / 50;
+  // ambient 0-100 → intensity
+  const ambVal = cfg.ambient * (ambient / 50);
+
   return (
     <>
-      {/* Ambient — very soft base fill */}
-      <ambientLight intensity={cfg.ambient} />
+      {/* Ambient — fills shadows, scaled by Ambiente slider */}
+      <ambientLight intensity={ambVal} />
 
-      {/* Key light — main front-left from above */}
+      {/* Key light — main front-left, scaled by Brillo, tinted by Temperatura */}
       <directionalLight
         position={[3.5, 7, 5]}
-        intensity={cfg.keyIntensity}
+        intensity={cfg.keyIntensity * bMul}
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-camera-far={20}
@@ -178,28 +201,28 @@ function StudioLights({ deviceType, envPreset }: { deviceType: string; envPreset
         shadow-camera-top={6}
         shadow-camera-bottom={-4}
         shadow-bias={-0.0005}
-        color={cfg.keyColor}
+        color={warmColor(cfg.keyColor, warmth)}
       />
 
-      {/* Fill light — right side, softer */}
+      {/* Fill light — softer, also tinted by temperature */}
       <directionalLight
         position={[-4, 2, 3]}
-        intensity={cfg.fillIntensity}
-        color={cfg.fillColor}
+        intensity={cfg.fillIntensity * bMul}
+        color={warmColor(cfg.fillColor, warmth * 0.5)}
       />
 
-      {/* Rim light — backlight creates the "glowing edge" like Rotato / Apple ads */}
+      {/* Rim light — edge highlight, subtle warmth */}
       <directionalLight
         position={[-2, 4, -5]}
-        intensity={isLaptop ? cfg.rimIntensity * 0.7 : cfg.rimIntensity}
-        color={cfg.rimColor}
+        intensity={(isLaptop ? cfg.rimIntensity * 0.7 : cfg.rimIntensity) * bMul}
+        color={warmColor(cfg.rimColor, warmth * 0.3)}
       />
 
-      {/* Subtle warm fill from below */}
-      <pointLight position={[0, -3, 2]} intensity={cfg.ambient * 0.8} color="#ffe0c0" />
+      {/* Subtle under-fill — stays neutral */}
+      <pointLight position={[0, -3, 2]} intensity={ambVal * 0.8} color="#ffe0c0" />
 
-      {/* Screen-forward glow — makes it look like the screen emits light */}
-      <pointLight position={[0, 0, 3]} intensity={0.25} color={cfg.screenGlow} distance={6} decay={2} />
+      {/* Screen glow — always on, independent of brightness */}
+      <pointLight position={[0, 0, 3]} intensity={0.18} color={cfg.screenGlow} distance={6} decay={2} />
     </>
   );
 }
@@ -858,17 +881,23 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
           {/* Reactively update renderer exposure from store */}
           <ExposureControl exposure={state.lightExposure} />
 
-          {/* Studio lighting rig — adapts colours to the active env preset */}
-          <StudioLights deviceType={state.deviceType} envPreset={state.envPreset} />
+          {/* Studio lighting rig — adapts to env preset, brightness, ambient, warmth */}
+          <StudioLights
+            deviceType={state.deviceType}
+            envPreset={state.envPreset}
+            brightness={state.lightBrightness ?? 40}
+            ambient={state.lightAmbient ?? 45}
+            warmth={state.lightWarmth ?? 0}
+          />
 
           {/* High-quality HDR environment map for photorealistic reflections.
               key={envPreset} forces a full remount so the new HDR actually loads.
-              environmentIntensity drives how strongly the IBL affects materials. */}
+              environmentIntensity driven by lightIBL slider (0-100 → 0-2×base). */}
           {state.envEnabled !== false && (
             <Suspense key={state.envPreset} fallback={null}>
               <Environment
                 preset={state.envPreset as 'studio' | 'warehouse' | 'sunset' | 'city' | 'forest' | 'night'}
-                environmentIntensity={ENV_INTENSITY[state.envPreset] ?? 2.8}
+                environmentIntensity={(ENV_INTENSITY[state.envPreset] ?? 1.4) * ((state.lightIBL ?? 40) / 50)}
                 background={false}
               />
             </Suspense>
