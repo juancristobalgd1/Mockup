@@ -227,7 +227,7 @@ function getApiBase() {
 }
 
 // ── Main component ────────────────────────────────────────────────
-export function LeftPanel() {
+export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
   const { state, updateState, addText } = useApp();
   const [activeTab, setActiveTab]           = useState<Tab>('device');
   const [selectedGroup, setSelectedGroup]   = useState<DeviceGroup>('iPhone');
@@ -784,7 +784,43 @@ export function LeftPanel() {
     </>
   );
 
-  // ── Panel shell ─────────────────────────────────────────────────
+  // ── Mobile shell (full-width, no sidebar rail) ───────────────────
+  if (mobile) {
+    return (
+      <div>
+        {/* Horizontal tab chips */}
+        <div style={{
+          display: 'flex', gap: 6, overflowX: 'auto', padding: '2px 14px 12px',
+          scrollbarWidth: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)',
+        } as React.CSSProperties}>
+          {TAB_ICONS.map(({ id, icon: Icon, label }) => (
+            <button key={id} onClick={() => setActiveTab(id)}
+              style={{
+                flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
+                padding: '6px 12px', borderRadius: 10, fontSize: 11, fontWeight: 700,
+                background: activeTab === id ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.05)',
+                border: activeTab === id ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                color: activeTab === id ? '#c4b5fd' : '#6b7280', cursor: 'pointer',
+              }}>
+              <Icon size={13} strokeWidth={activeTab === id ? 2 : 1.5} />
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Full-width content — no internal scroll, parent handles it */}
+        <div style={{ padding: '12px 14px 20px' }}>
+          {activeTab === 'presets'    && <PresetsTab />}
+          {activeTab === 'device'     && <DeviceTab />}
+          {activeTab === 'background' && <BackgroundTab />}
+          {activeTab === 'canvas'     && <SceneTab />}
+          {activeTab === 'text'       && <TextTab />}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Desktop shell (icon rail + content panel) ─────────────────
   return (
     <div style={{ display: 'flex', height: '100%', flexShrink: 0, overflow: 'hidden' }}>
 
