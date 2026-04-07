@@ -14,7 +14,7 @@ export interface DeviceModelDef {
   id: string;
   label: string;
   group: DeviceGroup;
-  storeType: 'iphone' | 'android' | 'ipad' | 'macbook' | 'browser' | 'watch' | 'imac';
+  storeType: 'iphone' | 'android' | 'ipad' | 'macbook' | 'browser' | 'watch';
   /** Display dimensions in CSS px (portrait, unscaled) */
   w: number;
   h: number;
@@ -106,6 +106,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasColors: true, hasOrientation: true,
     accent: '#475569',
     glbUrl: '/models/samsungs25ultra.glb',
+    skipOverlay: true,
   },
   {
     id: 'oneplus-12',
@@ -179,19 +180,6 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     accent: '#6b7280',
     glbUrl: '/models/macbookpro.glb',
     skipOverlay: true,
-  },
-  {
-    id: 'imac-27',
-    label: 'iMac 27"',
-    group: 'Desktop',
-    storeType: 'imac',
-    w: 460, h: 300,
-    insetTop: 16, insetBottom: 30, insetSide: 10,
-    br: '1rem', screenBr: '0.4rem',
-    camera: 'none',
-    cameraLayout: 'none',
-    frame: 'light',
-    accent: '#93c5fd',
   },
   // ── Browser ───────────────────────────────────────────────────────
   {

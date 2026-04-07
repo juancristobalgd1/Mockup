@@ -79,7 +79,7 @@ function SceneCapturer({ onGlReady }: { onGlReady: (gl: THREE.WebGLRenderer) => 
 
 // ── Studio lights  (Rotato-style) ─────────────────────────────────
 function StudioLights({ deviceType }: { deviceType: string }) {
-  const isLaptop = deviceType === 'macbook' || deviceType === 'imac';
+  const isLaptop = deviceType === 'macbook';
   return (
     <>
       {/* Ambient — very soft base fill */}
@@ -220,15 +220,6 @@ function DeviceScene({ floatEnabled }: { floatEnabled: boolean }) {
             contentType={state.contentType}
           />
         );
-      case 'imac':
-        return (
-          <MacBook3DModel
-            def={def}
-            screenTexture={screenTexture}
-            contentType={state.contentType}
-            lidAngle={90}
-          />
-        );
       case 'browser':
         return <BrowserFrame />;
       default:
@@ -268,7 +259,7 @@ function BrowserFrame() {
 
 // ── OrbitControls (simple) ────────────────────────────────────────
 function HeroOrbitControls({ deviceType }: { deviceType: string }) {
-  const isLaptop = deviceType === 'macbook' || deviceType === 'imac';
+  const isLaptop = deviceType === 'macbook';
   return (
     <OrbitControls
       enablePan={false}
@@ -307,7 +298,7 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
       getGLElement: () => glRef.current?.domElement ?? null,
     }));
 
-    const isLaptop = state.deviceType === 'macbook' || state.deviceType === 'imac';
+    const isLaptop = state.deviceType === 'macbook';
     const hasContent = !!(state.screenshotUrl || state.videoUrl);
     const floatEnabled = state.animation === 'float';
 
