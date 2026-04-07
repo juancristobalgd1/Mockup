@@ -20,6 +20,7 @@ export interface TextOverlay {
 }
 
 export interface AppState {
+  deviceModel: string;
   deviceType: DeviceType;
   deviceLandscape: boolean;
   deviceColor: DeviceColor;
@@ -59,6 +60,7 @@ export interface AppState {
 }
 
 export const defaultState: AppState = {
+  deviceModel: "iphone-15-pro",
   deviceType: "iphone",
   deviceLandscape: false,
   deviceColor: "titanium",

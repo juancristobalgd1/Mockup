@@ -1,10 +1,9 @@
 import { forwardRef } from 'react';
 import { useApp } from '../../store';
 import type { TextOverlay } from '../../store';
-import { IPhone15Pro } from '../devices/IPhone15Pro';
-import { AndroidPhone } from '../devices/AndroidPhone';
-import { IPad } from '../devices/IPad';
-import { MacBook } from '../devices/MacBook';
+import { PhoneDevice } from '../devices/PhoneDevice';
+import { TabletDevice } from '../devices/TabletDevice';
+import { MacBookDevice } from '../devices/MacBookDevice';
 import { Browser } from '../devices/Browser';
 import { AppleWatch } from '../devices/AppleWatch';
 import { IMac } from '../devices/IMac';
@@ -15,22 +14,33 @@ interface CanvasProps {
   onUpdateText: (id: string, updates: Partial<TextOverlay>) => void;
 }
 
-const DeviceComponents = {
-  iphone: IPhone15Pro,
-  android: AndroidPhone,
-  ipad: IPad,
-  macbook: MacBook,
-  browser: Browser,
-  watch: AppleWatch,
-  imac: IMac,
-};
-
 const RATIO_VALUES: Record<string, number> = {
   '1:1': 1,
   '4:5': 4 / 5,
   '16:9': 16 / 9,
   '9:16': 9 / 16,
 };
+
+function DeviceRenderer() {
+  const { state } = useApp();
+  switch (state.deviceType) {
+    case 'iphone':
+    case 'android':
+      return <PhoneDevice />;
+    case 'ipad':
+      return <TabletDevice />;
+    case 'macbook':
+      return <MacBookDevice />;
+    case 'browser':
+      return <Browser />;
+    case 'watch':
+      return <AppleWatch />;
+    case 'imac':
+      return <IMac />;
+    default:
+      return <PhoneDevice />;
+  }
+}
 
 export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, onUpdateText }, ref) => {
   const { state } = useApp();
@@ -66,11 +76,11 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
 
   const getAnimationClass = () => {
     switch (state.animation) {
-      case 'float': return 'animate-float';
-      case 'pulse': return 'animate-pulse-device';
-      case 'spin': return 'animate-spin-y';
+      case 'float':    return 'animate-float';
+      case 'pulse':    return 'animate-pulse-device';
+      case 'spin':     return 'animate-spin-y';
       case 'slide-in': return 'animate-slide-in';
-      default: return '';
+      default:         return '';
     }
   };
 
@@ -100,10 +110,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
     return `${offsetX}px ${offsetY}px ${s * 0.8}px ${s * 0.05}px rgba(0,0,0,${alpha})`;
   };
 
-  const DeviceComponent = DeviceComponents[state.deviceType] ?? IPhone15Pro;
-
   const handleTextDrag = (id: string, e: React.MouseEvent) => {
-    // Walk up to find the outer canvas ref div
     const container = (e.currentTarget as HTMLElement).closest('[data-canvas-root]') as HTMLElement;
     if (!container) return;
     const rect = container.getBoundingClientRect();
@@ -135,7 +142,6 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
   const ratioValue = hasRatio ? RATIO_VALUES[state.canvasRatio] : null;
 
   return (
-    // Outer div — always captures background, ref attached here for export
     <div
       ref={ref}
       data-canvas-root="true"
@@ -143,96 +149,53 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
       style={getBackground()}
       data-testid="canvas-area"
     >
-      {/* Background color overlay */}
+      {/* Color overlay */}
       {state.overlayEnabled && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: state.overlayColor,
-            opacity: state.overlayOpacity / 100,
-            pointerEvents: 'none',
-            zIndex: 1,
-          }}
-        />
+        <div style={{ position: 'absolute', inset: 0, background: state.overlayColor, opacity: state.overlayOpacity / 100, pointerEvents: 'none', zIndex: 1 }} />
       )}
 
-      {/* Canvas ratio guide overlay — dims areas outside the crop frame */}
+      {/* Canvas ratio guide overlay */}
       {hasRatio && ratioValue && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 3,
-            pointerEvents: 'none',
-          }}
-        >
-          {/* The guide frame itself uses box-shadow to dim outside */}
-          <div
-            style={{
-              position: 'relative',
-              aspectRatio: ratioValue,
-              height: '100%',
-              maxWidth: '100%',
-              maxHeight: '100%',
-              width: `${ratioValue * 100}%`,
-              boxShadow: '0 0 0 9999px rgba(0,0,0,0.35)',
-              border: '1.5px dashed rgba(255,255,255,0.2)',
-              borderRadius: 4,
-            }}
-          />
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3, pointerEvents: 'none' }}>
+          <div style={{
+            position: 'relative', aspectRatio: ratioValue, height: '100%',
+            maxWidth: '100%', maxHeight: '100%', width: `${ratioValue * 100}%`,
+            boxShadow: '0 0 0 9999px rgba(0,0,0,0.35)',
+            border: '1.5px dashed rgba(255,255,255,0.2)', borderRadius: 4,
+          }} />
         </div>
       )}
 
-      {/* Device wrapper centered within canvas, with optional padding */}
-      <div
-        style={{
-          position: 'relative',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: state.canvasPadding,
-          zIndex: 2,
-        }}
-      >
+      {/* Device wrapper */}
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: state.canvasPadding, zIndex: 2 }}>
         <div
           className={getAnimationClass()}
           style={{
             transform: getDeviceTransform(),
             filter: `drop-shadow(${getShadow()})`,
             transformOrigin: 'center center',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'transform 0.3s ease',
           }}
         >
-          <DeviceComponent />
+          <DeviceRenderer />
         </div>
       </div>
 
-      {/* Text overlays — positioned relative to the full canvas */}
+      {/* Text overlays */}
       {textOverlays.map(overlay => (
         <div
           key={overlay.id}
           style={{
             position: 'absolute',
-            left: `${overlay.x}%`,
-            top: `${overlay.y}%`,
+            left: `${overlay.x}%`, top: `${overlay.y}%`,
             transform: 'translate(-50%, -50%)',
-            fontSize: overlay.fontSize,
-            color: overlay.color,
+            fontSize: overlay.fontSize, color: overlay.color,
             fontWeight: overlay.isBold ? 700 : 400,
             fontStyle: overlay.isItalic ? 'italic' : 'normal',
-            cursor: 'move',
-            userSelect: 'none',
+            cursor: 'move', userSelect: 'none',
             textShadow: '0 1px 4px rgba(0,0,0,0.5)',
-            whiteSpace: 'pre',
-            zIndex: 10,
-            fontFamily: 'Inter, sans-serif',
+            whiteSpace: 'pre', zIndex: 10, fontFamily: 'Inter, sans-serif',
           }}
           onMouseDown={(e) => handleTextDrag(overlay.id, e)}
           data-testid={`text-overlay-${overlay.id}`}
