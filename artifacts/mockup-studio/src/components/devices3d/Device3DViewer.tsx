@@ -303,22 +303,46 @@ function HeroOrbitControls({
   const isLaptop = deviceType === 'macbook';
   const controlsRef = useRef<any>(null);
   const { camera } = useThree();
+  const isFirstMount = useRef(true);
+  const prevDeviceType = useRef(deviceType);
 
+  const applyPreset = useCallback((angle: string, laptop: boolean) => {
+    const raf = requestAnimationFrame(() => {
+      const controls = controlsRef.current;
+      if (!controls) return;
+      const preset = CAMERA_PRESETS[angle] ?? CAMERA_PRESETS.hero;
+      const dist = laptop ? 6.2 : 5.6;
+      const { phi, theta } = preset;
+      camera.position.set(
+        dist * Math.sin(phi) * Math.sin(theta),
+        dist * Math.cos(phi),
+        dist * Math.sin(phi) * Math.cos(theta),
+      );
+      controls.target.set(0, 0, 0);
+      controls.update();
+    });
+    return raf;
+  }, [camera]);
+
+  // Camera preset button pressed — skip on first mount (canvas camera prop handles initial position)
   useEffect(() => {
-    const controls = controlsRef.current;
-    if (!controls) return;
-    const preset = CAMERA_PRESETS[cameraAngle] ?? CAMERA_PRESETS.hero;
-    const dist = isLaptop ? 6.2 : 5.6;
-    const { phi, theta } = preset;
-    camera.position.set(
-      dist * Math.sin(phi) * Math.sin(theta),
-      dist * Math.cos(phi),
-      dist * Math.sin(phi) * Math.cos(theta),
-    );
-    controls.target.set(0, 0, 0);
-    controls.update();
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+    const raf = applyPreset(cameraAngle, isLaptop);
+    return () => cancelAnimationFrame(raf);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraResetKey]);
+
+  // Device type changed → snap back to hero so the new model is centered
+  useEffect(() => {
+    if (prevDeviceType.current === deviceType) return;
+    prevDeviceType.current = deviceType;
+    const raf = applyPreset('hero', deviceType === 'macbook');
+    return () => cancelAnimationFrame(raf);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deviceType]);
 
   return (
     <OrbitControls
