@@ -81,18 +81,71 @@ function SceneCapturer({ onGlReady }: { onGlReady: (gl: THREE.WebGLRenderer) => 
   return null;
 }
 
-// ── Studio lights  (Rotato-style) ─────────────────────────────────
-function StudioLights({ deviceType }: { deviceType: string }) {
+// ── Per-environment light configs ─────────────────────────────────
+const ENV_LIGHTS: Record<string, {
+  ambient: number;
+  keyColor: string; keyIntensity: number;
+  fillColor: string; fillIntensity: number;
+  rimColor: string;  rimIntensity: number;
+  screenGlow: string;
+}> = {
+  studio: {
+    ambient: 0.18,
+    keyColor:  '#ffffff', keyIntensity:  2.2,
+    fillColor: '#d0e8ff', fillIntensity: 0.55,
+    rimColor:  '#ffffff', rimIntensity:  1.6,
+    screenGlow: '#8090ff',
+  },
+  warehouse: {
+    ambient: 0.22,
+    keyColor:  '#ffe8c0', keyIntensity:  1.8,
+    fillColor: '#c8d8ff', fillIntensity: 0.45,
+    rimColor:  '#d0e0ff', rimIntensity:  1.2,
+    screenGlow: '#6080ff',
+  },
+  city: {
+    ambient: 0.14,
+    keyColor:  '#c0d8ff', keyIntensity:  1.5,
+    fillColor: '#ffd090', fillIntensity: 0.35,
+    rimColor:  '#8090ff', rimIntensity:  1.4,
+    screenGlow: '#4060ff',
+  },
+  sunset: {
+    ambient: 0.12,
+    keyColor:  '#ff9050', keyIntensity:  2.0,
+    fillColor: '#ffd080', fillIntensity: 0.5,
+    rimColor:  '#ff6030', rimIntensity:  1.8,
+    screenGlow: '#ff8040',
+  },
+  forest: {
+    ambient: 0.20,
+    keyColor:  '#d0ffb0', keyIntensity:  1.4,
+    fillColor: '#a0e8a0', fillIntensity: 0.35,
+    rimColor:  '#c0ffc0', rimIntensity:  1.0,
+    screenGlow: '#60c060',
+  },
+  night: {
+    ambient: 0.05,
+    keyColor:  '#2040a0', keyIntensity:  0.7,
+    fillColor: '#101830', fillIntensity: 0.2,
+    rimColor:  '#4060c0', rimIntensity:  0.8,
+    screenGlow: '#4060ff',
+  },
+};
+
+// ── Studio lights  (Rotato-style, env-aware) ──────────────────────
+function StudioLights({ deviceType, envPreset }: { deviceType: string; envPreset: string }) {
   const isLaptop = deviceType === 'macbook';
+  const cfg = ENV_LIGHTS[envPreset] ?? ENV_LIGHTS.studio;
   return (
     <>
       {/* Ambient — very soft base fill */}
-      <ambientLight intensity={0.18} />
+      <ambientLight intensity={cfg.ambient} />
 
       {/* Key light — main front-left from above */}
       <directionalLight
         position={[3.5, 7, 5]}
-        intensity={2.2}
+        intensity={cfg.keyIntensity}
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-camera-far={20}
@@ -101,29 +154,28 @@ function StudioLights({ deviceType }: { deviceType: string }) {
         shadow-camera-top={6}
         shadow-camera-bottom={-4}
         shadow-bias={-0.0005}
-        color="#ffffff"
+        color={cfg.keyColor}
       />
 
-      {/* Fill light — right side, softer, slightly warm */}
+      {/* Fill light — right side, softer */}
       <directionalLight
         position={[-4, 2, 3]}
-        intensity={0.55}
-        color="#d0e8ff"
+        intensity={cfg.fillIntensity}
+        color={cfg.fillColor}
       />
 
-      {/* Rim light — strong backlight from top-right behind device */}
-      {/* This creates the signature "glowing edge" like in Rotato/Apple ads */}
+      {/* Rim light — backlight creates the "glowing edge" like Rotato / Apple ads */}
       <directionalLight
         position={[-2, 4, -5]}
-        intensity={isLaptop ? 1.1 : 1.8}
-        color="#ffffff"
+        intensity={isLaptop ? cfg.rimIntensity * 0.7 : cfg.rimIntensity}
+        color={cfg.rimColor}
       />
 
       {/* Subtle warm fill from below */}
-      <pointLight position={[0, -3, 2]} intensity={0.15} color="#ffe0c0" />
+      <pointLight position={[0, -3, 2]} intensity={cfg.ambient * 0.8} color="#ffe0c0" />
 
       {/* Screen-forward glow — makes it look like the screen emits light */}
-      <pointLight position={[0, 0, 3]} intensity={0.25} color="#8090ff" distance={6} decay={2} />
+      <pointLight position={[0, 0, 3]} intensity={0.25} color={cfg.screenGlow} distance={6} decay={2} />
     </>
   );
 }
@@ -417,15 +469,16 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
         >
           <SceneCapturer onGlReady={handleGlReady} />
 
-          {/* Studio lighting rig */}
-          <StudioLights deviceType={state.deviceType} />
+          {/* Studio lighting rig — adapts colours to the active env preset */}
+          <StudioLights deviceType={state.deviceType} envPreset={state.envPreset} />
 
-          {/* High-quality environment map for reflections */}
-          <Suspense fallback={null}>
+          {/* High-quality HDR environment map for photorealistic reflections.
+              key={envPreset} forces a full remount so the new HDR actually loads. */}
+          <Suspense key={state.envPreset} fallback={null}>
             <Environment
-              preset={state.envPreset === 'night' ? 'night' : state.envPreset as 'studio' | 'warehouse' | 'sunset' | 'city' | 'forest'}
-              environmentIntensity={1.1}
-              backgroundBlurriness={0}
+              preset={state.envPreset as 'studio' | 'warehouse' | 'sunset' | 'city' | 'forest' | 'night'}
+              environmentIntensity={1.6}
+              background={false}
             />
           </Suspense>
 
