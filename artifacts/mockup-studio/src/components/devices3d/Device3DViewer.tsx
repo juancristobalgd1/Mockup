@@ -13,6 +13,7 @@ import { useApp } from '../../store';
 import { getModelById } from '../../data/devices';
 import { useScreenTexture } from './useScreenTexture';
 import { Phone3DModel } from './Phone3DModel';
+import { IPhone13ProGLBModel } from './IPhone13ProGLBModel';
 import { Tablet3DModel } from './Tablet3DModel';
 import { MacBook3DModel } from './MacBook3DModel';
 import { Watch3DModel } from './Watch3DModel';
@@ -140,6 +141,19 @@ function DeviceScene({ floatEnabled }: { floatEnabled: boolean }) {
   const isLandscape = state.deviceLandscape;
 
   const inner = (() => {
+    // Real GLB model — iPhone 13 Pro (uploaded by user)
+    if (state.deviceModel === 'iphone-13-pro') {
+      return (
+        <IPhone13ProGLBModel
+          def={def}
+          deviceColor={state.deviceColor}
+          screenTexture={screenTexture}
+          contentType={state.contentType}
+          isLandscape={isLandscape}
+        />
+      );
+    }
+
     switch (state.deviceType) {
       case 'iphone':
       case 'android':
