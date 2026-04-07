@@ -96,22 +96,6 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     accent: '#38bdf8',
     glbUrl: '/models/iphone16.glb',
   },
-  {
-    id: 'iphone-x',
-    label: 'iPhone X',
-    group: 'iPhone',
-    storeType: 'iphone',
-    w: 196, h: 422,
-    insetTop: 13, insetBottom: 10, insetSide: 12,
-    br: '2.2rem', screenBr: '1.8rem',
-    camera: 'notch',
-    cameraLayout: 'none',
-    frame: 'aluminum',
-    hasColors: true, hasOrientation: true,
-    accent: '#8e8e93',
-    glbUrl: '/models/iphonex.glb',
-    glbRotateZ: Math.PI / 2,
-  },
   // ── Android ───────────────────────────────────────────────────────
   {
     id: 'samsung-s25-ultra',
