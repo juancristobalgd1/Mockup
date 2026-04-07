@@ -1,6 +1,13 @@
-import { Suspense, useRef, forwardRef, useImperativeHandle, useCallback, useState } from 'react';
+import {
+  Suspense, useRef, forwardRef, useImperativeHandle,
+  useCallback, useState,
+} from 'react';
 import { Canvas as R3FCanvas, useThree } from '@react-three/fiber';
-import { OrbitControls, Environment, ContactShadows, Float } from '@react-three/drei';
+import {
+  OrbitControls, Environment, ContactShadows, Float,
+  useProgress, Html,
+} from '@react-three/drei';
+import { EffectComposer, Bloom, SMAA } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { useApp } from '../../store';
 import { getModelById } from '../../data/devices';
@@ -14,27 +21,118 @@ export interface Device3DViewerHandle {
   getGLElement: () => HTMLCanvasElement | null;
 }
 
-function RotatoHint() {
+// ── Loading indicator ─────────────────────────────────────────────
+function Loader() {
+  const { progress } = useProgress();
+  if (progress >= 100) return null;
+  return (
+    <Html center>
+      <div style={{
+        color: 'rgba(255,255,255,0.6)', fontSize: 12, fontFamily: 'system-ui',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+      }}>
+        <div style={{
+          width: 120, height: 2, background: 'rgba(255,255,255,0.12)', borderRadius: 1,
+        }}>
+          <div style={{
+            height: '100%', width: `${progress}%`,
+            background: 'rgba(255,255,255,0.5)', borderRadius: 1,
+            transition: 'width 0.3s',
+          }} />
+        </div>
+        Loading
+      </div>
+    </Html>
+  );
+}
+
+// ── Hint overlay ─────────────────────────────────────────────────
+function RotatoHint({ visible }: { visible: boolean }) {
   return (
     <div style={{
       position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)',
-      background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)',
-      border: '1px solid rgba(255,255,255,0.1)',
+      background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(8px)',
+      border: '1px solid rgba(255,255,255,0.08)',
       borderRadius: 20, padding: '5px 14px',
-      fontSize: 11, color: 'rgba(255,255,255,0.5)',
+      fontSize: 11, color: 'rgba(255,255,255,0.45)',
       pointerEvents: 'none', whiteSpace: 'nowrap', zIndex: 5,
+      opacity: visible ? 1 : 0, transition: 'opacity 0.8s ease',
     }}>
-      🖱 Drag to rotate · Scroll to zoom
+      ⌖ Drag to rotate · Scroll to zoom
     </div>
   );
 }
 
-function SceneCapturer(props: { onGlReady: (gl: THREE.WebGLRenderer) => void }) {
+// ── GL capture helper ─────────────────────────────────────────────
+function SceneCapturer({ onGlReady }: { onGlReady: (gl: THREE.WebGLRenderer) => void }) {
   const { gl } = useThree();
-  props.onGlReady(gl);
+  onGlReady(gl);
   return null;
 }
 
+// ── Studio lights  (Rotato-style) ─────────────────────────────────
+function StudioLights({ deviceType }: { deviceType: string }) {
+  const isLaptop = deviceType === 'macbook' || deviceType === 'imac';
+  return (
+    <>
+      {/* Ambient — very soft base fill */}
+      <ambientLight intensity={0.18} />
+
+      {/* Key light — main front-left from above */}
+      <directionalLight
+        position={[3.5, 7, 5]}
+        intensity={2.2}
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-far={20}
+        shadow-camera-left={-4}
+        shadow-camera-right={4}
+        shadow-camera-top={6}
+        shadow-camera-bottom={-4}
+        shadow-bias={-0.0005}
+        color="#ffffff"
+      />
+
+      {/* Fill light — right side, softer, slightly warm */}
+      <directionalLight
+        position={[-4, 2, 3]}
+        intensity={0.55}
+        color="#d0e8ff"
+      />
+
+      {/* Rim light — strong backlight from top-right behind device */}
+      {/* This creates the signature "glowing edge" like in Rotato/Apple ads */}
+      <directionalLight
+        position={[-2, 4, -5]}
+        intensity={isLaptop ? 1.1 : 1.8}
+        color="#ffffff"
+      />
+
+      {/* Subtle warm fill from below */}
+      <pointLight position={[0, -3, 2]} intensity={0.15} color="#ffe0c0" />
+
+      {/* Screen-forward glow — makes it look like the screen emits light */}
+      <pointLight position={[0, 0, 3]} intensity={0.25} color="#8090ff" distance={6} decay={2} />
+    </>
+  );
+}
+
+// ── Post-processing (bloom for screen) ───────────────────────────
+function PostFX({ hasContent }: { hasContent: boolean }) {
+  return (
+    <EffectComposer multisampling={4}>
+      <SMAA />
+      <Bloom
+        luminanceThreshold={0.85}
+        luminanceSmoothing={0.5}
+        intensity={hasContent ? 0.4 : 0.2}
+        mipmapBlur
+      />
+    </EffectComposer>
+  );
+}
+
+// ── Device scene (all geometry) ───────────────────────────────────
 function DeviceScene({ floatEnabled }: { floatEnabled: boolean }) {
   const { state } = useApp();
   const def = getModelById(state.deviceModel);
@@ -45,41 +143,117 @@ function DeviceScene({ floatEnabled }: { floatEnabled: boolean }) {
     switch (state.deviceType) {
       case 'iphone':
       case 'android':
-        return <Phone3DModel def={def} deviceColor={state.deviceColor} screenTexture={screenTexture} contentType={state.contentType} isLandscape={isLandscape} />;
-      case 'ipad':
-        return <Tablet3DModel def={def} screenTexture={screenTexture} contentType={state.contentType} isLandscape={isLandscape} />;
-      case 'macbook':
-        return <MacBook3DModel def={def} screenTexture={screenTexture} contentType={state.contentType} />;
-      case 'watch':
-        return <Watch3DModel def={def} screenTexture={screenTexture} contentType={state.contentType} />;
-      case 'imac': {
-        // Reuse MacBook model for iMac but with wider proportions
-        return <MacBook3DModel def={def} screenTexture={screenTexture} contentType={state.contentType} lidAngle={90} />;
-      }
-      case 'browser':
         return (
-          <group>
-            <mesh castShadow>
-              <boxGeometry args={[3.2, 0.05, 2.2]} />
-              <meshStandardMaterial color="#1a1a1e" metalness={0.1} roughness={0.4} />
-            </mesh>
-          </group>
+          <Phone3DModel
+            def={def}
+            deviceColor={state.deviceColor}
+            screenTexture={screenTexture}
+            contentType={state.contentType}
+            isLandscape={isLandscape}
+          />
         );
+      case 'ipad':
+        return (
+          <Tablet3DModel
+            def={def}
+            screenTexture={screenTexture}
+            contentType={state.contentType}
+            isLandscape={isLandscape}
+          />
+        );
+      case 'macbook':
+        return (
+          <MacBook3DModel
+            def={def}
+            screenTexture={screenTexture}
+            contentType={state.contentType}
+          />
+        );
+      case 'watch':
+        return (
+          <Watch3DModel
+            def={def}
+            screenTexture={screenTexture}
+            contentType={state.contentType}
+          />
+        );
+      case 'imac':
+        return (
+          <MacBook3DModel
+            def={def}
+            screenTexture={screenTexture}
+            contentType={state.contentType}
+            lidAngle={90}
+          />
+        );
+      case 'browser':
+        return <BrowserFrame />;
       default:
-        return <Phone3DModel def={def} deviceColor={state.deviceColor} screenTexture={screenTexture} contentType={state.contentType} isLandscape={isLandscape} />;
+        return (
+          <Phone3DModel
+            def={def}
+            deviceColor={state.deviceColor}
+            screenTexture={screenTexture}
+            contentType={state.contentType}
+            isLandscape={isLandscape}
+          />
+        );
     }
   })();
 
+  // Hero angle: pre-rotated so the device appears at a Rotato-style 3/4 angle
+  // Y = -25° (showing left side), X = 12° (slight tilt back)
+  const isLaptop = state.deviceType === 'macbook' || state.deviceType === 'imac';
+  const heroRot: [number, number, number] = isLaptop
+    ? [0.08, -0.25, 0]
+    : [0.18, -0.52, 0.04];
+
+  const device = <group rotation={heroRot}>{inner}</group>;
+
   if (floatEnabled) {
     return (
-      <Float speed={1.4} rotationIntensity={0.08} floatIntensity={0.18} floatingRange={[-0.06, 0.06]}>
-        {inner}
+      <Float speed={1.4} rotationIntensity={0.06} floatIntensity={0.16} floatingRange={[-0.06, 0.06]}>
+        {device}
       </Float>
     );
   }
-  return <>{inner}</>;
+  return device;
 }
 
+// ── Browser window placeholder ────────────────────────────────────
+function BrowserFrame() {
+  return (
+    <group>
+      <mesh castShadow>
+        <boxGeometry args={[3.4, 0.06, 2.2]} />
+        <meshStandardMaterial color="#1a1a1e" metalness={0.15} roughness={0.4} />
+      </mesh>
+    </group>
+  );
+}
+
+// ── OrbitControls (simple) ────────────────────────────────────────
+function HeroOrbitControls({ deviceType }: { deviceType: string }) {
+  const isLaptop = deviceType === 'macbook' || deviceType === 'imac';
+  return (
+    <OrbitControls
+      enablePan={false}
+      enableZoom={true}
+      enableRotate={true}
+      minDistance={isLaptop ? 3 : 2.2}
+      maxDistance={isLaptop ? 9 : 7.5}
+      minPolarAngle={Math.PI * 0.05}
+      maxPolarAngle={Math.PI * 0.92}
+      dampingFactor={0.05}
+      enableDamping={true}
+      rotateSpeed={0.7}
+      zoomSpeed={0.75}
+      target={[0, 0, 0]}
+    />
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────
 interface Device3DViewerProps {
   style?: React.CSSProperties;
   className?: string;
@@ -99,16 +273,14 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
       getGLElement: () => glRef.current?.domElement ?? null,
     }));
 
-    // Lighting preset based on background
-    const envPreset = 'studio' as const;
-
-    // Initial camera position
-    const camPos: [number, number, number] = state.deviceType === 'macbook' || state.deviceType === 'imac'
-      ? [0, 0.5, 5]
-      : [0, 0, 4.5];
-
-    // Float animation (only when float animation is selected)
+    const isLaptop = state.deviceType === 'macbook' || state.deviceType === 'imac';
+    const hasContent = !!(state.screenshotUrl || state.videoUrl);
     const floatEnabled = state.animation === 'float';
+
+    // Telephoto camera — narrow FOV like Rotato (feels more "product photo")
+    const fov = isLaptop ? 24 : 20;
+    const camZ = isLaptop ? 6.5 : 5.8;
+    const camY = isLaptop ? 0.6 : 0.2;
 
     return (
       <div
@@ -117,63 +289,56 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
         onPointerMove={() => setHintVisible(false)}
       >
         <R3FCanvas
-          camera={{ position: camPos, fov: 32, near: 0.1, far: 100 }}
-          gl={{ antialias: true, alpha: true, preserveDrawingBuffer: true }}
-          shadows
+          camera={{ position: [0, camY, camZ], fov, near: 0.1, far: 100 }}
+          gl={{
+            antialias: true,
+            alpha: true,
+            preserveDrawingBuffer: true,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1.2,
+          }}
+          shadows="soft"
           style={{ background: 'transparent' }}
+          dpr={[1, 2]}
         >
           <SceneCapturer onGlReady={handleGlReady} />
 
-          {/* Lighting */}
-          <ambientLight intensity={0.35} />
-          <directionalLight
-            position={[3, 6, 4]}
-            intensity={1.6}
-            castShadow
-            shadow-mapSize={[2048, 2048]}
-            shadow-camera-far={20}
-          />
-          <directionalLight position={[-3, 2, -2]} intensity={0.4} />
-          <pointLight position={[0, 3, 3]} intensity={0.6} color="#ffffff" />
+          {/* Studio lighting rig */}
+          <StudioLights deviceType={state.deviceType} />
 
-          {/* Environment for reflections */}
+          {/* High-quality environment map for reflections */}
           <Suspense fallback={null}>
-            <Environment preset={envPreset} environmentIntensity={0.7} />
+            <Environment
+              preset="studio"
+              environmentIntensity={1.1}
+              backgroundBlurriness={0}
+            />
           </Suspense>
 
-          {/* Contact shadow on ground */}
+          {/* Soft contact shadow on ground plane */}
           <ContactShadows
-            position={[0, -1.8, 0]}
-            opacity={0.55}
-            scale={8}
-            blur={2.5}
-            far={4}
+            position={[0, isLaptop ? -0.8 : -2.0, 0]}
+            opacity={0.65}
+            scale={isLaptop ? 10 : 6}
+            blur={isLaptop ? 3.5 : 2.2}
+            far={isLaptop ? 3 : 4}
             color="#000000"
+            resolution={512}
           />
 
-          {/* Device */}
-          <Suspense fallback={null}>
+          {/* Device geometry */}
+          <Suspense fallback={<Loader />}>
             <DeviceScene floatEnabled={floatEnabled} />
           </Suspense>
 
-          {/* Controls */}
-          <OrbitControls
-            enablePan={false}
-            enableZoom={true}
-            enableRotate={true}
-            minDistance={2}
-            maxDistance={8}
-            minPolarAngle={Math.PI / 8}
-            maxPolarAngle={Math.PI * 0.82}
-            dampingFactor={0.06}
-            enableDamping={true}
-            rotateSpeed={0.75}
-            zoomSpeed={0.8}
-            target={[0, 0, 0]}
-          />
+          {/* Post-processing: bloom + SMAA */}
+          <PostFX hasContent={hasContent} />
+
+          {/* Controls with Rotato hero angle */}
+          <HeroOrbitControls deviceType={state.deviceType} />
         </R3FCanvas>
 
-        {hintVisible && <RotatoHint />}
+        <RotatoHint visible={hintVisible} />
       </div>
     );
   },
