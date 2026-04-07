@@ -115,6 +115,18 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
     });
 
     setupDone.current = true;
+
+    // After creating new screen materials, immediately re-apply any existing
+    // texture so there's no flash of the dark screen between frames.
+    const tex = screenTexture.current;
+    screenMeshes.current.forEach(mesh => {
+      const mat = mesh.material as THREE.MeshStandardMaterial;
+      if (tex) {
+        mat.map = tex;
+        mat.color.set('#ffffff');
+        mat.needsUpdate = true;
+      }
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceColor]);
 

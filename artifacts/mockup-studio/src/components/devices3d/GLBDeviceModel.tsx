@@ -639,6 +639,17 @@ function ScreenOverlay({ sW, sH, sOffY, screenFaceZ, facesNeg, cornerRadius, scr
   const ctRef = useRef(contentType);
   ctRef.current = contentType;
 
+  // Belt-and-suspenders: re-apply texture after every render in case R3F
+  // touched the material between renders. No deps = runs after every commit.
+  useEffect(() => {
+    const tex = screenTexture.current;
+    if (tex && (mat.map !== tex || mat.color.r < 0.99)) {
+      mat.map = tex;
+      mat.color.set('#ffffff');
+      mat.needsUpdate = true;
+    }
+  });
+
   useFrame(() => {
     const tex = screenTexture.current;
     if (tex) {
@@ -720,6 +731,21 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
     if (modelChanged && !hasBaked && screenMeshes.current.length === 0) {
       detectAndMarkScreen(root, transform.screenFaceZ, screenMeshes.current);
     }
+
+    // After any material changes, IMMEDIATELY re-apply the current texture to all
+    // screen meshes. This runs synchronously (not waiting for the next useFrame),
+    // preventing any flash of the dark screen even if applyMaterials recreated
+    // a screen material. For ScreenOverlay models this is a no-op (screenMeshes
+    // is empty), but for skipOverlay=true models it guarantees the texture persists.
+    const tex = screenTexture.current;
+    screenMeshes.current.forEach(mesh => {
+      const mat = mesh.material as THREE.MeshStandardMaterial;
+      if (tex) {
+        mat.map = tex;
+        mat.color.set('#ffffff');
+        mat.needsUpdate = true;
+      }
+    });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceColor, transform]);
