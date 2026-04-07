@@ -260,46 +260,28 @@ function DeviceScene({
     state.deviceType === 'ipad'    ? 2.2 :
     state.deviceType === 'watch'   ? 0.9 : 1.65;
 
-  // ── Icon: ref for imperative hover styling (no pointer events on Html) ─
-  const iconDivRef = useRef<HTMLDivElement>(null);
-  const { gl } = useThree();
+  // ── Face-detection: hide icon when camera looks at the back ────────
+  // Uses a group's world quaternion to compute the screen normal in world
+  // space, then checks dot product with camera direction each frame.
+  // Updates the DOM div display imperatively — no state re-renders.
+  const faceGroupRef = useRef<THREE.Group>(null);
+  const wrapperRef   = useRef<HTMLDivElement>(null);
+  const _wn  = useRef(new THREE.Vector3());
+  const _wp  = useRef(new THREE.Vector3());
+  const _tc  = useRef(new THREE.Vector3());
+  const _q   = useRef(new THREE.Quaternion());
 
-  const iconBaseStyle: React.CSSProperties = {
-    width: 18, height: 18, borderRadius: '50%',
-    background: 'rgba(0,0,0,0.55)',
-    border: '1px dashed rgba(255,255,255,0.40)',
-    backdropFilter: 'blur(8px)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    userSelect: 'none',
-    pointerEvents: 'none',
-    transition: 'background 0.12s, border-color 0.12s, border-style 0.12s',
-  };
+  useFrame(({ camera }) => {
+    if (!faceGroupRef.current || !wrapperRef.current) return;
+    faceGroupRef.current.getWorldQuaternion(_q.current);
+    faceGroupRef.current.getWorldPosition(_wp.current);
+    _wn.current.set(0, 0, 1).applyQuaternion(_q.current);
+    _tc.current.copy(camera.position).sub(_wp.current).normalize();
+    wrapperRef.current.style.display =
+      _wn.current.dot(_tc.current) > 0.05 ? '' : 'none';
+  });
 
-  const applyHoverImperative = (entering: boolean) => {
-    if (!iconDivRef.current) return;
-    iconDivRef.current.style.background = entering ? 'rgba(124,58,237,0.85)' : 'rgba(0,0,0,0.55)';
-    iconDivRef.current.style.borderColor = entering ? 'rgba(196,181,253,0.7)' : 'rgba(255,255,255,0.40)';
-    iconDivRef.current.style.borderStyle = entering ? 'solid' : 'dashed';
-    gl.domElement.style.cursor = entering ? 'pointer' : '';
-  };
-
-  // Icon size in 3D units for the small click mesh
-  const iconMeshR = 0.055; // half-size of the small icon click area
-
-  // ── Which icon SVG to show ────────────────────────────────────────
-  const iconSVG = pencilVisible ? (
-    <svg width="9" height="9" viewBox="0 0 16 16" fill="none">
-      <path d="M11.5 2.5l2 2L5 13l-2.5.5.5-2.5L11.5 2.5z"
-        stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ) : (
-    <svg width="9" height="9" viewBox="0 0 18 18" fill="none">
-      <line x1="9" y1="3" x2="9" y2="15" stroke="white" strokeWidth="2.4" strokeLinecap="round"/>
-      <line x1="3" y1="9" x2="15" y2="9" stroke="white" strokeWidth="2.4" strokeLinecap="round"/>
-    </svg>
-  );
-
-  // ── Show icon? (always for no-content; only when pencilVisible for has-content) ─
+  // ── Show icon? ───────────────────────────────────────────────────
   const showIcon = !hasContent || pencilVisible;
 
   const inner = (() => {
@@ -418,61 +400,81 @@ function DeviceScene({
     }
   })();
 
-  // Hidden file input — triggered programmatically from mesh onClick
-  const fileInput = (
-    <input
-      ref={fileRef}
-      type="file"
-      accept="image/*,video/*"
-      style={{ display: 'none' }}
-      onChange={e => {
-        const f = e.target.files?.[0];
-        if (f) { applyFile(f); onHidePencil(); }
-        e.target.value = '';
-      }}
-    />
-  );
-
-  // ── Html visual icon — purely decorative, NO pointer events ──────
-  // occlude="blending" automatically hides/fades it when camera
-  // is looking from behind (device body occludes the icon position).
+  // ── Html icon overlay ────────────────────────────────────────────
+  // - The group at iconPos gives useFrame the correct world orientation
+  //   to detect front vs back facing.
+  // - Html (no transform) tracks the 3D point in screen space and
+  //   renders at the correct 2D position — reliable DOM events.
+  // - ONLY the small icon div has pointer-events:auto so OrbitControls
+  //   is never blocked outside the tiny icon area.
+  // - Direct DOM onClick on the icon → file picker ALWAYS opens
+  //   (browser treats DOM click as a trusted user gesture).
   const overlay = (
-    <Html
-      center
-      position={iconPos}
-      transform
-      distanceFactor={5.5}
-      zIndexRange={[100, 0]}
-      occlude="blending"
-      style={{ pointerEvents: 'none' }}
-    >
-      <div style={{ pointerEvents: 'none' }}>
-        {showIcon && (
-          <div ref={iconDivRef} style={iconBaseStyle}>
-            {iconSVG}
-          </div>
-        )}
-        {fileInput}
-      </div>
-    </Html>
+    <group ref={faceGroupRef} position={iconPos}>
+      <Html
+        center
+        zIndexRange={[100, 0]}
+        style={{ pointerEvents: 'none' }}
+      >
+        {/* wrapperRef toggled by useFrame face-detection (no re-renders) */}
+        <div ref={wrapperRef} style={{ pointerEvents: 'none' }}>
+          {showIcon && (
+            <div
+              onClick={() => fileRef.current?.click()}
+              onMouseEnter={e => {
+                const el = e.currentTarget as HTMLDivElement;
+                el.style.background = 'rgba(124,58,237,0.85)';
+                el.style.borderColor = 'rgba(196,181,253,0.7)';
+                el.style.borderStyle = 'solid';
+              }}
+              onMouseLeave={e => {
+                const el = e.currentTarget as HTMLDivElement;
+                el.style.background = 'rgba(0,0,0,0.55)';
+                el.style.borderColor = 'rgba(255,255,255,0.40)';
+                el.style.borderStyle = 'dashed';
+              }}
+              style={{
+                width: 16, height: 16, borderRadius: '50%',
+                background: 'rgba(0,0,0,0.55)',
+                border: '1px dashed rgba(255,255,255,0.40)',
+                backdropFilter: 'blur(8px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', userSelect: 'none',
+                pointerEvents: 'auto',
+                transition: 'background 0.12s, border-color 0.12s, border-style 0.12s',
+              }}
+            >
+              {pencilVisible ? (
+                <svg width="8" height="8" viewBox="0 0 16 16" fill="none">
+                  <path d="M11.5 2.5l2 2L5 13l-2.5.5.5-2.5L11.5 2.5z"
+                    stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              ) : (
+                <svg width="8" height="8" viewBox="0 0 18 18" fill="none">
+                  <line x1="9" y1="3" x2="9" y2="15" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                  <line x1="3" y1="9" x2="15" y2="9" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                </svg>
+              )}
+            </div>
+          )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*,video/*"
+            style={{ display: 'none' }}
+            onChange={e => {
+              const f = e.target.files?.[0];
+              if (f) { applyFile(f); onHidePencil(); }
+              e.target.value = '';
+            }}
+          />
+        </div>
+      </Html>
+    </group>
   );
 
-  // ── Mesh click handlers (R3F events — always reliable) ───────────
-  // Small mesh: opens file picker (active when icon is visible)
-  const iconClickMesh = showIcon ? (
-    <mesh
-      position={iconPos}
-      onClick={e => { e.stopPropagation(); fileRef.current?.click(); }}
-      onPointerEnter={() => applyHoverImperative(true)}
-      onPointerLeave={() => applyHoverImperative(false)}
-    >
-      <planeGeometry args={[iconMeshR * 2, iconMeshR * 2]} />
-      <meshBasicMaterial transparent opacity={0} depthWrite={false} side={THREE.FrontSide} />
-    </mesh>
-  ) : null;
-
-  // Large mesh: covers full screen area, reveals pencil on click
-  // (active only when content loaded and pencil not yet showing)
+  // Large transparent mesh: clicking anywhere on screen reveals pencil
+  // (only when content is loaded and pencil not yet shown)
   const screenClickMesh = (hasContent && !pencilVisible) ? (
     <mesh
       position={iconPos}
@@ -488,12 +490,11 @@ function DeviceScene({
       <Float speed={1.4} rotationIntensity={0.06} floatIntensity={0.16} floatingRange={[-0.06, 0.06]}>
         {inner}
         {screenClickMesh}
-        {iconClickMesh}
         {overlay}
       </Float>
     );
   }
-  return <>{inner}{screenClickMesh}{iconClickMesh}{overlay}</>;
+  return <>{inner}{screenClickMesh}{overlay}</>;
 }
 
 // ── Browser: screen content mesh (texture updated every frame) ────
