@@ -555,17 +555,21 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
         <primitive object={sceneObj} />
       </group>
 
-      {/* Screen content overlay — world-space plane aligned with front face */}
-      <ScreenOverlay
-        sW={sW}
-        sH={sH}
-        sOffY={sOffY}
-        screenFaceZ={screenFaceZ}
-        facesNeg={screenFacesNeg}
-        cornerRadius={cornerRadius}
-        screenTexture={screenTexture}
-        contentType={contentType}
-      />
+      {/* Screen content overlay — world-space plane aligned with front face.
+          Skipped for laptops/angled screens where the texture is applied
+          directly to the detected screen mesh (def.skipOverlay = true). */}
+      {!def.skipOverlay && (
+        <ScreenOverlay
+          sW={sW}
+          sH={sH}
+          sOffY={sOffY}
+          screenFaceZ={screenFaceZ}
+          facesNeg={screenFacesNeg}
+          cornerRadius={cornerRadius}
+          screenTexture={screenTexture}
+          contentType={contentType}
+        />
+      )}
     </>
   );
 }

@@ -21,7 +21,7 @@ import { Watch3DModel } from './Watch3DModel';
 // Preload all GLB models so they're ready before user selects them
 useGLTF.preload('/models/iphone17pro.glb');
 useGLTF.preload('/models/iphone16.glb');
-useGLTF.preload('/models/iphone14pro.glb');
+useGLTF.preload('/models/macbookpro.glb');
 
 export interface Device3DViewerHandle {
   getGLElement: () => HTMLCanvasElement | null;
@@ -181,7 +181,14 @@ function DeviceScene({ floatEnabled }: { floatEnabled: boolean }) {
           />
         );
       case 'macbook':
-        return (
+        return def.glbUrl ? (
+          <GLBDeviceModel
+            def={def}
+            deviceColor={state.deviceColor}
+            screenTexture={screenTexture}
+            contentType={state.contentType}
+          />
+        ) : (
           <MacBook3DModel
             def={def}
             screenTexture={screenTexture}

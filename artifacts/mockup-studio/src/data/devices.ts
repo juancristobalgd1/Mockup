@@ -48,6 +48,12 @@ export interface DeviceModelDef {
    * screen faces the camera correctly.
    */
   screenFacesBack?: boolean;
+  /**
+   * Set to true to skip the flat overlay plane entirely.
+   * Use for laptops / angled screens where the texture is applied directly to
+   * the detected screen mesh instead.
+   */
+  skipOverlay?: boolean;
 }
 
 export const DEVICE_MODELS: DeviceModelDef[] = [
@@ -83,22 +89,6 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasColors: true, hasOrientation: true,
     accent: '#38bdf8',
     glbUrl: '/models/iphone16.glb',
-  },
-  {
-    id: 'iphone-14-pro',
-    label: 'iPhone 14 Pro',
-    group: 'iPhone',
-    storeType: 'iphone',
-    w: 194, h: 420,
-    insetTop: 12, insetBottom: 11, insetSide: 10,
-    br: '2.6rem', screenBr: '2.1rem',
-    camera: 'dynamic-island',
-    cameraLayout: 'triple-tri',
-    frame: 'titanium',
-    hasColors: true, hasOrientation: true,
-    accent: '#7c7c7c',
-    glbUrl: '/models/iphone14pro.glb',
-    screenFacesBack: true,
   },
   // ── Android ───────────────────────────────────────────────────────
   {
@@ -203,30 +193,19 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
   },
   // ── Desktop ───────────────────────────────────────────────────────
   {
-    id: 'macbook-pro-16',
-    label: 'MacBook Pro 16"',
+    id: 'macbook-pro',
+    label: 'MacBook Pro',
     group: 'Desktop',
     storeType: 'macbook',
-    w: 560, h: 360,
-    insetTop: 14, insetBottom: 10, insetSide: 18,
-    br: '0.75rem', screenBr: '0.4rem',
+    w: 560, h: 350,
+    insetTop: 10, insetBottom: 8, insetSide: 12,
+    br: '0.75rem', screenBr: '0.3rem',
     camera: 'none',
     cameraLayout: 'none',
     frame: 'aluminum',
     accent: '#6b7280',
-  },
-  {
-    id: 'macbook-air',
-    label: 'MacBook Air M3',
-    group: 'Desktop',
-    storeType: 'macbook',
-    w: 520, h: 336,
-    insetTop: 14, insetBottom: 10, insetSide: 18,
-    br: '0.6rem', screenBr: '0.35rem',
-    camera: 'none',
-    cameraLayout: 'none',
-    frame: 'aluminum',
-    accent: '#e5c07b',
+    glbUrl: '/models/macbookpro.glb',
+    skipOverlay: true,
   },
   {
     id: 'imac-27',
