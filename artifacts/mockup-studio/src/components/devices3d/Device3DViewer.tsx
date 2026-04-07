@@ -9,7 +9,6 @@ import {
 } from '@react-three/drei';
 import { EffectComposer, Bloom, SMAA } from '@react-three/postprocessing';
 import * as THREE from 'three';
-import { Upload, ImagePlus } from 'lucide-react';
 import { useApp } from '../../store';
 import { getModelById } from '../../data/devices';
 import { useScreenTexture } from './useScreenTexture';
@@ -219,10 +218,82 @@ function PostFX({ hasContent }: { hasContent: boolean }) {
 
 // ── Device scene (all geometry) ───────────────────────────────────
 function DeviceScene({ floatEnabled }: { floatEnabled: boolean }) {
-  const { state } = useApp();
+  const { state, updateState } = useApp();
+  const fileRef = useRef<HTMLInputElement>(null);
   const def = getModelById(state.deviceModel);
   const screenTexture = useScreenTexture(state.screenshotUrl, state.videoUrl, state.contentType);
   const isLandscape = state.deviceLandscape;
+  const hasContent = !!(state.screenshotUrl || state.videoUrl);
+
+  const applyFile = (file: File) => {
+    const url = URL.createObjectURL(file);
+    if (file.type.startsWith('video/')) {
+      updateState({ videoUrl: url, screenshotUrl: null, contentType: 'video' });
+    } else {
+      updateState({ screenshotUrl: url, videoUrl: null, contentType: 'image' });
+    }
+  };
+
+  // Icon position: center of device screen, slightly in front
+  const iconPos: [number, number, number] =
+    state.deviceType === 'macbook'  ? [0,  0.28, 0.20] :
+    state.deviceType === 'browser'  ? [0, -0.30, 0.08] :
+    state.deviceType === 'watch'    ? [0,  0,    0.06] :
+                                      [0,  0,    0.10];
+
+  // The Html upload button — always rendered, follows device in 3D space
+  const uploadBtn = (
+    <Html
+      center
+      position={iconPos}
+      zIndexRange={[100, 0]}
+      style={{ pointerEvents: 'none' }}
+    >
+      {/* wrapper needed so only the icon area captures pointer events */}
+      <div style={{ pointerEvents: 'auto' }}>
+        <div
+          onClick={() => fileRef.current?.click()}
+          title={hasContent ? 'Cambiar imagen / video' : 'Subir imagen o video'}
+          style={{
+            width: 44, height: 44, borderRadius: '50%',
+            background: 'rgba(0,0,0,0.52)',
+            border: '1.5px dashed rgba(255,255,255,0.35)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', userSelect: 'none',
+            transition: 'background 0.15s, border-color 0.15s',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.background = 'rgba(124,58,237,0.72)';
+            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,181,253,0.6)';
+            (e.currentTarget as HTMLElement).style.borderStyle = 'solid';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.52)';
+            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.35)';
+            (e.currentTarget as HTMLElement).style.borderStyle = 'dashed';
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <line x1="9" y1="3" x2="9" y2="15" stroke="white" strokeWidth="2" strokeLinecap="round" />
+            <line x1="3" y1="9" x2="15" y2="9" stroke="white" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*,video/*"
+          style={{ display: 'none' }}
+          onChange={e => {
+            const f = e.target.files?.[0];
+            if (f) applyFile(f);
+            e.target.value = '';
+          }}
+        />
+      </div>
+    </Html>
+  );
 
   const inner = (() => {
     // Real GLB model — any device that has a glbUrl defined
@@ -344,10 +415,11 @@ function DeviceScene({ floatEnabled }: { floatEnabled: boolean }) {
     return (
       <Float speed={1.4} rotationIntensity={0.06} floatIntensity={0.16} floatingRange={[-0.06, 0.06]}>
         {inner}
+        {uploadBtn}
       </Float>
     );
   }
-  return <>{inner}</>;
+  return <>{inner}{uploadBtn}</>;
 }
 
 // ── Browser: screen content mesh (texture updated every frame) ────
@@ -616,10 +688,8 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
   function Device3DViewer({ style, className }, ref) {
     const { state, updateState } = useApp();
     const glRef = useRef<THREE.WebGLRenderer | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const [hintVisible, setHintVisible] = useState(true);
     const [dragOver, setDragOver] = useState(false);
-    const [replaceHover, setReplaceHover] = useState(false);
 
     const handleGlReady = useCallback((gl: THREE.WebGLRenderer) => {
       glRef.current = gl;
@@ -629,7 +699,11 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
       getGLElement: () => glRef.current?.domElement ?? null,
     }));
 
-    const applyFile = useCallback((file: File) => {
+    const handleDrop = useCallback((e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      const file = e.dataTransfer.files?.[0];
+      if (!file) return;
       const url = URL.createObjectURL(file);
       if (file.type.startsWith('video/')) {
         updateState({ videoUrl: url, screenshotUrl: null, contentType: 'video' });
@@ -637,19 +711,6 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
         updateState({ screenshotUrl: url, videoUrl: null, contentType: 'image' });
       }
     }, [updateState]);
-
-    const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) applyFile(file);
-      e.target.value = '';
-    }, [applyFile]);
-
-    const handleDrop = useCallback((e: React.DragEvent) => {
-      e.preventDefault();
-      setDragOver(false);
-      const file = e.dataTransfer.files?.[0];
-      if (file) applyFile(file);
-    }, [applyFile]);
 
     const isLaptop = state.deviceType === 'macbook';
     const hasContent = !!(state.screenshotUrl || state.videoUrl);
@@ -734,84 +795,18 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
           />
         </R3FCanvas>
 
-        <RotatoHint visible={hintVisible && hasContent} />
+        <RotatoHint visible={hintVisible} />
 
-        {/* ── Click-to-upload overlay (shown when no content) ────── */}
-        {!hasContent && (
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            style={{
-              position: 'absolute', inset: 0, zIndex: 10,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer',
-              background: dragOver ? 'rgba(124,58,237,0.12)' : 'transparent',
-              transition: 'background 0.18s',
-            }}
-          >
-            <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-              padding: '20px 28px', borderRadius: 20,
-              background: dragOver
-                ? 'rgba(124,58,237,0.22)'
-                : 'rgba(0,0,0,0.45)',
-              border: dragOver
-                ? '1.5px solid rgba(124,58,237,0.6)'
-                : '1.5px dashed rgba(255,255,255,0.18)',
-              backdropFilter: 'blur(10px)',
-              transition: 'all 0.18s',
-              pointerEvents: 'none',
-            }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: '50%',
-                background: dragOver ? 'rgba(124,58,237,0.35)' : 'rgba(255,255,255,0.07)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'background 0.18s',
-              }}>
-                <Upload size={20} style={{ color: dragOver ? '#c4b5fd' : 'rgba(255,255,255,0.55)' }} />
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: dragOver ? '#c4b5fd' : 'rgba(255,255,255,0.75)', marginBottom: 3 }}>
-                  {dragOver ? 'Suelta aquí' : 'Click para subir'}
-                </div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>
-                  Imagen o video · También puedes arrastrar
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* ── Drag-and-drop visual feedback ────────────────────────── */}
+        {dragOver && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none',
+            border: '2px solid rgba(124,58,237,0.7)',
+            borderRadius: 8,
+            background: 'rgba(124,58,237,0.08)',
+            boxShadow: 'inset 0 0 40px rgba(124,58,237,0.12)',
+          }} />
         )}
-
-        {/* ── Replace button (shown when content is loaded) ─────────── */}
-        {hasContent && (
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            onMouseEnter={() => setReplaceHover(true)}
-            onMouseLeave={() => setReplaceHover(false)}
-            style={{
-              position: 'absolute', bottom: 16, right: 16, zIndex: 10,
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '7px 14px', borderRadius: 20,
-              background: replaceHover ? 'rgba(124,58,237,0.8)' : 'rgba(0,0,0,0.5)',
-              border: replaceHover ? '1px solid rgba(196,181,253,0.4)' : '1px solid rgba(255,255,255,0.12)',
-              color: replaceHover ? '#fff' : 'rgba(255,255,255,0.55)',
-              fontSize: 11, fontWeight: 600, cursor: 'pointer',
-              backdropFilter: 'blur(10px)',
-              transition: 'all 0.15s',
-            }}
-          >
-            <ImagePlus size={13} />
-            Reemplazar
-          </button>
-        )}
-
-        {/* ── Hidden file input ─────────────────────────────────────── */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*,video/*"
-          style={{ display: 'none' }}
-          onChange={handleFileChange}
-        />
       </div>
     );
   },
