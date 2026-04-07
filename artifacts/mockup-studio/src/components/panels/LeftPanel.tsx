@@ -727,6 +727,16 @@ export function LeftPanel() {
                   </div>
                   <Toggle enabled={state.autoRotate} onToggle={() => updateState({ autoRotate: !state.autoRotate })} />
                 </div>
+                {state.autoRotate && (
+                  <div className="mt-3">
+                    <SliderControl
+                      label="Rotation Speed"
+                      value={Math.round(state.autoRotateSpeed * 10) / 10}
+                      min={0.5} max={8} step={0.5}
+                      onChange={v => updateState({ autoRotateSpeed: v })}
+                    />
+                  </div>
+                )}
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-2">
                     <RotateCcw size={13} style={{ color: '#6b7280' }} />
@@ -756,6 +766,33 @@ export function LeftPanel() {
                       }}>
                       <span style={{ fontSize: 16 }}>{env.icon}</span>
                       <span style={{ fontSize: 9 }}>{env.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Camera */}
+              <div className="mb-5" style={{ paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <SectionLabel>Camera</SectionLabel>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {([
+                    { id: 'hero',  label: 'Hero',  icon: '🎬' },
+                    { id: 'front', label: 'Front', icon: '👁' },
+                    { id: 'side',  label: 'Side',  icon: '↔' },
+                    { id: 'top',   label: 'Top',   icon: '⬆' },
+                  ] as const).map(cam => (
+                    <button
+                      key={cam.id}
+                      onClick={() => updateState({ cameraAngle: cam.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium transition-all"
+                      style={{
+                        background: state.cameraAngle === cam.id ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.03)',
+                        border: state.cameraAngle === cam.id ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.07)',
+                        color: state.cameraAngle === cam.id ? '#c4b5fd' : '#6b7280',
+                      }}
+                    >
+                      <span>{cam.icon}</span>
+                      <span>{cam.label}</span>
                     </button>
                   ))}
                 </div>

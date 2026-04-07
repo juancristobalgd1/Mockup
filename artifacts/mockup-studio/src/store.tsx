@@ -45,8 +45,11 @@ export interface AppState {
 
   animation: "none" | "float" | "spin" | "pulse" | "slide-in";
   autoRotate: boolean;
+  autoRotateSpeed: number;
   envPreset: EnvPreset;
   contactShadowOpacity: number;
+  cameraAngle: 'hero' | 'front' | 'side' | 'top';
+  cameraResetKey: number;
 
   texts: TextOverlay[];
 }
@@ -75,8 +78,11 @@ export const defaultState: AppState = {
 
   animation: "float",
   autoRotate: false,
+  autoRotateSpeed: 1.5,
   envPreset: "studio",
   contactShadowOpacity: 65,
+  cameraAngle: "hero",
+  cameraResetKey: 0,
 
   texts: []
 };

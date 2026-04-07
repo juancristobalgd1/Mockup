@@ -659,6 +659,11 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
     if (!hasBaked && screenMeshes.current.length === 0) {
       detectAndMarkScreen(root, transform.screenFaceZ, screenMeshes.current);
     }
+
+    // Force the useFrame texture-sync to re-apply the current texture to the
+    // freshly-created screen mesh materials (applyMaterials replaces them with
+    // a blank black material, so we must invalidate the cached texture ref).
+    prevTex.current = null;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceColor, transform]);
 

@@ -1,6 +1,6 @@
 import {
   Suspense, useRef, forwardRef, useImperativeHandle,
-  useCallback, useState,
+  useCallback, useState, useEffect,
 } from 'react';
 import { Canvas as R3FCanvas, useThree } from '@react-three/fiber';
 import {
@@ -282,11 +282,47 @@ function BrowserFrame() {
   );
 }
 
-// ── OrbitControls (simple) ────────────────────────────────────────
-function HeroOrbitControls({ deviceType, autoRotate }: { deviceType: string; autoRotate: boolean }) {
+// ── Camera angle presets ──────────────────────────────────────────
+const CAMERA_PRESETS: Record<string, { phi: number; theta: number }> = {
+  hero:  { phi: Math.PI / 2 - 0.12, theta:  0.28 },
+  front: { phi: Math.PI / 2,         theta:  0    },
+  side:  { phi: Math.PI / 2,         theta:  Math.PI / 2 },
+  top:   { phi: 0.18,                theta:  0    },
+};
+
+// ── OrbitControls ────────────────────────────────────────────────
+function HeroOrbitControls({
+  deviceType, autoRotate, autoRotateSpeed, cameraAngle, cameraResetKey,
+}: {
+  deviceType: string;
+  autoRotate: boolean;
+  autoRotateSpeed: number;
+  cameraAngle: string;
+  cameraResetKey: number;
+}) {
   const isLaptop = deviceType === 'macbook';
+  const controlsRef = useRef<any>(null);
+  const { camera } = useThree();
+
+  useEffect(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    const preset = CAMERA_PRESETS[cameraAngle] ?? CAMERA_PRESETS.hero;
+    const dist = isLaptop ? 6.2 : 5.6;
+    const { phi, theta } = preset;
+    camera.position.set(
+      dist * Math.sin(phi) * Math.sin(theta),
+      dist * Math.cos(phi),
+      dist * Math.sin(phi) * Math.cos(theta),
+    );
+    controls.target.set(0, 0, 0);
+    controls.update();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraResetKey]);
+
   return (
     <OrbitControls
+      ref={controlsRef}
       enablePan={false}
       enableZoom={true}
       enableRotate={true}
@@ -299,7 +335,7 @@ function HeroOrbitControls({ deviceType, autoRotate }: { deviceType: string; aut
       rotateSpeed={0.7}
       zoomSpeed={0.75}
       autoRotate={autoRotate}
-      autoRotateSpeed={1.5}
+      autoRotateSpeed={autoRotateSpeed}
       target={[0, 0, 0]}
     />
   );
@@ -389,7 +425,13 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
           <PostFX hasContent={hasContent} />
 
           {/* Controls with Rotato hero angle */}
-          <HeroOrbitControls deviceType={state.deviceType} autoRotate={state.autoRotate} />
+          <HeroOrbitControls
+            deviceType={state.deviceType}
+            autoRotate={state.autoRotate}
+            autoRotateSpeed={state.autoRotateSpeed}
+            cameraAngle={state.cameraAngle}
+            cameraResetKey={state.cameraResetKey}
+          />
         </R3FCanvas>
 
         <RotatoHint visible={hintVisible} />
