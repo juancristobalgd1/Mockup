@@ -23,6 +23,7 @@ useGLTF.preload('/models/iphone17pro.glb');
 useGLTF.preload('/models/iphone16.glb');
 useGLTF.preload('/models/macbookpro.glb');
 useGLTF.preload('/models/samsungs25ultra.glb');
+useGLTF.preload('/models/samsungs21ultra.glb');
 
 export interface Device3DViewerHandle {
   getGLElement: () => HTMLCanvasElement | null;
