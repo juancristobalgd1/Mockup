@@ -1,11 +1,11 @@
-import {
+import React, {
   Suspense, useRef, forwardRef, useImperativeHandle,
   useCallback, useState, useEffect,
 } from 'react';
-import { Canvas as R3FCanvas, useThree } from '@react-three/fiber';
+import { Canvas as R3FCanvas, useThree, useFrame } from '@react-three/fiber';
 import {
   OrbitControls, Environment, ContactShadows, Float,
-  useProgress, Html, useGLTF,
+  useProgress, Html, useGLTF, RoundedBox,
 } from '@react-three/drei';
 import { EffectComposer, Bloom, SMAA } from '@react-three/postprocessing';
 import * as THREE from 'three';
@@ -319,7 +319,13 @@ function DeviceScene({ floatEnabled }: { floatEnabled: boolean }) {
           />
         );
       case 'browser':
-        return <BrowserFrame />;
+        return (
+          <BrowserFrame3D
+            screenTexture={screenTexture}
+            contentType={state.contentType}
+            browserMode={def.id.includes('light') ? 'light' : 'dark'}
+          />
+        );
       default:
         return (
           <Phone3DModel
@@ -343,14 +349,175 @@ function DeviceScene({ floatEnabled }: { floatEnabled: boolean }) {
   return <>{inner}</>;
 }
 
-// ── Browser window placeholder ────────────────────────────────────
-function BrowserFrame() {
+// ── Browser: screen content mesh (texture updated every frame) ────
+function BrowserScreenContent({
+  w, h, screenTexture, contentType,
+}: {
+  w: number; h: number;
+  screenTexture: React.MutableRefObject<THREE.Texture | null>;
+  contentType: 'image' | 'video' | null;
+}) {
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame(() => {
+    if (!ref.current) return;
+    const mat = ref.current.material as THREE.MeshBasicMaterial;
+    const tex = screenTexture.current;
+    if (tex && mat.map !== tex) {
+      mat.map = tex;
+      mat.color.set('#ffffff');
+      mat.needsUpdate = true;
+    } else if (!tex && mat.map) {
+      mat.map = null;
+      mat.color.set('#070b14');
+      mat.needsUpdate = true;
+    }
+    if (contentType === 'video' && tex) tex.needsUpdate = true;
+  });
+  return (
+    <mesh ref={ref} renderOrder={1}>
+      <planeGeometry args={[w, h]} />
+      <meshBasicMaterial color="#070b14" toneMapped={false} />
+    </mesh>
+  );
+}
+
+// ── Browser window — full 3D model with chrome UI + live screen ───
+function BrowserFrame3D({
+  screenTexture, contentType, browserMode,
+}: {
+  screenTexture: React.MutableRefObject<THREE.Texture | null>;
+  contentType: 'image' | 'video' | null;
+  browserMode: 'dark' | 'light';
+}) {
+  const isDark = browserMode !== 'light';
+
+  // Colours
+  const frameColor  = isDark ? '#1a1a1e' : '#ebebed';
+  const barColor    = isDark ? '#2c2c2e' : '#e2e2e4';
+  const tabColor    = isDark ? '#3a3a3c' : '#d0d0d2';
+  const addrColor   = isDark ? '#424244' : '#c8c8ca';
+  const iconColor   = isDark ? '#8e8e93' : '#7a7a80';
+  const screenIdle  = isDark ? '#070b14' : '#ffffff';
+
+  // World dimensions (W×H browser window)
+  const W = 3.4,  H = 2.2,  D = 0.07;
+  const barH  = 0.30;                       // chrome bar height
+  const barY  = H / 2 - barH / 2;          // center of bar
+  const contH = H - barH;                  // content area height
+  const contY = barY - barH / 2 - contH / 2; // center of content
+
+  // Tab strip occupies top 40% of bar, nav row the rest
+  const tabH     = barH * 0.40;
+  const tabY     = barY + (barH - tabH) / 2;   // top of bar zone
+  const navH     = barH * 0.60;
+  const navY     = barY - tabH / 2;            // nav zone center (negative offset)
+
   return (
     <group>
-      <mesh castShadow>
-        <boxGeometry args={[3.4, 0.06, 2.2]} />
-        <meshStandardMaterial color="#1a1a1e" metalness={0.15} roughness={0.4} />
+      {/* ── Frame body ─────────────────────────────────────────────── */}
+      <RoundedBox args={[W, H, D]} radius={0.09} smoothness={6} castShadow receiveShadow>
+        <meshPhysicalMaterial
+          color={frameColor} metalness={0.18} roughness={0.16}
+          envMapIntensity={2.5} clearcoat={0.6} clearcoatRoughness={0.08}
+        />
+      </RoundedBox>
+
+      {/* ── Chrome bar background ────────────────────────────────── */}
+      <mesh position={[0, barY, D / 2 + 0.0005]}>
+        <planeGeometry args={[W - 0.004, barH]} />
+        <meshBasicMaterial color={barColor} />
       </mesh>
+
+      {/* ── Divider line between bar and content ─────────────────── */}
+      <mesh position={[0, barY - barH / 2 + 0.002, D / 2 + 0.001]}>
+        <planeGeometry args={[W - 0.004, 0.005]} />
+        <meshBasicMaterial color={isDark ? '#000000' : '#b0b0b2'} />
+      </mesh>
+
+      {/* ── Tab strip ────────────────────────────────────────────── */}
+      {/* Active tab */}
+      <mesh position={[-W / 2 + 0.50, tabY, D / 2 + 0.002]}>
+        <planeGeometry args={[0.80, tabH - 0.02]} />
+        <meshBasicMaterial color={barColor} />
+      </mesh>
+      {/* Tab label dots (simulated text) */}
+      {[0, 0.08, 0.16].map((ox) => (
+        <mesh key={ox} position={[-W / 2 + 0.26 + ox, tabY, D / 2 + 0.004]}>
+          <planeGeometry args={[0.06, 0.04]} />
+          <meshBasicMaterial color={iconColor} />
+        </mesh>
+      ))}
+      {/* Tab close × */}
+      <mesh position={[-W / 2 + 0.84, tabY, D / 2 + 0.004]}>
+        <circleGeometry args={[0.022, 16]} />
+        <meshBasicMaterial color={iconColor} />
+      </mesh>
+      {/* New-tab + button */}
+      <mesh position={[-W / 2 + 0.98, tabY, D / 2 + 0.003]}>
+        <planeGeometry args={[0.055, 0.055]} />
+        <meshBasicMaterial color={tabColor} />
+      </mesh>
+
+      {/* ── Traffic lights ────────────────────────────────────────── */}
+      {[
+        { x: -W / 2 + 0.13, col: '#ff5f57' },  // close
+        { x: -W / 2 + 0.21, col: '#febc2e' },  // minimize
+        { x: -W / 2 + 0.29, col: '#28c840' },  // maximise
+      ].map(({ x, col }) => (
+        <mesh key={x} position={[x, navY, D / 2 + 0.003]}>
+          <circleGeometry args={[0.026, 32]} />
+          <meshBasicMaterial color={col} />
+        </mesh>
+      ))}
+
+      {/* ── Back / Forward arrows ─────────────────────────────────── */}
+      <mesh position={[-W / 2 + 0.43, navY, D / 2 + 0.003]}>
+        <planeGeometry args={[0.042, 0.042]} />
+        <meshBasicMaterial color={iconColor} />
+      </mesh>
+      <mesh position={[-W / 2 + 0.51, navY, D / 2 + 0.003]}>
+        <planeGeometry args={[0.042, 0.042]} />
+        <meshBasicMaterial color={iconColor} />
+      </mesh>
+
+      {/* ── Address bar pill ─────────────────────────────────────── */}
+      <mesh position={[0.08, navY, D / 2 + 0.003]}>
+        <planeGeometry args={[W * 0.62, navH * 0.52]} />
+        <meshBasicMaterial color={addrColor} />
+      </mesh>
+      {/* Lock icon in address bar */}
+      <mesh position={[-W * 0.31 + 0.12, navY, D / 2 + 0.005]}>
+        <circleGeometry args={[0.016, 16]} />
+        <meshBasicMaterial color={iconColor} />
+      </mesh>
+      {/* URL dots */}
+      {[-0.04, 0.04, 0.12, 0.20, 0.28, 0.36].map((ox) => (
+        <mesh key={ox} position={[-W * 0.31 + 0.22 + ox, navY, D / 2 + 0.005]}>
+          <planeGeometry args={[0.06, 0.028]} />
+          <meshBasicMaterial color={isDark ? '#636368' : '#909096'} />
+        </mesh>
+      ))}
+
+      {/* ── Bookmarks bar (thin strip just above content) ─────────── */}
+      <mesh position={[0, barY - barH / 2 + 0.011, D / 2 + 0.001]}>
+        <planeGeometry args={[W - 0.004, 0.022]} />
+        <meshBasicMaterial color={isDark ? '#252527' : '#e8e8ea'} />
+      </mesh>
+
+      {/* ── Content screen ───────────────────────────────────────── */}
+      <group position={[0, contY, D / 2 + 0.0008]}>
+        {/* Background fill (idle colour) */}
+        <mesh>
+          <planeGeometry args={[W - 0.004, contH - 0.001]} />
+          <meshBasicMaterial color={screenIdle} />
+        </mesh>
+        {/* Live image / video */}
+        <BrowserScreenContent
+          w={W - 0.004} h={contH - 0.001}
+          screenTexture={screenTexture}
+          contentType={contentType}
+        />
+      </group>
     </group>
   );
 }
