@@ -315,10 +315,35 @@ function metalMat(color: string, roughness = 0.10, metalness = 0.88) {
  */
 function normalizeScreenUVs(obj: THREE.Mesh, flipU = false) {
   const geom = obj.geometry;
+  const pos  = geom.attributes.position as THREE.BufferAttribute | undefined;
+
+  // ── UV-axis orientation check: if U→Y (90° rotated), fall back to Strategy B ──
+  // We sample vertices and compute Pearson correlation of U with X and with Y.
+  // For standard phone UVs, |corr(U,X)| >> |corr(U,Y)|.
+  // For 90°-rotated atlases (e.g. OnePlus 12), |corr(U,Y)| >> |corr(U,X)|.
+  if (geom.attributes.uv && pos) {
+    const uvAttr = geom.attributes.uv as THREE.BufferAttribute;
+    const n = Math.min(uvAttr.count, 300);
+    let mx = 0, my = 0, mu = 0;
+    for (let i = 0; i < n; i++) {
+      mx += pos.getX(i); my += pos.getY(i); mu += uvAttr.getX(i);
+    }
+    mx /= n; my /= n; mu /= n;
+    let sXU = 0, sYU = 0, sXX = 0, sYY = 0, sUU = 0;
+    for (let i = 0; i < n; i++) {
+      const dx = pos.getX(i) - mx, dy = pos.getY(i) - my, du = uvAttr.getX(i) - mu;
+      sXU += dx * du; sYU += dy * du; sXX += dx * dx; sYY += dy * dy; sUU += du * du;
+    }
+    const corrXU = sXX > 0 && sUU > 0 ? Math.abs(sXU / Math.sqrt(sXX * sUU)) : 0;
+    const corrYU = sYY > 0 && sUU > 0 ? Math.abs(sYU / Math.sqrt(sYY * sUU)) : 0;
+    // If U strongly correlates with Y (rotated UV atlas), drop existing UVs → Strategy B
+    if (corrYU > corrXU + 0.3) {
+      geom.deleteAttribute('uv');
+    }
+  }
 
   // ── Strategy B: generate planar UVs from position XY ──────────────
   if (!geom.attributes.uv) {
-    const pos = geom.attributes.position as THREE.BufferAttribute | undefined;
     if (!pos) return;
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (let i = 0; i < pos.count; i++) {
