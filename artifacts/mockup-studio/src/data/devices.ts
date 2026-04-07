@@ -85,6 +85,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasColors: true, hasOrientation: true,
     accent: '#a8a29e',
     glbUrl: '/models/iphone17pro.glb',
+    skipOverlay: true,
   },
   {
     id: 'iphone-16',
@@ -101,6 +102,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasColors: true, hasOrientation: true,
     accent: '#38bdf8',
     glbUrl: '/models/iphone16.glb',
+    skipOverlay: true,
   },
   // ── Android ───────────────────────────────────────────────────────
   {
