@@ -79,7 +79,7 @@ export const defaultState: AppState = {
   animation: "float",
   autoRotate: false,
   autoRotateSpeed: 1.5,
-  envPreset: "studio",
+  envPreset: "warehouse",
   contactShadowOpacity: 65,
   cameraAngle: "hero",
   cameraResetKey: 0,

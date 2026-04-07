@@ -301,8 +301,8 @@ function countMeshes(root: THREE.Object3D): number {
 // ── Material helpers ──────────────────────────────────────────────────
 
 /** PBR override for metal chassis parts (adapts to deviceColor). */
-function metalMat(color: string, roughness = 0.10, metalness = 0.88) {
-  return new THREE.MeshStandardMaterial({ color, roughness, metalness, envMapIntensity: 2.2 });
+function metalMat(color: string, roughness = 0.08, metalness = 0.92) {
+  return new THREE.MeshStandardMaterial({ color, roughness, metalness, envMapIntensity: 3.2 });
 }
 
 /**
@@ -444,7 +444,7 @@ function classifyMesh(
   // ── Logo ──────────────────────────────────────────────────────────
   if (key.includes('logo')) {
     return new THREE.MeshStandardMaterial({
-      color: deviceColor || '#8a8a8e', metalness: 0.96, roughness: 0.05, envMapIntensity: 2.8,
+      color: deviceColor || '#8a8a8e', metalness: 0.96, roughness: 0.04, envMapIntensity: 3.5,
     });
   }
 
@@ -458,7 +458,7 @@ function classifyMesh(
   // ── Dark glossy surfaces (watch back cover, ceramic) ─────────────
   if (key.includes('black') || key.includes('glossy') || key.includes('dark_chrome')) {
     return new THREE.MeshStandardMaterial({
-      color: '#0a0a0a', roughness: 0.08, metalness: 0.7, envMapIntensity: 2.6,
+      color: '#0a0a0a', roughness: 0.06, metalness: 0.85, envMapIntensity: 3.2,
     });
   }
 
@@ -502,7 +502,7 @@ function applyMaterials(
       hasDefaultMat = true;
       // Boost baked-texture env response but keep original texture
       const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-      mats.forEach(m => { (m as THREE.MeshStandardMaterial).envMapIntensity = 1.6; });
+      mats.forEach(m => { (m as THREE.MeshStandardMaterial).envMapIntensity = 2.5; });
       return;
     }
 
