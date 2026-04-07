@@ -93,21 +93,6 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     accent: '#7c7c7c',
     glbUrl: '/models/iphone14pro.glb',
   },
-  {
-    id: 'iphone-13-pro',
-    label: 'iPhone 13 Pro',
-    group: 'iPhone',
-    storeType: 'iphone',
-    w: 192, h: 416,
-    insetTop: 14, insetBottom: 14, insetSide: 14,
-    br: '2.4rem', screenBr: '1.9rem',
-    camera: 'notch',
-    cameraLayout: 'triple-tri',
-    frame: 'titanium',
-    hasColors: true, hasOrientation: true,
-    accent: '#9ca3af',
-    glbUrl: '/models/iphone13pro.glb',
-  },
   // ── Android ───────────────────────────────────────────────────────
   {
     id: 'samsung-s24-ultra',

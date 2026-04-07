@@ -119,6 +119,10 @@ function detectScreenMesh(
 // ── Transform computation ─────────────────────────────────────────────
 
 function computeTransform(sceneObj: THREE.Object3D, def: DeviceModelDef): ModelTransform {
+  // Force world-matrix update so setFromObject gives correct bounds even for
+  // detached scenes (not yet added to the Three.js renderer scene graph).
+  sceneObj.updateMatrixWorld(true);
+
   const box    = new THREE.Box3().setFromObject(sceneObj);
   const size   = new THREE.Vector3();
   const center = new THREE.Vector3();
@@ -362,9 +366,11 @@ function ScreenOverlay({ sW, sH, sOffY, screenFaceZ, facesNeg, screenTexture, co
     if (contentType === 'video' && tex) tex.needsUpdate = true;
   });
 
-  // Place 3mm in front of the screen face so it's always rendered on top.
+  // Place just in front of the screen face.
   // depthWrite: true ensures back-face camera modules are properly occluded.
-  const zPos = facesNeg ? screenFaceZ - 0.003 : screenFaceZ + 0.003;
+  // DoubleSide makes the plane visible regardless of its normal orientation.
+  const OFFSET = 0.012;
+  const zPos = facesNeg ? screenFaceZ - OFFSET : screenFaceZ + OFFSET;
   const rotX = facesNeg ? Math.PI : 0;
 
   return (
@@ -380,6 +386,7 @@ function ScreenOverlay({ sW, sH, sOffY, screenFaceZ, facesNeg, screenTexture, co
         toneMapped={false}
         depthWrite={true}
         depthTest={true}
+        side={THREE.DoubleSide}
       />
     </mesh>
   );
