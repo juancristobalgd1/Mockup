@@ -180,6 +180,21 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasColors: true, hasOrientation: true,
     accent: '#60a5fa',
   },
+  // ── iPhone 13 ─────────────────────────────────────────────────────
+  {
+    id: 'iphone-13-pro',
+    label: 'iPhone 13 Pro',
+    group: 'iPhone',
+    storeType: 'iphone',
+    w: 192, h: 416,
+    insetTop: 14, insetBottom: 14, insetSide: 14,
+    br: '2.4rem', screenBr: '1.9rem',
+    camera: 'notch',
+    cameraLayout: 'triple-tri',
+    frame: 'titanium',
+    hasColors: true, hasOrientation: true,
+    accent: '#9ca3af',
+  },
   {
     id: 'iphone-13',
     label: 'iPhone 13',
