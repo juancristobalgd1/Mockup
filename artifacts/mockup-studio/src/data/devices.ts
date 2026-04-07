@@ -45,29 +45,14 @@ export interface DeviceModelDef {
 }
 
 export const DEVICE_MODELS: DeviceModelDef[] = [
-  // ── iPhone 17 ─────────────────────────────────────────────────────
-  {
-    id: 'iphone-17-pro-max',
-    label: 'iPhone 17 Pro Max',
-    group: 'iPhone',
-    storeType: 'iphone',
-    w: 220, h: 476,
-    insetTop: 11, insetBottom: 11, insetSide: 11,
-    br: '2.9rem', screenBr: '2.4rem',
-    camera: 'dynamic-island',
-    cameraLayout: 'triple-tri',
-    frame: 'titanium',
-    hasActionButton: true, hasCameraControl: true,
-    hasColors: true, hasOrientation: true,
-    accent: '#71717a',
-  },
+  // ── iPhone (GLB real models only) ─────────────────────────────────
   {
     id: 'iphone-17-pro',
     label: 'iPhone 17 Pro',
     group: 'iPhone',
     storeType: 'iphone',
-    w: 200, h: 434,
-    insetTop: 11, insetBottom: 11, insetSide: 11,
+    w: 197, h: 428,
+    insetTop: 11, insetBottom: 11, insetSide: 9,
     br: '2.7rem', screenBr: '2.2rem',
     camera: 'dynamic-island',
     cameraLayout: 'triple-tri',
@@ -75,60 +60,15 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasActionButton: true, hasCameraControl: true,
     hasColors: true, hasOrientation: true,
     accent: '#a8a29e',
-  },
-  {
-    id: 'iphone-17',
-    label: 'iPhone 17',
-    group: 'iPhone',
-    storeType: 'iphone',
-    w: 196, h: 425,
-    insetTop: 11, insetBottom: 11, insetSide: 11,
-    br: '2.6rem', screenBr: '2.1rem',
-    camera: 'dynamic-island',
-    cameraLayout: 'dual-v',
-    frame: 'aluminum',
-    hasActionButton: true, hasCameraControl: true,
-    hasColors: true, hasOrientation: true,
-    accent: '#f9a8d4',
-  },
-  // ── iPhone 16 ─────────────────────────────────────────────────────
-  {
-    id: 'iphone-16-pro-max',
-    label: 'iPhone 16 Pro Max',
-    group: 'iPhone',
-    storeType: 'iphone',
-    w: 218, h: 472,
-    insetTop: 11, insetBottom: 11, insetSide: 11,
-    br: '2.85rem', screenBr: '2.35rem',
-    camera: 'dynamic-island',
-    cameraLayout: 'triple-tri',
-    frame: 'titanium',
-    hasActionButton: true, hasCameraControl: true,
-    hasColors: true, hasOrientation: true,
-    accent: '#c2a882',
-  },
-  {
-    id: 'iphone-16-pro',
-    label: 'iPhone 16 Pro',
-    group: 'iPhone',
-    storeType: 'iphone',
-    w: 198, h: 430,
-    insetTop: 11, insetBottom: 11, insetSide: 11,
-    br: '2.65rem', screenBr: '2.15rem',
-    camera: 'dynamic-island',
-    cameraLayout: 'triple-tri',
-    frame: 'titanium',
-    hasActionButton: true, hasCameraControl: true,
-    hasColors: true, hasOrientation: true,
-    accent: '#78716c',
+    glbUrl: '/models/iphone17pro.glb',
   },
   {
     id: 'iphone-16',
     label: 'iPhone 16',
     group: 'iPhone',
     storeType: 'iphone',
-    w: 196, h: 425,
-    insetTop: 11, insetBottom: 11, insetSide: 11,
+    w: 196, h: 424,
+    insetTop: 11, insetBottom: 11, insetSide: 9,
     br: '2.6rem', screenBr: '2.1rem',
     camera: 'dynamic-island',
     cameraLayout: 'dual-v',
@@ -136,53 +76,8 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasActionButton: true, hasCameraControl: true,
     hasColors: true, hasOrientation: true,
     accent: '#38bdf8',
+    glbUrl: '/models/iphone16.glb',
   },
-  // ── iPhone 15 ─────────────────────────────────────────────────────
-  {
-    id: 'iphone-15-pro-max',
-    label: 'iPhone 15 Pro Max',
-    group: 'iPhone',
-    storeType: 'iphone',
-    w: 215, h: 466,
-    insetTop: 12, insetBottom: 12, insetSide: 12,
-    br: '2.8rem', screenBr: '2.3rem',
-    camera: 'dynamic-island',
-    cameraLayout: 'triple-tri',
-    frame: 'titanium',
-    hasActionButton: true,
-    hasColors: true, hasOrientation: true,
-    accent: '#9ca3af',
-  },
-  {
-    id: 'iphone-15-pro',
-    label: 'iPhone 15 Pro',
-    group: 'iPhone',
-    storeType: 'iphone',
-    w: 196, h: 425,
-    insetTop: 12, insetBottom: 12, insetSide: 12,
-    br: '2.6rem', screenBr: '2.1rem',
-    camera: 'dynamic-island',
-    cameraLayout: 'triple-tri',
-    frame: 'titanium',
-    hasActionButton: true,
-    hasColors: true, hasOrientation: true,
-    accent: '#a8a29e',
-  },
-  {
-    id: 'iphone-15',
-    label: 'iPhone 15',
-    group: 'iPhone',
-    storeType: 'iphone',
-    w: 196, h: 425,
-    insetTop: 12, insetBottom: 12, insetSide: 12,
-    br: '2.6rem', screenBr: '2.1rem',
-    camera: 'dynamic-island',
-    cameraLayout: 'dual-diag',
-    frame: 'aluminum',
-    hasColors: true, hasOrientation: true,
-    accent: '#60a5fa',
-  },
-  // ── iPhone 14 Pro ─────────────────────────────────────────────────
   {
     id: 'iphone-14-pro',
     label: 'iPhone 14 Pro',
@@ -194,12 +89,10 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     camera: 'dynamic-island',
     cameraLayout: 'triple-tri',
     frame: 'titanium',
-    hasActionButton: false,
     hasColors: true, hasOrientation: true,
     accent: '#7c7c7c',
     glbUrl: '/models/iphone14pro.glb',
   },
-  // ── iPhone 13 ─────────────────────────────────────────────────────
   {
     id: 'iphone-13-pro',
     label: 'iPhone 13 Pro',
@@ -214,20 +107,6 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasColors: true, hasOrientation: true,
     accent: '#9ca3af',
     glbUrl: '/models/iphone13pro.glb',
-  },
-  {
-    id: 'iphone-13',
-    label: 'iPhone 13',
-    group: 'iPhone',
-    storeType: 'iphone',
-    w: 192, h: 416,
-    insetTop: 14, insetBottom: 14, insetSide: 14,
-    br: '2.4rem', screenBr: '1.9rem',
-    camera: 'notch',
-    cameraLayout: 'dual-diag',
-    frame: 'aluminum',
-    hasColors: true, hasOrientation: true,
-    accent: '#6b7280',
   },
   // ── Android ───────────────────────────────────────────────────────
   {
@@ -438,11 +317,11 @@ export const GROUP_ICONS: Record<DeviceGroup, string> = {
 };
 
 export function getModelById(id: string): DeviceModelDef {
-  return DEVICE_MODELS.find(m => m.id === id) ?? DEVICE_MODELS[4]; // default: iPhone 16 Pro
+  return DEVICE_MODELS.find(m => m.id === id) ?? DEVICE_MODELS[0];
 }
 
 export function getModelsInGroup(group: DeviceGroup): DeviceModelDef[] {
   return DEVICE_MODELS.filter(m => m.group === group);
 }
 
-export const DEFAULT_MODEL_ID = 'iphone-16-pro';
+export const DEFAULT_MODEL_ID = 'iphone-17-pro';

@@ -2,11 +2,16 @@
  * GLBDeviceModel — universal loader for any GLB phone model.
  *
  * Handles two export conventions automatically:
- *   Y-up (glTF spec): no extra rotation  →  e.g. iPhone 14 Pro from Sketchfab
- *   Z-up (3ds Max):   rotate -90° on X   →  e.g. iPhone 13 Pro hand-scanned ZIP
+ *   Y-up (glTF spec): no extra rotation  →  iPhone 16, 17 Pro, 14 Pro
+ *   Z-up (3ds Max):   rotate -90° on X   →  iPhone 13 Pro
  *
- * Centers and scales the model to 2.5 Three.js units tall.
- * Overlays a screen content plane in WORLD space so it's always aligned.
+ * Screen detection strategy:
+ *   1. Named material: "display" or "screen" → highest priority
+ *   2. Geometric: flattest large mesh at the front face (for hash-named models)
+ *   3. Baked single-mesh fallback: use def.w/h proportions for overlay sizing
+ *
+ * Screen content is shown via an overlay plane placed just in front of the screen
+ * face. `depthWrite: true` ensures back-face camera modules are always occluded.
  */
 
 import { useMemo, useEffect, useRef } from 'react';
@@ -17,63 +22,318 @@ import type { DeviceModelDef } from '../../data/devices';
 
 const TARGET_H = 2.5;
 
-// ── Transform computation ──────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────────────
+
+interface ScreenOverlayDims {
+  sW: number;
+  sH: number;
+  sOffY: number;
+}
 
 interface ModelTransform {
   scale: number;
   position: [number, number, number];
   rotation: [number, number, number];
-  /** World-space Z of the front/screen face */
   screenFaceZ: number;
-  /** true when model was Z-up — screen faces −Z in world space */
   screenFacesNeg: boolean;
+  /** Model body width in Three.js units (after scaling) */
+  modelWidth: number;
+  /** True when the scene has multi-part meshes (not a single baked mesh) */
+  isMultiMesh: boolean;
+  /** Overlay dims derived from detected screen mesh (null for baked models) */
+  detectedScreen: ScreenOverlayDims | null;
 }
 
-function computeTransform(sceneObj: THREE.Object3D): ModelTransform {
+// ── Helpers ──────────────────────────────────────────────────────────
+
+/** Get a single lowercase string from a mesh's name + material names */
+function meshKey(obj: THREE.Mesh): string {
+  const parts = [obj.name];
+  const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+  mats.forEach(m => { if (m?.name) parts.push(m.name); });
+  return parts.join(' ').toLowerCase();
+}
+
+/**
+ * Detect the screen mesh inside `root` (in LOCAL/scene space, before our group transform).
+ * Returns the world bounding box of the best candidate, or null.
+ *
+ * Priority:
+ *   1. Mesh whose name or material includes "display" or "screen" (case-insensitive)
+ *   2. Flattest + largest-area mesh at the front face (frontZ side)
+ *
+ * For Z-up models we skip geometric detection — the single-mesh baked model handles it via overlay.
+ */
+function detectScreenMesh(
+  root: THREE.Object3D,
+  isZUp: boolean,
+  frontZ: number,    // max Z of the whole scene (local coords, Y-up)
+  centerZ: number,   // center Z of the whole scene
+): THREE.Box3 | null {
+  if (isZUp) return null; // Z-up models: use fallback overlay only
+
+  let namedBbox: THREE.Box3 | null = null;
+  let bestGeoBbox: THREE.Box3 | null = null;
+  let bestGeoScore = -Infinity;
+
+  const localBox = new THREE.Box3();
+  const localSize = new THREE.Vector3();
+  const localCenter = new THREE.Vector3();
+
+  root.traverse((obj: THREE.Object3D) => {
+    if (!(obj instanceof THREE.Mesh)) return;
+    const geo = obj.geometry;
+    if (!geo?.attributes?.position) return;
+
+    localBox.setFromObject(obj);
+    localBox.getSize(localSize);
+    localBox.getCenter(localCenter);
+
+    const key = meshKey(obj);
+
+    // Priority 1: explicit name match
+    if ((key.includes('display') || (key.includes('screen') && !key.includes('screen2')))
+      && namedBbox === null) {
+      namedBbox = localBox.clone();
+      return;
+    }
+
+    // Priority 2: geometric — flattest mesh at front face, large area
+    const midFront = 0.5 * (frontZ + centerZ); // midpoint between center and front
+    const isFront = localCenter.z > midFront;
+    if (!isFront) return;
+
+    const thinness = 1 / (localSize.z + 1e-6); // flatter = higher score
+    const area = localSize.x * localSize.y;
+    const score = thinness * area;
+
+    if (score > bestGeoScore) {
+      bestGeoScore = score;
+      bestGeoBbox = localBox.clone();
+    }
+  });
+
+  return namedBbox ?? bestGeoBbox;
+}
+
+// ── Transform computation ─────────────────────────────────────────────
+
+function computeTransform(sceneObj: THREE.Object3D, def: DeviceModelDef): ModelTransform {
   const box    = new THREE.Box3().setFromObject(sceneObj);
   const size   = new THREE.Vector3();
   const center = new THREE.Vector3();
   box.getSize(size);
   box.getCenter(center);
 
-  // Identify tallest axis
+  const meshCount = countMeshes(sceneObj);
+  const isMultiMesh = meshCount > 1;
+
+  // Identify Z-up vs Y-up
   const isZUp = size.z > size.y * 1.4 && size.z > size.x * 1.4;
   const tall   = isZUp ? size.z : size.y;
   const s      = TARGET_H / tall;
 
   if (isZUp) {
-    // 3ds Max Z-up: rotate -90° around X maps GLB-Z → Three.js-Y
-    // Transform rule on a vertex v: world = T + R(-90°X) * (S * v)
-    //   R(-90°X): (x,y,z) → (x, z, −y)
-    //   World center = (cx·s,  cz·s, −cy·s)
-    //   T = −world_center = (−cx·s, −cz·s, cy·s)
-    const rotation: [number,number,number] = [-Math.PI/2, 0, 0];
+    const rotation: [number,number,number] = [-Math.PI / 2, 0, 0];
     const position: [number,number,number] = [
       -center.x * s,
       -center.z * s,
        center.y * s,
     ];
-    // Screen face is at box.max.y in GLB (screen faces +Y in 3ds Max).
-    // After rotation: GLB +Y → Three.js -Z.
-    // World Z of screen = T_z + (−maxY · s) = cy·s − maxY·s = −(maxY−cy)·s
+    // Screen face: +Y in 3ds Max → -Z after rotation
     const screenFaceZ = -(box.max.y - center.y) * s;
-    return { scale: s, position, rotation, screenFaceZ, screenFacesNeg: true };
+    return {
+      scale: s, position, rotation,
+      screenFaceZ, screenFacesNeg: true,
+      modelWidth: size.x * s,
+      isMultiMesh,
+      detectedScreen: null,
+    };
   }
 
-  // Y-up — standard glTF, no rotation
+  // Y-up standard glTF
   const rotation: [number,number,number] = [0, 0, 0];
   const position: [number,number,number] = [
     -center.x * s,
     -center.y * s,
     -center.z * s,
   ];
-  // Screen faces +Z (toward camera at +Z). Front face = box.max.z.
-  // World Z = T_z + maxZ·s = −cz·s + maxZ·s = (maxZ−cz)·s
   const screenFaceZ = (box.max.z - center.z) * s;
-  return { scale: s, position, rotation, screenFaceZ, screenFacesNeg: false };
+
+  // Try to detect screen mesh and compute overlay dims in local space → world space
+  let detectedScreen: ScreenOverlayDims | null = null;
+  const screenBbox = detectScreenMesh(sceneObj, false, box.max.z, center.z);
+  if (screenBbox) {
+    const sc = new THREE.Vector3();
+    const ss = new THREE.Vector3();
+    screenBbox.getCenter(sc);
+    screenBbox.getSize(ss);
+    // Convert local coords to world coords (after our centering transform)
+    detectedScreen = {
+      sW: ss.x * s,
+      sH: ss.y * s,
+      sOffY: (sc.y - center.y) * s,
+    };
+  }
+
+  return {
+    scale: s, position, rotation,
+    screenFaceZ, screenFacesNeg: false,
+    modelWidth: size.x * s,
+    isMultiMesh,
+    detectedScreen,
+  };
 }
 
-// ── Screen content plane ───────────────────────────────────────────
+function countMeshes(root: THREE.Object3D): number {
+  let n = 0;
+  root.traverse(o => { if (o instanceof THREE.Mesh) n++; });
+  return n;
+}
+
+// ── Material helpers ──────────────────────────────────────────────────
+
+/** PBR override for metal chassis parts (adapts to deviceColor). */
+function metalMat(color: string, roughness = 0.10, metalness = 0.88) {
+  return new THREE.MeshStandardMaterial({ color, roughness, metalness, envMapIntensity: 2.2 });
+}
+
+/** Classify a mesh name/material key and return the right material (or null to keep original). */
+function classifyMesh(
+  key: string,
+  deviceColor: string,
+  screenMeshes: THREE.Mesh[],
+  obj: THREE.Mesh,
+): THREE.Material | null {
+
+  // ── Screen / display ─────────────────────────────────────────────
+  if ((key.includes('display') || key.includes('screen')) && !key.includes('screen2')) {
+    const mat = new THREE.MeshStandardMaterial({ color: '#020208', roughness: 0.04, metalness: 0 });
+    screenMeshes.push(obj);
+    return mat;
+  }
+
+  // ── Front glass cover (transparent) ──────────────────────────────
+  if (key.includes('glass') && !key.includes('frosted') && !key.includes('tint') && !key.includes('back')) {
+    return new THREE.MeshPhysicalMaterial({
+      color: '#b0c8e0', metalness: 0.05, roughness: 0.02,
+      transmission: 0.82, ior: 1.52, transparent: true, opacity: 0.92,
+    });
+  }
+
+  // ── Back frosted glass ────────────────────────────────────────────
+  if (key.includes('frosted_glass') || key.includes('tint_back')) {
+    return new THREE.MeshPhysicalMaterial({
+      color: '#e8e8e8', roughness: 0.35, metalness: 0.02,
+      transmission: 0.6, transparent: true, opacity: 0.97,
+    });
+  }
+
+  // ── Camera lenses / filters ───────────────────────────────────────
+  if (key.includes('lens') || key.includes('camera_filter') || key.includes('led')
+      || key.includes('sapphire') || key.includes('mirror_filter')) {
+    return new THREE.MeshPhysicalMaterial({
+      color: '#020506', roughness: 0.02, metalness: 0.12,
+      transmission: 0.18, transparent: true, opacity: 0.96,
+    });
+  }
+
+  // ── Metal frame / aluminum / titanium ────────────────────────────
+  if (key.includes('aluminum') || key.includes('frame') || key.includes('titanium')) {
+    return metalMat(deviceColor || '#71717a');
+  }
+
+  // ── Antenna / plastic / screws ────────────────────────────────────
+  if (key.includes('antena') || key.includes('plastic') || key.includes('screw')
+      || key.includes('usb') || key.includes('speaker')) {
+    return new THREE.MeshStandardMaterial({ color: '#0e0e11', roughness: 0.55, metalness: 0.45 });
+  }
+
+  // ── Logo ──────────────────────────────────────────────────────────
+  if (key.includes('logo')) {
+    return new THREE.MeshStandardMaterial({
+      color: deviceColor || '#8a8a8e', metalness: 0.96, roughness: 0.05, envMapIntensity: 2.8,
+    });
+  }
+
+  // ── Single baked mesh (e.g. defaultMaterial) ──────────────────────
+  if (key.includes('defaultmaterial')) {
+    return null; // keep original baked texture, just boost env response
+  }
+
+  // ── Fallback: generic chassis (hash-named or unknown) ────────────
+  return metalMat(deviceColor || '#71717a', 0.12, 0.86);
+}
+
+function applyMaterials(root: THREE.Object3D, deviceColor: string, screenMeshes: THREE.Mesh[]) {
+  let hasDefaultMat = false;
+
+  root.traverse((obj: THREE.Object3D) => {
+    if (obj instanceof THREE.Camera || obj instanceof THREE.Light) return;
+    if (!(obj instanceof THREE.Mesh)) return;
+    obj.frustumCulled = false;
+    obj.castShadow    = true;
+    obj.receiveShadow = true;
+
+    const key = meshKey(obj);
+
+    if (key.includes('defaultmaterial')) {
+      hasDefaultMat = true;
+      // Boost baked-texture env response but keep original texture
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach(m => { (m as THREE.MeshStandardMaterial).envMapIntensity = 1.6; });
+      return;
+    }
+
+    const mat = classifyMesh(key, deviceColor, screenMeshes, obj);
+    if (mat !== null) obj.material = mat;
+  });
+
+  return hasDefaultMat;
+}
+
+/**
+ * Geometric screen detection for models where no named screen was found.
+ * Traverses the mounted group (world coords) to find the flattest large mesh at the front.
+ */
+function detectAndMarkScreen(
+  root: THREE.Object3D,
+  screenFaceZ: number,
+  screenMeshes: THREE.Mesh[],
+) {
+  if (screenMeshes.length > 0) return; // already found by name
+
+  let bestMesh: THREE.Mesh | null = null;
+  let bestScore = -Infinity;
+
+  const localBox  = new THREE.Box3();
+  const localSize = new THREE.Vector3();
+  const localCtr  = new THREE.Vector3();
+
+  root.traverse((obj: THREE.Object3D) => {
+    if (!(obj instanceof THREE.Mesh)) return;
+    localBox.setFromObject(obj);
+    localBox.getSize(localSize);
+    localBox.getCenter(localCtr);
+
+    // Must be at the front face (world Z > 50% of screenFaceZ)
+    if (localCtr.z < 0.5 * screenFaceZ) return;
+
+    const thinness = 1 / (localSize.z + 1e-6);
+    const area = localSize.x * localSize.y;
+    const score = thinness * area;
+    if (score > bestScore) { bestScore = score; bestMesh = obj; }
+  });
+
+  if (bestMesh) {
+    (bestMesh as THREE.Mesh).material = new THREE.MeshStandardMaterial({
+      color: '#020208', roughness: 0.04, metalness: 0,
+    });
+    screenMeshes.push(bestMesh as THREE.Mesh);
+  }
+}
+
+// ── Screen overlay ────────────────────────────────────────────────────
 
 interface OverlayProps {
   sW: number; sH: number; sOffY: number;
@@ -85,6 +345,7 @@ interface OverlayProps {
 
 function ScreenOverlay({ sW, sH, sOffY, screenFaceZ, facesNeg, screenTexture, contentType }: OverlayProps) {
   const meshRef = useRef<THREE.Mesh>(null);
+
   useFrame(() => {
     if (!meshRef.current) return;
     const mat = meshRef.current.material as THREE.MeshBasicMaterial;
@@ -101,9 +362,9 @@ function ScreenOverlay({ sW, sH, sOffY, screenFaceZ, facesNeg, screenTexture, co
     if (contentType === 'video' && tex) tex.needsUpdate = true;
   });
 
-  // Place overlay 2mm (world) in front of the model face
+  // Place 3mm in front of the screen face so it's always rendered on top.
+  // depthWrite: true ensures back-face camera modules are properly occluded.
   const zPos = facesNeg ? screenFaceZ - 0.003 : screenFaceZ + 0.003;
-  // Flip plane to face −Z when screen faces −Z (Z-up models seen from behind camera's default)
   const rotX = facesNeg ? Math.PI : 0;
 
   return (
@@ -111,61 +372,20 @@ function ScreenOverlay({ sW, sH, sOffY, screenFaceZ, facesNeg, screenTexture, co
       ref={meshRef}
       position={[0, sOffY, zPos]}
       rotation={[rotX, 0, 0]}
-      renderOrder={3}
+      renderOrder={4}
     >
       <planeGeometry args={[sW, sH]} />
-      <meshBasicMaterial color="#000000" toneMapped={false} depthWrite={false} />
+      <meshBasicMaterial
+        color="#000000"
+        toneMapped={false}
+        depthWrite={true}
+        depthTest={true}
+      />
     </mesh>
   );
 }
 
-// ── Material override on model meshes ──────────────────────────────
-
-function applyMaterials(root: THREE.Object3D, deviceColor: string, screenMeshes: THREE.Mesh[]) {
-  root.traverse((obj: THREE.Object3D) => {
-    if (obj instanceof THREE.Camera || obj instanceof THREE.Light) return;
-    if (!(obj instanceof THREE.Mesh)) return;
-    obj.frustumCulled = false;
-    obj.castShadow    = true;
-    obj.receiveShadow = true;
-
-    const name = obj.name.toLowerCase();
-
-    if (name.startsWith('screen') && !name.startsWith('screen2')) {
-      obj.material = new THREE.MeshStandardMaterial({ color: '#020208', roughness: 0.04, metalness: 0 });
-      screenMeshes.push(obj);
-    } else if (name.startsWith('screen2')) {
-      obj.material = new THREE.MeshPhysicalMaterial({
-        color: '#a0c0e0', transmission: 0.8, roughness: 0, metalness: 0, transparent: true, opacity: 0.07,
-      });
-    } else if (name.startsWith('lens') || name.startsWith('still') || name.startsWith('led')) {
-      obj.material = new THREE.MeshPhysicalMaterial({
-        color: '#030608', roughness: 0.02, metalness: 0.1, transmission: 0.15, transparent: true, opacity: 0.96,
-      });
-    } else if (name.startsWith('glass')) {
-      obj.material = new THREE.MeshPhysicalMaterial({
-        color: deviceColor || '#71717a', metalness: 0.08, roughness: 0.06, transmission: 0.15, transparent: true, opacity: 0.98,
-      });
-    } else if (name.startsWith('logo')) {
-      obj.material = new THREE.MeshStandardMaterial({
-        color: deviceColor || '#8a8a8e', metalness: 0.96, roughness: 0.05, envMapIntensity: 2.8,
-      });
-    } else if (name.startsWith('balck') || name.startsWith('123') || name.startsWith('plastic') || name.startsWith('speaker')) {
-      obj.material = new THREE.MeshStandardMaterial({ color: '#0e0e11', metalness: 0.5, roughness: 0.45 });
-    } else if (name === 'defaultmaterial') {
-      // Baked single-mesh — keep original texture, just boost environment response
-      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-      mats.forEach(m => { (m as THREE.MeshStandardMaterial).envMapIntensity = 1.4; });
-    } else {
-      // Korean-named / generic chassis
-      obj.material = new THREE.MeshStandardMaterial({
-        color: deviceColor || '#71717a', metalness: 0.88, roughness: 0.10, envMapIntensity: 2.2,
-      });
-    }
-  });
-}
-
-// ── Main component ─────────────────────────────────────────────────
+// ── Main component ────────────────────────────────────────────────────
 
 interface Props {
   def: DeviceModelDef;
@@ -180,25 +400,33 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
   const sceneObj: THREE.Object3D | null =
     gltf?.scene ?? gltf?.scenes?.[0] ?? null;
 
-  // ── Compute transform once (from raw scene bounding box)
+  // ── Compute transform + screen dims in a single memo pass ─────────
   const transform = useMemo<ModelTransform | null>(() => {
     if (!sceneObj) return null;
-    return computeTransform(sceneObj);
+    return computeTransform(sceneObj, def);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneObj]);
 
-  // ── Apply materials after mount and on color change
+  // ── Apply / update materials when model or color changes ──────────
   const groupRef     = useRef<THREE.Group>(null);
   const screenMeshes = useRef<THREE.Mesh[]>([]);
 
   useEffect(() => {
     const root = groupRef.current;
-    if (!root) return;
+    if (!root || !transform) return;
     screenMeshes.current = [];
-    applyMaterials(root, deviceColor, screenMeshes.current);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deviceColor]);
 
-  // ── Update screen texture into named screen meshes (multi-mesh models)
+    const hasBaked = applyMaterials(root, deviceColor, screenMeshes.current);
+
+    // For multi-mesh models that didn't have an explicitly named screen mesh,
+    // detect it geometrically from world-space positions (group transforms applied).
+    if (!hasBaked && screenMeshes.current.length === 0) {
+      detectAndMarkScreen(root, transform.screenFaceZ, screenMeshes.current);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deviceColor, transform]);
+
+  // ── Sync screen texture into detected screen meshes (multi-mesh) ──
   const prevTex = useRef<THREE.Texture | null>(null);
   const ctRef   = useRef(contentType);
   ctRef.current = contentType;
@@ -219,26 +447,31 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
 
   if (!sceneObj || !transform) return null;
 
-  const { scale, position, rotation, screenFaceZ, screenFacesNeg } = transform;
+  const { scale, position, rotation, screenFaceZ, screenFacesNeg, modelWidth, detectedScreen } = transform;
 
-  // ── Screen overlay dimensions from device definition
-  const ratio = def.h > 0 ? TARGET_H / (def.h / 100) : 1;
-  const pW    = (def.w / 100) * ratio;
-  const iTop  = (def.insetTop    / 100) * ratio;
-  const iBot  = (def.insetBottom / 100) * ratio;
-  const iSide = (def.insetSide   / 100) * ratio;
-  const sW    = pW - iSide * 2;
-  const sH    = TARGET_H - iTop - iBot;
-  const sOffY = -(iTop - iBot) / 2;
+  // ── Screen overlay dimensions ─────────────────────────────────────
+  // Priority: detected from 3D geometry > proportional from def.w/h
+  let sW: number, sH: number, sOffY: number;
+  if (detectedScreen) {
+    ({ sW, sH, sOffY } = detectedScreen);
+  } else {
+    // Fallback: derive from device definition proportions
+    const screenWFrac = (def.w - def.insetSide * 2) / def.w;
+    const screenHFrac = (def.h - def.insetTop - def.insetBottom) / def.h;
+    const topHeavy    = (def.insetTop - def.insetBottom) / def.h;
+    sW    = modelWidth * screenWFrac;
+    sH    = TARGET_H  * screenHFrac;
+    sOffY = -TARGET_H * topHeavy;
+  }
 
   return (
     <>
-      {/* Model */}
+      {/* 3D model */}
       <group ref={groupRef} position={position} rotation={rotation} scale={scale}>
         <primitive object={sceneObj} />
       </group>
 
-      {/* Screen content overlay — in WORLD space, aligned with front face */}
+      {/* Screen content overlay — world-space plane aligned with front face */}
       <ScreenOverlay
         sW={sW}
         sH={sH}
