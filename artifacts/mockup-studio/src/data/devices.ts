@@ -42,6 +42,12 @@ export interface DeviceModelDef {
   accent: string;
   /** If set, uses a real GLB model instead of procedural geometry */
   glbUrl?: string;
+  /**
+   * Set to true when the GLB is exported with the screen facing -Z (away from
+   * the default camera). The loader will rotate the model 180° around Y so the
+   * screen faces the camera correctly.
+   */
+  screenFacesBack?: boolean;
 }
 
 export const DEVICE_MODELS: DeviceModelDef[] = [
@@ -92,6 +98,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasColors: true, hasOrientation: true,
     accent: '#7c7c7c',
     glbUrl: '/models/iphone14pro.glb',
+    screenFacesBack: true,
   },
   // ── Android ───────────────────────────────────────────────────────
   {
