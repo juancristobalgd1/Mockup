@@ -1,7 +1,7 @@
 import { useState, createContext, useContext } from "react";
 
 export type DeviceType = "iphone" | "android" | "ipad" | "macbook" | "browser" | "watch";
-export type DeviceColor = "titanium" | "black" | "white" | "blue";
+export type DeviceColor = "titanium" | "black" | "white" | "blue" | "naturallight" | "desert" | "sierra" | "clay";
 export type BrowserMode = "dark" | "light";
 export type BackgroundType = "solid" | "gradient" | "mesh" | "pattern" | "image" | "wallpaper";
 export type ShadowStyle = "none" | "spread" | "hug";
