@@ -313,7 +313,7 @@ function metalMat(color: string, roughness = 0.10, metalness = 0.88) {
  * Strategy B – mesh has NO UVs (e.g. MacBook Pro): generate planar UVs by
  *   projecting from position X/Y (works for any flat-panel screen).
  */
-function normalizeScreenUVs(obj: THREE.Mesh) {
+function normalizeScreenUVs(obj: THREE.Mesh, flipU = false) {
   const geom = obj.geometry;
 
   // ── Strategy B: generate planar UVs from position XY ──────────────
@@ -329,7 +329,8 @@ function normalizeScreenUVs(obj: THREE.Mesh) {
     const rX = maxX - minX || 1, rY = maxY - minY || 1;
     const uvs = new Float32Array(pos.count * 2);
     for (let i = 0; i < pos.count; i++) {
-      uvs[i * 2]     = (pos.getX(i) - minX) / rX;
+      const u = (pos.getX(i) - minX) / rX;
+      uvs[i * 2]     = flipU ? 1 - u : u;
       uvs[i * 2 + 1] = (pos.getY(i) - minY) / rY;
     }
     geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
@@ -347,13 +348,15 @@ function normalizeScreenUVs(obj: THREE.Mesh) {
   const rU = maxU - minU, rV = maxV - minV;
   if (rU < 0.001 || rV < 0.001) return; // degenerate UV island – skip
 
-  // Skip if already approximately [0, 1]
-  if (Math.abs(minU) < 0.005 && Math.abs(1 - maxU) < 0.005 &&
+  // Skip if already approximately [0, 1] (and no flip needed)
+  if (!flipU &&
+      Math.abs(minU) < 0.005 && Math.abs(1 - maxU) < 0.005 &&
       Math.abs(minV) < 0.005 && Math.abs(1 - maxV) < 0.005) return;
 
   const uv2 = new Float32Array(uvAttr.count * 2);
   for (let i = 0; i < uvAttr.count; i++) {
-    uv2[i * 2]     = (uvAttr.getX(i) - minU) / rU;
+    const u = (uvAttr.getX(i) - minU) / rU;
+    uv2[i * 2]     = flipU ? 1 - u : u;
     uv2[i * 2 + 1] = (uvAttr.getY(i) - minV) / rV;
   }
   geom.setAttribute('uv', new THREE.BufferAttribute(uv2, 2));
@@ -365,11 +368,12 @@ function classifyMesh(
   deviceColor: string,
   screenMeshes: THREE.Mesh[],
   obj: THREE.Mesh,
+  flipScreenU = false,
 ): THREE.Material | null {
 
   // ── Screen / display ─────────────────────────────────────────────
   if ((key.includes('display') || key.includes('screen')) && !key.includes('screen2')) {
-    normalizeScreenUVs(obj);
+    normalizeScreenUVs(obj, flipScreenU);
     const mat = new THREE.MeshStandardMaterial({ color: '#020208', roughness: 0.04, metalness: 0 });
     screenMeshes.push(obj);
     return mat;
@@ -452,7 +456,12 @@ function classifyMesh(
   return metalMat(deviceColor || '#71717a', 0.12, 0.86);
 }
 
-function applyMaterials(root: THREE.Object3D, deviceColor: string, screenMeshes: THREE.Mesh[]) {
+function applyMaterials(
+  root: THREE.Object3D,
+  deviceColor: string,
+  screenMeshes: THREE.Mesh[],
+  flipScreenU = false,
+) {
   let hasDefaultMat = false;
 
   root.traverse((obj: THREE.Object3D) => {
@@ -472,7 +481,7 @@ function applyMaterials(root: THREE.Object3D, deviceColor: string, screenMeshes:
       return;
     }
 
-    const mat = classifyMesh(key, deviceColor, screenMeshes, obj);
+    const mat = classifyMesh(key, deviceColor, screenMeshes, obj, flipScreenU);
     if (mat !== null) obj.material = mat;
   });
 
@@ -618,7 +627,7 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
     if (!root || !transform) return;
     screenMeshes.current = [];
 
-    const hasBaked = applyMaterials(root, deviceColor, screenMeshes.current);
+    const hasBaked = applyMaterials(root, deviceColor, screenMeshes.current, !!def.screenFacesBack);
 
     // For multi-mesh models that didn't have an explicitly named screen mesh,
     // detect it geometrically from world-space positions (group transforms applied).
