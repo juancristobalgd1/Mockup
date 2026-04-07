@@ -49,6 +49,12 @@ export interface DeviceModelDef {
    */
   screenFacesBack?: boolean;
   /**
+   * Optional Z-axis rotation (radians) applied to the GLB model before
+   * computing scale/position. Use for models exported in landscape orientation
+   * that need to be rotated into portrait (e.g. Math.PI / 2).
+   */
+  glbRotateZ?: number;
+  /**
    * Set to true to skip the flat overlay plane entirely.
    * Use for laptops / angled screens where the texture is applied directly to
    * the detected screen mesh instead.
@@ -89,6 +95,22 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasColors: true, hasOrientation: true,
     accent: '#38bdf8',
     glbUrl: '/models/iphone16.glb',
+  },
+  {
+    id: 'iphone-x',
+    label: 'iPhone X',
+    group: 'iPhone',
+    storeType: 'iphone',
+    w: 196, h: 422,
+    insetTop: 13, insetBottom: 10, insetSide: 12,
+    br: '2.2rem', screenBr: '1.8rem',
+    camera: 'notch',
+    cameraLayout: 'none',
+    frame: 'aluminum',
+    hasColors: true, hasOrientation: true,
+    accent: '#8e8e93',
+    glbUrl: '/models/iphonex.glb',
+    glbRotateZ: Math.PI / 2,
   },
   // ── Android ───────────────────────────────────────────────────────
   {

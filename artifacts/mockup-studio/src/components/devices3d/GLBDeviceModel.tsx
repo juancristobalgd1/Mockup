@@ -196,33 +196,41 @@ function computeTransform(sceneObj: THREE.Object3D, def: DeviceModelDef): ModelT
     };
   }
 
-  // Y-up standard glTF
+  // Y-up standard glTF — with optional Z-rotation for landscape-exported models.
   //
-  // Some Sketchfab exports have the screen facing -Z (away from the camera).
-  // When def.screenFacesBack is true we rotate the model 180° around Y so
-  // the screen ends up facing the camera (+Z direction).  After that rotation,
-  // the screen face (originally at box.min.z) maps to world +Z.
+  // glbRotateZ: corrects models exported with the phone lying on its side
+  // (e.g. X-extent = phone height). We compute effective size/center analytically
+  // so no actual scene mutation is needed.
+  //
+  // screenFacesBack: some exports have the screen at -Z (away from camera).
+  // We rotate 180° around Y so the screen faces +Z (toward camera).
+  const glbRotZ   = def.glbRotateZ ?? 0;
+  const cosA      = Math.cos(glbRotZ);
+  const sinA      = Math.sin(glbRotZ);
+
+  // Effective bounding extents and center after the Z rotation.
+  const effSzY = Math.abs(size.x * sinA) + Math.abs(size.y * cosA); // new height
+  const effSzX = Math.abs(size.x * cosA) + Math.abs(size.y * sinA); // new width
+  const eCX    = center.x * cosA - center.y * sinA;                  // new center.x
+  const eCY    = center.x * sinA + center.y * cosA;                  // new center.y
+
   const facesBack = !!def.screenFacesBack;
-  const rotation: [number,number,number] = [0, facesBack ? Math.PI : 0, 0];
-  //
-  // For facesBack models, Y-rotation = 180°, which negates local X and Z.
-  // To keep the model center at world origin we must FLIP the sign of position.z:
-  //   world.z = position.z + scale * (-local.z)
-  //   model center: position.z + s*(-center.z) = 0  →  position.z = +center.z*s
-  // Without flip: position.z = -center.z*s  (standard Y-up case)
-  const position: [number,number,number] = [
-    -center.x * s,
-    -center.y * s,
+  const rotation: [number, number, number] = [0, facesBack ? Math.PI : 0, glbRotZ];
+
+  // For facesBack: Y rotation (180°) flips local Z sign, so position.z = +center.z*s.
+  const position: [number, number, number] = [
+    -(facesBack ? -eCX : eCX) * s,
+    -eCY * s,
     facesBack ? center.z * s : -center.z * s,
   ];
-  // Screen-face world Z (always positive, toward camera at +Z):
-  //   Normal  : screen is at box.max.z  →  (max.z - center.z) * s
-  //   FacesBack (after flip): screen was at box.min.z  →  (center.z - min.z) * s
-  const screenFaceZ = facesBack
+
+  // Coarse screen-face Z from the bounding box; may be overridden below
+  // if the actual screen mesh is closer than the box face (e.g. lens spheres).
+  let screenFaceZ = facesBack
     ? (center.z - box.min.z) * s
     : (box.max.z - center.z) * s;
 
-  // Try to detect screen mesh and compute overlay dims in local space → world space
+  // ── Screen mesh detection ──────────────────────────────────────────
   let detectedScreen: ScreenOverlayDims | null = null;
   const screenBbox = detectScreenMesh(sceneObj, false, box.max.z, center.z);
   if (screenBbox) {
@@ -230,18 +238,32 @@ function computeTransform(sceneObj: THREE.Object3D, def: DeviceModelDef): ModelT
     const ss = new THREE.Vector3();
     screenBbox.getCenter(sc);
     screenBbox.getSize(ss);
-    // Convert local coords to world coords (after our centering transform)
+
+    // Prefer screen mesh's own Z over the (possibly inflated) bounding-box Z.
+    // This avoids overlay misplacement caused by spherical camera lenses, etc.
+    const measuredFaceZ = facesBack
+      ? (center.z - sc.z) * s
+      : (sc.z - center.z) * s;
+    if (measuredFaceZ > 0 && measuredFaceZ < screenFaceZ) {
+      screenFaceZ = measuredFaceZ;
+    }
+
+    // Rotate screen size/center by glbRotZ so the overlay matches the portrait screen.
+    const rotSsW = Math.abs(ss.x * cosA) + Math.abs(ss.y * sinA);
+    const rotSsH = Math.abs(ss.x * sinA) + Math.abs(ss.y * cosA);
+    const rSCY   = sc.x * sinA + sc.y * cosA;
+
     detectedScreen = {
-      sW: ss.x * s,
-      sH: ss.y * s,
-      sOffY: (sc.y - center.y) * s,
+      sW: rotSsW * s,
+      sH: rotSsH * s,
+      sOffY: (rSCY - eCY) * s,
     };
   }
 
   return {
     scale: s, position, rotation,
     screenFaceZ, screenFacesNeg: false,
-    modelWidth: size.x * s,
+    modelWidth: effSzX * s,
     isMultiMesh,
     detectedScreen,
   };
