@@ -15,13 +15,17 @@ interface Props {
 const MODEL_URL = '/models/iphone13pro.glb';
 useGLTF.preload(MODEL_URL);
 
-// GLB bounding data (measured from accessors):
-//   X: 0.336 – 24.928  → centerX ≈ 12.63
-//   Z: 0.200 – 50.436  → centerZ ≈ 25.32
-// Model lies flat → rotate -90° around X so Z becomes Y (height)
-const CENTER_X = -12.63;
-const CENTER_Z = -25.32;
-const SCALE = 0.0498; // 50.2 units × 0.0498 ≈ 2.5 unit tall phone
+// GLB bounding data (from accessors, in GLB model space):
+//   X: 0.336 – 24.928  → centerX = 12.632  (width axis)
+//   Y: 0.849 – 1.445   → centerY =  1.147  (thickness axis)
+//   Z: 0.200 – 50.436  → centerZ = 25.318  (height axis — GLB Z = Three.js Y after rotation)
+//
+// Strategy: first center the model at GLB origin, then rotate -90° on X
+// so the height axis (Z) maps to Three.js Y-up. Scale to ~2.5 units tall.
+const C_X = -12.632;  // offset to center X in GLB space
+const C_Y = -1.147;   // offset to center Y (thickness)
+const C_Z = -25.318;  // offset to center Z (height)
+const SCALE = 0.0498; // 50.2 GLB units × 0.0498 ≈ 2.5 Three.js units
 
 export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }: Props) {
   const { scene } = useGLTF(MODEL_URL) as any;
@@ -123,6 +127,16 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
           metalness: 0.65,
           roughness: 0.22,
         });
+
+      } else {
+        // Catch-all: Korean-named body/frame meshes (몸체 etc.)
+        // Give them the device body material so color theming works
+        obj.material = new THREE.MeshStandardMaterial({
+          color: deviceColor || '#71717a',
+          metalness: 0.86,
+          roughness: 0.12,
+          envMapIntensity: 2.0,
+        });
       }
     });
 
@@ -161,16 +175,16 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
   return (
     <group>
       {/*
-        Rotate -90° around X: model lies flat (Y-up in source = Z-up in GLB convention)
-        → After rotation, Z becomes Y so the phone stands upright in Three.js Y-up world
-        Translate to center the model bounding box at world origin
+        Two-step transform so centering happens in GLB model space (BEFORE rotation):
+        1. Inner group: translate model so its bounding-box center is at GLB origin [0,0,0]
+        2. Outer group: scale to ~2.5 Three.js units tall, then rotate -90° on X
+           so GLB's Z-up (height) becomes Three.js Y-up.
+        Result: phone is perfectly centered at world origin and stands upright.
       */}
-      <group
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[CENTER_X * SCALE, 0, CENTER_Z * SCALE]}
-        scale={SCALE}
-      >
-        <primitive object={cloned} />
+      <group scale={SCALE} rotation={[-Math.PI / 2, 0, 0]}>
+        <group position={[C_X, C_Y, C_Z]}>
+          <primitive object={cloned} />
+        </group>
       </group>
     </group>
   );
