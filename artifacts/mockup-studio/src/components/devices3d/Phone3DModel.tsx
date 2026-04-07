@@ -36,8 +36,15 @@ function ScreenContent({
     if (!ref.current) return;
     const mat = ref.current.material as THREE.MeshBasicMaterial;
     const tex = screenTexture.current;
-    if (tex && mat.map !== tex) { mat.map = tex; mat.needsUpdate = true; }
-    else if (!tex && mat.map) { mat.map = null; mat.needsUpdate = true; }
+    if (tex && mat.map !== tex) {
+      mat.map = tex;
+      mat.color.set('#ffffff');   // white so texture shows at full brightness
+      mat.needsUpdate = true;
+    } else if (!tex && mat.map) {
+      mat.map = null;
+      mat.color.set('#050510');   // dark idle screen
+      mat.needsUpdate = true;
+    }
     if (contentType === 'video' && tex) tex.needsUpdate = true;
   });
   return (
