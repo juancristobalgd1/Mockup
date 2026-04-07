@@ -272,25 +272,29 @@ export function MacBook3DModel({ def, screenTexture, contentType, lidAngle = 112
             </mesh>
           </group>
 
-          {/* Screen black bezel */}
-          <mesh position={[0, 0, lidD / 2 + 0.001]}>
-            <planeGeometry args={[lidW - 0.005, lidH - 0.005]} />
-            <meshStandardMaterial color="#040408" roughness={0.08} metalness={0} />
-          </mesh>
+          {/* Screen black bezel — must use RoundedBox to match lid corners */}
+          <RoundedBox
+            args={[lidW - 0.004, lidH - 0.004, 0.002]}
+            radius={0.034}
+            smoothness={6}
+            position={[0, 0, lidD / 2 + 0.001]}
+          >
+            <meshStandardMaterial color="#030306" roughness={0.06} metalness={0} envMapIntensity={1.2} />
+          </RoundedBox>
 
-          {/* Screen content */}
-          <mesh position={[0, sOffY, lidD / 2 + 0.002]}>
+          {/* Screen content base */}
+          <mesh position={[0, sOffY, lidD / 2 + 0.003]}>
             <planeGeometry args={[sW, sH]} />
-            <meshStandardMaterial color="#050510" roughness={0.06} metalness={0} />
+            <meshStandardMaterial color="#020208" roughness={0.04} metalness={0} />
           </mesh>
-          <group position={[0, sOffY, lidD / 2 + 0.003]}>
+          <group position={[0, sOffY, lidD / 2 + 0.004]}>
             <ScreenPlane w={sW} h={sH} screenTexture={screenTexture} contentType={contentType} />
           </group>
 
-          {/* Screen gloss */}
-          <mesh position={[0, sOffY, lidD / 2 + 0.005]}>
+          {/* Screen glass gloss */}
+          <mesh position={[0, sOffY, lidD / 2 + 0.006]}>
             <planeGeometry args={[sW, sH]} />
-            <meshStandardMaterial color="#fff" transparent opacity={0.025} roughness={0} metalness={0} />
+            <meshStandardMaterial color="#aaccff" transparent opacity={0.018} roughness={0} metalness={0} />
           </mesh>
 
           {/* Notch — MacBook Pro */}

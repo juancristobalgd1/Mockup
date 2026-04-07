@@ -470,35 +470,39 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
       </RoundedBox>
 
       {/* ── 2. FRONT GLASS FACE ──────────────────────────────────── */}
-      {/* Ceramic/glass front panel — very dark, very reflective */}
-      <mesh position={[0, 0, sZ - 0.002]}>
-        <planeGeometry args={[pW - 0.004, pH - 0.004]} />
+      {/* Use RoundedBox so corners MATCH the body — prevents screen overflow */}
+      <RoundedBox
+        args={[pW - 0.003, pH - 0.003, 0.001]}
+        radius={br * 0.97}
+        smoothness={8}
+        position={[0, 0, sZ - 0.001]}
+      >
         <meshStandardMaterial
-          color="#050508"
-          roughness={0.04}
+          color="#040407"
+          roughness={0.03}
           metalness={0.0}
-          envMapIntensity={2.0}
+          envMapIntensity={2.2}
         />
-      </mesh>
+      </RoundedBox>
 
-      {/* Screen content area */}
-      <mesh position={[0, sOffY, sZ]}>
+      {/* Screen black base — safe inset so corners stay inside rounded rect */}
+      <mesh position={[0, sOffY, sZ + 0.0005]}>
         <planeGeometry args={[sW, sH]} />
-        <meshStandardMaterial color="#030308" roughness={0.02} metalness={0} />
+        <meshStandardMaterial color="#020205" roughness={0.01} metalness={0} />
       </mesh>
 
       {/* Screen content texture */}
-      <group position={[0, sOffY, sZ + 0.0012]}>
+      <group position={[0, sOffY, sZ + 0.0015]}>
         <ScreenPlane w={sW} h={sH} screenTexture={screenTexture} contentType={contentType} />
       </group>
 
-      {/* Screen protective glass (slight specular) */}
+      {/* Screen oleophobic glass (thin specular layer) */}
       <mesh position={[0, sOffY, sZ + 0.003]}>
         <planeGeometry args={[sW, sH]} />
         <meshStandardMaterial
-          color="#ffffff"
+          color="#ccddff"
           transparent
-          opacity={0.028}
+          opacity={0.022}
           roughness={0.0}
           metalness={0}
         />
@@ -511,25 +515,29 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
         {def.camera === 'notch'          && <Notch sH={sH} isLandscape={false} />}
       </group>
 
-      {/* ── 4. BACK GLASS FACE ───────────────────────────────────── */}
-      {/* Glass/matte back panel */}
-      <mesh position={[0, 0, backZ + 0.002]}>
-        <planeGeometry args={[pW - 0.004, pH - 0.004]} />
+      {/* ── 4. BACK GLASS / MATTE FACE ───────────────────────────── */}
+      {/* Also RoundedBox to match body corners */}
+      <RoundedBox
+        args={[pW - 0.003, pH - 0.003, 0.001]}
+        radius={br * 0.97}
+        smoothness={8}
+        position={[0, 0, backZ + 0.001]}
+      >
         <meshStandardMaterial
           color={glassBackColor}
-          roughness={isPro ? 0.12 : 0.06}
-          metalness={isPro ? 0.0 : 0.1}
-          envMapIntensity={isPro ? 0.8 : 1.5}
+          roughness={isPro ? 0.14 : 0.06}
+          metalness={isPro ? 0.02 : 0.12}
+          envMapIntensity={isPro ? 0.9 : 1.8}
         />
-      </mesh>
+      </RoundedBox>
 
-      {/* Back glass gradient shimmer (specular strip) */}
-      <mesh position={[-pW * 0.1, pH * 0.1, backZ + 0.003]}>
-        <planeGeometry args={[pW * 0.6, pH * 0.4]} />
+      {/* Back shimmer highlight — stays within body (same rounded shape implicit) */}
+      <mesh position={[-pW * 0.08, pH * 0.08, backZ + 0.003]}>
+        <planeGeometry args={[pW * 0.45, pH * 0.3]} />
         <meshStandardMaterial
           color="#ffffff"
           transparent
-          opacity={0.015}
+          opacity={0.012}
           roughness={0}
           metalness={0}
         />

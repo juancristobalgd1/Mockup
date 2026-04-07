@@ -201,23 +201,14 @@ function DeviceScene({ floatEnabled }: { floatEnabled: boolean }) {
     }
   })();
 
-  // Hero angle: pre-rotated so the device appears at a Rotato-style 3/4 angle
-  // Y = -25° (showing left side), X = 12° (slight tilt back)
-  const isLaptop = state.deviceType === 'macbook' || state.deviceType === 'imac';
-  const heroRot: [number, number, number] = isLaptop
-    ? [0.08, -0.25, 0]
-    : [0.18, -0.52, 0.04];
-
-  const device = <group rotation={heroRot}>{inner}</group>;
-
   if (floatEnabled) {
     return (
       <Float speed={1.4} rotationIntensity={0.06} floatIntensity={0.16} floatingRange={[-0.06, 0.06]}>
-        {device}
+        {inner}
       </Float>
     );
   }
-  return device;
+  return <>{inner}</>;
 }
 
 // ── Browser window placeholder ────────────────────────────────────
@@ -278,9 +269,11 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
     const floatEnabled = state.animation === 'float';
 
     // Telephoto camera — narrow FOV like Rotato (feels more "product photo")
+    // Camera positioned at hero angle: slightly right+up from center, looking left-down at device
     const fov = isLaptop ? 24 : 20;
-    const camZ = isLaptop ? 6.5 : 5.8;
-    const camY = isLaptop ? 0.6 : 0.2;
+    const camX = isLaptop ? 1.2 : 1.6;   // Rightward → device appears from left (shows volume buttons)
+    const camY = isLaptop ? 0.5 : 0.4;   // Slightly above
+    const camZ = isLaptop ? 6.2 : 5.6;   // Depth
 
     return (
       <div
@@ -289,7 +282,7 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
         onPointerMove={() => setHintVisible(false)}
       >
         <R3FCanvas
-          camera={{ position: [0, camY, camZ], fov, near: 0.1, far: 100 }}
+          camera={{ position: [camX, camY, camZ], fov, near: 0.1, far: 100 }}
           gl={{
             antialias: true,
             alpha: true,
