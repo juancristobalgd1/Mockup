@@ -4,280 +4,232 @@ import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import type { DeviceModelDef } from '../../data/devices';
 
-// ── Material helpers ────────────────────────────────────────────────
+// ── Material presets ─────────────────────────────────────────────
 
-const BODY_COLORS: Record<string, { body: string; metalness: number; roughness: number }> = {
-  titanium: { body: '#2d2d2d', metalness: 0.88, roughness: 0.10 },
-  black:    { body: '#0d0d0d', metalness: 0.70, roughness: 0.18 },
-  white:    { body: '#d8d8d8', metalness: 0.52, roughness: 0.22 },
-  blue:     { body: '#1a2a5e', metalness: 0.78, roughness: 0.14 },
+const FRAME_MAT: Record<string, { color: string; metalness: number; roughness: number }> = {
+  titanium: { color: '#71717a', metalness: 0.90, roughness: 0.08 },
+  aluminum: { color: '#e8e8e8', metalness: 0.85, roughness: 0.10 },
+  glass:    { color: '#1c1c1e', metalness: 0.30, roughness: 0.05 },
+  light:    { color: '#f5f5f5', metalness: 0.70, roughness: 0.14 },
 };
 
-const ANDROID_FRAME: Record<string, { body: string; metalness: number; roughness: number }> = {
-  titanium: { body: '#252525', metalness: 0.88, roughness: 0.10 },
-  aluminum: { body: '#1e1e1e', metalness: 0.75, roughness: 0.18 },
-  glass:    { body: '#181818', metalness: 0.60, roughness: 0.08 },
+const DEVICE_COLORS: Record<string, string> = {
+  titanium:     '#6b7280',
+  black:        '#0d0d0f',
+  white:        '#e8e8ec',
+  blue:         '#1e3a5f',
+  naturallight: '#c2b8a3',
+  sierra:       '#6b8ca3',
 };
 
-// ── Screen plane that updates texture each frame ─────────────────
+// ── Screen that updates texture every frame ──────────────────────
 
-function ScreenPlane({
+function ScreenContent({
   w, h, screenTexture, contentType,
 }: {
   w: number; h: number;
   screenTexture: React.MutableRefObject<THREE.Texture | null>;
   contentType: 'image' | 'video' | null;
 }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const ref = useRef<THREE.Mesh>(null);
   useFrame(() => {
-    if (!meshRef.current) return;
-    const mat = meshRef.current.material as THREE.MeshBasicMaterial;
+    if (!ref.current) return;
+    const mat = ref.current.material as THREE.MeshBasicMaterial;
     const tex = screenTexture.current;
     if (tex && mat.map !== tex) { mat.map = tex; mat.needsUpdate = true; }
     else if (!tex && mat.map) { mat.map = null; mat.needsUpdate = true; }
     if (contentType === 'video' && tex) tex.needsUpdate = true;
   });
   return (
-    <mesh ref={meshRef}>
+    <mesh ref={ref} renderOrder={1}>
       <planeGeometry args={[w, h]} />
       <meshBasicMaterial color="#050510" toneMapped={false} />
     </mesh>
   );
 }
 
-// ── Camera lens element (reusable) ──────────────────────────────
+// ── Camera lens ──────────────────────────────────────────────────
 
-function CameraLens({ r = 0.038, x = 0, y = 0, z = 0 }: { r?: number; x?: number; y?: number; z?: number }) {
+function Lens({ r = 0.042, x = 0, y = 0, z = 0 }: {
+  r?: number; x?: number; y?: number; z?: number;
+}) {
   return (
     <group position={[x, y, z]}>
-      {/* Outer ring */}
+      {/* Outer chrome ring */}
       <mesh>
-        <torusGeometry args={[r, r * 0.22, 16, 32]} />
-        <meshStandardMaterial color="#111" metalness={0.9} roughness={0.1} />
+        <torusGeometry args={[r, r * 0.20, 16, 48]} />
+        <meshStandardMaterial color="#888" metalness={0.95} roughness={0.05} envMapIntensity={2.5} />
       </mesh>
       {/* Lens glass */}
-      <mesh position={[0, 0, 0.001]}>
-        <circleGeometry args={[r * 0.78, 32]} />
-        <meshStandardMaterial color="#0d0f1a" roughness={0.05} metalness={0.4} envMapIntensity={2} />
+      <mesh position={[0, 0, 0.002]}>
+        <circleGeometry args={[r * 0.80, 40]} />
+        <meshStandardMaterial color="#060c1a" roughness={0.04} metalness={0.5} envMapIntensity={3.0} />
       </mesh>
       {/* Inner iris */}
-      <mesh position={[0, 0, 0.003]}>
-        <circleGeometry args={[r * 0.42, 24]} />
-        <meshStandardMaterial color="#05060d" roughness={0.02} metalness={0.15} />
+      <mesh position={[0, 0, 0.004]}>
+        <circleGeometry args={[r * 0.42, 32]} />
+        <meshStandardMaterial color="#030509" roughness={0.02} metalness={0.2} />
       </mesh>
       {/* Sapphire glint */}
-      <mesh position={[r * 0.18, r * 0.18, 0.005]}>
-        <circleGeometry args={[r * 0.1, 12]} />
-        <meshStandardMaterial color="#6699ff" transparent opacity={0.55} roughness={0} metalness={0} />
+      <mesh position={[r * 0.22, r * 0.22, 0.006]}>
+        <circleGeometry args={[r * 0.10, 12]} />
+        <meshStandardMaterial color="#88aaff" transparent opacity={0.60} roughness={0} />
       </mesh>
     </group>
   );
 }
 
-function LiDARDot({ x = 0, y = 0, z = 0 }: { x?: number; y?: number; z?: number }) {
+function Flash({ x = 0, y = 0, z = 0 }: { x?: number; y?: number; z?: number }) {
+  return (
+    <group position={[x, y, z]}>
+      <RoundedBox args={[0.065, 0.025, 0.006]} radius={0.010} smoothness={4}>
+        <meshStandardMaterial color="#fffde0" emissive="#ffc040" emissiveIntensity={0.15} roughness={0.35} />
+      </RoundedBox>
+    </group>
+  );
+}
+
+function LiDAR({ x = 0, y = 0, z = 0 }: { x?: number; y?: number; z?: number }) {
   return (
     <group position={[x, y, z]}>
       <mesh>
         <circleGeometry args={[0.018, 16]} />
-        <meshStandardMaterial color="#111" roughness={0.1} metalness={0.5} />
+        <meshStandardMaterial color="#111" roughness={0.2} metalness={0.6} />
       </mesh>
       <mesh position={[0, 0, 0.002]}>
-        <circleGeometry args={[0.011, 12]} />
-        <meshStandardMaterial color="#1a0a00" roughness={0.1} />
+        <circleGeometry args={[0.010, 12]} />
+        <meshStandardMaterial color="#1a0a00" roughness={0.15} />
       </mesh>
     </group>
   );
 }
 
-function Flash({ x = 0, y = 0, z = 0, w = 0.055, h = 0.022 }: { x?: number; y?: number; z?: number; w?: number; h?: number }) {
+// ── Camera modules ───────────────────────────────────────────────
+
+function TripleTriModule({ pW, pH, pD, color, metal, rough }: {
+  pW: number; pH: number; pD: number; color: string; metal: number; rough: number;
+}) {
+  const bZ = -pD / 2 - 0.003;
+  const mW = pW * 0.46; const mH = mW;
   return (
-    <group position={[x, y, z]}>
-      <RoundedBox args={[w, h, 0.008]} radius={0.008} smoothness={4}>
-        <meshStandardMaterial color="#fffbe0" emissive="#ffd060" emissiveIntensity={0.2} roughness={0.3} metalness={0.1} />
+    <group position={[-pW * 0.17, pH * 0.31, bZ]}>
+      <RoundedBox args={[mW, mH, 0.020]} radius={0.030} smoothness={6}>
+        <meshStandardMaterial color={color} metalness={metal + 0.04} roughness={rough - 0.02} envMapIntensity={1.8} />
       </RoundedBox>
+      <Lens r={0.050} x={-mW * 0.25} y={ mH * 0.22} z={0.013} />
+      <Lens r={0.050} x={ mW * 0.25} y={ mH * 0.22} z={0.013} />
+      <Lens r={0.050} x={0}           y={-mH * 0.20} z={0.013} />
+      <LiDAR x={mW * 0.32} y={-mH * 0.32} z={0.013} />
+      <Flash x={0}         y={ mH * 0.43} z={0.013} />
     </group>
   );
 }
 
-// ── Camera module configurations ────────────────────────────────
-
-/** iPhone Pro 15/16/17: triangular triple camera + LiDAR + flash */
-function TripleTriModule({ pW, pH, pD, bodyColor, metalness, roughness }: {
-  pW: number; pH: number; pD: number; bodyColor: string; metalness: number; roughness: number;
+function DualVertModule({ pW, pH, pD, color, metal, rough }: {
+  pW: number; pH: number; pD: number; color: string; metal: number; rough: number;
 }) {
-  const mx = -pW * 0.18;
-  const my = pH * 0.32;
-  const mz = -pD / 2 - 0.005;
-  const modW = pW * 0.44;
-  const modH = pW * 0.44;
-
+  const bZ = -pD / 2 - 0.003;
+  const mW = pW * 0.30; const mH = pW * 0.46;
   return (
-    <group position={[mx, my, mz]}>
-      {/* Module housing */}
-      <RoundedBox args={[modW, modH, 0.018]} radius={0.028} smoothness={5}>
-        <meshStandardMaterial color={bodyColor} metalness={metalness + 0.03} roughness={roughness - 0.02} envMapIntensity={1.5} />
+    <group position={[-pW * 0.14, pH * 0.33, bZ]}>
+      <RoundedBox args={[mW, mH, 0.018]} radius={0.024} smoothness={5}>
+        <meshStandardMaterial color={color} metalness={metal + 0.02} roughness={rough} envMapIntensity={1.6} />
       </RoundedBox>
-      {/* Three lenses: top-left, top-right, bottom-center */}
-      <CameraLens r={0.048} x={-modW * 0.26} y={modH * 0.22} z={0.012} />
-      <CameraLens r={0.048} x={ modW * 0.26} y={modH * 0.22} z={0.012} />
-      <CameraLens r={0.048} x={0}           y={-modH * 0.21} z={0.012} />
-      {/* LiDAR (bottom-right) */}
-      <LiDARDot x={modW * 0.3} y={-modH * 0.32} z={0.012} />
-      {/* Flash (top, above lenses) */}
-      <Flash x={0} y={modH * 0.42} z={0.012} w={modW * 0.6} h={0.022} />
+      <Lens r={0.047} x={0} y={ mH * 0.21} z={0.012} />
+      <Lens r={0.047} x={0} y={-mH * 0.19} z={0.012} />
+      <Flash x={0} y={mH * 0.43} z={0.012} />
     </group>
   );
 }
 
-/** iPhone 16/17 base: dual camera vertical + flash */
-function DualVertModule({ pW, pH, pD, bodyColor, metalness, roughness }: {
-  pW: number; pH: number; pD: number; bodyColor: string; metalness: number; roughness: number;
+function DualDiagModule({ pW, pH, pD, color, metal, rough }: {
+  pW: number; pH: number; pD: number; color: string; metal: number; rough: number;
 }) {
-  const mx = -pW * 0.16;
-  const my = pH * 0.34;
-  const mz = -pD / 2 - 0.005;
-  const modW = pW * 0.30;
-  const modH = pW * 0.45;
-
+  const bZ = -pD / 2 - 0.003;
+  const mW = pW * 0.34; const mH = mW;
   return (
-    <group position={[mx, my, mz]}>
-      <RoundedBox args={[modW, modH, 0.018]} radius={0.022} smoothness={5}>
-        <meshStandardMaterial color={bodyColor} metalness={metalness + 0.02} roughness={roughness} envMapIntensity={1.5} />
+    <group position={[-pW * 0.15, pH * 0.33, bZ]}>
+      <RoundedBox args={[mW, mH, 0.015]} radius={0.026} smoothness={5}>
+        <meshStandardMaterial color={color} metalness={metal} roughness={rough} envMapIntensity={1.4} />
       </RoundedBox>
-      {/* Main + Ultra-wide stacked */}
-      <CameraLens r={0.046} x={0} y={modH * 0.22} z={0.012} />
-      <CameraLens r={0.046} x={0} y={-modH * 0.20} z={0.012} />
-      <Flash x={0} y={modH * 0.44} z={0.012} w={0.035} h={0.022} />
+      <Lens r={0.044} x={-mW * 0.22} y={ mH * 0.22} z={0.010} />
+      <Lens r={0.044} x={ mW * 0.22} y={-mH * 0.22} z={0.010} />
+      <Flash x={mW * 0.30} y={mH * 0.30} z={0.010} />
     </group>
   );
 }
 
-/** iPhone 13/15 base: diagonal dual camera */
-function DualDiagModule({ pW, pH, pD, bodyColor, metalness, roughness }: {
-  pW: number; pH: number; pD: number; bodyColor: string; metalness: number; roughness: number;
+function QuadSamsungModule({ pW, pH, pD, color, metal, rough }: {
+  pW: number; pH: number; pD: number; color: string; metal: number; rough: number;
 }) {
-  const mx = -pW * 0.16;
-  const my = pH * 0.33;
-  const mz = -pD / 2 - 0.004;
-  const modW = pW * 0.34;
-  const modH = pW * 0.34;
-
+  const bZ = -pD / 2 - 0.003;
+  const mW = pW * 0.34; const mH = pW * 0.55;
+  const lr = 0.040;
   return (
-    <group position={[mx, my, mz]}>
-      <RoundedBox args={[modW, modH, 0.015]} radius={0.024} smoothness={4}>
-        <meshStandardMaterial color={bodyColor} metalness={metalness} roughness={roughness} envMapIntensity={1.2} />
+    <group position={[-pW * 0.10, pH * 0.25, bZ]}>
+      <RoundedBox args={[mW, mH, 0.016]} radius={0.022} smoothness={5}>
+        <meshStandardMaterial color="#111" metalness={0.7} roughness={0.15} />
       </RoundedBox>
-      {/* Diagonal arrangement */}
-      <CameraLens r={0.044} x={-modW * 0.22} y={modH * 0.22} z={0.010} />
-      <CameraLens r={0.044} x={ modW * 0.22} y={-modH * 0.22} z={0.010} />
-      <Flash x={modW * 0.3} y={modH * 0.3} z={0.010} w={0.025} h={0.025} />
+      <Lens r={lr} x={0} y={ mH * 0.30} z={0.010} />
+      <Lens r={lr} x={0} y={ mH * 0.10} z={0.010} />
+      <Lens r={lr} x={0} y={-mH * 0.10} z={0.010} />
+      <Lens r={lr} x={0} y={-mH * 0.30} z={0.010} />
+      <Flash x={0} y={mH * 0.44} z={0.010} />
     </group>
   );
 }
 
-/** Samsung S24 Ultra: quad camera in vertical strip + periscope */
-function QuadSamsungModule({ pW, pH, pD, bodyColor, metalness, roughness }: {
-  pW: number; pH: number; pD: number; bodyColor: string; metalness: number; roughness: number;
+function PixelBarModule({ pW, pH, pD, color, metal, rough }: {
+  pW: number; pH: number; pD: number; color: string; metal: number; rough: number;
 }) {
-  const mx = -pW * 0.10;
-  const my = pH * 0.28;
-  const mz = -pD / 2 - 0.003;
-  const lr = 0.042;
-
+  const bZ = -pD / 2 - 0.006;
+  const bW = pW * 0.90; const bH = pW * 0.22;
   return (
-    <group position={[mx, my, mz]}>
-      {/* Individual floating lenses (S24 Ultra style — no housing) */}
-      <CameraLens r={lr} x={0} y={pH * 0.14}  z={mz * 0} />
-      <CameraLens r={lr} x={0} y={pH * 0.05}  z={mz * 0} />
-      <CameraLens r={lr} x={0} y={-pH * 0.04} z={mz * 0} />
-      <CameraLens r={lr} x={0} y={-pH * 0.13} z={mz * 0} />
-      {/* Flash */}
-      <Flash x={0} y={pH * 0.22} z={0.005} w={0.028} h={0.028} />
+    <group position={[0, pH * 0.36, bZ]}>
+      <RoundedBox args={[bW, bH, 0.014]} radius={bH / 2} smoothness={6}>
+        <meshStandardMaterial color="#111" metalness={0.70} roughness={0.15} />
+      </RoundedBox>
+      <Lens r={0.040} x={-bW * 0.26} y={0} z={0.010} />
+      <Lens r={0.040} x={0}           y={0} z={0.010} />
+      <Lens r={0.040} x={ bW * 0.26} y={0} z={0.010} />
+      <LiDAR x={bW * 0.40} y={0} z={0.010} />
     </group>
   );
 }
 
-/** Samsung S24 / OnePlus: circular module */
-function CircularModule({ pW, pH, pD, bodyColor, metalness, roughness, isOnePlus = false }: {
-  pW: number; pH: number; pD: number; bodyColor: string; metalness: number; roughness: number; isOnePlus?: boolean;
+function CircularModule({ pW, pH, pD, color, metal, rough, isOnePlus = false }: {
+  pW: number; pH: number; pD: number; color: string; metal: number; rough: number; isOnePlus?: boolean;
 }) {
-  const mx = -pW * 0.1;
-  const my = pH * 0.31;
-  const mz = -pD / 2 - 0.006;
-  const modR = pW * 0.25;
-
+  const bZ = -pD / 2 - 0.006;
+  const R = pW * 0.26;
   return (
-    <group position={[mx, my, mz]}>
-      {/* Outer ring */}
+    <group position={[-pW * 0.08, pH * 0.30, bZ]}>
       <mesh>
-        <torusGeometry args={[modR, modR * 0.08, 16, 64]} />
-        <meshStandardMaterial
-          color={isOnePlus ? '#c2410c' : '#1a1a1a'}
-          metalness={0.9} roughness={0.1}
-        />
+        <torusGeometry args={[R, R * 0.08, 16, 64]} />
+        <meshStandardMaterial color={isOnePlus ? '#c2410c' : '#1a1a1a'} metalness={0.9} roughness={0.08} />
       </mesh>
-      {/* Inner fill */}
-      <mesh position={[0, 0, -0.004]}>
-        <circleGeometry args={[modR * 0.9, 64]} />
-        <meshStandardMaterial color={bodyColor} metalness={metalness + 0.05} roughness={roughness - 0.03} />
+      <mesh position={[0, 0, -0.005]}>
+        <circleGeometry args={[R * 0.88, 64]} />
+        <meshStandardMaterial color={color} metalness={metal + 0.05} roughness={rough - 0.03} />
       </mesh>
-      {/* Three lenses */}
-      <CameraLens r={0.044} x={-modR * 0.42} y={modR * 0.42} z={0.006} />
-      <CameraLens r={0.044} x={ modR * 0.42} y={modR * 0.42} z={0.006} />
-      <CameraLens r={0.044} x={0}            y={-modR * 0.42} z={0.006} />
-      {/* Flash */}
-      <Flash x={modR * 0.5} y={0} z={0.008} w={0.026} h={0.026} />
-      {/* OnePlus: "Hasselblad" text placeholder dot */}
-      {isOnePlus && (
-        <mesh position={[0, 0, 0.01]}>
-          <circleGeometry args={[modR * 0.12, 24]} />
-          <meshStandardMaterial color="#ff6a00" emissive="#ff3300" emissiveIntensity={0.1} roughness={0.5} />
-        </mesh>
-      )}
+      <Lens r={0.044} x={-R * 0.42} y={ R * 0.42} z={0.006} />
+      <Lens r={0.044} x={ R * 0.42} y={ R * 0.42} z={0.006} />
+      <Lens r={0.044} x={0}         y={-R * 0.42} z={0.006} />
+      <Flash x={R * 0.50} y={0} z={0.008} />
     </group>
   );
 }
 
-/** Pixel 8 Pro: full-width horizontal camera bar */
-function PixelBarModule({ pW, pH, pD, bodyColor, metalness, roughness }: {
-  pW: number; pH: number; pD: number; bodyColor: string; metalness: number; roughness: number;
-}) {
-  const my = pH * 0.36;
-  const mz = -pD / 2 - 0.006;
-  const barW = pW * 0.90;
-  const barH = pW * 0.22;
-
-  return (
-    <group position={[0, my, mz]}>
-      {/* Camera bar housing — full-width pill */}
-      <RoundedBox args={[barW, barH, 0.014]} radius={barH / 2} smoothness={6}>
-        <meshStandardMaterial color="#111" metalness={0.7} roughness={0.15} envMapIntensity={1.2} />
-      </RoundedBox>
-      {/* Three lenses in bar (centered) */}
-      <CameraLens r={0.042} x={-barW * 0.26} y={0} z={0.010} />
-      <CameraLens r={0.042} x={0}            y={0} z={0.010} />
-      <CameraLens r={0.042} x={ barW * 0.26} y={0} z={0.010} />
-      {/* Temperature sensor / laser AF */}
-      <LiDARDot x={barW * 0.40} y={0} z={0.010} />
-    </group>
-  );
-}
-
-// ── Front camera elements ─────────────────────────────────────────
+// ── Front camera / notch ─────────────────────────────────────────
 
 function DynamicIsland({ sH, isLandscape }: { sH: number; isLandscape: boolean }) {
-  if (isLandscape) {
-    return (
-      <group position={[sH / 2 - 0.065, 0, 0]}>
-        <RoundedBox args={[0.055, 0.22, 0.004]} radius={0.027} smoothness={5}>
-          <meshStandardMaterial color="#000" roughness={0.05} metalness={0.2} />
-        </RoundedBox>
-      </group>
-    );
-  }
+  const [w, h] = isLandscape ? [0.055, 0.22] : [0.22, 0.055];
+  const pos: [number, number, number] = isLandscape
+    ? [sH / 2 - 0.065, 0, 0]
+    : [0, sH / 2 - 0.065, 0];
   return (
-    <group position={[0, sH / 2 - 0.065, 0]}>
-      <RoundedBox args={[0.22, 0.055, 0.004]} radius={0.027} smoothness={5}>
+    <group position={pos}>
+      <RoundedBox args={[w, h, 0.005]} radius={Math.min(w, h) / 2} smoothness={6}>
         <meshStandardMaterial color="#000" roughness={0.05} metalness={0.2} />
       </RoundedBox>
     </group>
@@ -287,33 +239,25 @@ function DynamicIsland({ sH, isLandscape }: { sH: number; isLandscape: boolean }
 function PunchHole({ sH, sW, isLandscape }: { sH: number; sW: number; isLandscape: boolean }) {
   const pos: [number, number, number] = isLandscape
     ? [sW / 2 - 0.065, 0, 0]
-    : [0, sH / 2 - 0.06, 0];
+    : [0, sH / 2 - 0.062, 0];
   return (
     <group position={pos}>
       <mesh>
-        <circleGeometry args={[0.028, 32]} />
+        <circleGeometry args={[0.026, 32]} />
         <meshStandardMaterial color="#000" roughness={0.05} />
-      </mesh>
-      <mesh position={[0, 0, 0.001]}>
-        <circleGeometry args={[0.016, 24]} />
-        <meshStandardMaterial color="#050510" roughness={0.02} />
       </mesh>
     </group>
   );
 }
 
 function Notch({ sH, isLandscape }: { sH: number; isLandscape: boolean }) {
-  if (isLandscape) {
-    return (
-      <mesh position={[sH / 2, 0, 0]}>
-        <boxGeometry args={[0.06, 0.38, 0.004]} />
-        <meshStandardMaterial color="#050505" roughness={0.1} />
-      </mesh>
-    );
-  }
+  const pos: [number, number, number] = isLandscape
+    ? [sH / 2, 0, 0]
+    : [0, sH / 2, 0];
+  const [w, h] = isLandscape ? [0.06, 0.38] : [0.38, 0.06];
   return (
-    <mesh position={[0, sH / 2, 0]}>
-      <boxGeometry args={[0.38, 0.06, 0.004]} />
+    <mesh position={pos}>
+      <boxGeometry args={[w, h, 0.005]} />
       <meshStandardMaterial color="#050505" roughness={0.1} />
     </mesh>
   );
@@ -321,92 +265,59 @@ function Notch({ sH, isLandscape }: { sH: number; isLandscape: boolean }) {
 
 // ── Side buttons ─────────────────────────────────────────────────
 
-function SideButtons({ pW, pH, pD, bodyColor, metalness, roughness, hasActionButton, hasCameraControl }: {
-  pW: number; pH: number; pD: number; bodyColor: string; metalness: number; roughness: number;
+function SideButtons({ pW, pH, pD, color, metal, rough, hasActionButton, hasCameraControl }: {
+  pW: number; pH: number; pD: number; color: string; metal: number; rough: number;
   hasActionButton?: boolean; hasCameraControl?: boolean;
 }) {
-  const btnMat = { color: bodyColor, metalness: metalness + 0.02, roughness: roughness + 0.06 };
-  const bZ = pD * 0.25;
+  const bD = pD * 0.25;
+  const mat = { color, metalness: metal + 0.02, roughness: rough + 0.05 };
 
   return (
     <group>
-      {/* Left side: Action button (iPhone 15 Pro+) or silent switch */}
+      {/* Left: Action button or silent switch */}
       {hasActionButton ? (
-        <group position={[-pW / 2 - 0.007, pH * 0.37, 0]}>
-          <RoundedBox args={[0.014, pH * 0.055, bZ]} radius={0.004} smoothness={3}>
-            <meshStandardMaterial {...btnMat} />
-          </RoundedBox>
-        </group>
+        <RoundedBox args={[0.014, pH * 0.055, bD]} radius={0.004} smoothness={3}
+          position={[-pW / 2 - 0.007, pH * 0.37, 0]}>
+          <meshStandardMaterial {...mat} />
+        </RoundedBox>
       ) : (
-        <group position={[-pW / 2 - 0.007, pH * 0.38, 0]}>
-          <RoundedBox args={[0.014, pH * 0.04, bZ]} radius={0.003} smoothness={3}>
-            <meshStandardMaterial {...btnMat} />
-          </RoundedBox>
-        </group>
+        <RoundedBox args={[0.014, pH * 0.040, bD]} radius={0.003} smoothness={3}
+          position={[-pW / 2 - 0.007, pH * 0.38, 0]}>
+          <meshStandardMaterial {...mat} />
+        </RoundedBox>
       )}
-
       {/* Left: Volume up */}
-      <group position={[-pW / 2 - 0.007, pH * 0.24, 0]}>
-        <RoundedBox args={[0.014, pH * 0.08, bZ]} radius={0.003} smoothness={3}>
-          <meshStandardMaterial {...btnMat} />
-        </RoundedBox>
-      </group>
+      <RoundedBox args={[0.014, pH * 0.08, bD]} radius={0.003} smoothness={3}
+        position={[-pW / 2 - 0.007, pH * 0.24, 0]}>
+        <meshStandardMaterial {...mat} />
+      </RoundedBox>
       {/* Left: Volume down */}
-      <group position={[-pW / 2 - 0.007, pH * 0.13, 0]}>
-        <RoundedBox args={[0.014, pH * 0.08, bZ]} radius={0.003} smoothness={3}>
-          <meshStandardMaterial {...btnMat} />
-        </RoundedBox>
-      </group>
-
-      {/* Right: Power button */}
-      <group position={[pW / 2 + 0.007, pH * 0.22, 0]}>
-        <RoundedBox args={[0.014, pH * 0.13, bZ]} radius={0.003} smoothness={3}>
-          <meshStandardMaterial {...btnMat} />
-        </RoundedBox>
-      </group>
-
+      <RoundedBox args={[0.014, pH * 0.08, bD]} radius={0.003} smoothness={3}
+        position={[-pW / 2 - 0.007, pH * 0.13, 0]}>
+        <meshStandardMaterial {...mat} />
+      </RoundedBox>
+      {/* Right: Power */}
+      <RoundedBox args={[0.014, pH * 0.13, bD]} radius={0.003} smoothness={3}
+        position={[pW / 2 + 0.007, pH * 0.22, 0]}>
+        <meshStandardMaterial {...mat} />
+      </RoundedBox>
       {/* Right: Camera Control (iPhone 16+) */}
       {hasCameraControl && (
-        <group position={[pW / 2 + 0.007, -pH * 0.05, 0]}>
-          <RoundedBox args={[0.014, pH * 0.10, bZ]} radius={0.003} smoothness={3}>
-            <meshStandardMaterial {...btnMat} />
-          </RoundedBox>
-          {/* Subtle grip lines */}
-          {[-0.02, 0, 0.02].map((dy, i) => (
-            <group key={i} position={[pW / 2 + 0.009, -pH * 0.05 + dy, 0]}>
-              <mesh rotation={[0, 0, Math.PI / 2]}>
-                <cylinderGeometry args={[0.001, 0.001, 0.009, 6]} />
-                <meshStandardMaterial color="#666" metalness={0.6} roughness={0.4} />
-              </mesh>
-            </group>
-          ))}
-        </group>
-      )}
-
-      {/* Bottom: USB-C port */}
-      <group position={[0, -pH / 2, 0]}>
-        <RoundedBox args={[pW * 0.14, 0.018, pD * 0.55]} radius={0.006} smoothness={4}
-          position={[0, 0.01, 0]}>
-          <meshStandardMaterial color="#0a0a0a" metalness={0.3} roughness={0.6} />
+        <RoundedBox args={[0.014, pH * 0.10, bD]} radius={0.003} smoothness={3}
+          position={[pW / 2 + 0.007, -pH * 0.05, 0]}>
+          <meshStandardMaterial {...mat} />
         </RoundedBox>
-      </group>
-    </group>
-  );
-}
-
-// ── Android-specific elements ─────────────────────────────────────
-
-function SPenSlot({ pW, pH, pD, bodyColor }: { pW: number; pH: number; pD: number; bodyColor: string }) {
-  return (
-    <group position={[pW * 0.42, -pH * 0.44, 0]}>
-      <RoundedBox args={[pW * 0.04, pH * 0.10, pD * 0.75]} radius={0.005} smoothness={3}>
-        <meshStandardMaterial color="#0a0a0a" metalness={0.3} roughness={0.5} />
+      )}
+      {/* Bottom: USB-C port */}
+      <RoundedBox args={[pW * 0.14, 0.018, pD * 0.55]} radius={0.006} smoothness={4}
+        position={[0, -pH / 2 + 0.005, 0]}>
+        <meshStandardMaterial color="#0a0a0a" metalness={0.3} roughness={0.6} />
       </RoundedBox>
     </group>
   );
 }
 
-// ── Main PhoneDevice component ────────────────────────────────────
+// ── Main component ────────────────────────────────────────────────
 
 interface Props {
   def: DeviceModelDef;
@@ -418,154 +329,141 @@ interface Props {
 
 export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isLandscape }: Props) {
   const isAndroid = def.storeType === 'android';
-  const isPro = def.id.includes('pro') || def.id.includes('ultra');
+  const isPro     = def.id.includes('pro') || def.id.includes('ultra');
 
-  // Normalize: phone height = 2.0 units
-  const scale = 2.0 / (def.h / 100);
+  // Scale: phone height = 2.2 units
+  const scale = 2.2 / (def.h / 100);
   const pW = (def.w / 100) * scale;
   const pH = (def.h / 100) * scale;
-  const pD = 0.115;
+  const pD = 0.118; // phone depth (thickness)
 
-  // Border radius: Pro iPhones have flatter sides (titanium chamfer)
+  // Border radius matching real device proportions
   const br = isAndroid
-    ? (def.id.includes('ultra') ? 0.055 : 0.082)
-    : (def.id.includes('13') ? 0.105 : isPro ? 0.108 : 0.112);
+    ? (def.id.includes('ultra') ? 0.050 : 0.078)
+    : isPro
+      ? (def.id.includes('13') ? 0.100 : def.id.includes('15') ? 0.106 : 0.110)
+      : 0.114;
 
-  const mat = isAndroid
-    ? (ANDROID_FRAME[def.frame] ?? ANDROID_FRAME.titanium)
-    : (BODY_COLORS[deviceColor] ?? BODY_COLORS.titanium);
+  // Colors
+  const framePreset = FRAME_MAT[def.frame] ?? FRAME_MAT.aluminum;
+  const colorKey    = deviceColor || 'titanium';
+  const bodyHex     = isAndroid
+    ? framePreset.color
+    : (DEVICE_COLORS[colorKey] ?? framePreset.color);
 
-  const bodyColor = mat.body;
-  const { metalness, roughness } = mat;
+  const { metalness, roughness } = framePreset;
 
-  // Glass back color — slightly warmer/different from the frame
-  const glassBackColor = isAndroid
-    ? (def.frame === 'glass' ? '#0e0e14' : bodyColor)
-    : (deviceColor === 'white' ? '#e8e8e8' : deviceColor === 'blue' ? '#131c40' : '#1a1a1e');
+  // Screen dimensions (inset from frame edges)
+  const iTop  = (def.insetTop    / 100) * scale;
+  const iBot  = (def.insetBottom / 100) * scale;
+  const iSide = (def.insetSide   / 100) * scale;
+  const sW    = pW - iSide * 2;
+  const sH    = pH - iTop - iBot;
+  const sOffY = -(iTop - iBot) / 2;
 
-  // Screen geometry
-  const insetTopPx  = (def.insetTop    / 100) * scale;
-  const insetBotPx  = (def.insetBottom / 100) * scale;
-  const insetSidePx = (def.insetSide   / 100) * scale;
-  const sW = pW - insetSidePx * 2;
-  const sH = pH - insetTopPx - insetBotPx;
-  const sOffY = -(insetTopPx - insetBotPx) / 2;
-  // Front glass occupies pD/2 to pD/2+0.002, so screen content starts at pD/2+0.003
-  const sZ = pD / 2 + 0.003;
-  const backZ = -pD / 2;
+  // Z positions
+  const frontZ = pD / 2;  // body front face
+  const backZ  = -pD / 2; // body back face
 
-  const cameraModuleProps = { pW, pH, pD, bodyColor, metalness, roughness };
+  const mProps = { pW, pH, pD, color: bodyHex, metal: metalness, rough: roughness };
 
   return (
     <group rotation={isLandscape ? [0, 0, -Math.PI / 2] : [0, 0, 0]}>
 
-      {/* ── 1. BODY / FRAME ─────────────────────────────────────── */}
-      {/* Main titanium/aluminum frame body */}
-      <RoundedBox args={[pW, pH, pD]} radius={br} smoothness={10} castShadow receiveShadow>
-        <meshStandardMaterial
-          color={bodyColor}
-          metalness={metalness}
-          roughness={roughness}
-          envMapIntensity={2.2}
-        />
-      </RoundedBox>
-
-      {/* ── 2. FRONT GLASS FACE ──────────────────────────────────── */}
-      {/* RoundedBox so corners MATCH the body — prevents screen overflow.
-          Position: center of glass = pD/2 + 0.001 so back face (pD/2+0.0005)
-          sits just above the body front face (pD/2), no z-fighting. */}
+      {/* ── 1. BODY ─────────────────────────────────────────────── */}
+      {/* Single RoundedBox — no glass overlay so no "double" outline */}
       <RoundedBox
-        args={[pW - 0.003, pH - 0.003, 0.002]}
-        radius={br * 0.97}
-        smoothness={8}
-        position={[0, 0, pD / 2 + 0.001]}
+        args={[pW, pH, pD]}
+        radius={br}
+        smoothness={12}
+        castShadow
+        receiveShadow
       >
         <meshStandardMaterial
-          color="#040407"
-          roughness={0.03}
-          metalness={0.0}
-          envMapIntensity={2.2}
+          color={bodyHex}
+          metalness={metalness}
+          roughness={roughness}
+          envMapIntensity={2.4}
         />
       </RoundedBox>
 
-      {/* Screen black base — safe inset so corners stay inside rounded rect */}
-      <mesh position={[0, sOffY, sZ + 0.0005]}>
-        <planeGeometry args={[sW, sH]} />
-        <meshStandardMaterial color="#020205" roughness={0.01} metalness={0} />
+      {/* ── 2. FRONT FACE — screen bezel + OLED ─────────────────── */}
+      {/* Black bezel fills the front face except the aluminum rim */}
+      <mesh position={[0, 0, frontZ + 0.0008]}>
+        <planeGeometry args={[pW * 0.94, pH * 0.97]} />
+        <meshStandardMaterial color="#030306" roughness={0.05} metalness={0} />
       </mesh>
 
-      {/* Screen content texture */}
-      <group position={[0, sOffY, sZ + 0.0015]}>
-        <ScreenPlane w={sW} h={sH} screenTexture={screenTexture} contentType={contentType} />
+      {/* OLED screen — dark base */}
+      <mesh position={[0, sOffY, frontZ + 0.0016]}>
+        <planeGeometry args={[sW, sH]} />
+        <meshStandardMaterial color="#020208" roughness={0.02} metalness={0} />
+      </mesh>
+
+      {/* Screen content */}
+      <group position={[0, sOffY, frontZ + 0.0024]}>
+        <ScreenContent w={sW} h={sH} screenTexture={screenTexture} contentType={contentType} />
       </group>
 
-      {/* Screen oleophobic glass (thin specular layer) */}
-      <mesh position={[0, sOffY, sZ + 0.003]}>
+      {/* Glass gloss reflection */}
+      <mesh position={[0, sOffY, frontZ + 0.0032]}>
         <planeGeometry args={[sW, sH]} />
-        <meshStandardMaterial
-          color="#ccddff"
-          transparent
-          opacity={0.022}
-          roughness={0.0}
-          metalness={0}
-        />
+        <meshStandardMaterial color="#aaccff" transparent opacity={0.018} roughness={0} metalness={0} />
       </mesh>
 
       {/* ── 3. FRONT CAMERA ─────────────────────────────────────── */}
-      <group position={[0, sOffY, sZ + 0.004]}>
+      <group position={[0, sOffY, frontZ + 0.004]}>
         {def.camera === 'dynamic-island' && <DynamicIsland sH={sH} isLandscape={false} />}
         {def.camera === 'punch-hole'     && <PunchHole sH={sH} sW={sW} isLandscape={false} />}
         {def.camera === 'notch'          && <Notch sH={sH} isLandscape={false} />}
       </group>
 
-      {/* ── 4. BACK GLASS / MATTE FACE ───────────────────────────── */}
-      {/* RoundedBox to match body corners. backZ = -pD/2, so center at
-          -pD/2 - 0.001 puts back face of glass just below body back face — no z-fight. */}
-      <RoundedBox
-        args={[pW - 0.003, pH - 0.003, 0.002]}
-        radius={br * 0.97}
-        smoothness={8}
-        position={[0, 0, backZ - 0.001]}
-      >
+      {/* ── 4. BACK FACE — logo + shimmer ────────────────────────── */}
+      {/* Apple logo */}
+      <mesh position={[0, pH * 0.03, backZ - 0.001]}>
+        <circleGeometry args={[pW * 0.095, 48]} />
         <meshStandardMaterial
-          color={glassBackColor}
-          roughness={isPro ? 0.14 : 0.06}
-          metalness={isPro ? 0.02 : 0.12}
-          envMapIntensity={isPro ? 0.9 : 1.8}
+          color={bodyHex}
+          metalness={metalness + 0.06}
+          roughness={roughness - 0.04}
+          envMapIntensity={3.0}
         />
-      </RoundedBox>
+      </mesh>
 
-      {/* Back shimmer highlight — stays within body (same rounded shape implicit) */}
-      <mesh position={[-pW * 0.08, pH * 0.08, backZ + 0.003]}>
-        <planeGeometry args={[pW * 0.45, pH * 0.3]} />
-        <meshStandardMaterial
-          color="#ffffff"
-          transparent
-          opacity={0.012}
-          roughness={0}
-          metalness={0}
-        />
+      {/* Back shimmer gradient */}
+      <mesh position={[-pW * 0.06, pH * 0.10, backZ - 0.001]}>
+        <planeGeometry args={[pW * 0.55, pH * 0.38]} />
+        <meshStandardMaterial color="#ffffff" transparent opacity={0.010} roughness={0} metalness={0} />
       </mesh>
 
       {/* ── 5. SIDE BUTTONS ──────────────────────────────────────── */}
       <SideButtons
-        {...cameraModuleProps}
+        {...mProps}
         hasActionButton={def.hasActionButton}
         hasCameraControl={def.hasCameraControl}
       />
 
-      {/* ── 6. S-PEN SLOT (Samsung Ultra) ────────────────────────── */}
-      {def.hasSPen && <SPenSlot pW={pW} pH={pH} pD={pD} bodyColor={bodyColor} />}
+      {/* ── 6. S-PEN SLOT ────────────────────────────────────────── */}
+      {def.hasSPen && (
+        <RoundedBox
+          args={[pW * 0.04, pH * 0.10, pD * 0.75]}
+          radius={0.005} smoothness={3}
+          position={[pW * 0.42, -pH * 0.44, 0]}
+        >
+          <meshStandardMaterial color="#0a0a0a" metalness={0.3} roughness={0.5} />
+        </RoundedBox>
+      )}
 
       {/* ── 7. BACK CAMERA MODULE ────────────────────────────────── */}
-      {def.cameraLayout === 'triple-tri'   && <TripleTriModule {...cameraModuleProps} />}
-      {def.cameraLayout === 'dual-v'       && <DualVertModule {...cameraModuleProps} />}
-      {def.cameraLayout === 'dual-diag'    && <DualDiagModule {...cameraModuleProps} />}
-      {def.cameraLayout === 'quad-samsung' && <QuadSamsungModule {...cameraModuleProps} />}
-      {def.cameraLayout === 'triple-bar'   && <PixelBarModule {...cameraModuleProps} />}
+      {def.cameraLayout === 'triple-tri'   && <TripleTriModule {...mProps} />}
+      {def.cameraLayout === 'dual-v'       && <DualVertModule  {...mProps} />}
+      {def.cameraLayout === 'dual-diag'    && <DualDiagModule  {...mProps} />}
+      {def.cameraLayout === 'quad-samsung' && <QuadSamsungModule {...mProps} />}
+      {def.cameraLayout === 'triple-bar'   && <PixelBarModule  {...mProps} />}
       {def.cameraLayout === 'triple-round' && (
-        <CircularModule {...cameraModuleProps} isOnePlus={def.id.includes('oneplus')} />
+        <CircularModule {...mProps} isOnePlus={def.id.includes('oneplus')} />
       )}
+
     </group>
   );
 }

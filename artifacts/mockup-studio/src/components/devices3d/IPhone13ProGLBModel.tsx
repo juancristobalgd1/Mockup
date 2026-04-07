@@ -15,17 +15,22 @@ interface Props {
 const MODEL_URL = '/models/iphone13pro.glb';
 useGLTF.preload(MODEL_URL);
 
-// GLB bounding data (from accessors, in GLB model space):
-//   X: 0.336 – 24.928  → centerX = 12.632  (width axis)
-//   Y: 0.849 – 1.445   → centerY =  1.147  (thickness axis)
-//   Z: 0.200 – 50.436  → centerZ = 25.318  (height axis — GLB Z = Three.js Y after rotation)
+// ── GLB coordinate math ───────────────────────────────────────────
+// The GLB was exported from 3ds Max in Z-up convention:
+//   X: 0.336 – 24.928  (width,    center = 12.632)
+//   Y: 0.849 – 1.445   (depth,    center =  1.147)
+//   Z: 0.200 – 50.436  (height,   center = 25.318)
 //
-// Strategy: first center the model at GLB origin, then rotate -90° on X
-// so the height axis (Z) maps to Three.js Y-up. Scale to ~2.5 units tall.
-const C_X = -12.632;  // offset to center X in GLB space
-const C_Y = -1.147;   // offset to center Y (thickness)
-const C_Z = -25.318;  // offset to center Z (height)
-const SCALE = 0.0498; // 50.2 GLB units × 0.0498 ≈ 2.5 Three.js units
+// We apply a single group transform: position P, rotation R(-90°,X), scale S
+// where S = 2.5 / 50.236 = 0.04977  (phone = 2.5 Three.js units tall)
+//
+// position P must equal  -(R(S(center)))  so the model is centered at world origin:
+//   S(center)     = 0.04977 * (12.632, 1.147, 25.318) = (0.629, 0.057, 1.261)
+//   R(-90°,X)(v)  maps (x,y,z) → (x, z, -y)         = (0.629, 1.261, -0.057)
+//   P             = -(0.629, 1.261, -0.057)           = (-0.629, -1.261, 0.057)
+const MODEL_SCALE = 0.04977;
+const MODEL_POS: [number, number, number] = [-0.629, -1.261, 0.057];
+const MODEL_ROT: [number, number, number] = [-Math.PI / 2, 0, 0];
 
 export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }: Props) {
   const { scene } = useGLTF(MODEL_URL) as any;
@@ -36,106 +41,72 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
     screenMeshes.current = [];
 
     clone.traverse((obj: THREE.Object3D) => {
+      // Remove embedded cameras / lights from the 3ds Max export
+      if (obj instanceof THREE.Camera || obj instanceof THREE.Light) {
+        obj.removeFromParent();
+        return;
+      }
       if (!(obj instanceof THREE.Mesh)) return;
+      obj.frustumCulled = false;
+      obj.castShadow    = true;
+      obj.receiveShadow = true;
+
       const name = obj.name.toLowerCase();
 
-      // Disable frustum culling so model renders at all camera angles
-      obj.frustumCulled = false;
-
       if (name.startsWith('screen') && !name.startsWith('screen2')) {
-        // OLED screen face — will receive user content
-        const mat = new THREE.MeshStandardMaterial({
-          color: '#020208',
-          roughness: 0.04,
-          metalness: 0,
+        // OLED display face
+        obj.material = new THREE.MeshStandardMaterial({
+          color: '#020208', roughness: 0.04, metalness: 0,
         });
-        obj.material = mat;
         screenMeshes.current.push(obj);
 
       } else if (name.startsWith('screen2')) {
-        // Front glass overlay — thin tinted glass effect
+        // Front cover glass — thin tinted gloss
         obj.material = new THREE.MeshPhysicalMaterial({
-          color: '#90b8e0',
-          transmission: 0.88,
-          roughness: 0.0,
-          metalness: 0,
-          transparent: true,
-          opacity: 0.06,
-          envMapIntensity: 2.5,
-        });
-
-      } else if (name.includes('e??') || name.includes('\xef\xbf\xbd')) {
-        // Body / aluminum frame (Korean-named meshes are the chassis)
-        obj.material = new THREE.MeshStandardMaterial({
-          color: deviceColor || '#71717a',
-          metalness: 0.88,
-          roughness: 0.14,
-          envMapIntensity: 2.0,
+          color: '#a0c0e0', transmission: 0.85, roughness: 0,
+          metalness: 0, transparent: true, opacity: 0.06, envMapIntensity: 2.0,
         });
 
       } else if (name.startsWith('lens') || name.startsWith('still') || name.startsWith('led')) {
-        // Camera lenses and optical glass elements
+        // Camera lenses and optical elements
         obj.material = new THREE.MeshPhysicalMaterial({
-          color: '#040810',
-          roughness: 0.02,
-          metalness: 0.15,
-          transmission: 0.18,
-          transparent: true,
-          opacity: 0.95,
-          envMapIntensity: 3.5,
+          color: '#040810', roughness: 0.02, metalness: 0.15,
+          transmission: 0.18, transparent: true, opacity: 0.95, envMapIntensity: 3.5,
         });
 
       } else if (name.startsWith('glass')) {
         // Back glass panel
         obj.material = new THREE.MeshPhysicalMaterial({
-          color: deviceColor || '#71717a',
-          metalness: 0.08,
-          roughness: 0.06,
-          transmission: 0.22,
-          transparent: true,
-          opacity: 0.97,
-          envMapIntensity: 3.0,
+          color: deviceColor || '#71717a', metalness: 0.08, roughness: 0.06,
+          transmission: 0.20, transparent: true, opacity: 0.97, envMapIntensity: 3.0,
         });
 
-      } else if (name.startsWith('plastic')) {
-        // Rubber / antenna band
+      } else if (name.startsWith('plastic') || name.startsWith('plastic2')) {
+        // Rubber antenna bands
         obj.material = new THREE.MeshStandardMaterial({
-          color: '#1a1a1e',
-          metalness: 0.0,
-          roughness: 0.6,
+          color: '#1a1a1e', metalness: 0.0, roughness: 0.6,
         });
 
       } else if (name.startsWith('speaker')) {
         obj.material = new THREE.MeshStandardMaterial({
-          color: '#111114',
-          metalness: 0.35,
-          roughness: 0.72,
+          color: '#111114', metalness: 0.35, roughness: 0.72,
         });
 
       } else if (name.startsWith('logo')) {
         obj.material = new THREE.MeshStandardMaterial({
-          color: deviceColor || '#8a8a8e',
-          metalness: 0.96,
-          roughness: 0.05,
-          envMapIntensity: 2.8,
+          color: deviceColor || '#8a8a8e', metalness: 0.96, roughness: 0.05, envMapIntensity: 2.8,
         });
 
       } else if (name.startsWith('balck') || name.startsWith('123')) {
-        // Camera module housing
+        // Camera module housing rings
         obj.material = new THREE.MeshStandardMaterial({
-          color: '#0d0d10',
-          metalness: 0.65,
-          roughness: 0.22,
+          color: '#0d0d10', metalness: 0.65, roughness: 0.22,
         });
 
       } else {
-        // Catch-all: Korean-named body/frame meshes (몸체 etc.)
-        // Give them the device body material so color theming works
+        // Korean-named chassis meshes — device color
         obj.material = new THREE.MeshStandardMaterial({
-          color: deviceColor || '#71717a',
-          metalness: 0.86,
-          roughness: 0.12,
-          envMapIntensity: 2.0,
+          color: deviceColor || '#71717a', metalness: 0.88, roughness: 0.10, envMapIntensity: 2.2,
         });
       }
     });
@@ -144,20 +115,18 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene, deviceColor]);
 
-  // Use refs so useFrame always reads the latest values
-  const contentTypeRef = useRef(contentType);
-  contentTypeRef.current = contentType;
-
-  const lastTexRef = useRef<THREE.Texture | null>(null);
-  const lastContentTypeRef = useRef<string | null>(null);
+  // Reactively update screen texture (texture ref updates asynchronously)
+  const prevTex = useRef<THREE.Texture | null>(null);
+  const prevCt  = useRef<string | null>(null);
+  const ctRef   = useRef(contentType);
+  ctRef.current = contentType;
 
   useFrame(() => {
     const tex = screenTexture.current;
-    const ct = contentTypeRef.current;
-    // Only update when something changed
-    if (tex === lastTexRef.current && ct === lastContentTypeRef.current) return;
-    lastTexRef.current = tex;
-    lastContentTypeRef.current = ct;
+    const ct  = ctRef.current;
+    if (tex === prevTex.current && ct === prevCt.current) return;
+    prevTex.current = tex;
+    prevCt.current  = ct;
 
     screenMeshes.current.forEach(mesh => {
       const mat = mesh.material as THREE.MeshStandardMaterial;
@@ -173,19 +142,8 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
   });
 
   return (
-    <group>
-      {/*
-        Two-step transform so centering happens in GLB model space (BEFORE rotation):
-        1. Inner group: translate model so its bounding-box center is at GLB origin [0,0,0]
-        2. Outer group: scale to ~2.5 Three.js units tall, then rotate -90° on X
-           so GLB's Z-up (height) becomes Three.js Y-up.
-        Result: phone is perfectly centered at world origin and stands upright.
-      */}
-      <group scale={SCALE} rotation={[-Math.PI / 2, 0, 0]}>
-        <group position={[C_X, C_Y, C_Z]}>
-          <primitive object={cloned} />
-        </group>
-      </group>
+    <group position={MODEL_POS} rotation={MODEL_ROT} scale={MODEL_SCALE}>
+      <primitive object={cloned} />
     </group>
   );
 }
