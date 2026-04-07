@@ -614,8 +614,6 @@ interface OverlayProps {
 }
 
 function ScreenOverlay({ sW, sH, sOffY, screenFaceZ, facesNeg, cornerRadius, screenTexture, contentType }: OverlayProps) {
-  const meshRef = useRef<THREE.Mesh>(null);
-
   // Build a rounded-rectangle geometry with correct UVs.
   // Dispose the previous geometry whenever dimensions change.
   const geom = useMemo(() => {
@@ -625,9 +623,23 @@ function ScreenOverlay({ sW, sH, sOffY, screenFaceZ, facesNeg, cornerRadius, scr
 
   useEffect(() => () => { geom.dispose(); }, [geom]);
 
+  // Create the material ONCE imperatively so React/R3F reconciliation can never
+  // reset mat.map or mat.color between renders (the root cause of content
+  // disappearing when deviceColor changes). The mesh receives it via the
+  // `material` prop — R3F only stores the reference, never mutates properties.
+  const mat = useMemo(() => new THREE.MeshBasicMaterial({
+    color: '#000000',
+    toneMapped: false,
+    depthWrite: true,
+    depthTest: true,
+    side: THREE.DoubleSide,
+  }), []);
+  useEffect(() => () => { mat.dispose(); }, [mat]);
+
+  const ctRef = useRef(contentType);
+  ctRef.current = contentType;
+
   useFrame(() => {
-    if (!meshRef.current) return;
-    const mat = meshRef.current.material as THREE.MeshBasicMaterial;
     const tex = screenTexture.current;
     if (tex) {
       const needMap   = mat.map !== tex;
@@ -637,7 +649,7 @@ function ScreenOverlay({ sW, sH, sOffY, screenFaceZ, facesNeg, cornerRadius, scr
         if (needColor) mat.color.set('#ffffff');
         mat.needsUpdate = true;
       }
-      if (contentType === 'video') tex.needsUpdate = true;
+      if (ctRef.current === 'video') tex.needsUpdate = true;
     } else if (mat.map || mat.color.r > 0.01) {
       mat.map = null;
       mat.color.set('#000000');
@@ -654,20 +666,12 @@ function ScreenOverlay({ sW, sH, sOffY, screenFaceZ, facesNeg, cornerRadius, scr
 
   return (
     <mesh
-      ref={meshRef}
       geometry={geom}
+      material={mat}
       position={[0, sOffY, zPos]}
       rotation={[rotX, 0, 0]}
       renderOrder={4}
-    >
-      <meshBasicMaterial
-        color="#000000"
-        toneMapped={false}
-        depthWrite={true}
-        depthTest={true}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
+    />
   );
 }
 

@@ -1,6 +1,6 @@
 import React, {
   Suspense, useRef, forwardRef, useImperativeHandle,
-  useCallback, useState, useEffect,
+  useCallback, useState, useEffect, useMemo,
 } from 'react';
 import { Canvas as R3FCanvas, useThree, useFrame } from '@react-three/fiber';
 import {
@@ -551,10 +551,11 @@ function BrowserScreenContent({
   screenTexture: React.MutableRefObject<THREE.Texture | null>;
   contentType: 'image' | 'video' | null;
 }) {
-  const ref = useRef<THREE.Mesh>(null);
+  const mat = useMemo(() => new THREE.MeshBasicMaterial({ color: '#070b14', toneMapped: false }), []);
+  useEffect(() => () => { mat.dispose(); }, [mat]);
+  const ctRef = useRef(contentType);
+  ctRef.current = contentType;
   useFrame(() => {
-    if (!ref.current) return;
-    const mat = ref.current.material as THREE.MeshBasicMaterial;
     const tex = screenTexture.current;
     if (tex) {
       const needMap   = mat.map !== tex;
@@ -564,7 +565,7 @@ function BrowserScreenContent({
         if (needColor) mat.color.set('#ffffff');
         mat.needsUpdate = true;
       }
-      if (contentType === 'video') tex.needsUpdate = true;
+      if (ctRef.current === 'video') tex.needsUpdate = true;
     } else if (mat.map || mat.color.r > 0.04) {
       mat.map = null;
       mat.color.set('#070b14');
@@ -572,9 +573,8 @@ function BrowserScreenContent({
     }
   });
   return (
-    <mesh ref={ref} renderOrder={1}>
+    <mesh material={mat} renderOrder={1}>
       <planeGeometry args={[w, h]} />
-      <meshBasicMaterial color="#070b14" toneMapped={false} />
     </mesh>
   );
 }
