@@ -262,7 +262,7 @@ function DeviceScene({
 
   // ── Icon style helpers (must be defined before htmlIcon uses them) ─
   const iconStyle = (): React.CSSProperties => ({
-    width: 44, height: 44, borderRadius: '50%',
+    width: 28, height: 28, borderRadius: '50%',
     background: 'rgba(0,0,0,0.52)',
     border: '1.5px dashed rgba(255,255,255,0.35)',
     backdropFilter: 'blur(10px)',
@@ -290,7 +290,7 @@ function DeviceScene({
           onMouseEnter={e => applyHover(e, true)}
           onMouseLeave={e => applyHover(e, false)}
         >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <svg width="12" height="12" viewBox="0 0 18 18" fill="none">
             <line x1="9" y1="3" x2="9" y2="15" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
             <line x1="3" y1="9" x2="15" y2="9" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
           </svg>
@@ -307,7 +307,7 @@ function DeviceScene({
           onMouseEnter={e => applyHover(e, true)}
           onMouseLeave={e => applyHover(e, false)}
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
             <path d="M11.5 2.5l2 2L5 13l-2.5.5.5-2.5L11.5 2.5z"
               stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
