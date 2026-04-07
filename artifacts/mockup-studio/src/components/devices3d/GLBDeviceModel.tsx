@@ -496,6 +496,11 @@ function applyMaterials(
     obj.castShadow    = true;
     obj.receiveShadow = true;
 
+    // Never repaint a mesh that has already been identified as the device screen.
+    // This prevents deviceColor from bleeding onto the screen when the user
+    // changes the frame color.
+    if (screenMeshes.includes(obj)) return;
+
     const key = meshKey(obj);
 
     if (key.includes('defaultmaterial')) {
@@ -644,19 +649,26 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
   }, [sceneObj]);
 
   // ── Apply / update materials when model or color changes ──────────
-  const groupRef     = useRef<THREE.Group>(null);
-  const screenMeshes = useRef<THREE.Mesh[]>([]);
+  const groupRef      = useRef<THREE.Group>(null);
+  const screenMeshes  = useRef<THREE.Mesh[]>([]);
+  const prevTransform = useRef<ModelTransform | null>(null);
 
   useEffect(() => {
     const root = groupRef.current;
     if (!root || !transform) return;
-    screenMeshes.current = [];
+
+    // Only reset the identified screen meshes when the model itself changes.
+    // When only deviceColor changes, keep screenMeshes intact so applyMaterials
+    // can skip them and never paint the screen with the frame color.
+    const modelChanged = prevTransform.current !== transform;
+    prevTransform.current = transform;
+    if (modelChanged) screenMeshes.current = [];
 
     const hasBaked = applyMaterials(root, deviceColor, screenMeshes.current, !!def.screenFacesBack);
 
     // For multi-mesh models that didn't have an explicitly named screen mesh,
     // detect it geometrically from world-space positions (group transforms applied).
-    if (!hasBaked && screenMeshes.current.length === 0) {
+    if (modelChanged && !hasBaked && screenMeshes.current.length === 0) {
       detectAndMarkScreen(root, transform.screenFaceZ, screenMeshes.current);
     }
 
