@@ -55,6 +55,12 @@ export interface DeviceModelDef {
    */
   glbRotateZ?: number;
   /**
+   * Optional X-axis rotation (radians) applied to the GLB model before
+   * computing scale/position. Use for models where the "up" axis is Z
+   * (e.g. Apple Watch exported Z-up, needing -Math.PI/2 to face camera).
+   */
+  glbRotateX?: number;
+  /**
    * Set to true to skip the flat overlay plane entirely.
    * Use for laptops / angled screens where the texture is applied directly to
    * the detected screen mesh instead.
@@ -223,30 +229,21 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
   },
   // ── Watch ─────────────────────────────────────────────────────────
   {
-    id: 'apple-watch-ultra',
-    label: 'Watch Ultra 2',
+    id: 'apple-watch-s4',
+    label: 'Apple Watch',
     group: 'Watch',
     storeType: 'watch',
-    w: 185, h: 222,
-    insetTop: 12, insetBottom: 12, insetSide: 12,
-    br: '35%', screenBr: '28%',
-    camera: 'none',
-    cameraLayout: 'none',
-    frame: 'titanium',
-    accent: '#f97316',
-  },
-  {
-    id: 'apple-watch-s9',
-    label: 'Watch Series 9',
-    group: 'Watch',
-    storeType: 'watch',
-    w: 175, h: 210,
-    insetTop: 12, insetBottom: 12, insetSide: 12,
-    br: '36%', screenBr: '30%',
+    w: 172, h: 210,
+    insetTop: 10, insetBottom: 10, insetSide: 10,
+    br: '38%', screenBr: '30%',
     camera: 'none',
     cameraLayout: 'none',
     frame: 'aluminum',
-    accent: '#e11d48',
+    hasColors: true,
+    accent: '#64748b',
+    glbUrl: '/models/applewatch.glb',
+    glbRotateX: -Math.PI / 2,
+    skipOverlay: true,
   },
 ];
 

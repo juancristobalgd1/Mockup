@@ -173,12 +173,12 @@ function computeTransform(sceneObj: THREE.Object3D, def: DeviceModelDef): ModelT
   const meshCount = countMeshes(sceneObj);
   const isMultiMesh = meshCount > 1;
 
-  // Identify Z-up vs Y-up
-  const isZUp = size.z > size.y * 1.4 && size.z > size.x * 1.4;
-  const tall   = isZUp ? size.z : size.y;
-  const s      = TARGET_H / tall;
+  // Identify Z-up vs Y-up (auto-detect only; manual glbRotateX overrides this path).
+  const glbRotX = def.glbRotateX ?? 0;
+  const isZUp   = glbRotX === 0 && size.z > size.y * 1.4 && size.z > size.x * 1.4;
 
   if (isZUp) {
+    const s = TARGET_H / size.z;
     const rotation: [number,number,number] = [-Math.PI / 2, 0, 0];
     const position: [number,number,number] = [
       -center.x * s,
@@ -196,39 +196,53 @@ function computeTransform(sceneObj: THREE.Object3D, def: DeviceModelDef): ModelT
     };
   }
 
-  // Y-up standard glTF — with optional Z-rotation for landscape-exported models.
+  // Y-up standard glTF — with optional Z-rotation and/or X-rotation.
   //
-  // glbRotateZ: corrects models exported with the phone lying on its side
-  // (e.g. X-extent = phone height). We compute effective size/center analytically
-  // so no actual scene mutation is needed.
-  //
-  // screenFacesBack: some exports have the screen at -Z (away from camera).
-  // We rotate 180° around Y so the screen faces +Z (toward camera).
-  const glbRotZ   = def.glbRotateZ ?? 0;
-  const cosA      = Math.cos(glbRotZ);
-  const sinA      = Math.sin(glbRotZ);
+  // glbRotateZ: corrects landscape-exported models (phone on its side).
+  // glbRotateX: corrects models where screen doesn't face +Z camera
+  //             (e.g. Apple Watch: local Y is depth, screen faces local +Z which
+  //              maps to world -Y → needs -90° X rotation so screen faces +Z).
+  // screenFacesBack: screen exported at -Z; we flip 180° around Y.
+  const glbRotZ = def.glbRotateZ ?? 0;
+  const cosZ = Math.cos(glbRotZ);
+  const sinZ = Math.sin(glbRotZ);
+  const cosX = Math.cos(glbRotX);
+  const sinX = Math.sin(glbRotX);
 
-  // Effective bounding extents and center after the Z rotation.
-  const effSzY = Math.abs(size.x * sinA) + Math.abs(size.y * cosA); // new height
-  const effSzX = Math.abs(size.x * cosA) + Math.abs(size.y * sinA); // new width
-  const eCX    = center.x * cosA - center.y * sinA;                  // new center.x
-  const eCY    = center.x * sinA + center.y * cosA;                  // new center.y
+  // ── Step 1: Z rotation (swaps XY extents for landscape exports) ──────
+  const effW_z = Math.abs(size.x * cosZ) + Math.abs(size.y * sinZ);
+  const effH_z = Math.abs(size.x * sinZ) + Math.abs(size.y * cosZ);
+  const eCX    = center.x * cosZ - center.y * sinZ;
+  const eCY_z  = center.x * sinZ + center.y * cosZ;
+
+  // ── Step 2: X rotation (swaps YZ extents, e.g. Apple Watch) ─────────
+  // After X rotation: new Y = eCY_z*cosX - center.z*sinX
+  //                   new Z = eCY_z*sinX + center.z*cosX
+  const effH   = Math.abs(effH_z * cosX) + Math.abs(size.z * sinX);
+  const eCY    = eCY_z * cosX - center.z * sinX;
+  const eCZ    = eCY_z * sinX + center.z * cosX;
+
+  // Scale so the effective height fills TARGET_H.
+  const s = TARGET_H / effH;
 
   const facesBack = !!def.screenFacesBack;
-  const rotation: [number, number, number] = [0, facesBack ? Math.PI : 0, glbRotZ];
+  const rotation: [number, number, number] = [glbRotX, facesBack ? Math.PI : 0, glbRotZ];
 
-  // For facesBack: Y rotation (180°) flips local Z sign, so position.z = +center.z*s.
+  // Center the model at world origin (accounting for all rotations).
   const position: [number, number, number] = [
     -(facesBack ? -eCX : eCX) * s,
     -eCY * s,
-    facesBack ? center.z * s : -center.z * s,
+    facesBack ? eCZ * s : -eCZ * s,
   ];
 
-  // Coarse screen-face Z from the bounding box; may be overridden below
-  // if the actual screen mesh is closer than the box face (e.g. lens spheres).
-  let screenFaceZ = facesBack
-    ? (center.z - box.min.z) * s
-    : (box.max.z - center.z) * s;
+  // ── Coarse screen-face Z from bounding box ───────────────────────────
+  // After X rotation the front-face Z comes from a combination of Y and Z offsets.
+  // For glbRotX=0 this reduces to (box.max.z - center.z)*s (standard).
+  const boxFaceY = facesBack ? box.min.y : box.max.y;
+  const boxFaceZ = facesBack ? box.min.z : box.max.z;
+  let screenFaceZ = Math.abs(
+    (boxFaceY - center.y) * sinX + (boxFaceZ - center.z) * cosX
+  ) * s;
 
   // ── Screen mesh detection ──────────────────────────────────────────
   let detectedScreen: ScreenOverlayDims | null = null;
@@ -239,31 +253,40 @@ function computeTransform(sceneObj: THREE.Object3D, def: DeviceModelDef): ModelT
     screenBbox.getCenter(sc);
     screenBbox.getSize(ss);
 
-    // Prefer screen mesh's own Z over the (possibly inflated) bounding-box Z.
-    // This avoids overlay misplacement caused by spherical camera lenses, etc.
-    const measuredFaceZ = facesBack
-      ? (center.z - sc.z) * s
-      : (sc.z - center.z) * s;
-    if (measuredFaceZ > 0 && measuredFaceZ < screenFaceZ) {
-      screenFaceZ = measuredFaceZ;
+    // Transform screen center through Z then X rotation to find its world Z.
+    const sc_y_z = sc.x * sinZ + sc.y * cosZ;
+    const sc_z_z = sc.z;
+
+    const measuredFaceZ = Math.abs(
+      (sc_y_z - eCY_z) * sinX + (sc_z_z - center.z) * cosX
+    ) * s;
+
+    if (measuredFaceZ > 0.001) {
+      // For pure-Z models (no X rotation), only use detected face if closer than bbox face.
+      if (glbRotX !== 0 || measuredFaceZ < screenFaceZ) {
+        screenFaceZ = measuredFaceZ;
+      }
     }
 
-    // Rotate screen size/center by glbRotZ so the overlay matches the portrait screen.
-    const rotSsW = Math.abs(ss.x * cosA) + Math.abs(ss.y * sinA);
-    const rotSsH = Math.abs(ss.x * sinA) + Math.abs(ss.y * cosA);
-    const rSCY   = sc.x * sinA + sc.y * cosA;
+    // Screen extents after Z then X rotation:
+    const ss_x_z  = Math.abs(ss.x * cosZ) + Math.abs(ss.y * sinZ);
+    const ss_y_z  = Math.abs(ss.x * sinZ) + Math.abs(ss.y * cosZ);
+    const ss_y_x  = Math.abs(ss_y_z * cosX) + Math.abs(ss.z * sinX);
+
+    // Screen center Y in the final rotated frame:
+    const sc_y_x  = sc_y_z * cosX - sc_z_z * sinX;
 
     detectedScreen = {
-      sW: rotSsW * s,
-      sH: rotSsH * s,
-      sOffY: (rSCY - eCY) * s,
+      sW:    ss_x_z * s,
+      sH:    ss_y_x * s,
+      sOffY: (sc_y_x - eCY) * s,
     };
   }
 
   return {
     scale: s, position, rotation,
     screenFaceZ, screenFacesNeg: false,
-    modelWidth: effSzX * s,
+    modelWidth: effW_z * s,
     isMultiMesh,
     detectedScreen,
   };
@@ -394,6 +417,30 @@ function classifyMesh(
     return new THREE.MeshStandardMaterial({
       color: deviceColor || '#8a8a8e', metalness: 0.96, roughness: 0.05, envMapIntensity: 2.8,
     });
+  }
+
+  // ── Watch band / rubber / silicone ───────────────────────────────
+  if (key.includes('rubber') || key.includes('silicone') || key.includes('band')) {
+    return new THREE.MeshStandardMaterial({
+      color: deviceColor || '#1a1a1a', roughness: 0.72, metalness: 0.0,
+    });
+  }
+
+  // ── Dark glossy surfaces (watch back cover, ceramic) ─────────────
+  if (key.includes('black') || key.includes('glossy') || key.includes('dark_chrome')) {
+    return new THREE.MeshStandardMaterial({
+      color: '#0a0a0a', roughness: 0.08, metalness: 0.7, envMapIntensity: 2.6,
+    });
+  }
+
+  // ── Sensor / cap (watch health sensors, crown cap) ───────────────
+  if (key.includes('sensor') || key.includes('material_')) {
+    return new THREE.MeshStandardMaterial({ color: '#1c1c1e', roughness: 0.25, metalness: 0.55 });
+  }
+
+  // ── Iron / chrome / steel (watch case) ───────────────────────────
+  if (key.includes('iron') || key.includes('chrome') || key.includes('steel')) {
+    return metalMat(deviceColor || '#a1a1aa');
   }
 
   // ── Single baked mesh (e.g. defaultMaterial) ──────────────────────
