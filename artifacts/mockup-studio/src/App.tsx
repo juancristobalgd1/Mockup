@@ -134,20 +134,23 @@ function Editor() {
             <div className="fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,0.5)' }}
               onClick={() => setMobileSheet(null)} />
             <div className="mobile-sheet fixed bottom-0 left-0 right-0 z-50 overflow-hidden"
-              style={{ maxHeight: '75vh', background: 'rgba(10,12,24,0.98)', borderRadius: '20px 20px 0 0', border: '1px solid rgba(255,255,255,0.08)', borderBottom: 'none' }}>
-              <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
+              style={{ maxHeight: '58vh', background: 'rgba(10,12,24,0.98)', borderRadius: '20px 20px 0 0', border: '1px solid rgba(255,255,255,0.08)', borderBottom: 'none' }}>
+              {/* Drag handle */}
+              <div className="flex items-center justify-center pt-3 pb-1 flex-shrink-0">
+                <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
+              </div>
+              {/* Sheet header */}
+              <div className="flex items-center justify-between px-4 pt-1 pb-2 flex-shrink-0">
                 <span className="text-sm font-bold" style={{ color: '#e2e8f0' }}>
                   {mobileSheet === 'controls' ? 'Controls' : 'Export'}
                 </span>
-                <button onClick={() => setMobileSheet(null)} style={{ color: '#6b7280' }}>
+                <button onClick={() => setMobileSheet(null)} style={{ color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}>
                   <X size={18} />
                 </button>
               </div>
-              <div className="flex items-center justify-center pb-2">
-                <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
-              </div>
-              <div className="overflow-y-auto" style={{ maxHeight: 'calc(75vh - 80px)' }}>
-                {mobileSheet === 'controls' && <LeftPanel />}
+              {/* Scrollable content — full width */}
+              <div className="overflow-y-auto styled-scroll" style={{ maxHeight: 'calc(58vh - 72px)' }}>
+                {mobileSheet === 'controls' && <LeftPanel mobile />}
                 {mobileSheet === 'export' && (
                   <RightPanel canvasRef={canvasRef} viewerRef={viewerRef} textOverlays={state.texts} onUpdateText={updateText} onRemoveText={removeText} />
                 )}
