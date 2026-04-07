@@ -40,6 +40,8 @@ export interface DeviceModelDef {
   hasOrientation?: boolean;
   /** Thumbnail accent color for picker */
   accent: string;
+  /** If set, uses a real GLB model instead of procedural geometry */
+  glbUrl?: string;
 }
 
 export const DEVICE_MODELS: DeviceModelDef[] = [
@@ -180,6 +182,23 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasColors: true, hasOrientation: true,
     accent: '#60a5fa',
   },
+  // ── iPhone 14 Pro ─────────────────────────────────────────────────
+  {
+    id: 'iphone-14-pro',
+    label: 'iPhone 14 Pro',
+    group: 'iPhone',
+    storeType: 'iphone',
+    w: 194, h: 420,
+    insetTop: 12, insetBottom: 11, insetSide: 10,
+    br: '2.6rem', screenBr: '2.1rem',
+    camera: 'dynamic-island',
+    cameraLayout: 'triple-tri',
+    frame: 'titanium',
+    hasActionButton: false,
+    hasColors: true, hasOrientation: true,
+    accent: '#7c7c7c',
+    glbUrl: '/models/iphone14pro.glb',
+  },
   // ── iPhone 13 ─────────────────────────────────────────────────────
   {
     id: 'iphone-13-pro',
@@ -194,6 +213,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     frame: 'titanium',
     hasColors: true, hasOrientation: true,
     accent: '#9ca3af',
+    glbUrl: '/models/iphone13pro.glb',
   },
   {
     id: 'iphone-13',

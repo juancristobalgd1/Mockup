@@ -5,7 +5,7 @@ import {
 import { Canvas as R3FCanvas, useThree } from '@react-three/fiber';
 import {
   OrbitControls, Environment, ContactShadows, Float,
-  useProgress, Html,
+  useProgress, Html, useGLTF,
 } from '@react-three/drei';
 import { EffectComposer, Bloom, SMAA } from '@react-three/postprocessing';
 import * as THREE from 'three';
@@ -13,10 +13,14 @@ import { useApp } from '../../store';
 import { getModelById } from '../../data/devices';
 import { useScreenTexture } from './useScreenTexture';
 import { Phone3DModel } from './Phone3DModel';
-import { IPhone13ProGLBModel } from './IPhone13ProGLBModel';
+import { GLBDeviceModel } from './GLBDeviceModel';
 import { Tablet3DModel } from './Tablet3DModel';
 import { MacBook3DModel } from './MacBook3DModel';
 import { Watch3DModel } from './Watch3DModel';
+
+// Preload GLB models so they're ready before user selects them
+useGLTF.preload('/models/iphone13pro.glb');
+useGLTF.preload('/models/iphone14pro.glb');
 
 export interface Device3DViewerHandle {
   getGLElement: () => HTMLCanvasElement | null;
@@ -141,10 +145,10 @@ function DeviceScene({ floatEnabled }: { floatEnabled: boolean }) {
   const isLandscape = state.deviceLandscape;
 
   const inner = (() => {
-    // Real GLB model — iPhone 13 Pro (uploaded by user)
-    if (state.deviceModel === 'iphone-13-pro') {
+    // Real GLB model — any device that has a glbUrl defined
+    if (def.glbUrl) {
       return (
-        <IPhone13ProGLBModel
+        <GLBDeviceModel
           def={def}
           deviceColor={state.deviceColor}
           screenTexture={screenTexture}
