@@ -674,12 +674,36 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
         </div>
       </Section>
 
-      {/* Exposure */}
+      {/* Lighting controls */}
       <Section label="Lighting">
         <Slider
-          label="Exposure"
-          value={Math.round((state.lightExposure ?? 1.3) * 100) / 100}
-          min={0.4} max={2.4} step={0.05}
+          label="Brillo"
+          value={state.lightBrightness ?? 40}
+          min={0} max={100} step={1} unit="%"
+          onChange={v => updateState({ lightBrightness: v })}
+        />
+        <Slider
+          label="Ambiente"
+          value={state.lightAmbient ?? 45}
+          min={0} max={100} step={1} unit="%"
+          onChange={v => updateState({ lightAmbient: v })}
+        />
+        <Slider
+          label="Temperatura"
+          value={state.lightWarmth ?? 0}
+          min={-50} max={50} step={1}
+          onChange={v => updateState({ lightWarmth: v })}
+        />
+        <Slider
+          label="Reflejos"
+          value={state.lightIBL ?? 40}
+          min={0} max={100} step={1} unit="%"
+          onChange={v => updateState({ lightIBL: v })}
+        />
+        <Slider
+          label="Exposición"
+          value={Math.round((state.lightExposure ?? 1.0) * 100) / 100}
+          min={0.4} max={2.0} step={0.05}
           onChange={v => updateState({ lightExposure: v })}
         />
       </Section>
