@@ -609,16 +609,20 @@ function ScreenOverlay({ sW, sH, sOffY, screenFaceZ, facesNeg, cornerRadius, scr
     if (!meshRef.current) return;
     const mat = meshRef.current.material as THREE.MeshBasicMaterial;
     const tex = screenTexture.current;
-    if (tex && mat.map !== tex) {
-      mat.map = tex;
-      mat.color.set('#ffffff');
-      mat.needsUpdate = true;
-    } else if (!tex && mat.map) {
+    if (tex) {
+      const needMap   = mat.map !== tex;
+      const needColor = mat.color.r < 0.99;
+      if (needMap || needColor) {
+        if (needMap)   mat.map = tex;
+        if (needColor) mat.color.set('#ffffff');
+        mat.needsUpdate = true;
+      }
+      if (contentType === 'video') tex.needsUpdate = true;
+    } else if (mat.map || mat.color.r > 0.01) {
       mat.map = null;
       mat.color.set('#000000');
       mat.needsUpdate = true;
     }
-    if (contentType === 'video' && tex) tex.needsUpdate = true;
   });
 
   // Place just in front of the screen face.

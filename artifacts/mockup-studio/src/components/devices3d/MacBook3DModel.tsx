@@ -21,12 +21,20 @@ function ScreenPlane({ w, h, screenTexture, contentType }: {
     if (!meshRef.current) return;
     const mat = meshRef.current.material as THREE.MeshBasicMaterial;
     const tex = screenTexture.current;
-    if (tex && mat.map !== tex) {
-      mat.map = tex; mat.color.set('#ffffff'); mat.needsUpdate = true;
-    } else if (!tex && mat.map) {
-      mat.map = null; mat.color.set('#050510'); mat.needsUpdate = true;
+    if (tex) {
+      const needMap   = mat.map !== tex;
+      const needColor = mat.color.r < 0.99;
+      if (needMap || needColor) {
+        if (needMap)   mat.map = tex;
+        if (needColor) mat.color.set('#ffffff');
+        mat.needsUpdate = true;
+      }
+      if (contentType === 'video') tex.needsUpdate = true;
+    } else if (mat.map || mat.color.r > 0.04) {
+      mat.map = null;
+      mat.color.set('#050510');
+      mat.needsUpdate = true;
     }
-    if (contentType === 'video' && tex) tex.needsUpdate = true;
   });
   return (
     <mesh ref={meshRef}>
