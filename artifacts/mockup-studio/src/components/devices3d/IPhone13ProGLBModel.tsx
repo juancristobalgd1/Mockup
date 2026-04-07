@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import type { DeviceModelDef } from '../../data/devices';
+import { getGlobalScreenTexture } from './textureGlobal';
 
 interface Props {
   def: DeviceModelDef;
@@ -117,8 +118,8 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
     setupDone.current = true;
 
     // After creating new screen materials, immediately re-apply any existing
-    // texture so there's no flash of the dark screen between frames.
-    const tex = screenTexture.current;
+    // texture from the global singleton so there's no flash of the dark screen.
+    const tex = getGlobalScreenTexture();
     screenMeshes.current.forEach(mesh => {
       const mat = mesh.material as THREE.MeshStandardMaterial;
       if (tex) {
@@ -130,13 +131,13 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceColor]);
 
-  // Update screen texture every frame
+  // Update screen texture every frame using the global singleton
   const prevTex = useRef<THREE.Texture | null>(null);
   const ctRef   = useRef(contentType);
   ctRef.current = contentType;
 
   useFrame(() => {
-    const tex = screenTexture.current;
+    const tex = getGlobalScreenTexture();
     screenMeshes.current.forEach(mesh => {
       const mat = mesh.material as THREE.MeshStandardMaterial;
       if (tex) {

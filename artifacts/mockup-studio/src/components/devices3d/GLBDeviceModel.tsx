@@ -19,6 +19,7 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import type { DeviceModelDef } from '../../data/devices';
+import { getGlobalScreenTexture } from './textureGlobal';
 
 // ── Geometry helpers ──────────────────────────────────────────────────
 
@@ -639,10 +640,10 @@ function ScreenOverlay({ sW, sH, sOffY, screenFaceZ, facesNeg, cornerRadius, scr
   const ctRef = useRef(contentType);
   ctRef.current = contentType;
 
-  // Belt-and-suspenders: re-apply texture after every render in case R3F
-  // touched the material between renders. No deps = runs after every commit.
+  // Belt-and-suspenders: re-apply texture after every render. Reads from the
+  // global singleton so timing/closure issues with refs cannot cause misses.
   useEffect(() => {
-    const tex = screenTexture.current;
+    const tex = getGlobalScreenTexture();
     if (tex && (mat.map !== tex || mat.color.r < 0.99)) {
       mat.map = tex;
       mat.color.set('#ffffff');
@@ -651,7 +652,7 @@ function ScreenOverlay({ sW, sH, sOffY, screenFaceZ, facesNeg, cornerRadius, scr
   });
 
   useFrame(() => {
-    const tex = screenTexture.current;
+    const tex = getGlobalScreenTexture();
     if (tex) {
       const needMap   = mat.map !== tex;
       const needColor = mat.color.r < 0.99;
@@ -733,11 +734,9 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
     }
 
     // After any material changes, IMMEDIATELY re-apply the current texture to all
-    // screen meshes. This runs synchronously (not waiting for the next useFrame),
-    // preventing any flash of the dark screen even if applyMaterials recreated
-    // a screen material. For ScreenOverlay models this is a no-op (screenMeshes
-    // is empty), but for skipOverlay=true models it guarantees the texture persists.
-    const tex = screenTexture.current;
+    // screen meshes. Reads from the global singleton for guaranteed freshness.
+    // For ScreenOverlay models (screenMeshes is empty) this is a no-op.
+    const tex = getGlobalScreenTexture();
     screenMeshes.current.forEach(mesh => {
       const mat = mesh.material as THREE.MeshStandardMaterial;
       if (tex) {
@@ -750,12 +749,12 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceColor, transform]);
 
-  // ── Sync screen texture into detected screen meshes (multi-mesh) ──
+  // ── Sync screen texture into detected screen meshes (multi-mesh / skipOverlay=true) ──
   const ctRef = useRef(contentType);
   ctRef.current = contentType;
 
   useFrame(() => {
-    const tex = screenTexture.current;
+    const tex = getGlobalScreenTexture();
     screenMeshes.current.forEach(mesh => {
       const mat = mesh.material as THREE.MeshStandardMaterial;
       if (tex) {

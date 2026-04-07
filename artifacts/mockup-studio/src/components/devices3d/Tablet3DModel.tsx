@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import type { DeviceModelDef } from '../../data/devices';
+import { getGlobalScreenTexture } from './textureGlobal';
 
 interface Props {
   def: DeviceModelDef;
@@ -23,7 +24,7 @@ function ScreenPlane({
   const ctRef = useRef(contentType);
   ctRef.current = contentType;
   useFrame(() => {
-    const tex = screenTexture.current;
+    const tex = getGlobalScreenTexture();
     if (tex) {
       const needMap   = mat.map !== tex;
       const needColor = mat.color.r < 0.99;

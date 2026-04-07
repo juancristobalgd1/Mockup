@@ -12,6 +12,7 @@ import * as THREE from 'three';
 import { useApp } from '../../store';
 import { getModelById } from '../../data/devices';
 import { useScreenTexture } from './useScreenTexture';
+import { getGlobalScreenTexture } from './textureGlobal';
 import { Phone3DModel } from './Phone3DModel';
 import { GLBDeviceModel } from './GLBDeviceModel';
 import { Tablet3DModel } from './Tablet3DModel';
@@ -556,7 +557,7 @@ function BrowserScreenContent({
   const ctRef = useRef(contentType);
   ctRef.current = contentType;
   useFrame(() => {
-    const tex = screenTexture.current;
+    const tex = getGlobalScreenTexture();
     if (tex) {
       const needMap   = mat.map !== tex;
       const needColor = mat.color.r < 0.99;

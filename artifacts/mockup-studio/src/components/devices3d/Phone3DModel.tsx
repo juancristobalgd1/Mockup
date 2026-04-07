@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import type { DeviceModelDef } from '../../data/devices';
+import { getGlobalScreenTexture } from './textureGlobal';
 
 // ── Material presets ─────────────────────────────────────────────
 
@@ -42,9 +43,9 @@ function ScreenContent({
   const ctRef = useRef(contentType);
   ctRef.current = contentType;
 
-  // Re-apply texture after every render (catches R3F material resets on color change).
+  // Re-apply texture after every render using the global singleton.
   useEffect(() => {
-    const tex = screenTexture.current;
+    const tex = getGlobalScreenTexture();
     if (tex && (mat.map !== tex || mat.color.r < 0.99)) {
       mat.map = tex;
       mat.color.set('#ffffff');
@@ -53,7 +54,7 @@ function ScreenContent({
   });
 
   useFrame(() => {
-    const tex = screenTexture.current;
+    const tex = getGlobalScreenTexture();
     if (tex) {
       const needMap   = mat.map !== tex;
       const needColor = mat.color.r < 0.99;
