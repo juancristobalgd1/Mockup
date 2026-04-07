@@ -217,7 +217,14 @@ function PostFX({ hasContent }: { hasContent: boolean }) {
 }
 
 // ── Device scene (all geometry) ───────────────────────────────────
-function DeviceScene({ floatEnabled }: { floatEnabled: boolean }) {
+function DeviceScene({
+  floatEnabled, pencilVisible, onShowPencil, onHidePencil,
+}: {
+  floatEnabled: boolean;
+  pencilVisible: boolean;
+  onShowPencil: () => void;
+  onHidePencil: () => void;
+}) {
   const { state, updateState } = useApp();
   const fileRef = useRef<HTMLInputElement>(null);
   const def = getModelById(state.deviceModel);
@@ -234,66 +241,81 @@ function DeviceScene({ floatEnabled }: { floatEnabled: boolean }) {
     }
   };
 
-  // Icon position: center of device screen, slightly in front
+  // Icon/plane position — screen center, slightly in front of device face
   const iconPos: [number, number, number] =
-    state.deviceType === 'macbook'  ? [0,  0.28, 0.20] :
-    state.deviceType === 'browser'  ? [0, -0.30, 0.08] :
-    state.deviceType === 'watch'    ? [0,  0,    0.06] :
-                                      [0,  0,    0.10];
+    state.deviceType === 'macbook' ? [0,  0.28, 0.20] :
+    state.deviceType === 'browser' ? [0, -0.30, 0.08] :
+    state.deviceType === 'watch'   ? [0,  0,    0.06] :
+                                     [0,  0,    0.10];
 
-  // The Html upload button — always rendered, follows device in 3D space
-  const uploadBtn = (
-    <Html
-      center
-      position={iconPos}
-      zIndexRange={[100, 0]}
-      style={{ pointerEvents: 'none' }}
-    >
-      {/* wrapper needed so only the icon area captures pointer events */}
-      <div style={{ pointerEvents: 'auto' }}>
+  // Invisible click-plane dimensions (covers device screen area)
+  const planeW =
+    state.deviceType === 'macbook' ? 2.2 :
+    state.deviceType === 'browser' ? 3.2 :
+    state.deviceType === 'ipad'    ? 1.6 :
+    state.deviceType === 'watch'   ? 0.7 : 0.85;
+  const planeH =
+    state.deviceType === 'macbook' ? 1.4 :
+    state.deviceType === 'browser' ? 2.0 :
+    state.deviceType === 'ipad'    ? 2.2 :
+    state.deviceType === 'watch'   ? 0.9 : 1.65;
+
+  // ── UI elements rendered into the Html portal ───────────────────
+  const htmlIcon = (() => {
+    // No content → always show "+" to invite upload
+    if (!hasContent) {
+      return (
         <div
           onClick={() => fileRef.current?.click()}
-          title={hasContent ? 'Cambiar imagen / video' : 'Subir imagen o video'}
-          style={{
-            width: 44, height: 44, borderRadius: '50%',
-            background: 'rgba(0,0,0,0.52)',
-            border: '1.5px dashed rgba(255,255,255,0.35)',
-            backdropFilter: 'blur(10px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', userSelect: 'none',
-            transition: 'background 0.15s, border-color 0.15s',
-            WebkitTapHighlightColor: 'transparent',
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = 'rgba(124,58,237,0.72)';
-            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,181,253,0.6)';
-            (e.currentTarget as HTMLElement).style.borderStyle = 'solid';
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.52)';
-            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.35)';
-            (e.currentTarget as HTMLElement).style.borderStyle = 'dashed';
-          }}
+          title="Subir imagen o video"
+          style={iconStyle('#fff', false)}
+          onMouseEnter={e => applyHover(e, true)}
+          onMouseLeave={e => applyHover(e, false)}
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <line x1="9" y1="3" x2="9" y2="15" stroke="white" strokeWidth="2" strokeLinecap="round" />
-            <line x1="3" y1="9" x2="15" y2="9" stroke="white" strokeWidth="2" strokeLinecap="round" />
+            <line x1="9" y1="3" x2="9" y2="15" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
+            <line x1="3" y1="9" x2="15" y2="9" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
           </svg>
         </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*,video/*"
-          style={{ display: 'none' }}
-          onChange={e => {
-            const f = e.target.files?.[0];
-            if (f) applyFile(f);
-            e.target.value = '';
-          }}
-        />
-      </div>
-    </Html>
-  );
+      );
+    }
+    // Has content + pencil visible → show pencil to replace
+    if (pencilVisible) {
+      return (
+        <div
+          onClick={() => fileRef.current?.click()}
+          title="Reemplazar imagen o video"
+          style={iconStyle('#fff', true)}
+          onMouseEnter={e => applyHover(e, true)}
+          onMouseLeave={e => applyHover(e, false)}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M11.5 2.5l2 2L5 13l-2.5.5.5-2.5L11.5 2.5z"
+              stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      );
+    }
+    // Has content, pencil hidden → nothing (clean view)
+    return null;
+  })();
+
+  const iconStyle = (_color: string, isPencil: boolean): React.CSSProperties => ({
+    width: 44, height: 44, borderRadius: '50%',
+    background: isPencil ? 'rgba(124,58,237,0.72)' : 'rgba(0,0,0,0.52)',
+    border: `1.5px ${isPencil ? 'solid' : 'dashed'} rgba(255,255,255,${isPencil ? '0.5' : '0.35'})`,
+    backdropFilter: 'blur(10px)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    cursor: 'pointer', userSelect: 'none',
+    transition: 'background 0.15s, border-color 0.15s',
+  });
+
+  const applyHover = (e: React.MouseEvent, entering: boolean) => {
+    const el = e.currentTarget as HTMLElement;
+    el.style.background = entering ? 'rgba(124,58,237,0.85)' : (pencilVisible ? 'rgba(124,58,237,0.72)' : 'rgba(0,0,0,0.52)');
+    el.style.borderColor = entering ? 'rgba(196,181,253,0.7)' : (pencilVisible ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.35)');
+    el.style.borderStyle = entering || pencilVisible ? 'solid' : 'dashed';
+  };
 
   const inner = (() => {
     // Real GLB model — any device that has a glbUrl defined
@@ -411,15 +433,70 @@ function DeviceScene({ floatEnabled }: { floatEnabled: boolean }) {
     }
   })();
 
+  // ── Invisible screen click-plane (shown only when hasContent) ───
+  // Captures pointer events on the device screen area; clicking it
+  // reveals the pencil icon. It is disabled when pencilVisible so
+  // the Html overlay can receive its own click events.
+  const clickPlane = hasContent && !pencilVisible ? (
+    <mesh
+      position={iconPos}
+      onClick={e => { e.stopPropagation(); onShowPencil(); }}
+    >
+      <planeGeometry args={[planeW, planeH]} />
+      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+    </mesh>
+  ) : null;
+
+  // ── Html icon overlay (+ or pencil) ─────────────────────────────
+  const overlay = htmlIcon ? (
+    <Html
+      center
+      position={iconPos}
+      zIndexRange={[100, 0]}
+      style={{ pointerEvents: 'none' }}
+    >
+      <div style={{ pointerEvents: 'auto' }}>
+        {htmlIcon}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*,video/*"
+          style={{ display: 'none' }}
+          onChange={e => {
+            const f = e.target.files?.[0];
+            if (f) { applyFile(f); onHidePencil(); }
+            e.target.value = '';
+          }}
+        />
+      </div>
+    </Html>
+  ) : (
+    // Keep the hidden input even when icon is hidden so drag-n-drop still works
+    <Html center position={iconPos} style={{ pointerEvents: 'none' }}>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*,video/*"
+        style={{ display: 'none' }}
+        onChange={e => {
+          const f = e.target.files?.[0];
+          if (f) { applyFile(f); onHidePencil(); }
+          e.target.value = '';
+        }}
+      />
+    </Html>
+  );
+
   if (floatEnabled) {
     return (
       <Float speed={1.4} rotationIntensity={0.06} floatIntensity={0.16} floatingRange={[-0.06, 0.06]}>
         {inner}
-        {uploadBtn}
+        {clickPlane}
+        {overlay}
       </Float>
     );
   }
-  return <>{inner}{uploadBtn}</>;
+  return <>{inner}{clickPlane}{overlay}</>;
 }
 
 // ── Browser: screen content mesh (texture updated every frame) ────
@@ -690,6 +767,7 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
     const glRef = useRef<THREE.WebGLRenderer | null>(null);
     const [hintVisible, setHintVisible] = useState(true);
     const [dragOver, setDragOver] = useState(false);
+    const [pencilVisible, setPencilVisible] = useState(false);
 
     const handleGlReady = useCallback((gl: THREE.WebGLRenderer) => {
       glRef.current = gl;
@@ -716,6 +794,10 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
     const hasContent = !!(state.screenshotUrl || state.videoUrl);
     const floatEnabled = state.animation === 'float';
 
+    // Hide pencil whenever the device model or content changes
+    useEffect(() => { setPencilVisible(false); }, [state.deviceModel, state.deviceType]);
+    useEffect(() => { if (!hasContent) setPencilVisible(false); }, [hasContent]);
+
     // Telephoto camera — narrow FOV like Rotato (feels more "product photo")
     // Camera positioned at hero angle: slightly right+up from center, looking left-down at device
     const fov = isLaptop ? 24 : 20;
@@ -728,7 +810,7 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
         className={className}
         style={{ position: 'relative', width: '100%', height: '100%', ...style }}
         onPointerMove={() => setHintVisible(false)}
-        onDragOver={(e) => { e.preventDefault(); if (!hasContent) setDragOver(true); }}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
       >
@@ -744,6 +826,7 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
           shadows="soft"
           style={{ background: 'transparent' }}
           dpr={[1, 2]}
+          onPointerMissed={() => setPencilVisible(false)}
         >
           <SceneCapturer onGlReady={handleGlReady} />
 
@@ -779,7 +862,12 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
 
           {/* Device geometry */}
           <Suspense fallback={<Loader />}>
-            <DeviceScene floatEnabled={floatEnabled} />
+            <DeviceScene
+              floatEnabled={floatEnabled}
+              pencilVisible={pencilVisible}
+              onShowPencil={() => setPencilVisible(true)}
+              onHidePencil={() => setPencilVisible(false)}
+            />
           </Suspense>
 
           {/* Post-processing: bloom + SMAA */}
