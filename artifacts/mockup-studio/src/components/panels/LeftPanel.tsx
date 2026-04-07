@@ -671,17 +671,34 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
         </div>
       </Section>
 
+      {/* Exposure */}
+      <Section label="Lighting">
+        <Slider
+          label="Exposure"
+          value={Math.round((state.lightExposure ?? 1.3) * 100) / 100}
+          min={0.4} max={2.4} step={0.05}
+          onChange={v => updateState({ lightExposure: v })}
+        />
+      </Section>
+
       {/* Environment */}
-      <Section label="Environment">
+      <Section label="Environment" action={
+        <Toggle
+          enabled={state.envEnabled !== false}
+          onToggle={() => updateState({ envEnabled: !(state.envEnabled !== false) })}
+        />
+      }>
         <HScroll gap={7}>
           {ENV_PRESETS.map(env => (
-            <button key={env.id} onClick={() => updateState({ envPreset: env.id })}
+            <button key={env.id} onClick={() => updateState({ envPreset: env.id, envEnabled: true })}
               style={{
                 flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                 padding: '8px 10px', borderRadius: 12,
-                background: state.envPreset === env.id ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.03)',
-                border: state.envPreset === env.id ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.07)',
-                color: state.envPreset === env.id ? '#c4b5fd' : '#6b7280', cursor: 'pointer', transition: 'all 0.12s',
+                background: state.envPreset === env.id && state.envEnabled !== false ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.03)',
+                border: state.envPreset === env.id && state.envEnabled !== false ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.07)',
+                color: state.envPreset === env.id && state.envEnabled !== false ? '#c4b5fd' : '#6b7280',
+                cursor: 'pointer', transition: 'all 0.12s',
+                opacity: state.envEnabled !== false ? 1 : 0.45,
               }}>
               <span style={{ fontSize: 18, lineHeight: 1 }}>{env.icon}</span>
               <span style={{ fontSize: 9, fontWeight: 600 }}>{env.label}</span>

@@ -47,6 +47,8 @@ export interface AppState {
   autoRotate: boolean;
   autoRotateSpeed: number;
   envPreset: EnvPreset;
+  envEnabled: boolean;
+  lightExposure: number;
   contactShadowOpacity: number;
   cameraAngle: 'hero' | 'front' | 'side' | 'top';
   cameraResetKey: number;
@@ -80,6 +82,8 @@ export const defaultState: AppState = {
   autoRotate: false,
   autoRotateSpeed: 1.5,
   envPreset: "warehouse",
+  envEnabled: true,
+  lightExposure: 1.3,
   contactShadowOpacity: 65,
   cameraAngle: "hero",
   cameraResetKey: 0,
