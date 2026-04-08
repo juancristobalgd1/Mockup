@@ -183,18 +183,6 @@ function Editor() {
           />
         </div>
 
-        {/* Movie Timeline */}
-        {state.movieMode && (
-          <div style={{ position: 'absolute', bottom: 64, left: 0, right: 0, zIndex: 15 }}>
-            <MovieTimeline
-              viewerRef={viewerRef}
-              movieTimeRef={movieTimeRef}
-              canvasRef={canvasRef}
-              onPlayingChange={setMoviePlaying}
-              onClose={() => { updateState({ movieMode: false }); setMoviePlaying(false); setMobileTab(null); }}
-            />
-          </div>
-        )}
 
         {/* ── Floating glass panel — appears above tab bar ─── */}
         {mobileTab !== null && (
@@ -299,38 +287,49 @@ function Editor() {
           </button>
         </div>
 
-        {/* ── Floating tab bar — dark pill style ── */}
+        {/* ── Bottom: tab bar (+ timeline in movie mode) ── */}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 40,
-          display: 'flex', gap: 8, overflowX: 'auto', padding: '10px 14px 22px',
-          background: 'transparent',
-          scrollbarWidth: 'none',
-        } as React.CSSProperties}>
-          {TAB_ICONS.map(({ id, icon: Icon, label }) => {
-            const active = mobileTab === id;
-            return (
-              <button key={id}
-                onClick={() => setMobileTab(active ? null : id)}
-                style={{
-                  flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7,
-                  padding: '10px 16px', borderRadius: 24,
-                  fontSize: 13, fontWeight: 600, letterSpacing: '-0.01em',
-                  background: active
-                    ? 'rgba(255,255,255,0.18)'
-                    : 'rgba(30,30,32,0.88)',
-                  border: active ? '1px solid rgba(255,255,255,0.25)' : '1px solid rgba(255,255,255,0.06)',
-                  color: active ? '#fff' : 'rgba(255,255,255,0.78)',
-                  cursor: 'pointer', transition: 'all 0.14s',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
-                  backdropFilter: 'blur(12px)',
-                  WebkitBackdropFilter: 'blur(12px)',
-                }}>
-                <Icon size={14} strokeWidth={active ? 2.2 : 1.8} />
-                {label}
-              </button>
-            );
-          })}
+          display: 'flex', flexDirection: 'column',
+        }}>
+          {/* Tab pill row */}
+          <div style={{
+            display: 'flex', gap: 8, overflowX: 'auto', padding: '10px 14px 22px',
+            background: 'transparent', scrollbarWidth: 'none',
+          } as React.CSSProperties}>
+            {TAB_ICONS.map(({ id, icon: Icon, label }) => {
+              const active = mobileTab === id;
+              return (
+                <button key={id}
+                  onClick={() => setMobileTab(active ? null : id)}
+                  style={{
+                    flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '10px 16px', borderRadius: 24,
+                    fontSize: 13, fontWeight: 600, letterSpacing: '-0.01em',
+                    background: active ? 'rgba(255,255,255,0.18)' : 'rgba(30,30,32,0.88)',
+                    border: active ? '1px solid rgba(255,255,255,0.25)' : '1px solid rgba(255,255,255,0.06)',
+                    color: active ? '#fff' : 'rgba(255,255,255,0.78)',
+                    cursor: 'pointer', transition: 'all 0.14s', whiteSpace: 'nowrap',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
+                    backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                  }}>
+                  <Icon size={14} strokeWidth={active ? 2.2 : 1.8} />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Timeline — sits below the tab bar when movie mode is active */}
+          {state.movieMode && (
+            <MovieTimeline
+              viewerRef={viewerRef}
+              movieTimeRef={movieTimeRef}
+              canvasRef={canvasRef}
+              onPlayingChange={setMoviePlaying}
+              onClose={() => { updateState({ movieMode: false }); setMoviePlaying(false); setMobileTab(null); }}
+            />
+          )}
         </div>
       </div>
     </div>
