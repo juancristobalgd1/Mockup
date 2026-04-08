@@ -932,10 +932,8 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         </div>
       </Section>
 
-      {/* Device & Motion — scale + rotate + float */}
+      {/* Device & Motion — rotate + float */}
       <Section label="Device & Motion">
-        <Slider label="Scale" value={state.deviceScale ?? 100} min={40} max={160} step={5}
-          onChange={v => updateState({ deviceScale: v })} unit="%" />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1076,6 +1074,12 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               );
             })}
           </HScroll>
+        </Section>
+
+        {/* Scale */}
+        <Section label="Scale">
+          <Slider label="Scale" value={state.deviceScale ?? 100} min={40} max={160} step={5}
+            onChange={v => updateState({ deviceScale: v })} unit="%" />
         </Section>
 
       </>
