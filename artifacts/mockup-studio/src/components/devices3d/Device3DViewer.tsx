@@ -5,7 +5,7 @@ import React, {
 import { Canvas as R3FCanvas, useThree, useFrame } from '@react-three/fiber';
 import {
   OrbitControls, Environment, ContactShadows, Float,
-  useProgress, Html, useGLTF, RoundedBox,
+  useProgress, Html, useGLTF, RoundedBox, MeshReflectorMaterial,
 } from '@react-three/drei';
 import { EffectComposer, Bloom, SMAA } from '@react-three/postprocessing';
 import * as THREE from 'three';
@@ -231,17 +231,44 @@ function StudioLights({
 }
 
 // ── Post-processing (bloom for screen) ───────────────────────────
-function PostFX({ hasContent }: { hasContent: boolean }) {
+function PostFX({ hasContent, bloomIntensity }: { hasContent: boolean; bloomIntensity: number }) {
+  const base = hasContent ? 0.22 : 0.08;
+  const scaled = base * (bloomIntensity / 22);
   return (
     <EffectComposer multisampling={4}>
       <SMAA />
       <Bloom
         luminanceThreshold={0.94}
         luminanceSmoothing={0.4}
-        intensity={hasContent ? 0.22 : 0.08}
+        intensity={scaled}
         mipmapBlur
       />
     </EffectComposer>
+  );
+}
+
+// ── Floor reflector (Rotato-style mirror floor) ───────────────────
+function FloorReflector({ isLaptop }: { isLaptop: boolean }) {
+  const { state } = useApp();
+  if (!state.reflection) return null;
+  const y = isLaptop ? -0.81 : -2.01;
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, y, 0]}>
+      <planeGeometry args={[30, 30]} />
+      <MeshReflectorMaterial
+        blur={[400, 100]}
+        resolution={512}
+        mixBlur={6}
+        mixStrength={(state.reflectionOpacity / 100) * 1.4}
+        roughness={0.85}
+        depthScale={1.2}
+        minDepthThreshold={0.4}
+        maxDepthThreshold={1.4}
+        color="#0d0e0f"
+        metalness={0.5}
+        mirror={0}
+      />
+    </mesh>
   );
 }
 
@@ -1007,19 +1034,24 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
             resolution={512}
           />
 
-          {/* Device geometry */}
-          <Suspense fallback={<Loader />}>
-            <DeviceScene
-              floatEnabled={floatEnabled}
-              pencilVisible={pencilVisible}
-              onShowPencil={() => setPencilVisible(true)}
-              onHidePencil={() => setPencilVisible(false)}
-              screenTexture={screenTexture}
-            />
-          </Suspense>
+          {/* Device geometry — wrapped in scale group */}
+          <group scale={state.deviceScale / 100}>
+            <Suspense fallback={<Loader />}>
+              <DeviceScene
+                floatEnabled={floatEnabled}
+                pencilVisible={pencilVisible}
+                onShowPencil={() => setPencilVisible(true)}
+                onHidePencil={() => setPencilVisible(false)}
+                screenTexture={screenTexture}
+              />
+            </Suspense>
+          </group>
+
+          {/* Floor reflection plane */}
+          <FloorReflector isLaptop={isLaptop} />
 
           {/* Post-processing: bloom + SMAA */}
-          <PostFX hasContent={hasContent} />
+          <PostFX hasContent={hasContent} bloomIntensity={state.bloomIntensity ?? 22} />
 
           {/* Controls with Rotato hero angle */}
           <HeroOrbitControls

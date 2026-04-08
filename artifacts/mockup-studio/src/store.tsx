@@ -46,6 +46,7 @@ export interface AppState {
   bgPattern: string;
 
   canvasRatio: CanvasRatio;
+  canvasRadius: number;
 
   overlayEnabled: boolean;
   overlayColor: string;
@@ -64,6 +65,13 @@ export interface AppState {
   contactShadowOpacity: number;
   cameraAngle: 'hero' | 'front' | 'side' | 'top';
   cameraResetKey: number;
+
+  deviceScale: number;
+  reflection: boolean;
+  reflectionOpacity: number;
+  grain: boolean;
+  grainIntensity: number;
+  bloomIntensity: number;
 
   texts: TextOverlay[];
 
@@ -91,6 +99,7 @@ export const defaultState: AppState = {
   bgPattern: "dots",
 
   canvasRatio: "free",
+  canvasRadius: 0,
 
   overlayEnabled: false,
   overlayColor: "#000000",
@@ -109,6 +118,13 @@ export const defaultState: AppState = {
   contactShadowOpacity: 65,
   cameraAngle: "hero",
   cameraResetKey: 0,
+
+  deviceScale: 100,
+  reflection: false,
+  reflectionOpacity: 50,
+  grain: false,
+  grainIntensity: 35,
+  bloomIntensity: 22,
 
   texts: [],
 

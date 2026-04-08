@@ -663,6 +663,18 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
         </HScroll>
       </Section>
 
+      {/* Canvas corner radius */}
+      <Section label="Canvas Shape">
+        <Slider label="Corner Radius" value={state.canvasRadius ?? 0} min={0} max={80} step={2}
+          onChange={v => updateState({ canvasRadius: v })} unit="px" />
+      </Section>
+
+      {/* Device scale */}
+      <Section label="Device">
+        <Slider label="Scale" value={state.deviceScale ?? 100} min={40} max={160} step={5}
+          onChange={v => updateState({ deviceScale: v })} unit="%" />
+      </Section>
+
       {/* Motion */}
       <Section label="Motion">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -674,7 +686,7 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
             <Toggle enabled={state.autoRotate} onToggle={() => updateState({ autoRotate: !state.autoRotate })} />
           </div>
           {state.autoRotate && (
-            <Slider label="Rotation Speed"
+            <Slider label="Speed"
               value={Math.round(state.autoRotateSpeed * 10) / 10}
               min={0.5} max={8} step={0.5}
               onChange={v => updateState({ autoRotateSpeed: v })} />
@@ -682,7 +694,7 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <RotateCcw size={12} style={{ color: 'rgba(255,255,255,0.35)' }} />
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Float Effect</span>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Float</span>
             </div>
             <Toggle
               enabled={state.animation === 'float'}
@@ -691,38 +703,41 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
         </div>
       </Section>
 
+      {/* Reflection */}
+      <Section label="Reflection" action={
+        <Toggle enabled={state.reflection ?? false} onToggle={() => updateState({ reflection: !(state.reflection ?? false) })} />
+      }>
+        {(state.reflection ?? false) && (
+          <Slider label="Strength" value={state.reflectionOpacity ?? 50} min={0} max={100}
+            onChange={v => updateState({ reflectionOpacity: v })} unit="%" />
+        )}
+      </Section>
+
+      {/* Film Grain */}
+      <Section label="Film Grain" action={
+        <Toggle enabled={state.grain ?? false} onToggle={() => updateState({ grain: !(state.grain ?? false) })} />
+      }>
+        {(state.grain ?? false) && (
+          <Slider label="Intensity" value={state.grainIntensity ?? 35} min={5} max={100}
+            onChange={v => updateState({ grainIntensity: v })} unit="%" />
+        )}
+      </Section>
+
       {/* Lighting controls */}
       <Section label="Lighting">
-        <Slider
-          label="Brillo"
-          value={state.lightBrightness ?? 40}
-          min={0} max={100} step={1} unit="%"
-          onChange={v => updateState({ lightBrightness: v })}
-        />
-        <Slider
-          label="Ambiente"
-          value={state.lightAmbient ?? 45}
-          min={0} max={100} step={1} unit="%"
-          onChange={v => updateState({ lightAmbient: v })}
-        />
-        <Slider
-          label="Temperatura"
-          value={state.lightWarmth ?? 0}
-          min={-50} max={50} step={1}
-          onChange={v => updateState({ lightWarmth: v })}
-        />
-        <Slider
-          label="Reflejos"
-          value={state.lightIBL ?? 40}
-          min={0} max={100} step={1} unit="%"
-          onChange={v => updateState({ lightIBL: v })}
-        />
-        <Slider
-          label="Exposición"
-          value={Math.round((state.lightExposure ?? 1.0) * 100) / 100}
+        <Slider label="Brightness" value={state.lightBrightness ?? 40} min={0} max={100} step={1} unit="%"
+          onChange={v => updateState({ lightBrightness: v })} />
+        <Slider label="Ambient" value={state.lightAmbient ?? 45} min={0} max={100} step={1} unit="%"
+          onChange={v => updateState({ lightAmbient: v })} />
+        <Slider label="Warmth" value={state.lightWarmth ?? 0} min={-50} max={50} step={1}
+          onChange={v => updateState({ lightWarmth: v })} />
+        <Slider label="Reflections" value={state.lightIBL ?? 40} min={0} max={100} step={1} unit="%"
+          onChange={v => updateState({ lightIBL: v })} />
+        <Slider label="Exposure" value={Math.round((state.lightExposure ?? 1.0) * 100) / 100}
           min={0.4} max={2.0} step={0.05}
-          onChange={v => updateState({ lightExposure: v })}
-        />
+          onChange={v => updateState({ lightExposure: v })} />
+        <Slider label="Bloom" value={state.bloomIntensity ?? 22} min={0} max={100} step={1}
+          onChange={v => updateState({ bloomIntensity: v })} unit="%" />
       </Section>
 
       {/* Environment */}

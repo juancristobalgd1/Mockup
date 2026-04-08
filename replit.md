@@ -7,34 +7,31 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 ## Artifacts
 
 ### Mockup Studio (`artifacts/mockup-studio`)
-A device mockup creator web app inspired by PostSpark.app. Built with React + Vite, Framer Motion, and html2canvas.
+A professional 3D device mockup creator styled after Rotato (rotato.app). Built with React + Vite + React Three Fiber / Three.js.
 
 **Features:**
-- 7 device frames: iPhone 15 Pro, Android Phone, iPad, MacBook, iMac, Browser (Chrome-style), Apple Watch
-- iPhone 15 Pro color variants: Titanium, Black, White, Blue
-- Browser frame Dark/Light mode toggle
+- 3D GLB device models: iPhone 17 Pro, iPhone 16, MacBook Pro, Samsung S25 Ultra, OnePlus 12, iPad Pro, iPad Mini, Apple Watch
+- Rotato dark theme: full dark UI with macOS traffic light dots, pill-mode selector, collapsible sections
+- Device frame colors: Titanium, Black, White, Blue, Natural Light, Desert, Sierra, Clay
 - Portrait & landscape orientation for phones and tablets
-- Background types: solid color, 12 gradient presets, 6 mesh gradients, 12 wallpapers, 3 patterns, custom image upload
-- Auto background: extracts dominant colors from uploaded screenshot → mesh gradient
-- Shuffle button: randomizes background from current type
-- Background overlay: color tint + opacity over any background
-- Canvas transform: scale, rotation, 3D tilt (X/Y axes), canvas padding
-- Canvas aspect ratio guide: Free / 1:1 / 4:5 / 16:9 / 9:16 (dashed overlay)
-- Advanced shadow: None / Spread / Hug styles + Intensity + Direction (angle slider)
-- Animations: float, pulse, spin, slide-in
-- **Movie mode**: Rotato-style timeline editor for camera animation
-  - Toggle via "Movie" button in the top bar
-  - Camera track with keyframe diamonds on a timeline ruler
-  - Add keyframe: captures current 3D camera position + target at the playhead time
-  - Drag playhead to scrub through the animation timeline
-  - Play/pause: previews the camera animation in real time
-  - Smooth interpolation (smoothstep) between keyframes
-  - Right-click keyframes to delete individual ones; Trash button to clear all
-  - Configurable duration: 3s / 5s / 8s / 10s / 15s / 20s / 30s
-  - Export WebM: records the full camera-animated scene as a WebM video
-- Draggable text overlays with font size, color, bold, italic controls
+- Background types: solid color, gradients, mesh gradients, wallpapers, patterns, custom image upload
+- Auto background: extracts dominant colors from screenshot → mesh gradient
+- Color overlay: tint + opacity over any background
+- Canvas aspect ratio guide: Free / 1:1 / 4:5 / 16:9 / 9:16
+- **Canvas corner radius** — rounded canvas shape for exports
+- **Device scale** — scale device 40–160%
+- **Floor Reflection** — Rotato-style MeshReflectorMaterial mirror floor with strength control
+- **Film Grain** — SVG fractalNoise overlay with intensity control
+- **Bloom control** — adjust screen glow bloom intensity
+- Lighting controls: Brightness, Ambient, Warmth, Reflections (IBL), Exposure
+- Environment presets: Studio, Warehouse, Sunset, City, Forest, Night (HDR)
+- Camera presets: Hero, Front, Side, Top
+- Contact shadow intensity
+- Auto Rotate + Float animation
+- **Movie mode**: timeline editor for camera animation with keyframes, WebM export
+- Draggable text overlays with font size, color, bold, italic
 - 8 preset templates
-- PNG export: Download + Copy to Clipboard, 4 size options
+- PNG export, Copy to Clipboard, 6 export size options
 
 **3D Device Screen Rendering — DO NOT MODIFY:**
 - iPhone 17 Pro: `skipOverlay: true` + `screenMeshName: 'Object_55'` — screen is the "Display" mesh (GLB node Object_55). Uses `markScreenByName` for direct lookup. Material name detection + geometric fallback are bypassed intentionally.
