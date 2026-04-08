@@ -503,7 +503,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
         {/* Playhead */}
         <div style={{
           position: 'absolute',
-          left: `calc(${TRACK_PADDING}px + ${playheadPct}% * (100% - ${TRACK_PADDING * 2}px) / 100)`,
+          left: `calc(${TRACK_PADDING}px + (100% - ${TRACK_PADDING * 2}px) * ${playheadPct / 100})`,
           top: 0, bottom: 0, width: 1,
           background: '#f97316', pointerEvents: 'none', zIndex: 10,
         }}>

@@ -838,27 +838,30 @@ function HeroOrbitControls({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceType]);
 
-  // Every frame: export camera state and (if playing) drive camera via keyframes
+  // Every frame: export camera state and (if playing) drive camera via keyframes.
+  // Priority 1 ensures this runs AFTER OrbitControls' own useFrame (priority 0),
+  // so our position wins and doesn't get overwritten by OrbitControls.update().
   useFrame(() => {
     const controls = controlsRef.current;
     if (!controls) return;
+
+    // Drive camera during movie playback — runs after OrbitControls, so we win
+    if (moviePlaying && movieKeyframes.length >= 2) {
+      const result = interpolateKeyframes(movieKeyframes, movieTimeRef.current);
+      if (result) {
+        camera.position.copy(result.position);
+        controls.target.copy(result.target);
+        // Do NOT call controls.update() here — it would re-apply OrbitControls'
+        // internal spherical coords and undo the position we just set.
+      }
+    }
 
     // Always export current camera state for keyframe capture
     cameraStateRef.current = {
       position: [camera.position.x, camera.position.y, camera.position.z],
       target: [controls.target.x, controls.target.y, controls.target.z],
     };
-
-    // Drive camera during movie playback
-    if (moviePlaying && movieKeyframes.length >= 2) {
-      const result = interpolateKeyframes(movieKeyframes, movieTimeRef.current);
-      if (result) {
-        camera.position.copy(result.position);
-        controls.target.copy(result.target);
-        controls.update();
-      }
-    }
-  });
+  }, 1);
 
   return (
     <OrbitControls
