@@ -138,8 +138,26 @@ function Editor() {
 
         {/* Mobile canvas */}
         <div className="flex-1 overflow-hidden relative">
-          <Canvas ref={canvasRef} viewerRef={viewerRef} textOverlays={state.texts} onUpdateText={updateText} />
+          <Canvas
+            ref={canvasRef}
+            viewerRef={viewerRef}
+            textOverlays={state.texts}
+            onUpdateText={updateText}
+            moviePlaying={moviePlaying}
+            movieTimeRef={movieTimeRef}
+          />
         </div>
+
+        {/* Movie Timeline (mobile — shown above bottom bar) */}
+        {state.movieMode && (
+          <MovieTimeline
+            viewerRef={viewerRef}
+            movieTimeRef={movieTimeRef}
+            canvasRef={canvasRef}
+            onPlayingChange={setMoviePlaying}
+            onClose={() => { updateState({ movieMode: false }); setMoviePlaying(false); setMobileSheet(null); }}
+          />
+        )}
 
         {/* Mobile bottom bar */}
         <div className="flex items-center gap-2 px-4 py-3 flex-shrink-0"
@@ -155,6 +173,24 @@ function Editor() {
             <Layers size={14} />
             Controls
           </button>
+
+          {/* Movie button (mobile) */}
+          <button
+            onClick={() => {
+              updateState({ movieMode: !state.movieMode });
+              if (state.movieMode) setMoviePlaying(false);
+              setMobileSheet(null);
+            }}
+            className="flex-1 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+            style={{
+              background: state.movieMode ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.05)',
+              border: state.movieMode ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(255,255,255,0.08)',
+              color: state.movieMode ? '#f87171' : '#6b7280',
+            }}>
+            <Film size={14} />
+            Movie
+          </button>
+
           <button
             onClick={() => setMobileSheet(mobileSheet === 'export' ? null : 'export')}
             className="flex-1 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all"
