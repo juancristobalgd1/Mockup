@@ -109,8 +109,18 @@ interface ModelTransform {
 /** Get a single lowercase string from a mesh's name + material names */
 function meshKey(obj: THREE.Mesh): string {
   const parts = [obj.name];
-  const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-  mats.forEach(m => { if (m?.name) parts.push(m.name); });
+  // Prefer original GLB material name cached before any replacement
+  const origName: string | undefined = obj.userData._origMatName;
+  if (origName) {
+    parts.push(origName);
+  } else {
+    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+    mats.forEach(m => { if (m?.name) parts.push(m.name); });
+    // Cache the first (original GLB) name so subsequent calls after material
+    // replacement still see the original names.
+    const matName = (Array.isArray(obj.material) ? obj.material[0] : obj.material)?.name;
+    if (matName) obj.userData._origMatName = matName;
+  }
   return parts.join(' ').toLowerCase();
 }
 
@@ -598,6 +608,27 @@ function applyMaterials(
 }
 
 /**
+ * Find the screen mesh by exact THREE.js node name (from def.screenMeshName).
+ * This is the most reliable method when the GLB has no named materials.
+ */
+function markScreenByName(
+  root: THREE.Object3D,
+  meshName: string,
+  screenMeshes: THREE.Mesh[],
+  flipU = false,
+) {
+  if (screenMeshes.length > 0) return;
+  root.traverse((obj: THREE.Object3D) => {
+    if (!(obj instanceof THREE.Mesh) || obj.name !== meshName) return;
+    normalizeScreenUVs(obj, flipU);
+    obj.material = new THREE.MeshBasicMaterial({
+      color: '#000000', toneMapped: false, side: THREE.DoubleSide,
+    });
+    screenMeshes.push(obj);
+  });
+}
+
+/**
  * Geometric screen detection for models where no named screen was found.
  * Traverses the mounted group (world coords) to find the flattest large mesh at the front.
  */
@@ -764,8 +795,14 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
 
       const hasBaked = applyMaterials(root, deviceColor, screenMeshes.current, !!def.screenFacesBack);
 
-      if (modelChanged && !hasBaked && screenMeshes.current.length === 0) {
-        detectAndMarkScreen(root, transform.screenFaceZ, screenMeshes.current);
+      if (screenMeshes.current.length === 0) {
+        if (def.screenMeshName) {
+          // Direct lookup by node name — most reliable, works regardless of material state
+          markScreenByName(root, def.screenMeshName, screenMeshes.current, !!def.screenFacesBack);
+        } else if (modelChanged && !hasBaked) {
+          // Geometric fallback for models with no named screen mesh
+          detectAndMarkScreen(root, transform.screenFaceZ, screenMeshes.current);
+        }
       }
 
       const tex = getGlobalScreenTexture();

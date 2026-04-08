@@ -66,6 +66,12 @@ export interface DeviceModelDef {
    * the detected screen mesh instead.
    */
   skipOverlay?: boolean;
+  /**
+   * THREE.js node name of the screen/display mesh in the GLB file.
+   * When set, the loader finds this mesh directly instead of relying on
+   * material-name heuristics (which break when materials have no names).
+   */
+  screenMeshName?: string;
 }
 
 export const DEVICE_MODELS: DeviceModelDef[] = [
@@ -86,6 +92,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     accent: '#a8a29e',
     glbUrl: '/models/iphone17pro.glb',
     skipOverlay: true,
+    screenMeshName: 'Object_55',
   },
   {
     id: 'iphone-16',
@@ -103,6 +110,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     accent: '#38bdf8',
     glbUrl: '/models/iphone16.glb',
     skipOverlay: true,
+    screenMeshName: 'Object_31',
   },
   // ── Android ───────────────────────────────────────────────────────
   {
