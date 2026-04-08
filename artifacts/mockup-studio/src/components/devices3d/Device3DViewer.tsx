@@ -315,10 +315,17 @@ function DeviceScene({
   screenTexture: React.MutableRefObject<THREE.Texture | null>;
 }) {
   const { state, updateState } = useApp();
-  const fileRef = useRef<HTMLInputElement>(null);
+  const imageFileRef = useRef<HTMLInputElement>(null);
+  const videoFileRef = useRef<HTMLInputElement>(null);
   const def = getModelById(state.deviceModel);
   const isLandscape = state.deviceLandscape;
   const hasContent = !!(state.screenshotUrl || state.videoUrl);
+
+  // ── Media menu state ─────────────────────────────────────────────
+  const [menuOpen, setMenuOpen]       = useState(false);
+  const [menuUrl,  setMenuUrl]        = useState('');
+  const [capturing, setCapturing]     = useState(false);
+  const [captureError, setCaptureError] = useState('');
 
   const applyFile = (file: File) => {
     const url = URL.createObjectURL(file);
@@ -326,6 +333,29 @@ function DeviceScene({
       updateState({ videoUrl: url, screenshotUrl: null, contentType: 'video' });
     } else {
       updateState({ screenshotUrl: url, videoUrl: null, contentType: 'image' });
+    }
+    setMenuOpen(false);
+  };
+
+  const handleUrlCapture = async () => {
+    if (!menuUrl.trim()) return;
+    setCaptureError('');
+    setCapturing(true);
+    try {
+      let url = menuUrl.trim();
+      if (!url.startsWith('http')) url = 'https://' + url;
+      const { protocol, hostname, port } = window.location;
+      const base = port ? `${protocol}//${hostname}:${port}` : `${protocol}//${hostname}`;
+      const res = await fetch(`${base}/api-server/api/screenshot?url=${encodeURIComponent(url)}`);
+      if (!res.ok) throw new Error('Failed');
+      const blob = await res.blob();
+      updateState({ screenshotUrl: URL.createObjectURL(blob), videoUrl: null, contentType: 'image' });
+      setMenuOpen(false);
+      setMenuUrl('');
+    } catch {
+      setCaptureError('Could not capture. Check the URL.');
+    } finally {
+      setCapturing(false);
     }
   };
 
@@ -523,22 +553,26 @@ function DeviceScene({
         style={{ pointerEvents: 'none' }}
       >
         {/* fontSize set by useFrame → everything inside scales via em */}
-        <div ref={wrapperRef} style={{ pointerEvents: 'none' }}>
+        <div ref={wrapperRef} style={{ pointerEvents: 'none', position: 'relative', display: 'inline-block' }}>
+
+          {/* ── Trigger pill ─────────────────────────────────────── */}
           {showIcon && (
             <div
-              onClick={() => fileRef.current?.click()}
+              onClick={() => setMenuOpen(m => !m)}
               onMouseEnter={e => {
-                (e.currentTarget as HTMLDivElement).style.background = 'rgba(40,42,54,0.88)';
+                (e.currentTarget as HTMLDivElement).style.background = menuOpen
+                  ? 'rgba(50,52,70,0.95)' : 'rgba(40,42,54,0.88)';
               }}
               onMouseLeave={e => {
-                (e.currentTarget as HTMLDivElement).style.background = 'rgba(10,10,16,0.72)';
+                (e.currentTarget as HTMLDivElement).style.background = menuOpen
+                  ? 'rgba(30,32,44,0.92)' : 'rgba(10,10,16,0.72)';
               }}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: '0.45em',
                 padding: '0.42em 0.85em 0.42em 0.65em',
                 borderRadius: '2em',
-                background: 'rgba(10,10,16,0.72)',
-                border: '1px solid rgba(255,255,255,0.20)',
+                background: menuOpen ? 'rgba(30,32,44,0.92)' : 'rgba(10,10,16,0.72)',
+                border: `1px solid ${menuOpen ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.20)'}`,
                 backdropFilter: 'blur(12px)',
                 cursor: 'pointer', userSelect: 'none', pointerEvents: 'auto',
                 transition: 'background 0.12s',
@@ -546,12 +580,7 @@ function DeviceScene({
                 boxShadow: '0 1px 8px rgba(0,0,0,0.4)',
               }}
             >
-              {/* Icon */}
-              <svg
-                width="1em" height="1em"
-                viewBox="0 0 16 16" fill="none"
-                style={{ flexShrink: 0, opacity: 0.85 }}
-              >
+              <svg width="1em" height="1em" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.85 }}>
                 {pencilVisible ? (
                   <path d="M11.5 2.5l2 2L5 13l-2.5.5.5-2.5L11.5 2.5z"
                     stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
@@ -562,27 +591,174 @@ function DeviceScene({
                   </>
                 )}
               </svg>
-              {/* Label */}
               <span style={{
                 fontSize: '0.85em', fontWeight: 500, letterSpacing: '0.01em',
                 color: 'rgba(255,255,255,0.80)',
                 fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
               }}>
-                {pencilVisible ? 'Edit' : 'Add media'}
+                {pencilVisible ? 'Edit media' : 'Add media'}
               </span>
             </div>
           )}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*,video/*"
-            style={{ display: 'none' }}
-            onChange={e => {
-              const f = e.target.files?.[0];
-              if (f) { applyFile(f); onHidePencil(); }
-              e.target.value = '';
-            }}
-          />
+
+          {/* ── Dropdown menu ────────────────────────────────────── */}
+          {menuOpen && (
+            <>
+              {/* Transparent backdrop to close on outside click */}
+              <div
+                onClick={() => { setMenuOpen(false); setCaptureError(''); }}
+                style={{
+                  position: 'fixed', inset: 0,
+                  zIndex: 98, pointerEvents: 'auto',
+                }}
+              />
+              <div style={{
+                position: 'absolute',
+                top: 'calc(100% + 0.5em)',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 99,
+                pointerEvents: 'auto',
+                width: '18em',
+                background: 'rgba(14,15,20,0.97)',
+                border: '1px solid rgba(255,255,255,0.14)',
+                borderRadius: '1em',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                padding: '0.9em',
+                display: 'flex', flexDirection: 'column', gap: '0.75em',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+              }}>
+
+                {/* Section: Capture from URL */}
+                <div>
+                  <div style={{ fontSize: '0.7em', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)', marginBottom: '0.6em' }}>
+                    Capture from URL
+                  </div>
+                  <div style={{
+                    borderRadius: '0.65em',
+                    border: '1px solid rgba(255,255,255,0.10)',
+                    background: 'rgba(255,255,255,0.04)',
+                    overflow: 'hidden',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5em', padding: '0.55em 0.75em' }}>
+                      <svg width="0.85em" height="0.85em" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, opacity: 0.4 }}>
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+                          stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+                          stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <input
+                        type="url"
+                        value={menuUrl}
+                        onChange={e => { setMenuUrl(e.target.value); setCaptureError(''); }}
+                        onKeyDown={e => e.key === 'Enter' && handleUrlCapture()}
+                        placeholder="https://example.com"
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                          flex: 1, background: 'transparent', fontSize: '0.85em',
+                          outline: 'none', color: 'rgba(255,255,255,0.85)', border: 'none',
+                          minWidth: 0,
+                        }}
+                      />
+                      {menuUrl && (
+                        <button onClick={() => { setMenuUrl(''); setCaptureError(''); }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.35)', display: 'flex' }}>
+                          <svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="none">
+                            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      onClick={handleUrlCapture}
+                      disabled={capturing || !menuUrl.trim()}
+                      style={{
+                        width: '100%', padding: '0.55em 0', fontSize: '0.85em', fontWeight: 600,
+                        borderTop: '1px solid rgba(255,255,255,0.07)',
+                        background: menuUrl.trim() ? 'rgba(255,255,255,0.08)' : 'transparent',
+                        color: menuUrl.trim() ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.25)',
+                        border: 'none', cursor: capturing || !menuUrl.trim() ? 'not-allowed' : 'pointer',
+                        transition: 'background 0.12s',
+                      }}
+                    >
+                      {capturing ? '⏳ Capturing…' : '📸 Capture Screenshot'}
+                    </button>
+                  </div>
+                  {captureError && (
+                    <p style={{ fontSize: '0.75em', color: '#ff453a', margin: '0.4em 0 0' }}>{captureError}</p>
+                  )}
+                </div>
+
+                {/* Divider */}
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 -0.2em' }} />
+
+                {/* Section: Upload */}
+                <div>
+                  <div style={{ fontSize: '0.7em', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)', marginBottom: '0.6em' }}>
+                    Upload Media
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5em' }}>
+                    {/* Image */}
+                    <button
+                      onClick={() => imageFileRef.current?.click()}
+                      style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4em',
+                        padding: '0.6em 0', borderRadius: '0.65em', fontSize: '0.85em', fontWeight: 600,
+                        background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
+                        color: 'rgba(255,255,255,0.80)', cursor: 'pointer',
+                      }}
+                    >
+                      <svg width="0.9em" height="0.9em" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+                        <path d="M21 15l-5-5L5 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      Image
+                    </button>
+                    {/* Video */}
+                    <button
+                      onClick={() => videoFileRef.current?.click()}
+                      style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4em',
+                        padding: '0.6em 0', borderRadius: '0.65em', fontSize: '0.85em', fontWeight: 600,
+                        background: 'rgba(48,209,88,0.10)', border: '1px solid rgba(48,209,88,0.25)',
+                        color: 'rgba(48,209,88,0.90)', cursor: 'pointer',
+                      }}
+                    >
+                      <svg width="0.9em" height="0.9em" viewBox="0 0 24 24" fill="none">
+                        <path d="M15 10l4.55-2.73A1 1 0 0 1 21 8.18v7.64a1 1 0 0 1-1.45.9L15 14"
+                          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <rect x="3" y="7" width="12" height="10" rx="2" stroke="currentColor" strokeWidth="2"/>
+                      </svg>
+                      Video
+                    </button>
+                  </div>
+                </div>
+
+                {/* Clear (only when content loaded) */}
+                {hasContent && (
+                  <button
+                    onClick={() => { updateState({ screenshotUrl: null, videoUrl: null, contentType: null }); setMenuOpen(false); onHidePencil(); }}
+                    style={{
+                      width: '100%', padding: '0.55em 0', borderRadius: '0.65em', fontSize: '0.85em', fontWeight: 600,
+                      background: 'rgba(255,69,58,0.10)', border: '1px solid rgba(255,69,58,0.25)',
+                      color: '#ff453a', cursor: 'pointer',
+                    }}
+                  >
+                    ✕ Remove media
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Hidden file inputs */}
+          <input ref={imageFileRef} type="file" accept="image/*" style={{ display: 'none' }}
+            onChange={e => { const f = e.target.files?.[0]; if (f) { applyFile(f); onHidePencil(); } e.target.value = ''; }} />
+          <input ref={videoFileRef} type="file" accept="video/*" style={{ display: 'none' }}
+            onChange={e => { const f = e.target.files?.[0]; if (f) { applyFile(f); onHidePencil(); } e.target.value = ''; }} />
         </div>
       </Html>
     </group>
