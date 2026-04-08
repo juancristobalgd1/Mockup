@@ -459,10 +459,10 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   };
 
   // ── Device tab content — searchable 3-column grid ───────────────
-  const GROUP_TO_STORETYPE: Record<DeviceGroup, string> = {
-    iPhone: 'iphone', Android: 'android', Tablet: 'ipad',
-    Desktop: 'macbook', Browser: 'browser', Watch: 'watch',
-  };
+  // Auto-derived from DEVICE_MODELS: no manual update needed when adding new groups.
+  const GROUP_TO_STORETYPE = Object.fromEntries(
+    DEVICE_MODELS.map(m => [m.group, m.storeType])
+  ) as Record<DeviceGroup, string>;
 
   const DeviceTab = () => {
     const q = deviceSearch.trim().toLowerCase();

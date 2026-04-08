@@ -1,6 +1,9 @@
 import { useState, createContext, useContext } from "react";
+import type { DeviceStoreType } from "./data/devices";
 
-export type DeviceType = "iphone" | "android" | "ipad" | "macbook" | "browser" | "watch";
+// DeviceType derives from DeviceStoreType in devices.ts — the single source of truth.
+// When adding a new device category, update DeviceStoreType there; this stays in sync.
+export type DeviceType = DeviceStoreType;
 export type DeviceColor = "titanium" | "black" | "white" | "blue" | "naturallight" | "desert" | "sierra" | "clay";
 export type BrowserMode = "dark" | "light";
 export type BackgroundType = "solid" | "gradient" | "mesh" | "pattern" | "image" | "wallpaper";

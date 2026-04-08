@@ -10,11 +10,15 @@ export type CameraLayout =
   | 'quad-samsung'  // Samsung Ultra: 4 lenses in rectangle module
   | 'none';
 
+/** All possible device store/category types. This is the single source of truth.
+ *  Import this type wherever DeviceType is needed (e.g. store.tsx). */
+export type DeviceStoreType = 'iphone' | 'android' | 'ipad' | 'macbook' | 'browser' | 'watch';
+
 export interface DeviceModelDef {
   id: string;
   label: string;
   group: DeviceGroup;
-  storeType: 'iphone' | 'android' | 'ipad' | 'macbook' | 'browser' | 'watch';
+  storeType: DeviceStoreType;
   /** Display dimensions in CSS px (portrait, unscaled) */
   w: number;
   h: number;
