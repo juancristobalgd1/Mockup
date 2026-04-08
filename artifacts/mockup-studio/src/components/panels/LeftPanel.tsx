@@ -65,9 +65,9 @@ const Section = ({ label, children, action }: {
   children: React.ReactNode;
   action?: React.ReactNode;
 }) => (
-  <div style={{ marginBottom: 14 }}>
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-      <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.09em', textTransform: 'uppercase', color: '#374151' }}>
+  <div style={{ marginBottom: 16 }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
+      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>
         {label}
       </span>
       {action}
@@ -83,10 +83,10 @@ const Chip = ({ active, onClick, children, style }: {
   <button
     onClick={onClick}
     style={{
-      flexShrink: 0, padding: '5px 10px', borderRadius: 10, fontSize: 11, fontWeight: 600,
-      background: active ? '#f3f4f6' : '#ffffff',
-      border: active ? '1px solid #9ca3af' : '1px solid #e5e7eb',
-      color: active ? '#111827' : '#6b7280',
+      flexShrink: 0, padding: '5px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600,
+      background: active ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
+      border: active ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
+      color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.42)',
       cursor: 'pointer', transition: 'all 0.12s', whiteSpace: 'nowrap', ...style,
     }}
   >
@@ -99,11 +99,13 @@ const Toggle = ({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
   <button onClick={onToggle}
     style={{
       position: 'relative', width: 36, height: 20, borderRadius: 10, flexShrink: 0,
-      background: enabled ? '#374151' : '#d1d5db', border: 'none', cursor: 'pointer', transition: 'background 0.2s',
+      background: enabled ? 'rgba(48,209,88,0.55)' : 'rgba(255,255,255,0.12)',
+      border: 'none', cursor: 'pointer', transition: 'background 0.2s',
     }}>
     <div style={{
       position: 'absolute', top: 2, width: 16, height: 16, borderRadius: '50%',
-      background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', transition: 'left 0.18s',
+      background: enabled ? '#fff' : 'rgba(255,255,255,0.6)',
+      boxShadow: '0 1px 4px rgba(0,0,0,0.5)', transition: 'left 0.18s',
       left: enabled ? 18 : 2,
     }} />
   </button>
@@ -116,8 +118,8 @@ const Slider = ({ label, value, min, max, step = 1, onChange, unit = '' }: {
 }) => (
   <div style={{ marginBottom: 12 }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-      <span style={{ fontSize: 11, color: '#9ca3af' }}>{label}</span>
-      <span style={{ fontSize: 11, color: '#6b7280', fontVariantNumeric: 'tabular-nums' }}>{value}{unit}</span>
+      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)' }}>{label}</span>
+      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.60)', fontVariantNumeric: 'tabular-nums' }}>{value}{unit}</span>
     </div>
     <input type="range" min={min} max={max} step={step} value={value}
       onChange={e => onChange(Number(e.target.value))} className="ms-range w-full" />
@@ -133,8 +135,8 @@ function DeviceThumbnail({ modelId, isSelected }: { modelId: string; isSelected:
   const isMac     = def.storeType === 'macbook';
   const isBrowser = def.storeType === 'browser';
 
-  const accent = isSelected ? '#374151' : def.accent;
-  const body   = isSelected ? '#e5e7eb' : 'rgba(0,0,0,0.06)';
+  const accent = isSelected ? 'rgba(255,255,255,0.85)' : (def.accent ?? 'rgba(255,255,255,0.35)');
+  const body   = isSelected ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)';
 
   if (isPhone) {
     const r = def.storeType === 'android' ? 6 : 8;
@@ -315,18 +317,18 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
     <>
       {/* URL capture */}
       <Section label="Capture from URL">
-        <div style={{ borderRadius: 12, border: mode === 'screenshot' ? '1px solid rgba(2,132,199,0.3)' : '1px solid #e5e7eb', background: mode === 'screenshot' ? 'rgba(2,132,199,0.04)' : '#fafafa', overflow: 'hidden' }}>
+        <div style={{ borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px' }}>
-            <Link2 size={12} style={{ color: '#6b7280', flexShrink: 0 }} />
+            <Link2 size={12} style={{ color: 'rgba(255,255,255,0.35)', flexShrink: 0 }} />
             <input
               type="url" value={urlInput}
               onChange={e => { setUrlInput(e.target.value); setCaptureError(''); }}
               onKeyDown={e => e.key === 'Enter' && handleUrlCapture()}
               placeholder="https://example.com"
-              style={{ flex: 1, background: 'transparent', fontSize: 11, outline: 'none', color: '#111827', border: 'none' }}
+              style={{ flex: 1, background: 'transparent', fontSize: 11, outline: 'none', color: 'rgba(255,255,255,0.85)', border: 'none' }}
             />
             {urlInput && (
-              <button onClick={() => { setUrlInput(''); setCaptureError(''); }} style={{ color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              <button onClick={() => { setUrlInput(''); setCaptureError(''); }} style={{ color: 'rgba(255,255,255,0.35)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                 <X size={11} />
               </button>
             )}
@@ -334,23 +336,23 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
           <button onClick={handleUrlCapture} disabled={capturing || !urlInput.trim()}
             style={{
               width: '100%', padding: '7px 0', fontSize: 11, fontWeight: 600,
-              borderTop: '1px solid #e5e7eb',
-              background: capturing ? '#f3f4f6' : urlInput ? '#f3f4f6' : 'transparent',
-              color: urlInput ? '#374151' : '#9ca3af', border: 'none',
+              borderTop: '1px solid rgba(255,255,255,0.07)',
+              background: urlInput ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: urlInput ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.25)', border: 'none',
               cursor: capturing || !urlInput.trim() ? 'not-allowed' : 'pointer',
             }}>
             {capturing ? '⏳ Capturing…' : '📸 Capture Screenshot'}
           </button>
         </div>
-        {captureError && <p style={{ fontSize: 10, color: '#dc2626', marginTop: 4 }}>{captureError}</p>}
+        {captureError && <p style={{ fontSize: 10, color: 'var(--rt-accent-red)', marginTop: 4 }}>{captureError}</p>}
       </Section>
 
       {/* Upload */}
       <Section label="Upload Media">
         <HScroll gap={8}>
-          <UploadTile icon={<ImageIcon size={13} />} label="Image" accept="image/*" color="#374151"
+          <UploadTile icon={<ImageIcon size={13} />} label="Image" accept="image/*" color="rgba(255,255,255,0.7)"
             onFile={f => updateState({ screenshotUrl: URL.createObjectURL(f), videoUrl: null, contentType: 'image' })} />
-          <UploadTile icon={<Video size={13} />} label="Video" accept="video/*" color="#4ade80"
+          <UploadTile icon={<Video size={13} />} label="Video" accept="video/*" color="rgba(48,209,88,0.9)"
             onFile={f => updateState({ videoUrl: URL.createObjectURL(f), screenshotUrl: null, contentType: 'video' })} />
           {(state.screenshotUrl || state.videoUrl) && (
             <button
@@ -358,7 +360,7 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
               style={{
                 flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px',
                 borderRadius: 10, fontSize: 11, fontWeight: 600,
-                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171',
+                background: 'rgba(255,69,58,0.12)', border: '1px solid rgba(255,69,58,0.25)', color: 'var(--rt-accent-red)',
                 cursor: 'pointer',
               }}>
               <X size={11} /> Clear
@@ -366,9 +368,9 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
           )}
         </HScroll>
         {(state.screenshotUrl || state.videoUrl) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, padding: '4px 8px', borderRadius: 8, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
-            {state.contentType === 'video' ? <Video size={11} style={{ color: '#4ade80' }} /> : <ImageIcon size={11} style={{ color: '#4ade80' }} />}
-            <span style={{ fontSize: 10, color: '#4ade80' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, padding: '4px 8px', borderRadius: 8, background: 'rgba(48,209,88,0.08)', border: '1px solid rgba(48,209,88,0.18)' }}>
+            {state.contentType === 'video' ? <Video size={11} style={{ color: 'var(--rt-accent-green)' }} /> : <ImageIcon size={11} style={{ color: 'var(--rt-accent-green)' }} />}
+            <span style={{ fontSize: 10, color: 'var(--rt-accent-green)' }}>
               {state.contentType === 'video' ? 'Video loaded' : 'Image loaded'}
             </span>
           </div>
@@ -382,10 +384,11 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
             <button key={group} onClick={() => setSelectedGroup(group)}
               style={{
                 flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4,
-                padding: '4px 9px', borderRadius: 8, fontSize: 10, fontWeight: 700,
-                background: selectedGroup === group ? '#f3f4f6' : '#ffffff',
-                border: selectedGroup === group ? '1px solid #9ca3af' : '1px solid #e5e7eb',
-                color: selectedGroup === group ? '#111827' : '#6b7280', cursor: 'pointer',
+                padding: '4px 9px', borderRadius: 7, fontSize: 10, fontWeight: 700,
+                background: selectedGroup === group ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
+                border: selectedGroup === group ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
+                color: selectedGroup === group ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.40)',
+                cursor: 'pointer',
               }}>
               <span>{GROUP_ICONS[group]}</span>
               <span>{group}</span>
@@ -404,15 +407,15 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
                 onClick={() => updateState({ deviceModel: model.id, deviceType: model.storeType })}
                 style={{
                   flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
-                  gap: 5, padding: '10px 8px 8px', borderRadius: 14, width: 64,
-                  background: isSelected ? '#f3f4f6' : '#ffffff',
-                  border: isSelected ? '1.5px solid #9ca3af' : '1px solid #e5e7eb',
+                  gap: 5, padding: '10px 8px 8px', borderRadius: 12, width: 64,
+                  background: isSelected ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.04)',
+                  border: isSelected ? '1.5px solid rgba(255,255,255,0.22)' : '1px solid rgba(255,255,255,0.07)',
                   cursor: 'pointer', transition: 'all 0.12s',
                 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
                   <DeviceThumbnail modelId={model.id} isSelected={isSelected} />
                 </div>
-                <span style={{ fontSize: 9, fontWeight: 600, textAlign: 'center', lineHeight: 1.2, color: isSelected ? '#111827' : '#6b7280' }}>
+                <span style={{ fontSize: 9, fontWeight: 600, textAlign: 'center', lineHeight: 1.2, color: isSelected ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.38)' }}>
                   {model.label}
                 </span>
               </button>
@@ -429,12 +432,12 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
               <button key={c.id} title={c.label} onClick={() => updateState({ deviceColor: c.id })}
                 style={{
                   flexShrink: 0, width: 28, height: 28, borderRadius: '50%', background: c.bg,
-                  border: state.deviceColor === c.id ? '2px solid #374151' : `2px solid ${c.border}`,
-                  boxShadow: state.deviceColor === c.id ? '0 0 0 2.5px rgba(55,65,81,0.2)' : 'none',
+                  border: state.deviceColor === c.id ? '2px solid rgba(255,255,255,0.7)' : `2px solid ${c.border}`,
+                  boxShadow: state.deviceColor === c.id ? '0 0 0 2.5px rgba(255,255,255,0.15)' : 'none',
                   cursor: 'pointer', transition: 'all 0.15s',
                 }} />
             ))}
-            <span style={{ fontSize: 10, color: '#4b5563', display: 'flex', alignItems: 'center', paddingLeft: 2 }}>
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.40)', display: 'flex', alignItems: 'center', paddingLeft: 2 }}>
               {IPHONE_COLORS.find(c => c.id === state.deviceColor)?.label}
             </span>
           </HScroll>
@@ -471,8 +474,8 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
         <Section label="Type" action={
           <button onClick={handleShuffle} style={{
             display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8,
-            fontSize: 10, fontWeight: 700, background: '#f3f4f6',
-            border: '1px solid #d1d5db', color: '#374151', cursor: 'pointer',
+            fontSize: 10, fontWeight: 700, background: 'rgba(255,255,255,0.08)',
+            border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.65)', cursor: 'pointer',
             transition: 'all 0.12s',
           }}>
             <Shuffle size={10} /> Shuffle
@@ -492,15 +495,12 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
           <Section label="Color">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ position: 'relative', flexShrink: 0 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: state.bgColor, border: '1px solid #e5e7eb' }} />
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: state.bgColor, border: '1px solid rgba(255,255,255,0.1)' }} />
                 <input type="color" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
                   style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
               </div>
               <input type="text" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
-                style={{
-                  flex: 1, background: '#fafafa', border: '1px solid #e5e7eb',
-                  borderRadius: 8, padding: '6px 10px', fontSize: 11, fontFamily: 'monospace', outline: 'none', color: '#374151',
-                }} />
+                className="rt-input" style={{ fontFamily: 'monospace' }} />
             </div>
           </Section>
         )}
@@ -512,9 +512,9 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
               {GRADIENTS.map(g => (
                 <button key={g.id} title={g.label} onClick={() => updateState({ bgColor: g.id })}
                   style={{
-                    flexShrink: 0, width: 56, height: 56, borderRadius: 14, background: g.css,
-                    border: state.bgColor === g.id ? '2.5px solid #374151' : '1.5px solid #e5e7eb',
-                    boxShadow: state.bgColor === g.id ? '0 0 0 2px rgba(55,65,81,0.2)' : 'none',
+                    flexShrink: 0, width: 56, height: 56, borderRadius: 12, background: g.css,
+                    border: state.bgColor === g.id ? '2.5px solid rgba(255,255,255,0.7)' : '1.5px solid rgba(255,255,255,0.08)',
+                    boxShadow: state.bgColor === g.id ? '0 0 0 2px rgba(255,255,255,0.12)' : 'none',
                     cursor: 'pointer', transition: 'all 0.12s',
                   }} />
               ))}
@@ -529,8 +529,8 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
               <button onClick={handleAutoBackground} disabled={extracting}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 7,
-                  fontSize: 10, fontWeight: 600, background: '#f3f4f6',
-                  border: '1px solid #d1d5db', color: '#374151', cursor: 'pointer',
+                  fontSize: 10, fontWeight: 600, background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.65)', cursor: 'pointer',
                 }}>
                 <Wand2 size={10} />
                 {extracting ? 'Extracting…' : 'Auto'}
@@ -541,8 +541,8 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
               {MESH_GRADIENTS.filter(m => m.id !== '__auto__').map(m => (
                 <button key={m.id} title={m.label} onClick={() => updateState({ bgColor: m.id })}
                   style={{
-                    flexShrink: 0, width: 60, height: 60, borderRadius: 14, background: m.css,
-                    border: state.bgColor === m.id ? '2.5px solid #374151' : '1.5px solid #e5e7eb',
+                    flexShrink: 0, width: 60, height: 60, borderRadius: 12, background: m.css,
+                    border: state.bgColor === m.id ? '2.5px solid rgba(255,255,255,0.65)' : '1.5px solid rgba(255,255,255,0.08)',
                     cursor: 'pointer', transition: 'all 0.12s',
                   }} />
               ))}
@@ -557,8 +557,8 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
               {WALLPAPERS.map(w => (
                 <button key={w.id} title={w.label} onClick={() => updateState({ bgColor: w.id })}
                   style={{
-                    flexShrink: 0, width: 60, height: 60, borderRadius: 14, background: w.css, position: 'relative', overflow: 'hidden',
-                    border: state.bgColor === w.id ? '2.5px solid #374151' : '1.5px solid #e5e7eb',
+                    flexShrink: 0, width: 60, height: 60, borderRadius: 12, background: w.css, position: 'relative', overflow: 'hidden',
+                    border: state.bgColor === w.id ? '2.5px solid rgba(255,255,255,0.65)' : '1.5px solid rgba(255,255,255,0.08)',
                     cursor: 'pointer', transition: 'all 0.12s',
                   }}>
                   <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2px 4px', background: 'rgba(0,0,0,0.55)' }}>
@@ -578,18 +578,18 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
                 {PATTERNS.map(p => (
                   <button key={p.id} onClick={() => updateState({ bgPattern: p.id })}
                     style={{
-                      flexShrink: 0, width: 64, height: 48, borderRadius: 12, cursor: 'pointer',
-                      border: state.bgPattern === p.id ? '2px solid #374151' : '1.5px solid #e5e7eb',
+                      flexShrink: 0, width: 64, height: 48, borderRadius: 10, cursor: 'pointer',
+                      border: state.bgPattern === p.id ? '2px solid rgba(255,255,255,0.5)' : '1.5px solid rgba(255,255,255,0.08)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      ...p.bgStyle('#f3f4f6'),
+                      ...p.bgStyle('#1a1c1e'),
                     }}>
-                    <span style={{ fontSize: 9, color: '#6b7280' }}>{p.label}</span>
+                    <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>{p.label}</span>
                   </button>
                 ))}
               </HScroll>
             </Section>
             <Section label="Pattern Color">
-              <div style={{ position: 'relative', width: '100%', height: 36, borderRadius: 10, background: state.bgColor, border: '1px solid #e5e7eb' }}>
+              <div style={{ position: 'relative', width: '100%', height: 36, borderRadius: 10, background: state.bgColor, border: '1px solid rgba(255,255,255,0.1)' }}>
                 <input type="color" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
                   style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
               </div>
@@ -601,15 +601,15 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
         {state.bgType === 'image' && (
           <Section label="Background Image">
             {state.bgImage && (
-              <div style={{ width: '100%', height: 72, borderRadius: 12, overflow: 'hidden', marginBottom: 8, border: '1px solid #e5e7eb' }}>
+              <div style={{ width: '100%', height: 72, borderRadius: 10, overflow: 'hidden', marginBottom: 8, border: '1px solid rgba(255,255,255,0.1)' }}>
                 <img src={state.bgImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="bg" />
               </div>
             )}
             <button onClick={() => bgFileRef.current?.click()}
               style={{
-                width: '100%', padding: '10px 0', borderRadius: 12, fontSize: 11, fontWeight: 600,
-                background: '#fafafa', border: '1px dashed #d1d5db',
-                color: '#6b7280', cursor: 'pointer',
+                width: '100%', padding: '10px 0', borderRadius: 10, fontSize: 11, fontWeight: 600,
+                background: 'rgba(255,255,255,0.04)', border: '1px dashed rgba(255,255,255,0.18)',
+                color: 'rgba(255,255,255,0.45)', cursor: 'pointer',
               }}>
               {state.bgImage ? 'Change Image' : '+ Upload Image'}
             </button>
@@ -618,9 +618,9 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
         )}
 
         {/* Overlay */}
-        <div style={{ paddingTop: 10, marginTop: 4, borderTop: '1px solid #e5e7eb' }}>
+        <div style={{ paddingTop: 10, marginTop: 4, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.09em', textTransform: 'uppercase', color: '#374151' }}>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>
               Color Overlay
             </span>
             <Toggle enabled={state.overlayEnabled} onToggle={() => updateState({ overlayEnabled: !state.overlayEnabled })} />
@@ -629,7 +629,7 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
             <>
               <HScroll gap={7}>
                 <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: state.overlayColor, border: '1px solid #e5e7eb' }} />
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: state.overlayColor, border: '1px solid rgba(255,255,255,0.1)' }} />
                   <input type="color" value={state.overlayColor} onChange={e => updateState({ overlayColor: e.target.value })}
                     style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
                 </div>
@@ -637,7 +637,7 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
                   <button key={col} onClick={() => updateState({ overlayColor: col })}
                     style={{
                       flexShrink: 0, width: 24, height: 24, borderRadius: '50%', background: col,
-                      border: state.overlayColor === col ? '2px solid #374151' : '1px solid #d1d5db', cursor: 'pointer',
+                      border: state.overlayColor === col ? '2px solid rgba(255,255,255,0.7)' : '1px solid rgba(255,255,255,0.15)', cursor: 'pointer',
                     }} />
                 ))}
               </HScroll>
@@ -668,8 +668,8 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <RefreshCw size={12} style={{ color: '#6b7280' }} />
-              <span style={{ fontSize: 11, color: '#9ca3af' }}>Auto Rotate</span>
+              <RefreshCw size={12} style={{ color: 'rgba(255,255,255,0.35)' }} />
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Auto Rotate</span>
             </div>
             <Toggle enabled={state.autoRotate} onToggle={() => updateState({ autoRotate: !state.autoRotate })} />
           </div>
@@ -681,8 +681,8 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
           )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <RotateCcw size={12} style={{ color: '#6b7280' }} />
-              <span style={{ fontSize: 11, color: '#9ca3af' }}>Float Effect</span>
+              <RotateCcw size={12} style={{ color: 'rgba(255,255,255,0.35)' }} />
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Float Effect</span>
             </div>
             <Toggle
               enabled={state.animation === 'float'}
@@ -737,12 +737,12 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
             <button key={env.id} onClick={() => updateState({ envPreset: env.id, envEnabled: true })}
               style={{
                 flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                padding: '8px 10px', borderRadius: 12,
-                background: state.envPreset === env.id && state.envEnabled !== false ? '#f3f4f6' : '#ffffff',
-                border: state.envPreset === env.id && state.envEnabled !== false ? '1px solid #9ca3af' : '1px solid #e5e7eb',
-                color: state.envPreset === env.id && state.envEnabled !== false ? '#111827' : '#6b7280',
+                padding: '8px 10px', borderRadius: 10,
+                background: state.envPreset === env.id && state.envEnabled !== false ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
+                border: state.envPreset === env.id && state.envEnabled !== false ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
+                color: state.envPreset === env.id && state.envEnabled !== false ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.4)',
                 cursor: 'pointer', transition: 'all 0.12s',
-                opacity: state.envEnabled !== false ? 1 : 0.45,
+                opacity: state.envEnabled !== false ? 1 : 0.35,
               }}>
               <span style={{ fontSize: 18, lineHeight: 1 }}>{env.icon}</span>
               <span style={{ fontSize: 9, fontWeight: 600 }}>{env.label}</span>
@@ -764,10 +764,11 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
               onClick={() => updateState({ cameraAngle: cam.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}
               style={{
                 flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
-                padding: '6px 10px', borderRadius: 10, fontSize: 11, fontWeight: 600,
-                background: state.cameraAngle === cam.id ? '#f3f4f6' : '#ffffff',
-                border: state.cameraAngle === cam.id ? '1px solid #9ca3af' : '1px solid #e5e7eb',
-                color: state.cameraAngle === cam.id ? '#111827' : '#6b7280', cursor: 'pointer', transition: 'all 0.12s',
+                padding: '6px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600,
+                background: state.cameraAngle === cam.id ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
+                border: state.cameraAngle === cam.id ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
+                color: state.cameraAngle === cam.id ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.40)',
+                cursor: 'pointer', transition: 'all 0.12s',
               }}>
               <span>{cam.icon}</span>
               <span>{cam.label}</span>
@@ -832,14 +833,14 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
     <>
       <button onClick={addText}
         style={{
-          width: '100%', padding: '12px 0', borderRadius: 14, fontSize: 12, fontWeight: 700,
-          background: '#374151',
-          border: '1px solid #374151', color: '#ffffff', cursor: 'pointer',
+          width: '100%', padding: '12px 0', borderRadius: 12, fontSize: 12, fontWeight: 700,
+          background: 'rgba(255,255,255,0.9)',
+          border: 'none', color: '#0d0e0f', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
         }}>
         <Type size={14} /> Add Text Overlay
       </button>
-      <p style={{ fontSize: 10, textAlign: 'center', color: '#374151', marginTop: 10, lineHeight: 1.6 }}>
+      <p style={{ fontSize: 10, textAlign: 'center', color: 'rgba(255,255,255,0.30)', marginTop: 10, lineHeight: 1.6 }}>
         Drag text overlays on the canvas to reposition.
       </p>
     </>
@@ -851,17 +852,18 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
       <div>
         {/* Horizontal tab chips */}
         <div style={{
-          display: 'flex', gap: 6, overflowX: 'auto', padding: '2px 14px 12px',
-          scrollbarWidth: 'none', borderBottom: '1px solid #e5e7eb',
+          display: 'flex', gap: 4, overflowX: 'auto', padding: '8px 14px 10px',
+          scrollbarWidth: 'none', borderBottom: '1px solid rgba(255,255,255,0.07)',
         } as React.CSSProperties}>
           {TAB_ICONS.map(({ id, icon: Icon, label }) => (
             <button key={id} onClick={() => setActiveTab(id)}
               style={{
                 flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
-                padding: '6px 12px', borderRadius: 10, fontSize: 11, fontWeight: 700,
-                background: activeTab === id ? modeAccent.bg : 'transparent',
-                border: activeTab === id ? `1px solid ${modeAccent.border}` : '1px solid transparent',
-                color: activeTab === id ? modeAccent.color : '#6b7280', cursor: 'pointer',
+                padding: '6px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600,
+                background: activeTab === id ? 'rgba(255,255,255,0.10)' : 'transparent',
+                border: activeTab === id ? '1px solid rgba(255,255,255,0.15)' : '1px solid transparent',
+                color: activeTab === id ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.38)',
+                cursor: 'pointer',
               }}>
               <Icon size={13} strokeWidth={activeTab === id ? 2 : 1.5} />
               {label}
@@ -869,7 +871,7 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
           ))}
         </div>
 
-        {/* Full-width content — no internal scroll, parent handles it */}
+        {/* Full-width content */}
         <div style={{ padding: '12px 14px 20px' }}>
           {activeTab === 'presets'    && <PresetsTab />}
           {activeTab === 'device'     && <DeviceTab />}
@@ -887,29 +889,32 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
 
       {/* Icon rail */}
       <div style={{
-        width: 56, display: 'flex', flexDirection: 'column', alignItems: 'center',
-        padding: '10px 4px', gap: 1, flexShrink: 0,
-        background: '#f9fafb', borderRight: '1px solid #e5e7eb',
+        width: 54, display: 'flex', flexDirection: 'column', alignItems: 'center',
+        padding: '10px 4px', gap: 2, flexShrink: 0,
+        background: 'var(--rt-panel)',
+        borderRight: '1px solid var(--rt-border)',
       }}>
+        {/* Brand logo */}
         <div style={{
-          width: 32, height: 32, borderRadius: 10, marginBottom: 8,
-          background: '#374151',
+          width: 30, height: 30, borderRadius: 8, marginBottom: 10,
+          background: 'rgba(255,255,255,0.9)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff', fontWeight: 900, fontSize: 13, flexShrink: 0,
+          color: '#0d0e0f', fontWeight: 900, fontSize: 13, flexShrink: 0,
+          fontStyle: 'italic',
         }}>M</div>
 
         {TAB_ICONS.map(({ id, icon: Icon, label }) => (
           <button key={id} onClick={() => setActiveTab(id)} title={label}
             style={{
-              width: 44, height: 46, borderRadius: 10, border: 'none',
+              width: 44, height: 46, borderRadius: 8, border: 'none',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
-              background: activeTab === id ? modeAccent.bg : 'transparent',
-              outline: activeTab === id ? `1px solid ${modeAccent.border}` : '1px solid transparent',
+              background: activeTab === id ? 'rgba(255,255,255,0.09)' : 'transparent',
+              outline: 'none',
               cursor: 'pointer', transition: 'all 0.12s',
             }}>
-            <Icon size={16} strokeWidth={activeTab === id ? 2 : 1.5}
-              style={{ color: activeTab === id ? modeAccent.color : '#6b7280' }} />
-            <span style={{ fontSize: 8, fontWeight: 600, color: activeTab === id ? modeAccent.color : '#9ca3af', letterSpacing: '0.02em' }}>
+            <Icon size={15} strokeWidth={activeTab === id ? 2 : 1.5}
+              style={{ color: activeTab === id ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.33)' }} />
+            <span style={{ fontSize: 8, fontWeight: 600, color: activeTab === id ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.22)', letterSpacing: '0.02em' }}>
               {label}
             </span>
           </button>
@@ -919,17 +924,12 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
       {/* Content panel */}
       <div style={{
         width: 240, display: 'flex', flexDirection: 'column', height: '100%', flexShrink: 0,
-        background: '#ffffff', borderRight: '1px solid #e5e7eb',
+        background: 'var(--rt-panel-2)',
+        borderRight: '1px solid var(--rt-border)',
       }}>
-        {/* Mode accent stripe */}
-        <div style={{
-          height: 3, flexShrink: 0,
-          background: modeAccent.color,
-          opacity: 0.7,
-        }} />
         {/* Tab header */}
-        <div style={{ padding: '10px 14px 8px', borderBottom: '1px solid #e5e7eb', flexShrink: 0 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>
+        <div style={{ padding: '11px 14px 9px', borderBottom: '1px solid var(--rt-border)', flexShrink: 0 }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.75)' }}>
             {TAB_ICONS.find(t => t.id === activeTab)?.label}
           </span>
         </div>
@@ -956,12 +956,12 @@ function UploadTile({ icon, label, accept, color, onFile }: {
     <button onClick={() => ref.current?.click()}
       style={{
         flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-        padding: '8px 14px', borderRadius: 12,
-        background: '#fafafa', border: '1px dashed #d1d5db',
+        padding: '8px 14px', borderRadius: 10,
+        background: 'rgba(255,255,255,0.05)', border: '1px dashed rgba(255,255,255,0.15)',
         cursor: 'pointer', transition: 'all 0.15s',
       }}>
       <span style={{ color }}>{icon}</span>
-      <span style={{ fontSize: 10, fontWeight: 600, color: '#6b7280' }}>{label}</span>
+      <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.42)' }}>{label}</span>
       <input ref={ref} type="file" accept={accept} style={{ display: 'none' }}
         onChange={e => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
     </button>
