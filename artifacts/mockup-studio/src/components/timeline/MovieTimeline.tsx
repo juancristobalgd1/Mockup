@@ -446,7 +446,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
         onPointerDown={handleTrackPointerDown}
         onPointerMove={handleTrackPointerMove}
         onPointerUp={handleTrackPointerUp}
-        style={{ position: 'relative', padding: `5px ${TRACK_PADDING}px 8px`, cursor: 'crosshair' }}
+        style={{ position: 'relative', padding: `12px ${TRACK_PADDING}px 12px`, cursor: 'crosshair' }}
       >
         {/* Ruler */}
         <div style={{ position: 'relative', height: 18, marginBottom: 4 }}>
