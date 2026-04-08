@@ -172,6 +172,7 @@ function Editor() {
 
         {/* Canvas — absolute full fill */}
         <div style={{ position: 'absolute', inset: 0 }} className="canvas-bg">
+
           <Canvas
             ref={canvasRef}
             viewerRef={viewerRef}
@@ -233,6 +234,70 @@ function Editor() {
           </>
         )}
 
+        {/* ── Floating top bar — mode group + export ── */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 40,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 14px',
+          pointerEvents: 'none',
+        }}>
+          {/* Image / Movie group button */}
+          <div style={{
+            display: 'flex', alignItems: 'center',
+            background: 'rgba(22,24,26,0.82)',
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            borderRadius: 14, padding: 3,
+            border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+            pointerEvents: 'auto',
+          } as React.CSSProperties}>
+            {CREATION_MODES.map(mode => {
+              const isActive = state.creationMode === mode.id;
+              return (
+                <button key={mode.id} onClick={() => handleModeChange(mode.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '7px 14px', borderRadius: 11, cursor: 'pointer',
+                    fontSize: 12, fontWeight: 600,
+                    transition: 'all 0.13s',
+                    background: isActive ? 'rgba(255,255,255,0.14)' : 'transparent',
+                    border: isActive ? '1px solid rgba(255,255,255,0.14)' : '1px solid transparent',
+                    color: isActive ? '#fff' : 'rgba(255,255,255,0.52)',
+                    boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
+                  }}>
+                  {mode.icon}
+                  {mode.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Export button */}
+          <button
+            onClick={() => setMobileTab(mobileTab === 'export' ? null : 'export')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 7,
+              padding: '9px 16px', borderRadius: 14,
+              fontSize: 13, fontWeight: 700,
+              background: mobileTab === 'export'
+                ? 'rgba(255,255,255,0.20)'
+                : 'rgba(22,24,26,0.82)',
+              backdropFilter: 'blur(14px)',
+              WebkitBackdropFilter: 'blur(14px)',
+              border: mobileTab === 'export'
+                ? '1px solid rgba(255,255,255,0.25)'
+                : '1px solid rgba(255,255,255,0.08)',
+              color: '#fff',
+              cursor: 'pointer', transition: 'all 0.13s',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+              pointerEvents: 'auto',
+            } as React.CSSProperties}>
+            <Download size={14} />
+            Export
+          </button>
+        </div>
+
         {/* ── Floating tab bar — dark pill style ── */}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 40,
@@ -265,29 +330,6 @@ function Editor() {
               </button>
             );
           })}
-          {/* Export pill — slightly brighter */}
-          <button
-            onClick={() => setMobileTab(mobileTab === 'export' ? null : 'export')}
-            style={{
-              flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7,
-              padding: '10px 16px', borderRadius: 24,
-              fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em',
-              background: mobileTab === 'export'
-                ? 'rgba(255,255,255,0.18)'
-                : 'rgba(30,30,32,0.88)',
-              border: mobileTab === 'export'
-                ? '1px solid rgba(255,255,255,0.25)'
-                : '1px solid rgba(255,255,255,0.06)',
-              color: '#fff',
-              cursor: 'pointer', transition: 'all 0.14s',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-            } as React.CSSProperties}>
-            <Download size={14} />
-            Export
-          </button>
         </div>
       </div>
     </div>
