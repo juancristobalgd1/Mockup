@@ -1074,42 +1074,83 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const PresetsTab = () => {
     const allBgs = [...GRADIENTS, ...MESH_GRADIENTS, ...WALLPAPERS];
     return (
-      <Section label="Templates">
-        <HScroll gap={8}>
-          {PRESETS.map(preset => {
-            const bg = allBgs.find(g => g.id === preset.thumb);
-            const bgCss = bg ? ('css' in bg ? bg.css : '') : '';
-            return (
-              <button key={preset.id}
-                onClick={() => {
-                  const s = preset.state;
-                  const defaultModel = DEVICE_MODELS.find(m => m.storeType === s.deviceType);
-                  updateState({
-                    deviceType: s.deviceType,
-                    deviceModel: defaultModel?.id ?? 'iphone-17-pro',
-                    deviceLandscape: s.deviceLandscape ?? false,
-                    bgType: s.bgType, bgColor: s.bgColor,
-                    animation: s.animation,
-                    autoRotate: s.autoRotate ?? false,
-                    envPreset: (s.envPreset ?? 'studio') as EnvPreset,
-                    contactShadowOpacity: s.contactShadowOpacity ?? 65,
-                  });
-                }}
-                style={{
-                  flexShrink: 0, width: 80, height: 80, borderRadius: 16, overflow: 'hidden', position: 'relative',
-                  background: bgCss || '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer',
-                  transition: 'all 0.12s',
-                }}>
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-end', padding: 6 }}>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.9)', textAlign: 'left', lineHeight: 1.2, textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}>
-                    {preset.label}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </HScroll>
-      </Section>
+      <>
+        {/* Present Type — Rotato-style visual pose grid */}
+        <Section label="Present Type">
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 4,
+          }}>
+            {PRESENT_POSES.map(pose => {
+              const active = state.cameraAngle === pose.id;
+              return (
+                <button
+                  key={pose.id}
+                  onClick={() => updateState({ cameraAngle: pose.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    padding: '8px 4px 6px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                    background: active
+                      ? 'linear-gradient(145deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08))'
+                      : 'rgba(255,255,255,0.04)',
+                    outline: active
+                      ? '1.5px solid rgba(255,255,255,0.32)'
+                      : '1px solid rgba(255,255,255,0.07)',
+                    transition: 'all 0.18s ease',
+                    boxShadow: active ? '0 4px 16px rgba(0,0,0,0.4)' : 'none',
+                    transform: active ? 'scale(1.02)' : 'scale(1)',
+                  }}
+                >
+                  <PoseThumbnail ry={pose.ry} rx={pose.rx} rz={pose.rz} active={active} />
+                  <span style={{
+                    fontSize: 9, fontWeight: 700, letterSpacing: '0.04em',
+                    color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.38)',
+                    textTransform: 'uppercase', marginTop: 2,
+                    transition: 'color 0.2s',
+                  }}>{pose.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </Section>
+
+        {/* Templates */}
+        <Section label="Templates">
+          <HScroll gap={8}>
+            {PRESETS.map(preset => {
+              const bg = allBgs.find(g => g.id === preset.thumb);
+              const bgCss = bg ? ('css' in bg ? bg.css : '') : '';
+              return (
+                <button key={preset.id}
+                  onClick={() => {
+                    const s = preset.state;
+                    const defaultModel = DEVICE_MODELS.find(m => m.storeType === s.deviceType);
+                    updateState({
+                      deviceType: s.deviceType,
+                      deviceModel: defaultModel?.id ?? 'iphone-17-pro',
+                      deviceLandscape: s.deviceLandscape ?? false,
+                      bgType: s.bgType, bgColor: s.bgColor,
+                      animation: s.animation,
+                      autoRotate: s.autoRotate ?? false,
+                      envPreset: (s.envPreset ?? 'studio') as EnvPreset,
+                      contactShadowOpacity: s.contactShadowOpacity ?? 65,
+                    });
+                  }}
+                  style={{
+                    flexShrink: 0, width: 80, height: 80, borderRadius: 16, overflow: 'hidden', position: 'relative',
+                    background: bgCss || '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer',
+                    transition: 'all 0.12s',
+                  }}>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-end', padding: 6 }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.9)', textAlign: 'left', lineHeight: 1.2, textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}>
+                      {preset.label}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </HScroll>
+        </Section>
+      </>
     );
   };
 
