@@ -193,8 +193,10 @@ function Editor() {
               onClick={() => setMobileTab(null)}
             />
             <div style={{
-              position: 'absolute', bottom: 58, left: 8, right: 8, zIndex: 30,
-              maxHeight: '70vh',
+              position: 'absolute',
+              bottom: state.movieMode ? 220 : 58,
+              left: 8, right: 8, zIndex: 30,
+              maxHeight: state.movieMode ? '48vh' : '70vh',
               background: 'rgba(22,24,26,0.92)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
