@@ -456,7 +456,11 @@ function classifyMesh(
   // ── Screen / display ─────────────────────────────────────────────
   if ((key.includes('display') || key.includes('screen')) && !key.includes('screen2')) {
     normalizeScreenUVs(obj, flipScreenU);
-    const mat = new THREE.MeshBasicMaterial({ color: '#000000', toneMapped: false });
+    const mat = new THREE.MeshBasicMaterial({
+      color: '#000000',
+      toneMapped: false,
+      side: THREE.DoubleSide,
+    });
     screenMeshes.push(obj);
     return mat;
   }
@@ -629,7 +633,7 @@ function detectAndMarkScreen(
   if (bestMesh) {
     normalizeScreenUVs(bestMesh as THREE.Mesh);
     (bestMesh as THREE.Mesh).material = new THREE.MeshBasicMaterial({
-      color: '#000000', toneMapped: false,
+      color: '#000000', toneMapped: false, side: THREE.DoubleSide,
     });
     screenMeshes.push(bestMesh as THREE.Mesh);
   }
