@@ -254,6 +254,7 @@ function Editor() {
           } as React.CSSProperties}>
             {CREATION_MODES.map(mode => {
               const isActive = state.creationMode === mode.id;
+              const isMovie = mode.id === 'movie';
               return (
                 <button key={mode.id} onClick={() => handleModeChange(mode.id)}
                   style={{
@@ -261,8 +262,8 @@ function Editor() {
                     padding: '7px 14px', borderRadius: 11, cursor: 'pointer',
                     fontSize: 12, fontWeight: 600,
                     transition: 'all 0.13s',
-                    background: isActive ? 'rgba(255,255,255,0.14)' : 'transparent',
-                    border: isActive ? '1px solid rgba(255,255,255,0.14)' : '1px solid transparent',
+                    background: isActive ? (isMovie ? '#161819' : 'rgba(255,255,255,0.14)') : 'transparent',
+                    border: isActive ? `1px solid ${isMovie ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.14)'}` : '1px solid transparent',
                     color: isActive ? '#fff' : 'rgba(255,255,255,0.52)',
                     boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
                   }}>
