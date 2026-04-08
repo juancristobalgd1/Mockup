@@ -594,14 +594,14 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
             <Shuffle size={10} /> Shuffle
           </button>
         }>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7, marginBottom: 4 }}>
+          <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' } as React.CSSProperties}>
             {bgTypeCards.map(({ id, label, preview }) => {
               const active = state.bgType === id;
               return (
                 <button key={id} onClick={() => updateState({ bgType: id })}
                   style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    padding: '10px 4px 8px', borderRadius: 14, gap: 0, border: 'none',
+                    flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    padding: '10px 8px 8px', borderRadius: 14, gap: 0, border: 'none',
                     background: active ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
                     outline: active ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
                     cursor: 'pointer', transition: 'all 0.12s',
