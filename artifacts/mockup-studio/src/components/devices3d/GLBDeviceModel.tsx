@@ -64,6 +64,24 @@ function makeRoundedRectGeom(w: number, h: number, r: number): THREE.ShapeGeomet
 
 const TARGET_H = 2.5;
 
+// ── Device colour map — semantic IDs → valid CSS hex ─────────────────
+// THREE.Color cannot parse 'titanium', 'desert', etc.  Always resolve
+// before passing to any material constructor.
+const DEVICE_COLOR_HEX: Record<string, string> = {
+  titanium:     '#8a8680',
+  black:        '#1c1c1e',
+  white:        '#e8e8ea',
+  blue:         '#2c4a6e',
+  naturallight: '#c8bfb0',
+  sierra:       '#7a9ab0',
+  desert:       '#9c8878',
+  clay:         '#e0dbd0',
+};
+
+function resolveColor(deviceColor: string, fallback = '#71717a'): string {
+  return DEVICE_COLOR_HEX[deviceColor] ?? deviceColor ?? fallback;
+}
+
 // ── Types ────────────────────────────────────────────────────────────
 
 interface ScreenOverlayDims {
@@ -302,15 +320,14 @@ function countMeshes(root: THREE.Object3D): number {
 // ── Material helpers ──────────────────────────────────────────────────
 
 /** PBR override for metal chassis parts (adapts to deviceColor). */
-function metalMat(color: string, roughness = 0.06, metalness = 0.95) {
-  // MeshPhysicalMaterial adds clearcoat for the polished-titanium/aluminum look
-  // that Apple devices have — a thin glassy layer on top of the metal.
+function metalMat(color: string, roughness = 0.18, metalness = 0.88) {
+  const hex = resolveColor(color);
   return new THREE.MeshPhysicalMaterial({
-    color, roughness, metalness,
-    envMapIntensity: 1.8,
-    clearcoat: 0.8,
-    clearcoatRoughness: 0.04,
-    reflectivity: 1.0,
+    color: hex, roughness, metalness,
+    envMapIntensity: 1.4,
+    clearcoat: 0.25,
+    clearcoatRoughness: 0.18,
+    reflectivity: 0.7,
   });
 }
 
@@ -326,30 +343,43 @@ function normalizeScreenUVs(obj: THREE.Mesh, flipU = false) {
   const geom = obj.geometry;
   const pos  = geom.attributes.position as THREE.BufferAttribute | undefined;
 
-  // ── UV-axis orientation check: if U→Y (90° rotated), fall back to Strategy B ──
-  // We sample vertices and compute Pearson correlation of U with X and with Y.
-  // For standard phone UVs, |corr(U,X)| >> |corr(U,Y)|.
-  // For 90°-rotated atlases (e.g. OnePlus 12), |corr(U,Y)| >> |corr(U,X)|.
+  // ── UV-axis orientation check + V-flip auto-detection ──────────────
+  // Compute Pearson correlations between position (X,Y) and UV (U,V).
+  // • If |corr(U,Y)| >> |corr(U,X)|  → atlas rotated 90° → drop UVs → Strategy B
+  // • If corr(Y,V) < -0.3             → V is inverted (V=0 at screen top) → flip V
+  let autoFlipV = false;
+
   if (geom.attributes.uv && pos) {
     const uvAttr = geom.attributes.uv as THREE.BufferAttribute;
     const n = Math.min(uvAttr.count, 300);
-    let mx = 0, my = 0, mu = 0;
+    let mx = 0, my = 0, mu = 0, mv = 0;
     for (let i = 0; i < n; i++) {
-      mx += pos.getX(i); my += pos.getY(i); mu += uvAttr.getX(i);
+      mx += pos.getX(i); my += pos.getY(i);
+      mu += uvAttr.getX(i); mv += uvAttr.getY(i);
     }
-    mx /= n; my /= n; mu /= n;
-    let sXU = 0, sYU = 0, sXX = 0, sYY = 0, sUU = 0;
+    mx /= n; my /= n; mu /= n; mv /= n;
+    let sXU = 0, sYU = 0, sYV = 0, sXX = 0, sYY = 0, sUU = 0, sVV = 0;
     for (let i = 0; i < n; i++) {
-      const dx = pos.getX(i) - mx, dy = pos.getY(i) - my, du = uvAttr.getX(i) - mu;
-      sXU += dx * du; sYU += dy * du; sXX += dx * dx; sYY += dy * dy; sUU += du * du;
+      const dx = pos.getX(i) - mx, dy = pos.getY(i) - my;
+      const du = uvAttr.getX(i) - mu, dv = uvAttr.getY(i) - mv;
+      sXU += dx * du; sYU += dy * du; sYV += dy * dv;
+      sXX += dx * dx; sYY += dy * dy; sUU += du * du; sVV += dv * dv;
     }
     const corrXU = sXX > 0 && sUU > 0 ? Math.abs(sXU / Math.sqrt(sXX * sUU)) : 0;
     const corrYU = sYY > 0 && sUU > 0 ? Math.abs(sYU / Math.sqrt(sYY * sUU)) : 0;
-    // If U strongly correlates with Y (rotated UV atlas), drop existing UVs → Strategy B
+    // Signed correlation of Y with V: negative → V decreases as Y rises → upside-down
+    const corrYV = sYY > 0 && sVV > 0 ? sYV / Math.sqrt(sYY * sVV) : 0;
+
     if (corrYU > corrXU + 0.3) {
+      // U axis maps to Y in model space → 90°-rotated atlas → regenerate from position
       geom.deleteAttribute('uv');
+    } else {
+      // Detect inverted V direction (image appears upside-down on screen)
+      if (corrYV < -0.3) autoFlipV = true;
     }
   }
+
+  const flipV = autoFlipV;
 
   // ── Strategy B: generate planar UVs from position XY ──────────────
   if (!geom.attributes.uv) {
@@ -364,8 +394,9 @@ function normalizeScreenUVs(obj: THREE.Mesh, flipU = false) {
     const uvs = new Float32Array(pos.count * 2);
     for (let i = 0; i < pos.count; i++) {
       const u = (pos.getX(i) - minX) / rX;
+      const v = (pos.getY(i) - minY) / rY;
       uvs[i * 2]     = flipU ? 1 - u : u;
-      uvs[i * 2 + 1] = (pos.getY(i) - minY) / rY;
+      uvs[i * 2 + 1] = flipV ? 1 - v : v;
     }
     geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
     return;
@@ -382,16 +413,17 @@ function normalizeScreenUVs(obj: THREE.Mesh, flipU = false) {
   const rU = maxU - minU, rV = maxV - minV;
   if (rU < 0.001 || rV < 0.001) return; // degenerate UV island – skip
 
-  // Skip if already approximately [0, 1] (and no flip needed)
-  if (!flipU &&
+  // Skip if already [0,1] with no flip needed
+  if (!flipU && !flipV &&
       Math.abs(minU) < 0.005 && Math.abs(1 - maxU) < 0.005 &&
       Math.abs(minV) < 0.005 && Math.abs(1 - maxV) < 0.005) return;
 
   const uv2 = new Float32Array(uvAttr.count * 2);
   for (let i = 0; i < uvAttr.count; i++) {
     const u = (uvAttr.getX(i) - minU) / rU;
+    const v = (uvAttr.getY(i) - minV) / rV;
     uv2[i * 2]     = flipU ? 1 - u : u;
-    uv2[i * 2 + 1] = (uvAttr.getY(i) - minV) / rV;
+    uv2[i * 2 + 1] = flipV ? 1 - v : v;
   }
   geom.setAttribute('uv', new THREE.BufferAttribute(uv2, 2));
 }
@@ -430,8 +462,9 @@ function classifyMesh(
   }
 
   // ── Front glass cover (transparent) ──────────────────────────────
+  // Note: NOT excluding 'black' — "black glass" is still glass (iPhone Pro, etc.)
   if (key.includes('glass') && !key.includes('frosted') && !key.includes('tint')
-      && !key.includes('back') && !key.includes('camera') && !key.includes('black')) {
+      && !key.includes('back') && !key.includes('camera')) {
     return new THREE.MeshPhysicalMaterial({
       color: '#c8d8ee', metalness: 0.04, roughness: 0.01,
       transmission: 0.88, ior: 1.55, transparent: true, opacity: 0.95,
@@ -476,7 +509,7 @@ function classifyMesh(
   // ── Logo ──────────────────────────────────────────────────────────
   if (key.includes('logo')) {
     return new THREE.MeshPhysicalMaterial({
-      color: deviceColor || '#8a8a8e', metalness: 0.98, roughness: 0.02,
+      color: resolveColor(deviceColor, '#8a8a8e'), metalness: 0.98, roughness: 0.02,
       envMapIntensity: 2.0, clearcoat: 1.0, clearcoatRoughness: 0.0, reflectivity: 1.0,
     });
   }
@@ -512,7 +545,8 @@ function classifyMesh(
   }
 
   // ── Fallback: generic chassis (hash-named or unknown) ────────────
-  return metalMat(deviceColor || '#71717a', 0.10, 0.88);
+  // Use moderate roughness so unknown meshes don't become chrome mirrors
+  return metalMat(deviceColor || '#71717a', 0.35, 0.72);
 }
 
 function applyMaterials(
