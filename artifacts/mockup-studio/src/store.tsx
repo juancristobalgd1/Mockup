@@ -59,6 +59,12 @@ export interface AppState {
   lightOverlayOpacity: number;
   lightOverlayBlend: string;
 
+  annotateMode: boolean;
+  annotateTool: 'pen' | 'marker' | 'eraser' | 'arrow' | 'rect' | 'text';
+  annotateColor: string;
+  annotateSize: 'S' | 'M' | 'L' | 'XL';
+  annotateClearKey: number;
+
   animation: "none" | "float" | "spin" | "pulse" | "slide-in";
   autoRotate: boolean;
   autoRotateSpeed: number;
@@ -115,6 +121,12 @@ export const defaultState: AppState = {
   lightOverlay: null,
   lightOverlayOpacity: 60,
   lightOverlayBlend: 'multiply',
+
+  annotateMode: false,
+  annotateTool: 'pen',
+  annotateColor: '#ef4444',
+  annotateSize: 'M',
+  annotateClearKey: 0,
 
   animation: "float",
   autoRotate: false,
