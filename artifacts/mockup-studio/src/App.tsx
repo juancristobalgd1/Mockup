@@ -1,12 +1,43 @@
 import { useRef, useState } from 'react';
 import { AppProvider, useApp } from './store';
+import type { CreationMode } from './store';
 import { Canvas } from './components/canvas/Canvas';
 import { LeftPanel } from './components/panels/LeftPanel';
 import { RightPanel } from './components/panels/RightPanel';
 import { MovieTimeline } from './components/timeline/MovieTimeline';
-import { Download, Layers, X, Film } from 'lucide-react';
+import { Download, Layers, X, Film, Smartphone, Camera } from 'lucide-react';
 import { getModelById } from './data/devices';
 import type { Device3DViewerHandle } from './components/devices3d/Device3DViewer';
+
+const CREATION_MODES: { id: CreationMode; label: string; icon: React.ReactNode; desc: string; accent: string; glow: string; border: string }[] = [
+  {
+    id: 'mockup',
+    label: 'Mockup',
+    icon: <Smartphone size={13} />,
+    desc: 'Device mockup with image or video',
+    accent: '#a78bfa',
+    glow: 'rgba(124,58,237,0.35)',
+    border: 'rgba(124,58,237,0.5)',
+  },
+  {
+    id: 'movie',
+    label: 'Movie',
+    icon: <Film size={13} />,
+    desc: 'Animated cinematic video export',
+    accent: '#f87171',
+    glow: 'rgba(239,68,68,0.35)',
+    border: 'rgba(239,68,68,0.5)',
+  },
+  {
+    id: 'screenshot',
+    label: 'Screenshot',
+    icon: <Camera size={13} />,
+    desc: 'Capture any website into a device',
+    accent: '#38bdf8',
+    glow: 'rgba(56,189,248,0.35)',
+    border: 'rgba(56,189,248,0.5)',
+  },
+];
 
 function Editor() {
   const { state, updateState, updateText, removeText } = useApp();
@@ -23,6 +54,17 @@ function Editor() {
     ? `${currentModel.label} · ${state.browserMode}`
     : currentModel.label;
 
+  const activeMode = CREATION_MODES.find(m => m.id === state.creationMode) ?? CREATION_MODES[0];
+
+  const handleModeChange = (mode: CreationMode) => {
+    const isMovie = mode === 'movie';
+    updateState({
+      creationMode: mode,
+      movieMode: isMovie,
+    });
+    if (!isMovie) setMoviePlaying(false);
+  };
+
   return (
     <div className="app-root" style={{ background: '#070912' }}>
       {/* Desktop layout */}
@@ -38,6 +80,34 @@ function Editor() {
               backdropFilter: 'blur(12px)',
               borderBottom: '1px solid rgba(255,255,255,0.05)',
             }}>
+
+            {/* Mode selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              {CREATION_MODES.map(mode => {
+                const isActive = state.creationMode === mode.id;
+                return (
+                  <button
+                    key={mode.id}
+                    onClick={() => handleModeChange(mode.id)}
+                    title={mode.desc}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '5px 12px', borderRadius: 9, cursor: 'pointer',
+                      fontSize: 11, fontWeight: 700, transition: 'all 0.18s',
+                      background: isActive ? `rgba(${mode.id === 'mockup' ? '124,58,237' : mode.id === 'movie' ? '239,68,68' : '56,189,248'},0.18)` : 'transparent',
+                      border: isActive ? `1px solid ${mode.border}` : '1px solid transparent',
+                      color: isActive ? mode.accent : '#4b5563',
+                      boxShadow: isActive ? `0 0 12px ${mode.glow}` : 'none',
+                    }}
+                  >
+                    {mode.icon}
+                    {mode.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Right side info */}
             <div className="flex items-center gap-2">
               {state.contentType && (
                 <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
@@ -49,7 +119,7 @@ function Editor() {
                   {state.contentType === 'video' ? '▶ Video' : '⬛ Image'}
                 </span>
               )}
-              <span className="text-xs font-medium" style={{ color: '#6b7280' }}>{deviceLabel}</span>
+              <span className="text-xs font-medium" style={{ color: '#4b5563' }}>{deviceLabel}</span>
               {(state.deviceType === 'iphone' || state.deviceType === 'android' || state.deviceType === 'ipad') && (
                 <span className="text-xs" style={{ color: '#374151' }}>
                   · {state.deviceLandscape ? 'Landscape' : 'Portrait'}
@@ -62,25 +132,20 @@ function Editor() {
                 </span>
               )}
             </div>
+          </div>
 
-            {/* Movie mode button */}
-            <button
-              onClick={() => {
-                updateState({ movieMode: !state.movieMode });
-                if (state.movieMode) setMoviePlaying(false);
-              }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                padding: '4px 12px', borderRadius: 7, cursor: 'pointer',
-                fontSize: 11, fontWeight: 600,
-                background: state.movieMode ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)',
-                border: state.movieMode ? '1px solid rgba(239,68,68,0.35)' : '1px solid rgba(255,255,255,0.09)',
-                color: state.movieMode ? '#f87171' : '#6b7280',
-              }}
-            >
-              <Film size={12} />
-              Movie
-            </button>
+          {/* Mode hint bar */}
+          <div style={{
+            padding: '6px 20px',
+            background: `linear-gradient(90deg, ${activeMode.id === 'mockup' ? 'rgba(124,58,237,0.08)' : activeMode.id === 'movie' ? 'rgba(239,68,68,0.08)' : 'rgba(56,189,248,0.08)'}, transparent)`,
+            borderBottom: '1px solid rgba(255,255,255,0.03)',
+            display: 'flex', alignItems: 'center', gap: 8,
+            transition: 'all 0.3s',
+          }}>
+            <span style={{ color: activeMode.accent, opacity: 0.9 }}>{activeMode.icon}</span>
+            <span style={{ fontSize: 10, color: activeMode.accent, opacity: 0.7, fontWeight: 600, letterSpacing: '0.04em' }}>
+              {activeMode.desc}
+            </span>
           </div>
 
           {/* Canvas */}
@@ -159,6 +224,27 @@ function Editor() {
           />
         )}
 
+        {/* Mobile mode selector */}
+        <div style={{ display: 'flex', gap: 4, padding: '8px 16px 0', background: 'rgba(8,10,22,0.98)' }}>
+          {CREATION_MODES.map(mode => {
+            const isActive = state.creationMode === mode.id;
+            return (
+              <button
+                key={mode.id}
+                onClick={() => handleModeChange(mode.id)}
+                className="flex-1 py-1.5 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1.5 transition-all"
+                style={{
+                  background: isActive ? `rgba(${mode.id === 'mockup' ? '124,58,237' : mode.id === 'movie' ? '239,68,68' : '56,189,248'},0.18)` : 'rgba(255,255,255,0.04)',
+                  border: isActive ? `1px solid ${mode.border}` : '1px solid rgba(255,255,255,0.07)',
+                  color: isActive ? mode.accent : '#4b5563',
+                }}>
+                {mode.icon}
+                {mode.label}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Mobile bottom bar */}
         <div className="flex items-center gap-2 px-4 py-3 flex-shrink-0"
           style={{ background: 'rgba(8,10,22,0.98)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
@@ -166,29 +252,12 @@ function Editor() {
             onClick={() => setMobileSheet(mobileSheet === 'controls' ? null : 'controls')}
             className="flex-1 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all"
             style={{
-              background: mobileSheet === 'controls' ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.05)',
-              border: mobileSheet === 'controls' ? '1px solid rgba(124,58,237,0.45)' : '1px solid rgba(255,255,255,0.08)',
-              color: mobileSheet === 'controls' ? '#c4b5fd' : '#6b7280',
+              background: mobileSheet === 'controls' ? activeMode.glow.replace('0.35', '0.22') : 'rgba(255,255,255,0.05)',
+              border: mobileSheet === 'controls' ? `1px solid ${activeMode.border}` : '1px solid rgba(255,255,255,0.08)',
+              color: mobileSheet === 'controls' ? activeMode.accent : '#6b7280',
             }}>
             <Layers size={14} />
             Controls
-          </button>
-
-          {/* Movie button (mobile) */}
-          <button
-            onClick={() => {
-              updateState({ movieMode: !state.movieMode });
-              if (state.movieMode) setMoviePlaying(false);
-              setMobileSheet(null);
-            }}
-            className="flex-1 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all"
-            style={{
-              background: state.movieMode ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.05)',
-              border: state.movieMode ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(255,255,255,0.08)',
-              color: state.movieMode ? '#f87171' : '#6b7280',
-            }}>
-            <Film size={14} />
-            Movie
           </button>
 
           <button

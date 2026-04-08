@@ -7,6 +7,7 @@ export type BackgroundType = "solid" | "gradient" | "mesh" | "pattern" | "image"
 export type ShadowStyle = "none" | "spread" | "hug";
 export type CanvasRatio = "free" | "1:1" | "4:5" | "16:9" | "9:16";
 export type ContentType = "image" | "video" | null;
+export type CreationMode = "mockup" | "movie" | "screenshot";
 
 export interface CameraKeyframe {
   id: string;
@@ -69,6 +70,8 @@ export interface AppState {
   movieMode: boolean;
   movieDuration: number;
   cameraKeyframes: CameraKeyframe[];
+
+  creationMode: CreationMode;
 }
 
 export const defaultState: AppState = {
@@ -112,6 +115,8 @@ export const defaultState: AppState = {
   movieMode: false,
   movieDuration: 5,
   cameraKeyframes: [],
+
+  creationMode: 'mockup',
 };
 
 interface AppContextType {
