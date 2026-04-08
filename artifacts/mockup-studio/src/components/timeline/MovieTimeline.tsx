@@ -218,7 +218,19 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
         useCORS: true, allowTaint: true, scale: 1, backgroundColor: null,
         ignoreElements: (element) => element.tagName === 'CANVAS',
       });
-      const W = bgCanvas.width, H = bgCanvas.height;
+      let W = bgCanvas.width, H = bgCanvas.height;
+      if (W === 0 || H === 0) {
+        W = el.offsetWidth;
+        H = el.offsetHeight;
+        if (W > 0 && H > 0) {
+          bgCanvas.width = W;
+          bgCanvas.height = H;
+        }
+      }
+      if (W === 0 || H === 0) {
+        console.error('Canvas has zero dimensions, cannot export');
+        throw new Error('Canvas has zero dimensions, cannot export. Please ensure the canvas is visible and has a valid size before exporting.');
+      }
       const offscreen = document.createElement('canvas');
       offscreen.width = W; offscreen.height = H;
       const ctx = offscreen.getContext('2d')!;
