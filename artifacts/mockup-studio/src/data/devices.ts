@@ -74,6 +74,38 @@ export interface DeviceModelDef {
   screenMeshName?: string;
 }
 
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * HOW TO ADD A NEW 3D DEVICE
+ * ─────────────────────────────────────────────────────────────────────────────
+ * 1. Copy the .glb model file to:  public/models/<your-model>.glb
+ * 2. Add a new entry below with the fields:
+ *      id         – unique kebab-case identifier
+ *      label      – display name shown in the picker
+ *      group      – one of the DeviceGroup values (or add a new one)
+ *      storeType  – controls which store tab it appears under
+ *      w / h      – screen dimensions in CSS px (portrait orientation)
+ *      inset*     – pixels of bezel on each side
+ *      br         – CSS border-radius of the device body
+ *      screenBr   – CSS border-radius of the screen corners
+ *      camera     – front-camera style ('dynamic-island' | 'punch-hole' | 'notch' | 'none')
+ *      cameraLayout – rear camera arrangement (or 'none')
+ *      frame      – chassis material style
+ *      accent     – thumbnail accent color (CSS hex)
+ *      glbUrl     – path to the .glb model (relative to /public)
+ *
+ * Optional GLB tuning fields:
+ *      screenFacesBack  – set true if the screen faces -Z in the export
+ *      glbRotateZ       – radians to rotate landscape-exported models into portrait
+ *      glbRotateX       – radians to fix Z-up exported models (e.g. -Math.PI/2)
+ *      skipOverlay      – true for laptops/angled screens (texture applied to mesh)
+ *      screenMeshName   – THREE.js node name of the screen mesh (skips auto-detection)
+ *
+ * That's it — no other files need to be changed. The renderer picks up the
+ * new entry automatically, preloads the GLB, and handles screen content,
+ * lighting, orientation, and color variants without any extra wiring.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
 export const DEVICE_MODELS: DeviceModelDef[] = [
   // ── iPhone (GLB real models only) ─────────────────────────────────
   {
