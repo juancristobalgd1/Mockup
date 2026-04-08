@@ -77,9 +77,9 @@ const Chip = ({ active, onClick, children, style }: {
     onClick={onClick}
     style={{
       flexShrink: 0, padding: '5px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600,
-      background: active ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
-      border: active ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
-      color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.42)',
+      background: active ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.12)',
+      border: active ? '1px solid rgba(255,255,255,0.32)' : '1px solid rgba(255,255,255,0.14)',
+      color: active ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.65)',
       cursor: 'pointer', transition: 'all 0.12s', whiteSpace: 'nowrap', ...style,
     }}
   >
@@ -541,8 +541,8 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   style={{
                     flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
                     width: 80, padding: '14px 6px 10px', borderRadius: 18, gap: 0,
-                    background: isSelected ? 'rgba(255,255,255,0.13)' : 'rgba(255,255,255,0.05)',
-                    border: isSelected ? '2px solid rgba(255,255,255,0.35)' : '1.5px solid rgba(255,255,255,0.08)',
+                    background: isSelected ? 'rgba(255,255,255,0.26)' : 'rgba(255,255,255,0.13)',
+                    border: isSelected ? '2px solid rgba(255,255,255,0.42)' : '1.5px solid rgba(255,255,255,0.18)',
                     cursor: 'pointer', transition: 'all 0.12s',
                   }}>
                   <div style={{
@@ -578,8 +578,8 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     padding: '12px 4px 9px', borderRadius: 14, gap: 0,
-                    background: isSelected ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
-                    border: isSelected ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
+                    background: isSelected ? 'rgba(255,255,255,0.24)' : 'rgba(255,255,255,0.12)',
+                    border: isSelected ? '2px solid rgba(255,255,255,0.40)' : '1.5px solid rgba(255,255,255,0.16)',
                     cursor: 'pointer', transition: 'all 0.12s',
                   }}>
                   <div style={{
@@ -681,8 +681,8 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   style={{
                     flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
                     padding: '10px 8px 8px', borderRadius: 14, gap: 0, border: 'none',
-                    background: active ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
-                    outline: active ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
+                    background: active ? 'rgba(255,255,255,0.24)' : 'rgba(255,255,255,0.13)',
+                    outline: active ? '2px solid rgba(255,255,255,0.42)' : '1.5px solid rgba(255,255,255,0.16)',
                     cursor: 'pointer', transition: 'all 0.12s',
                   }}>
                   <div style={{
@@ -729,8 +729,8 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     style={{
                       flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
                       padding: '10px 8px 8px', borderRadius: 14, gap: 0, border: 'none',
-                      background: active ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
-                      outline: active ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
+                      background: active ? 'rgba(255,255,255,0.24)' : 'rgba(255,255,255,0.13)',
+                      outline: active ? '2px solid rgba(255,255,255,0.42)' : '1.5px solid rgba(255,255,255,0.16)',
                       cursor: 'pointer', transition: 'all 0.12s',
                     }}>
                     <div style={{
@@ -772,8 +772,8 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     style={{
                       flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
                       padding: '10px 8px 8px', borderRadius: 14, gap: 0, border: 'none',
-                      background: active ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
-                      outline: active ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
+                      background: active ? 'rgba(255,255,255,0.24)' : 'rgba(255,255,255,0.13)',
+                      outline: active ? '2px solid rgba(255,255,255,0.42)' : '1.5px solid rgba(255,255,255,0.16)',
                       cursor: 'pointer', transition: 'all 0.12s',
                     }}>
                     <div style={{
@@ -803,8 +803,8 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     style={{
                       flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
                       padding: '10px 8px 8px', borderRadius: 14, gap: 0, border: 'none',
-                      background: active ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
-                      outline: active ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
+                      background: active ? 'rgba(255,255,255,0.24)' : 'rgba(255,255,255,0.13)',
+                      outline: active ? '2px solid rgba(255,255,255,0.42)' : '1.5px solid rgba(255,255,255,0.16)',
                       cursor: 'pointer', transition: 'all 0.12s',
                     }}>
                     <div style={{
@@ -835,8 +835,8 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                       style={{
                         flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
                         padding: '10px 8px 8px', borderRadius: 14, gap: 0, border: 'none',
-                        background: active ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
-                        outline: active ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
+                        background: active ? 'rgba(255,255,255,0.24)' : 'rgba(255,255,255,0.13)',
+                        outline: active ? '2px solid rgba(255,255,255,0.42)' : '1.5px solid rgba(255,255,255,0.16)',
                         cursor: 'pointer', transition: 'all 0.12s',
                       }}>
                       <div style={{
@@ -874,7 +874,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
             <button onClick={() => bgFileRef.current?.click()}
               style={{
                 width: '100%', padding: '10px 0', borderRadius: 10, fontSize: 11, fontWeight: 600,
-                background: 'rgba(255,255,255,0.04)', border: '1px dashed rgba(255,255,255,0.18)',
+                background: 'rgba(255,255,255,0.13)', border: '1px dashed rgba(255,255,255,0.28)',
                 color: 'rgba(255,255,255,0.45)', cursor: 'pointer',
               }}>
               {state.bgImage ? 'Change Image' : '+ Upload Image'}
@@ -1032,11 +1032,11 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
                   width: 52, padding: '10px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
                   background: active
-                    ? 'linear-gradient(145deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08))'
-                    : 'rgba(255,255,255,0.04)',
+                    ? 'linear-gradient(145deg, rgba(255,255,255,0.28), rgba(255,255,255,0.18))'
+                    : 'rgba(255,255,255,0.13)',
                   outline: active
-                    ? '1.5px solid rgba(255,255,255,0.32)'
-                    : '1px solid rgba(255,255,255,0.07)',
+                    ? '1.5px solid rgba(255,255,255,0.42)'
+                    : '1px solid rgba(255,255,255,0.18)',
                   boxShadow: active ? '0 4px 16px rgba(0,0,0,0.4)' : 'none',
                   transform: active ? 'scale(1.04)' : 'scale(1)',
                   transition: 'all 0.18s ease',
@@ -1103,9 +1103,9 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               onClick={() => updateState({ annotateSize: sz })}
               style={{
                 flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
-                background: state.annotateSize === sz ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.04)',
-                outline: state.annotateSize === sz ? '1.5px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.08)',
-                color: state.annotateSize === sz ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.4)',
+                background: state.annotateSize === sz ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.13)',
+                outline: state.annotateSize === sz ? '1.5px solid rgba(255,255,255,0.42)' : '1px solid rgba(255,255,255,0.18)',
+                color: state.annotateSize === sz ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.65)',
                 fontSize: 11, fontWeight: 700, transition: 'all 0.12s',
               }}>
               {sz}
@@ -1243,9 +1243,9 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               style={{
                 flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                 padding: '7px 9px', borderRadius: 10,
-                background: state.envPreset === env.id && state.envEnabled !== false ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
-                border: state.envPreset === env.id && state.envEnabled !== false ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
-                color: state.envPreset === env.id && state.envEnabled !== false ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.4)',
+                background: state.envPreset === env.id && state.envEnabled !== false ? 'rgba(255,255,255,0.26)' : 'rgba(255,255,255,0.13)',
+                border: state.envPreset === env.id && state.envEnabled !== false ? '1px solid rgba(255,255,255,0.38)' : '1px solid rgba(255,255,255,0.16)',
+                color: state.envPreset === env.id && state.envEnabled !== false ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.65)',
                 cursor: 'pointer', transition: 'all 0.12s',
                 opacity: state.envEnabled !== false ? 1 : 0.35,
               }}>
@@ -1277,11 +1277,11 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     padding: '8px 6px 6px', borderRadius: 12, border: 'none', cursor: 'pointer',
                     background: active
-                      ? 'linear-gradient(145deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08))'
-                      : 'rgba(255,255,255,0.04)',
+                      ? 'linear-gradient(145deg, rgba(255,255,255,0.28), rgba(255,255,255,0.18))'
+                      : 'rgba(255,255,255,0.13)',
                     outline: active
-                      ? '1.5px solid rgba(255,255,255,0.32)'
-                      : '1px solid rgba(255,255,255,0.07)',
+                      ? '1.5px solid rgba(255,255,255,0.42)'
+                      : '1px solid rgba(255,255,255,0.18)',
                     transition: 'all 0.18s ease',
                     boxShadow: active ? '0 4px 16px rgba(0,0,0,0.4)' : 'none',
                     transform: active ? 'scale(1.04)' : 'scale(1)',
