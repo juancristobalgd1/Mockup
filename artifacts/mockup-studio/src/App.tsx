@@ -5,7 +5,7 @@ import { Canvas } from './components/canvas/Canvas';
 import { LeftPanel } from './components/panels/LeftPanel';
 import { RightPanel } from './components/panels/RightPanel';
 import { MovieTimeline } from './components/timeline/MovieTimeline';
-import { Download, Layers, X, Film, Smartphone, Camera, ChevronDown } from 'lucide-react';
+import { Download, Layers, X, Film, Smartphone, ChevronDown } from 'lucide-react';
 import { getModelById } from './data/devices';
 import type { Device3DViewerHandle } from './components/devices3d/Device3DViewer';
 
@@ -26,12 +26,6 @@ const CREATION_MODES: {
     label: 'Movie',
     icon: <Film size={11} />,
     desc: 'Animated cinematic video export',
-  },
-  {
-    id: 'screenshot',
-    label: 'Screenshot',
-    icon: <Camera size={11} />,
-    desc: 'Capture any website into a device',
   },
 ];
 

@@ -109,6 +109,7 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
   const [showLayers, setShowLayers] = useState(true);
 
   const isVideo = state.contentType === 'video';
+  const isMovieMode = state.creationMode === 'movie';
 
   const handleDownloadPNG = async () => {
     if (!canvasRef.current) return;
@@ -200,7 +201,7 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
 
         {/* Primary export buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
-          {isVideo ? (
+          {isMovieMode ? (
             <>
               <button data-testid="export-video"
                 onClick={handleDownloadVideo}
@@ -214,7 +215,7 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
                   cursor: state.videoUrl ? 'pointer' : 'not-allowed',
                 }}>
                 <Download size={13} />
-                Download Video
+                Descargar video
               </button>
               <button
                 onClick={handleRecordWebM}
@@ -255,7 +256,7 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
                   cursor: exporting ? 'not-allowed' : 'pointer',
                 }}>
                 <Download size={13} />
-                {exporting ? 'Exporting…' : 'Download PNG'}
+                {exporting ? 'Exporting…' : 'Descargar PNG'}
               </button>
               <button data-testid="copy-clipboard"
                 onClick={handleCopy}
