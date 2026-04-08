@@ -377,20 +377,14 @@ function DeviceScene({
     const isFront = _wn.current.dot(_tc.current) > 0.05;
     wrapperRef.current.style.display = isFront ? '' : 'none';
 
-    // Compute screen pixel dimensions from the projected device face
+    // Derive how many CSS pixels correspond to 1 world unit at current zoom
     _pjA.current.copy(_wp.current).project(camera);
     _pjB.current.set(_wp.current.x + 1, _wp.current.y, _wp.current.z).project(camera);
     const pxPerUnit = Math.abs(_pjB.current.x - _pjA.current.x) *
       (gl.domElement.clientWidth / 2);
-    // Fill ~80% of the actual screen face so the drop zone sits inside the bezel
-    const w = Math.round(Math.max(36, Math.min(600, pxPerUnit * planeW * 0.80)));
-    const h = Math.round(Math.max(56, Math.min(900, pxPerUnit * planeH * 0.80)));
-    wrapperRef.current.style.width     = `${w}px`;
-    wrapperRef.current.style.height    = `${h}px`;
-    wrapperRef.current.style.transform = '';
-    // Set font-size so em units in ScreenDropZoneContent scale with the container
-    const fs = Math.max(8, Math.min(18, w * 0.10));
-    wrapperRef.current.style.fontSize  = `${fs.toFixed(1)}px`;
+    // Font-size drives the entire pill via em units; clamp so it's always legible
+    const fs = Math.max(9, Math.min(16, pxPerUnit * 0.10));
+    wrapperRef.current.style.fontSize = `${fs.toFixed(1)}px`;
   });
 
   // ── Show icon? ───────────────────────────────────────────────────
@@ -528,45 +522,54 @@ function DeviceScene({
         zIndexRange={[100, 0]}
         style={{ pointerEvents: 'none' }}
       >
-        {/* wrapperRef sized by useFrame to match device screen face */}
-        <div ref={wrapperRef} style={{ pointerEvents: 'none', position: 'relative' }}>
+        {/* fontSize set by useFrame → everything inside scales via em */}
+        <div ref={wrapperRef} style={{ pointerEvents: 'none' }}>
           {showIcon && (
             <div
               onClick={() => fileRef.current?.click()}
               onMouseEnter={e => {
-                const el = e.currentTarget as HTMLDivElement;
-                el.style.background = 'rgba(40,40,50,0.92)';
-                el.style.transform = 'scale(1.08)';
+                (e.currentTarget as HTMLDivElement).style.background = 'rgba(40,42,54,0.88)';
               }}
               onMouseLeave={e => {
-                const el = e.currentTarget as HTMLDivElement;
-                el.style.background = 'rgba(20,20,28,0.78)';
-                el.style.transform = 'scale(1)';
+                (e.currentTarget as HTMLDivElement).style.background = 'rgba(10,10,16,0.72)';
               }}
               style={{
-                display: 'inline-flex', flexDirection: 'row',
-                alignItems: 'center', justifyContent: 'center',
-                gap: '0.4em',
-                padding: '0.5em 0.85em',
+                display: 'inline-flex', alignItems: 'center', gap: '0.45em',
+                padding: '0.42em 0.85em 0.42em 0.65em',
                 borderRadius: '2em',
-                background: 'rgba(20,20,28,0.78)',
-                border: '1px solid rgba(255,255,255,0.18)',
-                backdropFilter: 'blur(14px)',
-                cursor: 'pointer', userSelect: 'none',
-                pointerEvents: 'auto',
-                transition: 'background 0.12s, transform 0.12s',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
-                position: 'absolute',
-                top: '50%', left: '50%',
-                transform: 'translate(-50%,-50%)',
+                background: 'rgba(10,10,16,0.72)',
+                border: '1px solid rgba(255,255,255,0.20)',
+                backdropFilter: 'blur(12px)',
+                cursor: 'pointer', userSelect: 'none', pointerEvents: 'auto',
+                transition: 'background 0.12s',
                 whiteSpace: 'nowrap',
+                boxShadow: '0 1px 8px rgba(0,0,0,0.4)',
               }}
             >
-              {pencilVisible ? (
-                <ScreenDropZoneContent pencil />
-              ) : (
-                <ScreenDropZoneContent pencil={false} />
-              )}
+              {/* Icon */}
+              <svg
+                width="1em" height="1em"
+                viewBox="0 0 16 16" fill="none"
+                style={{ flexShrink: 0, opacity: 0.85 }}
+              >
+                {pencilVisible ? (
+                  <path d="M11.5 2.5l2 2L5 13l-2.5.5.5-2.5L11.5 2.5z"
+                    stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                ) : (
+                  <>
+                    <line x1="8" y1="3" x2="8" y2="13" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                    <line x1="3" y1="8" x2="13" y2="8" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                  </>
+                )}
+              </svg>
+              {/* Label */}
+              <span style={{
+                fontSize: '0.85em', fontWeight: 500, letterSpacing: '0.01em',
+                color: 'rgba(255,255,255,0.80)',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+              }}>
+                {pencilVisible ? 'Edit' : 'Add media'}
+              </span>
             </div>
           )}
           <input
