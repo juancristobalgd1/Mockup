@@ -14,36 +14,24 @@ const CREATION_MODES: {
   label: string;
   icon: React.ReactNode;
   desc: string;
-  accent: string;
-  bg: string;
-  border: string;
 }[] = [
   {
     id: 'mockup',
-    label: 'Mockup',
-    icon: <Smartphone size={12} />,
+    label: 'Image',
+    icon: <Smartphone size={11} />,
     desc: 'Device mockup with image or video',
-    accent: '#374151',
-    bg: 'rgba(55,65,81,0.08)',
-    border: 'rgba(55,65,81,0.25)',
   },
   {
     id: 'movie',
     label: 'Movie',
-    icon: <Film size={12} />,
+    icon: <Film size={11} />,
     desc: 'Animated cinematic video export',
-    accent: '#dc2626',
-    bg: 'rgba(220,38,38,0.08)',
-    border: 'rgba(220,38,38,0.3)',
   },
   {
     id: 'screenshot',
     label: 'Screenshot',
-    icon: <Camera size={12} />,
+    icon: <Camera size={11} />,
     desc: 'Capture any website into a device',
-    accent: '#0284c7',
-    bg: 'rgba(2,132,199,0.08)',
-    border: 'rgba(2,132,199,0.3)',
   },
 ];
 
@@ -56,12 +44,7 @@ function Editor() {
   const [mobileSheet, setMobileSheet] = useState<'controls' | 'export' | null>(null);
 
   const currentModel = getModelById(state.deviceModel);
-  const deviceLabel = state.deviceType === 'iphone'
-    ? `${currentModel.label}`
-    : state.deviceType === 'browser'
-    ? `${currentModel.label}`
-    : currentModel.label;
-
+  const deviceLabel = currentModel.label;
   const activeMode = CREATION_MODES.find(m => m.id === state.creationMode) ?? CREATION_MODES[0];
 
   const handleModeChange = (mode: CreationMode) => {
@@ -71,27 +54,62 @@ function Editor() {
   };
 
   return (
-    <div className="app-root" style={{ background: '#f1f3f5' }}>
+    <div className="app-root" style={{ background: 'var(--rt-canvas)' }}>
 
       {/* ── DESKTOP LAYOUT ─────────────────────────────────────── */}
       <div className="desktop-layout">
         <LeftPanel />
 
-        <div className="flex flex-col flex-1 overflow-hidden">
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
 
-          {/* Top bar */}
+          {/* ── Rotato-style Title Bar ──────────────────────────── */}
           <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '0 16px', height: 48, flexShrink: 0,
-            background: '#ffffff', borderBottom: '1px solid #e5e7eb',
-            gap: 12,
+            display: 'flex', alignItems: 'center',
+            padding: '0 14px', height: 42, flexShrink: 0,
+            background: 'var(--rt-panel)',
+            borderBottom: '1px solid var(--rt-border)',
+            gap: 14,
           }}>
+            {/* macOS traffic lights */}
+            <div className="rt-traffic" style={{ flexShrink: 0 }}>
+              <span className="tl-red" />
+              <span className="tl-yellow" />
+              <span className="tl-green" />
+            </div>
 
-            {/* Mode selector — centered */}
+            {/* Document / device title */}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--rt-text-2)' }}>
+                {deviceLabel}
+                {(state.deviceType === 'iphone' || state.deviceType === 'android') && (
+                  <span style={{ color: 'var(--rt-text-3)' }}>
+                    {' '}· {state.deviceLandscape ? 'Landscape' : 'Portrait'}
+                  </span>
+                )}
+              </span>
+              {state.contentType && (
+                <span style={{
+                  fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+                  padding: '2px 7px', borderRadius: 20,
+                  background: state.contentType === 'video'
+                    ? 'rgba(48,209,88,0.12)' : 'rgba(255,255,255,0.07)',
+                  color: state.contentType === 'video'
+                    ? 'var(--rt-accent-green)' : 'var(--rt-text-3)',
+                  border: state.contentType === 'video'
+                    ? '1px solid rgba(48,209,88,0.2)' : '1px solid var(--rt-border)',
+                }}>
+                  {state.contentType === 'video' ? '▶ Video' : 'Image'}
+                </span>
+              )}
+            </div>
+
+            {/* Rotato-style segmented mode picker */}
             <div style={{
-              display: 'flex', alignItems: 'center', gap: 2,
-              padding: '3px', borderRadius: 10,
-              background: '#f3f4f6', border: '1px solid #e5e7eb',
+              display: 'flex', alignItems: 'center',
+              background: 'rgba(255,255,255,0.06)',
+              borderRadius: 8, padding: '2px',
+              border: '1px solid var(--rt-border)',
+              flexShrink: 0,
             }}>
               {CREATION_MODES.map(mode => {
                 const isActive = state.creationMode === mode.id;
@@ -102,12 +120,13 @@ function Editor() {
                     title={mode.desc}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 5,
-                      padding: '4px 11px', borderRadius: 7, cursor: 'pointer',
-                      fontSize: 11, fontWeight: 600, transition: 'all 0.15s',
-                      background: isActive ? '#ffffff' : 'transparent',
-                      border: isActive ? `1px solid ${mode.border}` : '1px solid transparent',
-                      color: isActive ? mode.accent : '#9ca3af',
-                      boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.07)' : 'none',
+                      padding: '4px 11px', borderRadius: 6, cursor: 'pointer',
+                      fontSize: 11, fontWeight: 600,
+                      transition: 'all 0.12s',
+                      background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
+                      border: isActive ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
+                      color: isActive ? 'var(--rt-text)' : 'var(--rt-text-3)',
+                      boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
                     }}
                   >
                     {mode.icon}
@@ -116,42 +135,10 @@ function Editor() {
                 );
               })}
             </div>
-
-            {/* Device info */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'center' }}>
-              <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 500 }}>
-                {deviceLabel}
-                {(state.deviceType === 'iphone' || state.deviceType === 'android' || state.deviceType === 'ipad') && (
-                  <span> · {state.deviceLandscape ? 'Landscape' : 'Portrait'}</span>
-                )}
-              </span>
-              {state.contentType && (
-                <span style={{
-                  fontSize: 10, padding: '2px 7px', borderRadius: 20, fontWeight: 600,
-                  background: state.contentType === 'video' ? 'rgba(22,163,74,0.08)' : 'rgba(55,65,81,0.07)',
-                  color: state.contentType === 'video' ? '#16a34a' : '#374151',
-                  border: state.contentType === 'video' ? '1px solid rgba(22,163,74,0.2)' : '1px solid rgba(55,65,81,0.15)',
-                }}>
-                  {state.contentType === 'video' ? '▶ Video' : '⬛ Image'}
-                </span>
-              )}
-            </div>
-
-            {/* Mode indicator pill */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '5px 12px', borderRadius: 8,
-              background: activeMode.bg, border: `1px solid ${activeMode.border}`,
-            }}>
-              <span style={{ color: activeMode.accent }}>{activeMode.icon}</span>
-              <span style={{ fontSize: 10, fontWeight: 700, color: activeMode.accent, letterSpacing: '0.03em' }}>
-                {activeMode.label.toUpperCase()} MODE
-              </span>
-            </div>
           </div>
 
           {/* Canvas */}
-          <div className="flex-1 overflow-hidden relative canvas-bg">
+          <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }} className="canvas-bg">
             <Canvas
               ref={canvasRef}
               viewerRef={viewerRef}
@@ -189,45 +176,42 @@ function Editor() {
         {/* Mobile topbar */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0 16px', height: 52, flexShrink: 0,
-          background: '#ffffff', borderBottom: '1px solid #e5e7eb',
+          padding: '0 16px', height: 50, flexShrink: 0,
+          background: 'var(--rt-panel)',
+          borderBottom: '1px solid var(--rt-border)',
         }}>
           {/* Brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{
-              width: 28, height: 28, borderRadius: 8,
-              background: '#111827',
+              width: 26, height: 26, borderRadius: 7,
+              background: 'rgba(255,255,255,0.9)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontWeight: 900, fontSize: 13, flexShrink: 0,
+              color: '#0d0e0f', fontWeight: 900, fontSize: 12, flexShrink: 0,
+              fontStyle: 'italic',
             }}>M</div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', lineHeight: 1.1 }}>MockupStudio</div>
-              <div style={{ fontSize: 9, color: activeMode.accent, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                {activeMode.label} Mode
-              </div>
-            </div>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--rt-text)', letterSpacing: '-0.01em' }}>
+              MockupStudio
+            </span>
           </div>
 
-          {/* Right: content badge + export */}
+          {/* Mode + Export */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {state.contentType && (
-              <span style={{
-                fontSize: 10, padding: '3px 8px', borderRadius: 20, fontWeight: 600,
-                background: state.contentType === 'video' ? 'rgba(22,163,74,0.1)' : 'rgba(55,65,81,0.07)',
-                color: state.contentType === 'video' ? '#16a34a' : '#6b7280',
-                border: state.contentType === 'video' ? '1px solid rgba(22,163,74,0.2)' : '1px solid #e5e7eb',
-              }}>
-                {state.contentType === 'video' ? '▶ Video' : 'Image'}
-              </span>
-            )}
+            <span style={{
+              fontSize: 10, fontWeight: 600, color: 'var(--rt-text-2)',
+              padding: '3px 8px', borderRadius: 6,
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid var(--rt-border)',
+            }}>
+              {activeMode.label}
+            </span>
             <button
               onClick={() => setMobileSheet(mobileSheet === 'export' ? null : 'export')}
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
-                padding: '7px 14px', borderRadius: 10, cursor: 'pointer',
+                padding: '7px 13px', borderRadius: 20, cursor: 'pointer',
                 fontSize: 11, fontWeight: 700,
-                background: '#111827', color: '#fff',
-                border: 'none', boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                background: 'rgba(255,255,255,0.9)', color: '#0d0e0f',
+                border: 'none',
               }}>
               <Download size={12} />
               Export
@@ -236,7 +220,7 @@ function Editor() {
         </div>
 
         {/* Mobile canvas */}
-        <div className="flex-1 overflow-hidden relative canvas-bg">
+        <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }} className="canvas-bg">
           <Canvas
             ref={canvasRef}
             viewerRef={viewerRef}
@@ -260,8 +244,9 @@ function Editor() {
 
         {/* Mobile mode tabs */}
         <div style={{
-          display: 'flex', gap: 6, padding: '10px 16px 6px',
-          background: '#ffffff', borderTop: '1px solid #e5e7eb',
+          display: 'flex', gap: 4, padding: '8px 12px 4px',
+          background: 'var(--rt-panel)',
+          borderTop: '1px solid var(--rt-border)',
         }}>
           {CREATION_MODES.map(mode => {
             const isActive = state.creationMode === mode.id;
@@ -270,12 +255,12 @@ function Editor() {
                 key={mode.id}
                 onClick={() => handleModeChange(mode.id)}
                 style={{
-                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  padding: '9px 4px', borderRadius: 10, cursor: 'pointer',
-                  fontSize: 11, fontWeight: 700, transition: 'all 0.15s',
-                  background: isActive ? mode.bg : 'transparent',
-                  border: isActive ? `1.5px solid ${mode.border}` : '1.5px solid #e5e7eb',
-                  color: isActive ? mode.accent : '#9ca3af',
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                  padding: '8px 4px', borderRadius: 8, cursor: 'pointer',
+                  fontSize: 11, fontWeight: 600, transition: 'all 0.15s',
+                  background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  border: isActive ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
+                  color: isActive ? 'var(--rt-text)' : 'var(--rt-text-3)',
                 }}>
                 {mode.icon}
                 {mode.label}
@@ -286,20 +271,20 @@ function Editor() {
 
         {/* Mobile bottom actions */}
         <div style={{
-          display: 'flex', gap: 8, padding: '8px 16px 12px',
-          background: '#ffffff',
+          display: 'flex', gap: 8, padding: '6px 12px 14px',
+          background: 'var(--rt-panel)',
         }}>
           <button
             onClick={() => setMobileSheet(mobileSheet === 'controls' ? null : 'controls')}
             style={{
               flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '13px 8px', borderRadius: 14, cursor: 'pointer',
-              fontSize: 13, fontWeight: 700, transition: 'all 0.15s',
-              background: mobileSheet === 'controls' ? activeMode.bg : '#f3f4f6',
-              border: mobileSheet === 'controls' ? `1.5px solid ${activeMode.border}` : '1.5px solid #e5e7eb',
-              color: mobileSheet === 'controls' ? activeMode.accent : '#374151',
+              padding: '12px 8px', borderRadius: 12, cursor: 'pointer',
+              fontSize: 12, fontWeight: 700, transition: 'all 0.15s',
+              background: mobileSheet === 'controls' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)',
+              border: '1px solid var(--rt-border)',
+              color: 'var(--rt-text)',
             }}>
-            <Layers size={16} />
+            <Layers size={15} />
             Controls
           </button>
 
@@ -307,12 +292,12 @@ function Editor() {
             onClick={() => setMobileSheet(mobileSheet === 'export' ? null : 'export')}
             style={{
               flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '13px 8px', borderRadius: 14, cursor: 'pointer',
-              fontSize: 13, fontWeight: 700,
-              background: '#111827', color: '#ffffff',
-              border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              padding: '12px 8px', borderRadius: 12, cursor: 'pointer',
+              fontSize: 12, fontWeight: 700,
+              background: 'rgba(255,255,255,0.9)', color: '#0d0e0f',
+              border: 'none',
             }}>
-            <Download size={16} />
+            <Download size={15} />
             Export
           </button>
         </div>
@@ -320,47 +305,38 @@ function Editor() {
         {/* Mobile bottom sheet */}
         {mobileSheet && (
           <>
-            <div className="fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,0.2)' }}
+            <div className="fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,0.55)' }}
               onClick={() => setMobileSheet(null)} />
             <div className="mobile-sheet fixed bottom-0 left-0 right-0 z-50 overflow-hidden"
               style={{
-                maxHeight: '72vh',
-                background: '#ffffff',
-                borderRadius: '20px 20px 0 0',
-                boxShadow: '0 -8px 40px rgba(0,0,0,0.12)',
+                maxHeight: '75vh',
+                background: 'var(--rt-panel)',
+                borderRadius: '16px 16px 0 0',
+                borderTop: '1px solid var(--rt-border-mid)',
+                boxShadow: '0 -12px 48px rgba(0,0,0,0.6)',
               }}>
-              {/* Drag handle */}
               <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-                <div style={{ width: 36, height: 4, borderRadius: 2, background: '#d1d5db' }} />
+                <div style={{ width: 32, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)' }} />
               </div>
-              {/* Sheet header */}
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '4px 20px 12px',
-                borderBottom: '1px solid #f3f4f6',
+                padding: '4px 18px 10px',
+                borderBottom: '1px solid var(--rt-border)',
               }}>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>
-                    {mobileSheet === 'controls' ? 'Controls' : 'Export'}
-                  </div>
-                  {mobileSheet === 'controls' && (
-                    <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 1 }}>
-                      {activeMode.desc}
-                    </div>
-                  )}
-                </div>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--rt-text)' }}>
+                  {mobileSheet === 'controls' ? 'Controls' : 'Export'}
+                </span>
                 <button
                   onClick={() => setMobileSheet(null)}
                   style={{
-                    width: 28, height: 28, borderRadius: 8, border: 'none',
-                    background: '#f3f4f6', color: '#6b7280', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: 26, height: 26, borderRadius: 13, border: 'none',
+                    background: 'rgba(255,255,255,0.1)', color: 'var(--rt-text-2)',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                  <X size={14} />
+                  <X size={13} />
                 </button>
               </div>
-              {/* Scrollable content */}
-              <div className="overflow-y-auto styled-scroll" style={{ maxHeight: 'calc(72vh - 80px)' }}>
+              <div className="overflow-y-auto styled-scroll" style={{ maxHeight: 'calc(75vh - 80px)' }}>
                 {mobileSheet === 'controls' && <LeftPanel mobile />}
                 {mobileSheet === 'export' && (
                   <RightPanel canvasRef={canvasRef} viewerRef={viewerRef} textOverlays={state.texts} onUpdateText={updateText} onRemoveText={removeText} />

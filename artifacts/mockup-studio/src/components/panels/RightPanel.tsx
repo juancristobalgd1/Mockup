@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, Copy, Image, Check, Video, Film, Info } from 'lucide-react';
+import { Download, Copy, Image, Check, Video, Film, ChevronDown } from 'lucide-react';
 import { useApp } from '../../store';
 import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
 
@@ -24,21 +24,14 @@ const EXPORT_SIZES: ExportSizeOption[] = [
 
 async function captureCanvas(el: HTMLDivElement, glEl?: HTMLCanvasElement | null) {
   const html2canvas = (await import('html2canvas')).default;
-
   const bgCanvas = await html2canvas(el, {
-    useCORS: true,
-    allowTaint: true,
-    scale: 2,
-    backgroundColor: null,
-    width: el.offsetWidth,
-    height: el.offsetHeight,
+    useCORS: true, allowTaint: true, scale: 2, backgroundColor: null,
+    width: el.offsetWidth, height: el.offsetHeight,
     ignoreElements: (element) => element.tagName === 'CANVAS',
   });
-
   if (glEl) {
     const out = document.createElement('canvas');
-    out.width = bgCanvas.width;
-    out.height = bgCanvas.height;
+    out.width = bgCanvas.width; out.height = bgCanvas.height;
     const ctx = out.getContext('2d')!;
     ctx.drawImage(bgCanvas, 0, 0);
     ctx.drawImage(glEl, 0, 0, out.width, out.height);
@@ -49,9 +42,22 @@ async function captureCanvas(el: HTMLDivElement, glEl?: HTMLCanvasElement | null
 
 function downloadBlob(url: string, filename: string) {
   const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
+  a.href = url; a.download = filename; a.click();
+}
+
+function SectionHeader({ label, open, onToggle }: { label: string; open: boolean; onToggle: () => void }) {
+  return (
+    <button onClick={onToggle} style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      width: '100%', padding: '9px 0', cursor: 'pointer', border: 'none',
+      background: 'transparent', borderBottom: `1px solid rgba(255,255,255,0.065)`,
+    }}>
+      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>
+        {label}
+      </span>
+      <ChevronDown size={12} style={{ color: 'rgba(255,255,255,0.28)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+    </button>
+  );
 }
 
 export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, onRemoveText }: RightPanelProps) {
@@ -61,6 +67,8 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
   const [copied, setCopied] = useState(false);
   const [recording, setRecording] = useState(false);
   const [selectedSize, setSelectedSize] = useState('ig-post');
+  const [showSize, setShowSize] = useState(true);
+  const [showLayers, setShowLayers] = useState(true);
 
   const isVideo = state.contentType === 'video';
 
@@ -71,11 +79,8 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
       const glEl = viewerRef?.current?.getGLElement() ?? null;
       const canvas = await captureCanvas(canvasRef.current, glEl);
       downloadBlob(canvas.toDataURL('image/png'), `mockup-${Date.now()}.png`);
-    } catch (err) {
-      console.error('Export failed', err);
-    } finally {
-      setExporting(false);
-    }
+    } catch (err) { console.error('Export failed', err); }
+    finally { setExporting(false); }
   };
 
   const handleDownloadVideo = () => {
@@ -91,19 +96,15 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
       const el = canvasRef.current;
       const rect = el.getBoundingClientRect();
       const offscreen = document.createElement('canvas');
-      offscreen.width = rect.width * 2;
-      offscreen.height = rect.height * 2;
+      offscreen.width = rect.width * 2; offscreen.height = rect.height * 2;
       const ctx = offscreen.getContext('2d');
       if (!ctx) return;
-
       const stream = offscreen.captureStream(30);
       const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
       const chunks: BlobPart[] = [];
       recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-
       recorder.start(100);
       const startTime = Date.now();
-
       const html2canvas = (await import('html2canvas')).default;
       const drawLoop = async () => {
         if (Date.now() - startTime < DURATION_MS) {
@@ -111,20 +112,14 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
           ctx.clearRect(0, 0, offscreen.width, offscreen.height);
           ctx.drawImage(snap, 0, 0);
           requestAnimationFrame(drawLoop);
-        } else {
-          recorder.stop();
-        }
+        } else { recorder.stop(); }
       };
       drawLoop();
-
       await new Promise<void>(resolve => { recorder.onstop = () => resolve(); });
       const blob = new Blob(chunks, { type: 'video/webm' });
       downloadBlob(URL.createObjectURL(blob), `mockup-animated-${Date.now()}.webm`);
-    } catch (err) {
-      console.error('Record failed', err);
-    } finally {
-      setRecording(false);
-    }
+    } catch (err) { console.error('Record failed', err); }
+    finally { setRecording(false); }
   };
 
   const handleCopy = async () => {
@@ -138,224 +133,204 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }, 'image/png');
-    } catch (err) {
-      console.error('Copy failed', err);
-    } finally {
-      setCopying(false);
-    }
+    } catch (err) { console.error('Copy failed', err); }
+    finally { setCopying(false); }
   };
-
-  const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-    <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: '#6b7280', letterSpacing: '0.08em' }}>
-      {children}
-    </div>
-  );
 
   return (
     <div className="right-panel flex flex-col h-full"
-      style={{ width: 220, background: '#ffffff', borderLeft: '1px solid #e5e7eb', flexShrink: 0 }}>
+      style={{ width: 210, background: 'var(--rt-panel)', borderLeft: '1px solid var(--rt-border)', flexShrink: 0 }}>
 
       {/* Header */}
-      <div className="px-4 py-3.5 flex-shrink-0 flex items-center gap-2"
-        style={{ borderBottom: '1px solid #e5e7eb' }}>
-        <Download size={14} style={{ color: '#374151' }} />
-        <span className="text-sm font-bold" style={{ color: '#111827' }}>Export</span>
+      <div style={{
+        padding: '11px 14px 9px', flexShrink: 0,
+        borderBottom: '1px solid var(--rt-border)',
+        display: 'flex', alignItems: 'center', gap: 8,
+      }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.75)' }}>Export</span>
         {isVideo && (
-          <span className="ml-auto flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
-            style={{ background: 'rgba(22,163,74,0.08)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.2)' }}>
-            <Video size={9} /> Video
-          </span>
+          <span style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
+            padding: '2px 6px', borderRadius: 20,
+            background: 'rgba(48,209,88,0.12)', color: 'var(--rt-accent-green)',
+            border: '1px solid rgba(48,209,88,0.2)',
+          }}>Video</span>
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 styled-scroll">
+      <div className="flex-1 overflow-y-auto styled-scroll" style={{ padding: '12px 14px 20px' }}>
 
-        {/* Format indicator */}
-        <div className="mb-4 p-3 rounded-xl flex items-start gap-2.5"
-          style={{ background: '#f9fafb', border: '1px solid #e5e7eb' }}>
-          {isVideo
-            ? <Film size={14} style={{ color: '#16a34a', flexShrink: 0, marginTop: 1 }} />
-            : <Image size={14} style={{ color: '#374151', flexShrink: 0, marginTop: 1 }} />}
-          <div>
-            <p className="text-xs font-semibold" style={{ color: isVideo ? '#16a34a' : '#374151' }}>
-              {isVideo ? 'Video mode' : 'Image mode'}
-            </p>
-            <p className="text-[10px] mt-0.5" style={{ color: '#6b7280' }}>
-              {isVideo ? 'Export as WebM or download original MP4' : 'Export as PNG or copy to clipboard'}
-            </p>
-          </div>
+        {/* Primary export buttons */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+          {isVideo ? (
+            <>
+              <button data-testid="export-video"
+                onClick={handleDownloadVideo}
+                disabled={!state.videoUrl}
+                style={{
+                  width: '100%', padding: '10px', borderRadius: 10, fontSize: 12, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                  background: state.videoUrl ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.08)',
+                  color: state.videoUrl ? '#0d0e0f' : 'rgba(255,255,255,0.3)',
+                  border: 'none',
+                  cursor: state.videoUrl ? 'pointer' : 'not-allowed',
+                }}>
+                <Download size={13} />
+                Download Video
+              </button>
+              <button
+                onClick={handleRecordWebM}
+                disabled={recording}
+                style={{
+                  width: '100%', padding: '8px', borderRadius: 10, fontSize: 11, fontWeight: 600,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)',
+                  color: 'rgba(255,255,255,0.60)', cursor: recording ? 'not-allowed' : 'pointer',
+                }}>
+                <Film size={12} />
+                {recording ? 'Recording 4s…' : 'Record Scene (WebM)'}
+              </button>
+              <button
+                onClick={handleDownloadPNG}
+                disabled={exporting}
+                style={{
+                  width: '100%', padding: '8px', borderRadius: 10, fontSize: 11, fontWeight: 600,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
+                  color: 'rgba(255,255,255,0.38)', cursor: exporting ? 'not-allowed' : 'pointer',
+                }}>
+                <Image size={12} />
+                {exporting ? 'Capturing…' : 'Snapshot as PNG'}
+              </button>
+            </>
+          ) : (
+            <>
+              <button data-testid="export-png"
+                onClick={handleDownloadPNG}
+                disabled={exporting}
+                style={{
+                  width: '100%', padding: '10px', borderRadius: 10, fontSize: 12, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                  background: exporting ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.9)',
+                  color: exporting ? 'rgba(255,255,255,0.3)' : '#0d0e0f',
+                  border: 'none',
+                  cursor: exporting ? 'not-allowed' : 'pointer',
+                }}>
+                <Download size={13} />
+                {exporting ? 'Exporting…' : 'Download PNG'}
+              </button>
+              <button data-testid="copy-clipboard"
+                onClick={handleCopy}
+                disabled={copying || copied}
+                style={{
+                  width: '100%', padding: '8px', borderRadius: 10, fontSize: 11, fontWeight: 600,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  background: copied ? 'rgba(48,209,88,0.10)' : 'rgba(255,255,255,0.06)',
+                  border: copied ? '1px solid rgba(48,209,88,0.2)' : '1px solid rgba(255,255,255,0.09)',
+                  color: copied ? 'var(--rt-accent-green)' : 'rgba(255,255,255,0.55)',
+                  cursor: copying ? 'not-allowed' : 'pointer',
+                }}>
+                {copied ? <Check size={12} /> : <Copy size={12} />}
+                {copied ? 'Copied!' : copying ? 'Copying…' : 'Copy to Clipboard'}
+              </button>
+            </>
+          )}
         </div>
 
-        {/* Size (PNG only) */}
+        {/* Export size — collapsible */}
         {!isVideo && (
           <>
-            <SectionLabel>Export Size</SectionLabel>
-            <div className="flex flex-col gap-1.5 mb-4">
-              {EXPORT_SIZES.map(s => (
-                <button key={s.id} data-testid={`export-size-${s.id}`}
-                  onClick={() => setSelectedSize(s.id)}
-                  className="flex items-center justify-between px-3 py-2 rounded-xl text-left transition-all"
-                  style={{
-                    background: selectedSize === s.id ? '#f3f4f6' : '#ffffff',
-                    border: selectedSize === s.id ? '1px solid #9ca3af' : '1px solid #e5e7eb',
-                  }}>
-                  <div className="flex flex-col">
-                    <span className="text-[10px]" style={{ color: selectedSize === s.id ? '#374151' : '#6b7280' }}>
-                      {s.platform}
+            <SectionHeader label="Export Size" open={showSize} onToggle={() => setShowSize(!showSize)} />
+            {showSize && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 6, marginBottom: 12 }}>
+                {EXPORT_SIZES.map(s => (
+                  <button key={s.id} data-testid={`export-size-${s.id}`}
+                    onClick={() => setSelectedSize(s.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '7px 10px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                      background: selectedSize === s.id ? 'rgba(255,255,255,0.09)' : 'transparent',
+                      transition: 'background 0.12s',
+                    }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.30)' }}>{s.platform}</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: selectedSize === s.id ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.50)' }}>
+                        {s.label}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 9, fontFamily: 'monospace', color: 'rgba(255,255,255,0.25)' }}>
+                      {s.w}×{s.h}
                     </span>
-                    <span className="text-xs font-semibold" style={{ color: selectedSize === s.id ? '#111827' : '#9ca3af' }}>
-                      {s.label}
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-mono" style={{ color: '#9ca3af' }}>
-                    {s.w}×{s.h}
-                  </span>
-                </button>
-              ))}
-            </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </>
         )}
 
-        {/* Primary export button */}
-        {isVideo ? (
-          <div className="flex flex-col gap-2 mb-4">
-            {/* Download original video */}
-            <button
-              onClick={handleDownloadVideo}
-              disabled={!state.videoUrl}
-              className="w-full py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
-              style={{
-                background: 'linear-gradient(135deg, #16a34a, #15803d)',
-                color: '#fff',
-                boxShadow: '0 2px 8px rgba(22,163,74,0.2)',
-                cursor: state.videoUrl ? 'pointer' : 'not-allowed',
-                opacity: state.videoUrl ? 1 : 0.5,
-              }}>
-              <Download size={14} />
-              Download Video
-            </button>
-
-            {/* Record animated WebM */}
-            <button
-              onClick={handleRecordWebM}
-              disabled={recording}
-              data-testid="export-video"
-              className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2"
-              style={{
-                background: '#f3f4f6',
-                border: '1px solid #d1d5db',
-                color: '#374151',
-                cursor: recording ? 'not-allowed' : 'pointer',
-              }}>
-              <Film size={13} />
-              {recording ? 'Recording 4s...' : 'Record Scene (WebM)'}
-            </button>
-
-            {/* Snapshot PNG of video frame */}
-            <button
-              onClick={handleDownloadPNG}
-              disabled={exporting}
-              className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2"
-              style={{
-                background: '#ffffff',
-                border: '1px solid #e5e7eb',
-                color: '#6b7280',
-                cursor: exporting ? 'not-allowed' : 'pointer',
-              }}>
-              <Image size={13} />
-              {exporting ? 'Capturing...' : 'Snapshot as PNG'}
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2 mb-4">
-            <button
-              data-testid="export-png"
-              onClick={handleDownloadPNG}
-              disabled={exporting}
-              className="w-full py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
-              style={{
-                background: exporting ? '#e5e7eb' : '#374151',
-                color: exporting ? '#9ca3af' : '#fff',
-                boxShadow: exporting ? 'none' : '0 2px 8px rgba(55,65,81,0.2)',
-                cursor: exporting ? 'not-allowed' : 'pointer',
-              }}>
-              <Download size={14} />
-              {exporting ? 'Exporting...' : 'Download PNG'}
-            </button>
-
-            <button
-              data-testid="copy-clipboard"
-              onClick={handleCopy}
-              disabled={copying || copied}
-              className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2"
-              style={{
-                background: copied ? 'rgba(22,163,74,0.08)' : '#f9fafb',
-                color: copied ? '#16a34a' : '#6b7280',
-                border: copied ? '1px solid rgba(22,163,74,0.25)' : '1px solid #e5e7eb',
-                cursor: copying ? 'not-allowed' : 'pointer',
-              }}>
-              {copied ? <Check size={13} /> : <Copy size={13} />}
-              {copied ? 'Copied!' : copying ? 'Copying...' : 'Copy to Clipboard'}
-            </button>
-          </div>
-        )}
-
-        {/* Text overlays */}
+        {/* Text layers — collapsible */}
         {textOverlays.length > 0 && (
-          <div className="mb-4">
-            <SectionLabel>Text Layers ({textOverlays.length})</SectionLabel>
-            <div className="flex flex-col gap-2">
-              {textOverlays.map(overlay => (
-                <div key={overlay.id} className="rounded-xl p-3"
-                  style={{ background: '#f9fafb', border: '1px solid #e5e7eb' }}>
-                  <input type="text" value={overlay.text}
-                    onChange={e => onUpdateText(overlay.id, { text: e.target.value })}
-                    className="w-full bg-transparent text-xs mb-2 outline-none"
-                    style={{ color: '#111827', borderBottom: '1px solid #e5e7eb', paddingBottom: 4 }}
-                    data-testid={`text-input-${overlay.id}`} />
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px]" style={{ color: '#6b7280' }}>Size</span>
-                    <input type="range" min={10} max={80} value={overlay.fontSize}
-                      onChange={e => onUpdateText(overlay.id, { fontSize: Number(e.target.value) })}
-                      className="flex-1 ms-range" />
-                    <span className="text-[10px] font-mono" style={{ color: '#9ca3af' }}>{overlay.fontSize}</span>
+          <>
+            <SectionHeader label={`Text Layers (${textOverlays.length})`} open={showLayers} onToggle={() => setShowLayers(!showLayers)} />
+            {showLayers && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8, marginBottom: 12 }}>
+                {textOverlays.map(overlay => (
+                  <div key={overlay.id}
+                    style={{ borderRadius: 10, padding: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    <input type="text" value={overlay.text}
+                      onChange={e => onUpdateText(overlay.id, { text: e.target.value })}
+                      className="rt-input w-full"
+                      style={{ marginBottom: 8 }}
+                      data-testid={`text-input-${overlay.id}`} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', minWidth: 28 }}>Size</span>
+                      <input type="range" min={10} max={80} value={overlay.fontSize}
+                        onChange={e => onUpdateText(overlay.id, { fontSize: Number(e.target.value) })}
+                        className="flex-1 ms-range" />
+                      <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.35)', minWidth: 20 }}>{overlay.fontSize}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', minWidth: 28 }}>Color</span>
+                      <input type="color" value={overlay.color}
+                        onChange={e => onUpdateText(overlay.id, { color: e.target.value })}
+                        style={{ width: 22, height: 22, borderRadius: 6, cursor: 'pointer', border: 'none', background: 'none' }} />
+                      <button onClick={() => onUpdateText(overlay.id, { isBold: !overlay.isBold })}
+                        style={{
+                          width: 22, height: 22, borderRadius: 5, fontSize: 11, fontWeight: 900,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: overlay.isBold ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
+                          color: overlay.isBold ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.35)',
+                          border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer',
+                        }}>B</button>
+                      <button onClick={() => onUpdateText(overlay.id, { isItalic: !overlay.isItalic })}
+                        style={{
+                          width: 22, height: 22, borderRadius: 5, fontSize: 11, fontStyle: 'italic',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: overlay.isItalic ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
+                          color: overlay.isItalic ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.35)',
+                          border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer',
+                        }}>I</button>
+                      <button onClick={() => onRemoveText(overlay.id)}
+                        data-testid={`remove-text-${overlay.id}`}
+                        style={{
+                          marginLeft: 'auto', fontSize: 10, color: 'rgba(255,69,58,0.7)',
+                          background: 'none', border: 'none', cursor: 'pointer',
+                        }}>
+                        Remove
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px]" style={{ color: '#6b7280' }}>Color</span>
-                    <input type="color" value={overlay.color}
-                      onChange={e => onUpdateText(overlay.id, { color: e.target.value })}
-                      className="w-6 h-6 rounded cursor-pointer border-0" />
-                    <button onClick={() => onUpdateText(overlay.id, { isBold: !overlay.isBold })}
-                      className="w-6 h-6 rounded text-xs font-bold flex items-center justify-center"
-                      style={{ background: overlay.isBold ? '#374151' : '#f3f4f6', color: overlay.isBold ? '#ffffff' : '#6b7280', border: '1px solid #e5e7eb' }}>B</button>
-                    <button onClick={() => onUpdateText(overlay.id, { isItalic: !overlay.isItalic })}
-                      className="w-6 h-6 rounded text-xs italic flex items-center justify-center"
-                      style={{ background: overlay.isItalic ? '#374151' : '#f3f4f6', color: overlay.isItalic ? '#ffffff' : '#6b7280', border: '1px solid #e5e7eb' }}>I</button>
-                  </div>
-                  <button onClick={() => onRemoveText(overlay.id)}
-                    data-testid={`remove-text-${overlay.id}`}
-                    className="text-[10px] transition-colors hover:text-red-500"
-                    style={{ color: '#9ca3af' }}>
-                    Remove layer
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         {/* Tips */}
-        <div className="p-3 rounded-xl" style={{ background: '#f9fafb', border: '1px solid #e5e7eb' }}>
-          <div className="flex items-center gap-2 mb-2">
-            <Info size={11} style={{ color: '#9ca3af' }} />
-            <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#9ca3af' }}>Tips</span>
-          </div>
-          <ul className="text-[10px] space-y-1" style={{ color: '#9ca3af' }}>
-            <li>Drop image/video on device screen</li>
-            <li>Paste a URL to capture screenshot</li>
-            <li>Drag text overlays on canvas</li>
-            <li>Record Scene exports animated WebM</li>
-          </ul>
+        <div style={{ marginTop: 8 }}>
+          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.20)', lineHeight: 1.7 }}>
+            Drop image/video on the device screen. Paste a URL to capture a screenshot. Drag text overlays on canvas.
+          </p>
         </div>
       </div>
     </div>
