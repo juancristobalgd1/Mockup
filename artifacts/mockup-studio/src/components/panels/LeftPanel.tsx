@@ -404,55 +404,94 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           />
         </div>
 
-        {/* 3-column device grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7, marginBottom: 14 }}>
-          {models.map(model => {
-            const isSelected = state.deviceModel === model.id;
-            return (
-              <button key={model.id}
-                onClick={() => updateState({ deviceModel: model.id, deviceType: model.storeType })}
-                style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  padding: '12px 4px 9px', borderRadius: 14, gap: 0,
-                  background: isSelected ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
-                  border: isSelected ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
-                  cursor: 'pointer', transition: 'all 0.12s',
-                }}>
-                {/* Thumbnail — scaled up for the grid */}
-                <div style={{
-                  height: 60, width: '100%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transform: 'scale(1.4)', transformOrigin: 'center',
-                }}>
-                  <DeviceThumbnail modelId={model.id} isSelected={isSelected} />
-                </div>
-                {/* Name */}
-                <span style={{
-                  fontSize: 10, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
-                  marginTop: 6,
-                  color: isSelected ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.60)',
-                }}>
-                  {model.label}
-                </span>
-                {/* Resolution */}
-                <span style={{
-                  fontSize: 8, marginTop: 3,
-                  color: 'rgba(255,255,255,0.25)', fontVariantNumeric: 'tabular-nums',
-                }}>
-                  {model.w}×{model.h}
-                </span>
-              </button>
-            );
-          })}
-          {models.length === 0 && (
-            <div style={{
-              gridColumn: '1 / -1', textAlign: 'center', padding: '24px 0',
-              color: 'rgba(255,255,255,0.25)', fontSize: 11,
-            }}>
-              No devices found
-            </div>
-          )}
-        </div>
+        {/* Device list — horizontal slider on mobile, 3-col grid on desktop */}
+        {mobile ? (
+          <div style={{
+            display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6,
+            scrollbarWidth: 'none', msOverflowStyle: 'none',
+            marginBottom: 14,
+          } as React.CSSProperties}>
+            {models.map(model => {
+              const isSelected = state.deviceModel === model.id;
+              return (
+                <button key={model.id}
+                  onClick={() => updateState({ deviceModel: model.id, deviceType: model.storeType })}
+                  style={{
+                    flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    width: 80, padding: '14px 6px 10px', borderRadius: 18, gap: 0,
+                    background: isSelected ? 'rgba(255,255,255,0.13)' : 'rgba(255,255,255,0.05)',
+                    border: isSelected ? '2px solid rgba(255,255,255,0.35)' : '1.5px solid rgba(255,255,255,0.08)',
+                    cursor: 'pointer', transition: 'all 0.12s',
+                  }}>
+                  <div style={{
+                    height: 68, width: '100%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transform: 'scale(1.5)', transformOrigin: 'center',
+                  }}>
+                    <DeviceThumbnail modelId={model.id} isSelected={isSelected} />
+                  </div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
+                    marginTop: 8, color: isSelected ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.58)',
+                    maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {model.label}
+                  </span>
+                </button>
+              );
+            })}
+            {models.length === 0 && (
+              <div style={{ padding: '24px 0', color: 'rgba(255,255,255,0.25)', fontSize: 11 }}>
+                No devices found
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7, marginBottom: 14 }}>
+            {models.map(model => {
+              const isSelected = state.deviceModel === model.id;
+              return (
+                <button key={model.id}
+                  onClick={() => updateState({ deviceModel: model.id, deviceType: model.storeType })}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    padding: '12px 4px 9px', borderRadius: 14, gap: 0,
+                    background: isSelected ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
+                    border: isSelected ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
+                    cursor: 'pointer', transition: 'all 0.12s',
+                  }}>
+                  <div style={{
+                    height: 60, width: '100%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transform: 'scale(1.4)', transformOrigin: 'center',
+                  }}>
+                    <DeviceThumbnail modelId={model.id} isSelected={isSelected} />
+                  </div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
+                    marginTop: 6, color: isSelected ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.60)',
+                  }}>
+                    {model.label}
+                  </span>
+                  <span style={{
+                    fontSize: 8, marginTop: 3,
+                    color: 'rgba(255,255,255,0.25)', fontVariantNumeric: 'tabular-nums',
+                  }}>
+                    {model.w}×{model.h}
+                  </span>
+                </button>
+              );
+            })}
+            {models.length === 0 && (
+              <div style={{
+                gridColumn: '1 / -1', textAlign: 'center', padding: '24px 0',
+                color: 'rgba(255,255,255,0.25)', fontSize: 11,
+              }}>
+                No devices found
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Frame color dots */}
         {state.deviceType === 'iphone' && (
