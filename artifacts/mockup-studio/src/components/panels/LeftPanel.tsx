@@ -981,11 +981,9 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         </div>
       </Section>
 
-      {/* Present Type — Rotato-style visual pose grid */}
+      {/* Present Type — Rotato-style horizontal slider */}
       <Section label="Present Type">
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 10,
-        }}>
+        <HScroll gap={6}>
           {PRESENT_POSES.map(pose => {
             const active = state.cameraAngle === pose.id;
             return (
@@ -993,8 +991,9 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                 key={pose.id}
                 onClick={() => updateState({ cameraAngle: pose.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}
                 style={{
+                  flexShrink: 0,
                   display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  padding: '8px 4px 6px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                  padding: '8px 6px 6px', borderRadius: 12, border: 'none', cursor: 'pointer',
                   background: active
                     ? 'linear-gradient(145deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08))'
                     : 'rgba(255,255,255,0.04)',
@@ -1003,7 +1002,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     : '1px solid rgba(255,255,255,0.07)',
                   transition: 'all 0.18s ease',
                   boxShadow: active ? '0 4px 16px rgba(0,0,0,0.4)' : 'none',
-                  transform: active ? 'scale(1.02)' : 'scale(1)',
+                  transform: active ? 'scale(1.04)' : 'scale(1)',
                 }}
               >
                 <PoseThumbnail ry={pose.ry} rx={pose.rx} rz={pose.rz} active={active} />
@@ -1011,14 +1010,16 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   fontSize: 9, fontWeight: 700, letterSpacing: '0.04em',
                   color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.38)',
                   textTransform: 'uppercase', marginTop: 2,
-                  transition: 'color 0.2s',
+                  transition: 'color 0.2s', whiteSpace: 'nowrap',
                 }}>{pose.label}</span>
               </button>
             );
           })}
+        </HScroll>
+        <div style={{ marginTop: 10 }}>
+          <Slider label="Shadow" value={state.contactShadowOpacity} min={0} max={100}
+            onChange={v => updateState({ contactShadowOpacity: v })} unit="%" />
         </div>
-        <Slider label="Shadow" value={state.contactShadowOpacity} min={0} max={100}
-          onChange={v => updateState({ contactShadowOpacity: v })} unit="%" />
       </Section>
     </>
   );
@@ -1075,11 +1076,9 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     const allBgs = [...GRADIENTS, ...MESH_GRADIENTS, ...WALLPAPERS];
     return (
       <>
-        {/* Present Type — Rotato-style visual pose grid */}
+        {/* Present Type — Rotato-style horizontal slider */}
         <Section label="Present Type">
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 4,
-          }}>
+          <HScroll gap={6}>
             {PRESENT_POSES.map(pose => {
               const active = state.cameraAngle === pose.id;
               return (
@@ -1087,8 +1086,9 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   key={pose.id}
                   onClick={() => updateState({ cameraAngle: pose.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}
                   style={{
+                    flexShrink: 0,
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    padding: '8px 4px 6px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                    padding: '8px 6px 6px', borderRadius: 12, border: 'none', cursor: 'pointer',
                     background: active
                       ? 'linear-gradient(145deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08))'
                       : 'rgba(255,255,255,0.04)',
@@ -1097,7 +1097,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                       : '1px solid rgba(255,255,255,0.07)',
                     transition: 'all 0.18s ease',
                     boxShadow: active ? '0 4px 16px rgba(0,0,0,0.4)' : 'none',
-                    transform: active ? 'scale(1.02)' : 'scale(1)',
+                    transform: active ? 'scale(1.04)' : 'scale(1)',
                   }}
                 >
                   <PoseThumbnail ry={pose.ry} rx={pose.rx} rz={pose.rz} active={active} />
@@ -1105,12 +1105,12 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     fontSize: 9, fontWeight: 700, letterSpacing: '0.04em',
                     color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.38)',
                     textTransform: 'uppercase', marginTop: 2,
-                    transition: 'color 0.2s',
+                    transition: 'color 0.2s', whiteSpace: 'nowrap',
                   }}>{pose.label}</span>
                 </button>
               );
             })}
-          </div>
+          </HScroll>
         </Section>
 
         {/* Templates */}
