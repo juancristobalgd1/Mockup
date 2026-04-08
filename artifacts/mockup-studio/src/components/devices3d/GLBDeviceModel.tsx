@@ -516,7 +516,7 @@ function classifyMesh(
   // ── Watch band / rubber / silicone ───────────────────────────────
   if (key.includes('rubber') || key.includes('silicone') || key.includes('band')) {
     return new THREE.MeshStandardMaterial({
-      color: deviceColor || '#1a1a1a', roughness: 0.68, metalness: 0.0, envMapIntensity: 0.5,
+      color: resolveColor(deviceColor, '#1a1a1a'), roughness: 0.68, metalness: 0.0, envMapIntensity: 0.5,
     });
   }
 
