@@ -39,13 +39,14 @@ const CANVAS_RATIOS = [
   { id: '9:16',  label: '9:16'  },
 ] as const;
 
-type Tab = 'presets' | 'device' | 'background' | 'canvas' | 'text';
+type Tab = 'presets' | 'device' | 'background' | 'canvas' | 'lighting' | 'text';
 
 const TAB_ICONS: { id: Tab; icon: React.ComponentType<IconProps>; label: string }[] = [
   { id: 'presets',    icon: LayoutGrid, label: 'Presets'    },
   { id: 'device',     icon: Smartphone, label: 'Device'     },
   { id: 'background', icon: ImageIcon,  label: 'Background' },
   { id: 'canvas',     icon: Sliders,    label: 'Scene'      },
+  { id: 'lighting',   icon: Sun,        label: 'Lighting'   },
   { id: 'text',       icon: Type,       label: 'Text'       },
 ];
 
@@ -728,7 +729,41 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
         </div>
       </Section>
 
-      {/* Lighting — compact 2-column grid */}
+      {/* Camera & Shadow — presets + shadow intensity */}
+      <Section label="Camera & Shadow">
+        <HScroll gap={6}>
+          {([
+            { id: 'hero',  label: 'Hero',  icon: '🎬' },
+            { id: 'front', label: 'Front', icon: '👁' },
+            { id: 'side',  label: 'Side',  icon: '↔' },
+            { id: 'top',   label: 'Top',   icon: '⬆' },
+          ] as const).map(cam => (
+            <button key={cam.id}
+              onClick={() => updateState({ cameraAngle: cam.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}
+              style={{
+                flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
+                padding: '6px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600,
+                background: state.cameraAngle === cam.id ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
+                border: state.cameraAngle === cam.id ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
+                color: state.cameraAngle === cam.id ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.40)',
+                cursor: 'pointer', transition: 'all 0.12s',
+              }}>
+              <span>{cam.icon}</span><span>{cam.label}</span>
+            </button>
+          ))}
+        </HScroll>
+        <div style={{ marginTop: 10 }}>
+          <Slider label="Shadow" value={state.contactShadowOpacity} min={0} max={100}
+            onChange={v => updateState({ contactShadowOpacity: v })} unit="%" />
+        </div>
+      </Section>
+    </>
+  );
+
+  // ── Lighting tab ────────────────────────────────────────────────
+  const LightingTab = () => (
+    <>
+      {/* Compact 2-column lighting grid */}
       <Section label="Lighting">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 12 }}>
           <MiniSlider label="Brightness" value={state.lightBrightness ?? 40} min={0} max={100} step={1} unit="%"
@@ -768,35 +803,6 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
             </button>
           ))}
         </HScroll>
-      </Section>
-
-      {/* Camera & Shadow — presets + shadow intensity */}
-      <Section label="Camera & Shadow">
-        <HScroll gap={6}>
-          {([
-            { id: 'hero',  label: 'Hero',  icon: '🎬' },
-            { id: 'front', label: 'Front', icon: '👁' },
-            { id: 'side',  label: 'Side',  icon: '↔' },
-            { id: 'top',   label: 'Top',   icon: '⬆' },
-          ] as const).map(cam => (
-            <button key={cam.id}
-              onClick={() => updateState({ cameraAngle: cam.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}
-              style={{
-                flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
-                padding: '6px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600,
-                background: state.cameraAngle === cam.id ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
-                border: state.cameraAngle === cam.id ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
-                color: state.cameraAngle === cam.id ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.40)',
-                cursor: 'pointer', transition: 'all 0.12s',
-              }}>
-              <span>{cam.icon}</span><span>{cam.label}</span>
-            </button>
-          ))}
-        </HScroll>
-        <div style={{ marginTop: 10 }}>
-          <Slider label="Shadow" value={state.contactShadowOpacity} min={0} max={100}
-            onChange={v => updateState({ contactShadowOpacity: v })} unit="%" />
-        </div>
       </Section>
     </>
   );
@@ -893,6 +899,7 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
           {activeTab === 'device'     && <DeviceTab />}
           {activeTab === 'background' && <BackgroundTab />}
           {activeTab === 'canvas'     && <SceneTab />}
+          {activeTab === 'lighting'   && <LightingTab />}
           {activeTab === 'text'       && <TextTab />}
         </div>
       </div>
@@ -956,6 +963,7 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
           {activeTab === 'device'     && <DeviceTab />}
           {activeTab === 'background' && <BackgroundTab />}
           {activeTab === 'canvas'     && <SceneTab />}
+          {activeTab === 'lighting'   && <LightingTab />}
           {activeTab === 'text'       && <TextTab />}
         </div>
       </div>
