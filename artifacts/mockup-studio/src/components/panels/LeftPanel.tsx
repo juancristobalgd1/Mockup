@@ -883,116 +883,113 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           </Section>
         )}
 
-        {/* Light / Shadow Overlay */}
-        <div style={{ paddingTop: 10, marginTop: 4, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-          <div style={{ marginBottom: 8 }}>
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>
-              Light Overlay
-            </span>
-          </div>
-          {/* Overlay preset strip */}
-          <HScroll gap={7}>
-            {/* None button */}
-            <button
-              onClick={() => updateState({ lightOverlay: null })}
-              style={{
-                flexShrink: 0, width: 52, height: 52, borderRadius: 12, border: 'none', cursor: 'pointer',
-                background: 'rgba(255,255,255,0.05)',
-                outline: !state.lightOverlay ? '2px solid rgba(255,255,255,0.5)' : '1px solid rgba(255,255,255,0.1)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                <circle cx="11" cy="11" r="9" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5"/>
-                <line x1="4" y1="4" x2="18" y2="18" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-            </button>
-            {/* Preset thumbnails */}
-            {LIGHT_OVERLAYS.map(preset => {
-              const active = state.lightOverlay === preset.id;
-              return (
-                <button
-                  key={preset.id}
-                  onClick={() => updateState({ lightOverlay: preset.id })}
-                  style={{
-                    flexShrink: 0, width: 52, height: 52, borderRadius: 12, border: 'none', cursor: 'pointer',
-                    overflow: 'hidden', position: 'relative',
-                    outline: active ? '2px solid rgba(255,255,255,0.7)' : '1px solid rgba(255,255,255,0.1)',
-                    background: '#fff',
-                  }}>
-                  <div style={{
-                    position: 'absolute', inset: 0,
-                    backgroundImage: preset.background,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    filter: preset.filter,
-                  }} />
-                  {active && (
-                    <div style={{
-                      position: 'absolute', inset: 0,
-                      boxShadow: 'inset 0 0 0 2px rgba(255,255,255,0.7)',
-                      borderRadius: 12,
-                    }} />
-                  )}
-                </button>
-              );
-            })}
-          </HScroll>
-
-          {/* Controls when a light overlay is selected */}
-          {state.lightOverlay && (
-            <div style={{ marginTop: 10 }}>
-              <Slider label="Opacity" value={state.lightOverlayOpacity} min={0} max={100}
-                onChange={v => updateState({ lightOverlayOpacity: v })} unit="%" />
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)' }}>Blend Mode</span>
-                </div>
-                <HScroll gap={5}>
-                  {(['multiply', 'overlay', 'screen', 'soft-light'] as const).map(mode => (
-                    <Chip key={mode} active={state.lightOverlayBlend === mode}
-                      onClick={() => updateState({ lightOverlayBlend: mode })}>
-                      {mode.charAt(0).toUpperCase() + mode.slice(1).replace('-', ' ')}
-                    </Chip>
-                  ))}
-                </HScroll>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Color Overlay */}
-        <div style={{ paddingTop: 10, marginTop: 4, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>
-              Color Overlay
-            </span>
-            <Toggle enabled={state.overlayEnabled} onToggle={() => updateState({ overlayEnabled: !state.overlayEnabled })} />
-          </div>
-          {state.overlayEnabled && (
-            <>
-              <HScroll gap={7}>
-                <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: state.overlayColor, border: '1px solid rgba(255,255,255,0.1)' }} />
-                  <input type="color" value={state.overlayColor} onChange={e => updateState({ overlayColor: e.target.value })}
-                    style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
-                </div>
-                {['#000000', '#ffffff', '#374151', '#0ea5e9', '#ec4899'].map(col => (
-                  <button key={col} onClick={() => updateState({ overlayColor: col })}
-                    style={{
-                      flexShrink: 0, width: 24, height: 24, borderRadius: '50%', background: col,
-                      border: state.overlayColor === col ? '2px solid rgba(255,255,255,0.7)' : '1px solid rgba(255,255,255,0.15)', cursor: 'pointer',
-                    }} />
-                ))}
-              </HScroll>
-              <div style={{ marginTop: 10 }}>
-                <Slider label="Opacity" value={state.overlayOpacity} min={0} max={90} onChange={v => updateState({ overlayOpacity: v })} unit="%" />
-              </div>
-            </>
-          )}
-        </div>
       </>
     );
   };
+
+  // ── Overlay tab content ─────────────────────────────────────────
+  const OverlayTab = () => (
+    <>
+      {/* Light / Shadow Overlay */}
+      <Section label="Light Overlay">
+        <HScroll gap={7}>
+          {/* None button */}
+          <button
+            onClick={() => updateState({ lightOverlay: null })}
+            style={{
+              flexShrink: 0, width: 56, height: 56, borderRadius: 12, border: 'none', cursor: 'pointer',
+              background: 'rgba(255,255,255,0.05)',
+              outline: !state.lightOverlay ? '2px solid rgba(255,255,255,0.5)' : '1px solid rgba(255,255,255,0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <circle cx="11" cy="11" r="9" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5"/>
+              <line x1="4" y1="4" x2="18" y2="18" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </button>
+          {/* Preset thumbnails */}
+          {LIGHT_OVERLAYS.map(preset => {
+            const active = state.lightOverlay === preset.id;
+            return (
+              <button
+                key={preset.id}
+                onClick={() => updateState({ lightOverlay: preset.id })}
+                style={{
+                  flexShrink: 0, width: 56, height: 56, borderRadius: 12, border: 'none', cursor: 'pointer',
+                  overflow: 'hidden', position: 'relative',
+                  outline: active ? '2px solid rgba(255,255,255,0.7)' : '1px solid rgba(255,255,255,0.1)',
+                  background: '#fff',
+                }}>
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  backgroundImage: preset.background,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  filter: preset.filter,
+                }} />
+                {active && (
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    boxShadow: 'inset 0 0 0 2px rgba(255,255,255,0.7)',
+                    borderRadius: 12,
+                  }} />
+                )}
+              </button>
+            );
+          })}
+        </HScroll>
+
+        {/* Controls when a light overlay is selected */}
+        {state.lightOverlay && (
+          <div style={{ marginTop: 12 }}>
+            <Slider label="Opacity" value={state.lightOverlayOpacity} min={0} max={100}
+              onChange={v => updateState({ lightOverlayOpacity: v })} unit="%" />
+            <div style={{ marginBottom: 4 }}>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', display: 'block', marginBottom: 6 }}>Blend Mode</span>
+              <HScroll gap={5}>
+                {(['multiply', 'overlay', 'screen', 'soft-light'] as const).map(mode => (
+                  <Chip key={mode} active={state.lightOverlayBlend === mode}
+                    onClick={() => updateState({ lightOverlayBlend: mode })}>
+                    {mode.charAt(0).toUpperCase() + mode.slice(1).replace('-', ' ')}
+                  </Chip>
+                ))}
+              </HScroll>
+            </div>
+          </div>
+        )}
+      </Section>
+
+      {/* Color Overlay */}
+      <Section label="Color Overlay" action={
+        <Toggle enabled={state.overlayEnabled} onToggle={() => updateState({ overlayEnabled: !state.overlayEnabled })} />
+      }>
+        {state.overlayEnabled && (
+          <>
+            <HScroll gap={7}>
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: state.overlayColor, border: '1px solid rgba(255,255,255,0.1)' }} />
+                <input type="color" value={state.overlayColor} onChange={e => updateState({ overlayColor: e.target.value })}
+                  style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
+              </div>
+              {['#000000', '#ffffff', '#374151', '#0ea5e9', '#ec4899'].map(col => (
+                <button key={col} onClick={() => updateState({ overlayColor: col })}
+                  style={{
+                    flexShrink: 0, width: 28, height: 28, borderRadius: '50%', background: col,
+                    border: state.overlayColor === col ? '2px solid rgba(255,255,255,0.7)' : '1px solid rgba(255,255,255,0.15)', cursor: 'pointer',
+                  }} />
+              ))}
+            </HScroll>
+            <div style={{ marginTop: 10 }}>
+              <Slider label="Opacity" value={state.overlayOpacity} min={0} max={90} onChange={v => updateState({ overlayOpacity: v })} unit="%" />
+            </div>
+          </>
+        )}
+        {!state.overlayEnabled && (
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', margin: 0 }}>Toggle on to add a solid color tint.</p>
+        )}
+      </Section>
+    </>
+  );
 
   // ── Scene tab content ───────────────────────────────────────────
   const SceneTab = () => (
@@ -1233,6 +1230,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {mobileContentOnly === 'template'   && <TemplateTab />}
         {mobileContentOnly === 'device'     && <DeviceTab />}
         {mobileContentOnly === 'background' && <BackgroundTab />}
+        {mobileContentOnly === 'overlay'    && <OverlayTab />}
         {mobileContentOnly === 'canvas'     && <SceneTab />}
         {mobileContentOnly === 'lighting'   && <LightingTab />}
         {mobileContentOnly === 'text'       && <TextTab />}
@@ -1251,6 +1249,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           {activeTab === 'template'   && <TemplateTab />}
           {activeTab === 'device'     && <DeviceTab />}
           {activeTab === 'background' && <BackgroundTab />}
+          {activeTab === 'overlay'    && <OverlayTab />}
           {activeTab === 'canvas'     && <SceneTab />}
           {activeTab === 'lighting'   && <LightingTab />}
           {activeTab === 'text'       && <TextTab />}
@@ -1343,6 +1342,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           {activeTab === 'template'   && <TemplateTab />}
           {activeTab === 'device'     && <DeviceTab />}
           {activeTab === 'background' && <BackgroundTab />}
+          {activeTab === 'overlay'    && <OverlayTab />}
           {activeTab === 'canvas'     && <SceneTab />}
           {activeTab === 'lighting'   && <LightingTab />}
           {activeTab === 'text'       && <TextTab />}
