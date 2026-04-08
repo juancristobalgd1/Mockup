@@ -462,9 +462,8 @@ function classifyMesh(
   }
 
   // ── Front glass cover (transparent) ──────────────────────────────
-  // Note: NOT excluding 'black' — "black glass" is still glass (iPhone Pro, etc.)
   if (key.includes('glass') && !key.includes('frosted') && !key.includes('tint')
-      && !key.includes('back') && !key.includes('camera')) {
+      && !key.includes('back') && !key.includes('camera') && !key.includes('black')) {
     return new THREE.MeshPhysicalMaterial({
       color: '#c8d8ee', metalness: 0.04, roughness: 0.01,
       transmission: 0.88, ior: 1.55, transparent: true, opacity: 0.95,
