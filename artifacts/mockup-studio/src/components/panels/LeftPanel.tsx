@@ -1031,13 +1031,25 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   flexShrink: 0,
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
                   width: 52, padding: '10px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
-                  background: active ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.04)',
-                  outline: active ? '1.5px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.08)',
-                  color: active ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.4)',
-                  transition: 'all 0.12s',
+                  background: active
+                    ? 'linear-gradient(145deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08))'
+                    : 'rgba(255,255,255,0.04)',
+                  outline: active
+                    ? '1.5px solid rgba(255,255,255,0.32)'
+                    : '1px solid rgba(255,255,255,0.07)',
+                  boxShadow: active ? '0 4px 16px rgba(0,0,0,0.4)' : 'none',
+                  transform: active ? 'scale(1.04)' : 'scale(1)',
+                  transition: 'all 0.18s ease',
                 }}>
-                {t.icon}
-                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.03em' }}>{t.label}</span>
+                <span style={{ color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.38)', display: 'flex' }}>
+                  {t.icon}
+                </span>
+                <span style={{
+                  fontSize: 9, fontWeight: 700, letterSpacing: '0.04em',
+                  color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.38)',
+                  textTransform: 'uppercase', marginTop: 2,
+                  transition: 'color 0.2s', whiteSpace: 'nowrap',
+                }}>{t.label}</span>
               </button>
             );
           })}
