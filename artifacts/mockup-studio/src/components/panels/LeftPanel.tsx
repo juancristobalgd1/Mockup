@@ -868,33 +868,37 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
     </>
   );
 
-  // ── Mobile shell (full-width, no sidebar rail) ───────────────────
+  // ── Mobile shell (persistent bottom panel) ───────────────────────
   if (mobile) {
     return (
       <div>
-        {/* Horizontal tab chips */}
+        {/* Pill tab strip */}
         <div style={{
-          display: 'flex', gap: 4, overflowX: 'auto', padding: '8px 14px 10px',
+          display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 14px 10px',
           scrollbarWidth: 'none', borderBottom: '1px solid rgba(255,255,255,0.07)',
         } as React.CSSProperties}>
-          {TAB_ICONS.map(({ id, icon: Icon, label }) => (
-            <button key={id} onClick={() => setActiveTab(id)}
-              style={{
-                flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
-                padding: '6px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600,
-                background: activeTab === id ? 'rgba(255,255,255,0.10)' : 'transparent',
-                border: activeTab === id ? '1px solid rgba(255,255,255,0.15)' : '1px solid transparent',
-                color: activeTab === id ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.38)',
-                cursor: 'pointer',
-              }}>
-              <Icon size={13} strokeWidth={activeTab === id ? 2 : 1.5} />
-              {label}
-            </button>
-          ))}
+          {TAB_ICONS.map(({ id, icon: Icon, label }) => {
+            const active = activeTab === id;
+            return (
+              <button key={id} onClick={() => setActiveTab(id)}
+                style={{
+                  flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '8px 15px', borderRadius: 22, fontSize: 12, fontWeight: 600,
+                  background: active ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.07)',
+                  border: '1px solid transparent',
+                  color: active ? '#0d0e0f' : 'rgba(255,255,255,0.50)',
+                  cursor: 'pointer', transition: 'all 0.15s',
+                  whiteSpace: 'nowrap',
+                }}>
+                <Icon size={13} strokeWidth={active ? 2.5 : 1.5} />
+                {label}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Full-width content */}
-        <div style={{ padding: '12px 14px 20px' }}>
+        {/* Active tab content */}
+        <div style={{ padding: '12px 14px 16px' }}>
           {activeTab === 'presets'    && <PresetsTab />}
           {activeTab === 'device'     && <DeviceTab />}
           {activeTab === 'background' && <BackgroundTab />}
