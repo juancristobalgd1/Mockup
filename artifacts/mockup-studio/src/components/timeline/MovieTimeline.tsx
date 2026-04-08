@@ -269,15 +269,15 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
 
   return (
     <div style={{
-      width: '100%', background: '#ffffff',
-      borderTop: '1px solid #e5e7eb',
+      width: '100%', background: '#161819',
+      borderTop: '1px solid rgba(255,255,255,0.08)',
       flexShrink: 0, userSelect: 'none',
     }}>
 
       {/* ── Top controls bar ─────────────────────────────────────── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
-        padding: '8px 14px', borderBottom: '1px solid #e5e7eb',
+        padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)',
         flexWrap: 'wrap',
       }}>
 
@@ -287,12 +287,12 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
           disabled={isExporting || liveRecording}
           title={isPlaying ? 'Pausar' : 'Reproducir animación'}
           style={{
-            background: isPlaying ? '#f3f4f6' : 'rgba(255,255,255,0.06)',
-            border: `1px solid ${isPlaying ? '#9ca3af' : 'rgba(255,255,255,0.1)'}`,
+            background: isPlaying ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)',
+            border: `1px solid ${isPlaying ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'}`,
             borderRadius: 6, width: 28, height: 28, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: isPlaying ? '#374151' : '#9ca3af',
-            opacity: (isExporting || liveRecording) ? 0.4 : 1,
+            color: isPlaying ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)',
+            opacity: (isExporting || liveRecording) ? 0.35 : 1,
           }}
         >
           {isPlaying ? <Pause size={12} /> : <Play size={12} />}
@@ -310,7 +310,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
               background: 'rgba(220,38,38,0.15)',
               border: '1px solid rgba(239,68,68,0.4)',
               color: '#f87171', fontSize: 11, fontWeight: 700,
-              opacity: (isPlaying || isExporting) ? 0.4 : 1,
+              opacity: (isPlaying || isExporting) ? 0.35 : 1,
             }}
           >
             <Circle size={9} fill="#f87171" color="#f87171" />
@@ -339,7 +339,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
             <span style={{ fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: '#f87171' }}>
               {formatTimer(liveTime)}
             </span>
-            <span style={{ fontSize: 10, color: '#6b7280' }}>
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>
               — Mueve el dispositivo con el ratón...
             </span>
           </div>
@@ -351,16 +351,16 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
             onClick={handleAddKeyframe}
             title="Añadir keyframe manual en la posición actual del playhead"
             style={{
-              background: '#f9fafb', border: '1px solid #e5e7eb',
+              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
               borderRadius: 6, height: 28, padding: '0 10px', cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: 5,
-              color: '#6b7280', fontSize: 11, fontWeight: 600,
+              color: 'rgba(255,255,255,0.55)', fontSize: 11, fontWeight: 600,
             }}
           >
             <Plus size={11} />
             Añadir keyframe
             {cameraKeyframes.length > 0 && (
-              <span style={{ color: '#4b5563', fontSize: 10 }}>({cameraKeyframes.length})</span>
+              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10 }}>({cameraKeyframes.length})</span>
             )}
           </button>
         )}
@@ -385,10 +385,10 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
         <div style={{ flex: 1 }} />
 
         {/* Time display */}
-        <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#374151', fontWeight: 600 }}>
+        <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
           {formatTime(currentTime)}
         </span>
-        <span style={{ fontSize: 10, color: '#374151' }}>de</span>
+        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>de</span>
 
         {/* Duration selector */}
         <select
@@ -399,8 +399,9 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
             if (movieTimeRef.current > d) { movieTimeRef.current = d; setCurrentTime(d); }
           }}
           style={{
-            background: '#f9fafb', border: '1px solid #e5e7eb',
-            borderRadius: 5, color: '#6b7280', fontSize: 11, padding: '2px 6px', cursor: 'pointer',
+            background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 5, color: 'rgba(255,255,255,0.6)', fontSize: 11,
+            padding: '2px 6px', cursor: 'pointer',
           }}
         >
           {[3, 5, 8, 10, 15, 20, 30].map(d => <option key={d} value={d}>{d}s</option>)}
@@ -417,7 +418,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
             borderRadius: 6, height: 28, padding: '0 10px',
             cursor: (cameraKeyframes.length < 2 || isExporting || liveRecording) ? 'not-allowed' : 'pointer',
             display: 'flex', alignItems: 'center', gap: 5,
-            color: (cameraKeyframes.length < 2 || liveRecording) ? '#4b5563' : '#f87171',
+            color: (cameraKeyframes.length < 2 || liveRecording) ? 'rgba(255,255,255,0.2)' : '#f87171',
             fontSize: 11, fontWeight: 600,
             opacity: (cameraKeyframes.length < 2 || liveRecording) ? 0.45 : 1,
           }}
@@ -430,7 +431,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
         <button
           onClick={() => { stopLiveRec(); stopPlayback(); onClose(); }}
           style={{
-            background: 'none', border: 'none', color: '#374151', cursor: 'pointer',
+            background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: 24, height: 24, borderRadius: 4,
           }}
@@ -455,8 +456,8 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
               top: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
               transform: 'translateX(-50%)', pointerEvents: 'none',
             }}>
-              <div style={{ width: 1, height: 5, background: '#d1d5db' }} />
-              <span style={{ fontSize: 9, color: '#374151', marginTop: 1, fontFamily: 'monospace' }}>{s}s</span>
+              <div style={{ width: 1, height: 5, background: 'rgba(255,255,255,0.2)' }} />
+              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', marginTop: 1, fontFamily: 'monospace' }}>{s}s</span>
             </div>
           ))}
           {/* Half-second ticks */}
@@ -465,7 +466,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
               position: 'absolute', left: `${(s / movieDuration) * 100}%`,
               top: 0, transform: 'translateX(-50%)', pointerEvents: 'none',
             }}>
-              <div style={{ width: 1, height: 3, background: '#e5e7eb' }} />
+              <div style={{ width: 1, height: 3, background: 'rgba(255,255,255,0.09)' }} />
             </div>
           ))}
         </div>
@@ -474,12 +475,12 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
         <div style={{ height: 28, position: 'relative' }}>
           <div style={{
             position: 'absolute', inset: 0,
-            background: '#f9fafb',
-            border: '1px solid #e5e7eb', borderRadius: 4,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.09)', borderRadius: 4,
           }}>
             <span style={{
               position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)',
-              fontSize: 9, color: '#374151', fontWeight: 700,
+              fontSize: 9, color: 'rgba(255,255,255,0.3)', fontWeight: 700,
               textTransform: 'uppercase', letterSpacing: '0.08em', pointerEvents: 'none',
             }}>Camera</span>
 
@@ -490,7 +491,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
                 left: `${(cameraKeyframes[0].time / movieDuration) * 100}%`,
                 right: `${100 - (cameraKeyframes[cameraKeyframes.length - 1].time / movieDuration) * 100}%`,
                 top: '50%', height: 1,
-                background: 'rgba(148,163,184,0.25)', transform: 'translateY(-50%)',
+                background: 'rgba(255,255,255,0.12)', transform: 'translateY(-50%)',
                 pointerEvents: 'none',
               }} />
             )}
