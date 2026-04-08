@@ -1374,7 +1374,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   // ── Mobile content-only mode (rendered by App.tsx inside a floating sheet) ──
   if (mobile && mobileContentOnly !== undefined) {
     return (
-      <div style={{ padding: '12px 14px 16px' }}>
+      <div style={{ padding: '12px 0 16px' }}>
         {mobileContentOnly === 'presets'    && <PresetsTab />}
         {mobileContentOnly === 'template'   && <TemplateTab />}
         {mobileContentOnly === 'device'     && <DeviceTab />}
