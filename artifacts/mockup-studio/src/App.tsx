@@ -236,10 +236,15 @@ function Editor() {
 
         {/* ── Floating top bar — mode group + export ── */}
         <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 40,
+          position: 'absolute',
+          ...(state.movieMode
+            ? { bottom: 64, left: 0, right: 0 }
+            : { top: 0, left: 0, right: 0 }),
+          zIndex: 40,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 14px',
+          padding: '10px 14px',
           pointerEvents: 'none',
+          transition: 'bottom 0.2s, top 0.2s',
         }}>
           {/* Image / Movie group button */}
           <div style={{
