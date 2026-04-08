@@ -3,6 +3,7 @@ import { useApp } from '../../store';
 import type { TextOverlay } from '../../store';
 import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS } from '../../data/backgrounds';
 import { LIGHT_OVERLAYS } from '../../data/lightOverlays';
+import { AnnotateCanvas } from './AnnotateCanvas';
 import { Device3DViewer } from '../devices3d/Device3DViewer';
 import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
 import { CSSDeviceFallback, checkWebGL } from '../devices3d/WebGLFallback';
@@ -157,6 +158,9 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
           movieTimeRef={movieTimeRef}
         />
       ) : null /* loading – will resolve synchronously */}
+
+      {/* Annotation drawing layer */}
+      <AnnotateCanvas />
 
       {/* Text overlays */}
       {textOverlays.map(overlay => (
