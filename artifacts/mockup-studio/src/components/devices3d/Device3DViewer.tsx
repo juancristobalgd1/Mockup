@@ -11,7 +11,7 @@ import { EffectComposer, Bloom, SMAA } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { useApp } from '../../store';
 import type { CameraKeyframe } from '../../store';
-import { getModelById } from '../../data/devices';
+import { getModelById, DEVICE_MODELS } from '../../data/devices';
 import { useScreenTexture } from './useScreenTexture';
 import { getGlobalScreenTexture } from './textureGlobal';
 import { Phone3DModel } from './Phone3DModel';
@@ -20,15 +20,10 @@ import { Tablet3DModel } from './Tablet3DModel';
 import { MacBook3DModel } from './MacBook3DModel';
 import { Watch3DModel } from './Watch3DModel';
 
-// Preload all GLB models so they're ready before user selects them
-useGLTF.preload('/models/iphone17pro.glb');
-useGLTF.preload('/models/iphone16.glb');
-useGLTF.preload('/models/macbookpro.glb');
-useGLTF.preload('/models/samsungs25ultra.glb');
-useGLTF.preload('/models/oneplus12.glb');
-useGLTF.preload('/models/ipadpro129.glb');
-useGLTF.preload('/models/ipadmini6.glb');
-useGLTF.preload('/models/applewatch.glb');
+// Auto-preload every GLB model declared in devices.ts.
+// Adding a new device with a glbUrl here is all that is needed —
+// no manual preload line required.
+DEVICE_MODELS.forEach(m => { if (m.glbUrl) useGLTF.preload(m.glbUrl); });
 
 export interface Device3DViewerHandle {
   getGLElement: () => HTMLCanvasElement | null;
@@ -420,8 +415,13 @@ function DeviceScene({
   // ── Show icon? ───────────────────────────────────────────────────
   const showIcon = !hasContent || pencilVisible;
 
+  // ── Device renderer ───────────────────────────────────────────────
+  // Priority 1: any device with a glbUrl is handled universally by GLBDeviceModel.
+  //   → To add a new 3D device: drop the .glb in /public/models/ and add
+  //     an entry with glbUrl in devices.ts. Nothing else needs to change here.
+  // Priority 2: devices without a glbUrl fall back to a procedural model
+  //   matched by storeType (browser frame, phone geometry, etc.).
   const inner = (() => {
-    // Real GLB model — any device that has a glbUrl defined
     if (def.glbUrl) {
       return (
         <GLBDeviceModel
@@ -434,50 +434,18 @@ function DeviceScene({
       );
     }
 
+    // Procedural fallbacks — only used when no glbUrl is set
     switch (state.deviceType) {
-      case 'iphone':
-        return def.glbUrl ? (
-          <GLBDeviceModel
-            def={def}
-            deviceColor={state.deviceColor}
+      case 'browser':
+        return (
+          <BrowserFrame3D
             screenTexture={screenTexture}
             contentType={state.contentType}
-          />
-        ) : (
-          <Phone3DModel
-            def={def}
-            deviceColor={state.deviceColor}
-            screenTexture={screenTexture}
-            contentType={state.contentType}
-            isLandscape={isLandscape}
-          />
-        );
-      case 'android':
-        return def.glbUrl ? (
-          <GLBDeviceModel
-            def={def}
-            deviceColor={state.deviceColor}
-            screenTexture={screenTexture}
-            contentType={state.contentType}
-          />
-        ) : (
-          <Phone3DModel
-            def={def}
-            deviceColor={state.deviceColor}
-            screenTexture={screenTexture}
-            contentType={state.contentType}
-            isLandscape={isLandscape}
+            browserMode={def.id.includes('light') ? 'light' : 'dark'}
           />
         );
       case 'ipad':
-        return def.glbUrl ? (
-          <GLBDeviceModel
-            def={def}
-            deviceColor={state.deviceColor}
-            screenTexture={screenTexture}
-            contentType={state.contentType}
-          />
-        ) : (
+        return (
           <Tablet3DModel
             def={def}
             screenTexture={screenTexture}
@@ -486,14 +454,7 @@ function DeviceScene({
           />
         );
       case 'macbook':
-        return def.glbUrl ? (
-          <GLBDeviceModel
-            def={def}
-            deviceColor={state.deviceColor}
-            screenTexture={screenTexture}
-            contentType={state.contentType}
-          />
-        ) : (
+        return (
           <MacBook3DModel
             def={def}
             screenTexture={screenTexture}
@@ -501,26 +462,11 @@ function DeviceScene({
           />
         );
       case 'watch':
-        return def.glbUrl ? (
-          <GLBDeviceModel
-            def={def}
-            deviceColor={state.deviceColor}
-            screenTexture={screenTexture}
-            contentType={state.contentType}
-          />
-        ) : (
+        return (
           <Watch3DModel
             def={def}
             screenTexture={screenTexture}
             contentType={state.contentType}
-          />
-        );
-      case 'browser':
-        return (
-          <BrowserFrame3D
-            screenTexture={screenTexture}
-            contentType={state.contentType}
-            browserMode={def.id.includes('light') ? 'light' : 'dark'}
           />
         );
       default:
