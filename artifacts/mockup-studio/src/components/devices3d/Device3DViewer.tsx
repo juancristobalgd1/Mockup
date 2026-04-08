@@ -973,10 +973,15 @@ function BrowserFrame3D({
 
 // ── Camera angle presets ──────────────────────────────────────────
 const CAMERA_PRESETS: Record<string, { phi: number; theta: number }> = {
-  hero:  { phi: Math.PI / 2 - 0.12, theta:  0.28 },
-  front: { phi: Math.PI / 2,         theta:  0    },
-  side:  { phi: Math.PI / 2,         theta:  Math.PI / 2 },
-  top:   { phi: 0.18,                theta:  0    },
+  hero:         { phi: Math.PI / 2 - 0.12, theta:  0.28 },
+  front:        { phi: Math.PI / 2,         theta:  0    },
+  side:         { phi: Math.PI / 2,         theta:  Math.PI / 2 },
+  top:          { phi: 0.18,                theta:  0    },
+  'tilt-right': { phi: Math.PI / 2 - 0.08, theta:  0.72 },
+  'tilt-left':  { phi: Math.PI / 2 - 0.08, theta: -0.72 },
+  low:          { phi: Math.PI / 2 + 0.45, theta:  0.22 },
+  diagonal:     { phi: Math.PI / 2 - 0.18, theta:  Math.PI / 4 },
+  dramatic:     { phi: Math.PI / 2 - 0.50, theta:  0.38 },
 };
 
 // ── Interpolate between camera keyframes ──────────────────────────

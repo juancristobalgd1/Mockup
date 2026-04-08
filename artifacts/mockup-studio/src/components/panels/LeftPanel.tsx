@@ -317,6 +317,84 @@ function extractColorsFromImage(imgSrc: string): Promise<string[]> {
 
 
 
+// ── Rotato-style present pose definitions ─────────────────────────
+const PRESENT_POSES: {
+  id: 'hero' | 'front' | 'side' | 'top' | 'tilt-right' | 'tilt-left' | 'low' | 'diagonal' | 'dramatic';
+  label: string;
+  ry: number; rx: number; rz: number;
+  perspective?: number;
+}[] = [
+  { id: 'hero',       label: 'Hero',     ry:  25, rx: -12, rz:  0 },
+  { id: 'front',      label: 'Front',    ry:   0, rx:   0, rz:  0 },
+  { id: 'tilt-right', label: 'Right',    ry:  48, rx:  -8, rz:  0 },
+  { id: 'tilt-left',  label: 'Left',     ry: -48, rx:  -8, rz:  0 },
+  { id: 'top',        label: 'Top',      ry:  12, rx: -58, rz:  0 },
+  { id: 'low',        label: 'Low',      ry:  14, rx:  42, rz:  0 },
+  { id: 'side',       label: 'Side',     ry:  76, rx:   0, rz:  0 },
+  { id: 'diagonal',   label: 'Diagonal', ry:  44, rx: -16, rz:  0 },
+  { id: 'dramatic',   label: 'Dramatic', ry:  20, rx: -38, rz:  0 },
+];
+
+// ── Rotato pose thumbnail ──────────────────────────────────────────
+function PoseThumbnail({ ry, rx, rz, active }: {
+  ry: number; rx: number; rz: number; active: boolean;
+}) {
+  const bodyColor   = active ? '#d0d0d0' : '#484848';
+  const screenColor = active ? '#ffffff' : '#111111';
+  const frameColor  = active ? '#b0b0b0' : '#333333';
+
+  return (
+    <div style={{
+      width: 52, height: 80,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      perspective: 180,
+    }}>
+      <div style={{
+        width: 22, height: 46,
+        transform: `rotateY(${ry}deg) rotateX(${rx}deg) rotateZ(${rz}deg)`,
+        transformStyle: 'preserve-3d',
+        transition: 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        position: 'relative',
+      }}>
+        {/* Phone body */}
+        <div style={{
+          width: '100%', height: '100%',
+          background: bodyColor,
+          borderRadius: 5,
+          boxShadow: active
+            ? '3px 6px 20px rgba(0,0,0,0.8), inset 0 0 0 0.5px rgba(255,255,255,0.3)'
+            : '2px 4px 10px rgba(0,0,0,0.7)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          position: 'relative', overflow: 'hidden',
+          transition: 'background 0.3s, box-shadow 0.3s',
+        }}>
+          {/* Screen */}
+          <div style={{
+            width: '74%', height: '78%',
+            background: screenColor,
+            borderRadius: 2,
+            transition: 'background 0.3s',
+          }} />
+          {/* Dynamic island notch */}
+          <div style={{
+            position: 'absolute', top: 2, left: '50%', transform: 'translateX(-50%)',
+            width: 8, height: 2, borderRadius: 1,
+            background: frameColor,
+            transition: 'background 0.3s',
+          }} />
+        </div>
+        {/* Side button */}
+        <div style={{
+          position: 'absolute', right: -1, top: '28%',
+          width: 1.5, height: 8, borderRadius: 1,
+          background: frameColor,
+          transition: 'background 0.3s',
+        }} />
+      </div>
+    </div>
+  );
+}
+
 // ── Mode accent helpers ────────────────────────────────────────────
 function getModeAccent(mode: string) {
   if (mode === 'movie')      return { color: '#dc2626', bg: 'rgba(220,38,38,0.08)', border: 'rgba(220,38,38,0.3)' };
@@ -903,33 +981,44 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         </div>
       </Section>
 
-      {/* Camera & Shadow — presets + shadow intensity */}
-      <Section label="Camera & Shadow">
-        <HScroll gap={6}>
-          {([
-            { id: 'hero',  label: 'Hero',  icon: '🎬' },
-            { id: 'front', label: 'Front', icon: '👁' },
-            { id: 'side',  label: 'Side',  icon: '↔' },
-            { id: 'top',   label: 'Top',   icon: '⬆' },
-          ] as const).map(cam => (
-            <button key={cam.id}
-              onClick={() => updateState({ cameraAngle: cam.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}
-              style={{
-                flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
-                padding: '6px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600,
-                background: state.cameraAngle === cam.id ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
-                border: state.cameraAngle === cam.id ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
-                color: state.cameraAngle === cam.id ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.40)',
-                cursor: 'pointer', transition: 'all 0.12s',
-              }}>
-              <span>{cam.icon}</span><span>{cam.label}</span>
-            </button>
-          ))}
-        </HScroll>
-        <div style={{ marginTop: 10 }}>
-          <Slider label="Shadow" value={state.contactShadowOpacity} min={0} max={100}
-            onChange={v => updateState({ contactShadowOpacity: v })} unit="%" />
+      {/* Present Type — Rotato-style visual pose grid */}
+      <Section label="Present Type">
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 10,
+        }}>
+          {PRESENT_POSES.map(pose => {
+            const active = state.cameraAngle === pose.id;
+            return (
+              <button
+                key={pose.id}
+                onClick={() => updateState({ cameraAngle: pose.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  padding: '8px 4px 6px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                  background: active
+                    ? 'linear-gradient(145deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08))'
+                    : 'rgba(255,255,255,0.04)',
+                  outline: active
+                    ? '1.5px solid rgba(255,255,255,0.32)'
+                    : '1px solid rgba(255,255,255,0.07)',
+                  transition: 'all 0.18s ease',
+                  boxShadow: active ? '0 4px 16px rgba(0,0,0,0.4)' : 'none',
+                  transform: active ? 'scale(1.02)' : 'scale(1)',
+                }}
+              >
+                <PoseThumbnail ry={pose.ry} rx={pose.rx} rz={pose.rz} active={active} />
+                <span style={{
+                  fontSize: 9, fontWeight: 700, letterSpacing: '0.04em',
+                  color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.38)',
+                  textTransform: 'uppercase', marginTop: 2,
+                  transition: 'color 0.2s',
+                }}>{pose.label}</span>
+              </button>
+            );
+          })}
         </div>
+        <Slider label="Shadow" value={state.contactShadowOpacity} min={0} max={100}
+          onChange={v => updateState({ contactShadowOpacity: v })} unit="%" />
       </Section>
     </>
   );
