@@ -313,47 +313,6 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
   // ── Device tab content ──────────────────────────────────────────
   const DeviceTab = () => (
     <>
-      {/* Mode-specific context hint */}
-      {mode === 'screenshot' && (
-        <div style={{
-          marginBottom: 14, padding: '8px 10px', borderRadius: 10,
-          background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.2)',
-          display: 'flex', alignItems: 'flex-start', gap: 8,
-        }}>
-          <span style={{ fontSize: 16, flexShrink: 0 }}>📸</span>
-          <div>
-            <p style={{ fontSize: 10, fontWeight: 700, color: '#38bdf8', marginBottom: 2 }}>Screenshot Mode</p>
-            <p style={{ fontSize: 10, color: '#6b7280', lineHeight: 1.4 }}>Enter a URL below to capture any website and display it inside a device frame.</p>
-          </div>
-        </div>
-      )}
-      {mode === 'movie' && (
-        <div style={{
-          marginBottom: 14, padding: '8px 10px', borderRadius: 10,
-          background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
-          display: 'flex', alignItems: 'flex-start', gap: 8,
-        }}>
-          <span style={{ fontSize: 16, flexShrink: 0 }}>🎬</span>
-          <div>
-            <p style={{ fontSize: 10, fontWeight: 700, color: '#f87171', marginBottom: 2 }}>Movie Mode</p>
-            <p style={{ fontSize: 10, color: '#6b7280', lineHeight: 1.4 }}>Load your media here, then use the Timeline at the bottom to animate and export your video.</p>
-          </div>
-        </div>
-      )}
-      {mode === 'mockup' && (
-        <div style={{
-          marginBottom: 14, padding: '8px 10px', borderRadius: 10,
-          background: 'rgba(55,65,81,0.05)', border: '1px solid rgba(55,65,81,0.15)',
-          display: 'flex', alignItems: 'flex-start', gap: 8,
-        }}>
-          <span style={{ fontSize: 16, flexShrink: 0 }}>📱</span>
-          <div>
-            <p style={{ fontSize: 10, fontWeight: 700, color: '#374151', marginBottom: 2 }}>Mockup Mode</p>
-            <p style={{ fontSize: 10, color: '#6b7280', lineHeight: 1.4 }}>Upload an image or video, choose your device, then export a professional-quality mockup.</p>
-          </div>
-        </div>
-      )}
-
       {/* URL capture */}
       <Section label="Capture from URL">
         <div style={{ borderRadius: 12, border: mode === 'screenshot' ? '1px solid rgba(2,132,199,0.3)' : '1px solid #e5e7eb', background: mode === 'screenshot' ? 'rgba(2,132,199,0.04)' : '#fafafa', overflow: 'hidden' }}>
@@ -928,8 +887,8 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
 
       {/* Icon rail */}
       <div style={{
-        width: 52, display: 'flex', flexDirection: 'column', alignItems: 'center',
-        padding: '10px 0', gap: 2, flexShrink: 0,
+        width: 56, display: 'flex', flexDirection: 'column', alignItems: 'center',
+        padding: '10px 4px', gap: 1, flexShrink: 0,
         background: '#f9fafb', borderRight: '1px solid #e5e7eb',
       }}>
         <div style={{
@@ -942,14 +901,17 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
         {TAB_ICONS.map(({ id, icon: Icon, label }) => (
           <button key={id} onClick={() => setActiveTab(id)} title={label}
             style={{
-              width: 38, height: 38, borderRadius: 10, border: 'none',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+              width: 44, height: 46, borderRadius: 10, border: 'none',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
               background: activeTab === id ? modeAccent.bg : 'transparent',
               outline: activeTab === id ? `1px solid ${modeAccent.border}` : '1px solid transparent',
               cursor: 'pointer', transition: 'all 0.12s',
             }}>
-            <Icon size={17} strokeWidth={activeTab === id ? 2 : 1.5}
-              style={{ color: activeTab === id ? modeAccent.color : '#4b5563' }} />
+            <Icon size={16} strokeWidth={activeTab === id ? 2 : 1.5}
+              style={{ color: activeTab === id ? modeAccent.color : '#6b7280' }} />
+            <span style={{ fontSize: 8, fontWeight: 600, color: activeTab === id ? modeAccent.color : '#9ca3af', letterSpacing: '0.02em' }}>
+              {label}
+            </span>
           </button>
         ))}
       </div>
@@ -959,20 +921,17 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
         width: 240, display: 'flex', flexDirection: 'column', height: '100%', flexShrink: 0,
         background: '#ffffff', borderRight: '1px solid #e5e7eb',
       }}>
+        {/* Mode accent stripe */}
+        <div style={{
+          height: 3, flexShrink: 0,
+          background: modeAccent.color,
+          opacity: 0.7,
+        }} />
         {/* Tab header */}
         <div style={{ padding: '10px 14px 8px', borderBottom: '1px solid #e5e7eb', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>
-              {TAB_ICONS.find(t => t.id === activeTab)?.label}
-            </span>
-            <span style={{
-              fontSize: 9, fontWeight: 800, letterSpacing: '0.09em', textTransform: 'uppercase' as const,
-              padding: '2px 7px', borderRadius: 6,
-              background: modeAccent.bg, color: modeAccent.color, border: `1px solid ${modeAccent.border}`,
-            }}>
-              {mode}
-            </span>
-          </div>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>
+            {TAB_ICONS.find(t => t.id === activeTab)?.label}
+          </span>
         </div>
 
         {/* Scrollable content */}
