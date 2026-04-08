@@ -206,10 +206,7 @@ function Editor() {
             <div style={{
               position: 'absolute', bottom: 58, left: 0, right: 0, zIndex: 30,
               maxHeight: '68vh',
-              background: 'rgba(14, 16, 18, 0.72)',
-              backdropFilter: 'blur(28px)',
-              WebkitBackdropFilter: 'blur(28px)',
-              borderTop: '1px solid rgba(255,255,255,0.10)',
+              background: 'transparent',
               display: 'flex', flexDirection: 'column',
               overflow: 'hidden',
             } as React.CSSProperties}>
@@ -234,11 +231,8 @@ function Editor() {
         {/* ── Floating tab bar — always visible at the bottom ── */}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 40,
-          display: 'flex', gap: 5, overflowX: 'auto', padding: '8px 12px 16px',
-          background: 'rgba(10, 12, 13, 0.55)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          borderTop: '1px solid rgba(255,255,255,0.07)',
+          display: 'flex', gap: 5, overflowX: 'auto', padding: '8px 12px 20px',
+          background: 'transparent',
           scrollbarWidth: 'none',
         } as React.CSSProperties}>
           {TAB_ICONS.map(({ id, icon: Icon, label }) => {
@@ -248,29 +242,29 @@ function Editor() {
                 onClick={() => setMobileTab(active ? null : id)}
                 style={{
                   flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
-                  padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-                  background: active ? 'rgba(255,255,255,0.15)' : 'transparent',
-                  border: active ? '1px solid rgba(255,255,255,0.22)' : '1px solid rgba(255,255,255,0.10)',
-                  color: active ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.45)',
-                  cursor: 'pointer', transition: 'all 0.14s',
+                  padding: '7px 12px', borderRadius: 20, fontSize: 12, fontWeight: active ? 700 : 500,
+                  background: 'transparent', border: 'none',
+                  color: active ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.38)',
+                  cursor: 'pointer', transition: 'color 0.14s',
                   whiteSpace: 'nowrap',
+                  textShadow: active ? '0 1px 8px rgba(0,0,0,0.8)' : '0 1px 4px rgba(0,0,0,0.6)',
                 }}>
-                <Icon size={13} strokeWidth={active ? 2.2 : 1.5} />
+                <Icon size={13} strokeWidth={active ? 2.4 : 1.5} />
                 {label}
               </button>
             );
           })}
-          {/* Export — always bright white pill to stand out */}
+          {/* Export — same transparent style, bold to distinguish */}
           <button
             onClick={() => setMobileTab(mobileTab === 'export' ? null : 'export')}
             style={{
               flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
-              padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700,
-              background: mobileTab === 'export' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.88)',
-              border: '1px solid transparent',
-              color: mobileTab === 'export' ? 'rgba(255,255,255,0.95)' : '#0d0e0f',
-              cursor: 'pointer', transition: 'all 0.14s',
+              padding: '7px 12px', borderRadius: 20, fontSize: 12, fontWeight: mobileTab === 'export' ? 700 : 600,
+              background: 'transparent', border: 'none',
+              color: mobileTab === 'export' ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.65)',
+              cursor: 'pointer', transition: 'color 0.14s',
               whiteSpace: 'nowrap',
+              textShadow: '0 1px 8px rgba(0,0,0,0.8)',
             }}>
             <Download size={13} />
             Export
