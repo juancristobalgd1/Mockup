@@ -407,7 +407,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 /* ─── Glass panels ──────────────────────────────────────────── */
 
-/* Glass panels — now flat white/light-gray surface */
 .glass-panel {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: none;
@@ -415,11 +414,20 @@ input[type="range"]::-webkit-slider-thumb:hover {
   border: 1px solid #e5e7eb;
 }
 
-/* Mesh gradient backgrounds — replaced with clean flat light surfaces */
 .mesh-1 {
   background: #f3f4f6;
 }
 
 .mesh-2 {
   background: #f9fafb;
+}
+
+/* ─── Canvas wrapper background ─────────────────────────────── */
+
+.canvas-bg {
+  background-color: #e8eaed;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
