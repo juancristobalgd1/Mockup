@@ -109,8 +109,6 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasColors: true, hasOrientation: true,
     accent: '#38bdf8',
     glbUrl: '/models/iphone16.glb',
-    skipOverlay: true,
-    screenMeshName: 'Object_31',
   },
   // ── Android ───────────────────────────────────────────────────────
   {
