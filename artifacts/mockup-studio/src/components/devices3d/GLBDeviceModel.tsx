@@ -445,7 +445,7 @@ function classifyMesh(
   if (deviceColor === 'clay') {
     if ((key.includes('display') || key.includes('screen')) && !key.includes('screen2')) {
       normalizeScreenUVs(obj, flipScreenU);
-      const mat = new THREE.MeshStandardMaterial({ color: '#020208', roughness: 0.04, metalness: 0 });
+      const mat = new THREE.MeshBasicMaterial({ color: '#000000', toneMapped: false });
       screenMeshes.push(obj);
       return mat;
     }
@@ -456,22 +456,21 @@ function classifyMesh(
   // ── Screen / display ─────────────────────────────────────────────
   if ((key.includes('display') || key.includes('screen')) && !key.includes('screen2')) {
     normalizeScreenUVs(obj, flipScreenU);
-    const mat = new THREE.MeshStandardMaterial({ color: '#020208', roughness: 0.04, metalness: 0 });
+    const mat = new THREE.MeshBasicMaterial({ color: '#000000', toneMapped: false });
     screenMeshes.push(obj);
     return mat;
   }
 
   // ── Front glass cover ─────────────────────────────────────────────
-  // Nearly invisible — just a clearcoat specular highlight to simulate
-  // the sheen of real cover glass without tinting the screen behind it.
+  // Very subtle overlay: nearly invisible, no env-map interaction,
+  // only catches specular from scene lights (not the background).
   if (key.includes('glass') && !key.includes('frosted') && !key.includes('tint')
       && !key.includes('back') && !key.includes('camera') && !key.includes('black')) {
-    return new THREE.MeshPhysicalMaterial({
-      color: '#f0f2f4', metalness: 0, roughness: 0.0,
-      transparent: true, opacity: 0.08,
-      envMapIntensity: 1.8,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.0,
+    return new THREE.MeshStandardMaterial({
+      color: '#c8d4e0', metalness: 0, roughness: 0.05,
+      transparent: true, opacity: 0.07,
+      envMapIntensity: 0,
+      depthWrite: false,
     });
   }
 
@@ -629,8 +628,8 @@ function detectAndMarkScreen(
 
   if (bestMesh) {
     normalizeScreenUVs(bestMesh as THREE.Mesh);
-    (bestMesh as THREE.Mesh).material = new THREE.MeshStandardMaterial({
-      color: '#020208', roughness: 0.04, metalness: 0,
+    (bestMesh as THREE.Mesh).material = new THREE.MeshBasicMaterial({
+      color: '#000000', toneMapped: false,
     });
     screenMeshes.push(bestMesh as THREE.Mesh);
   }
@@ -749,37 +748,29 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
   const prevTransform = useRef<ModelTransform | null>(null);
 
   useEffect(() => {
-    const root = groupRef.current;
-    if (!root || !transform) return;
+    if (!transform) return;
+    // Defer to next macrotask so R3F has committed the group ref before we traverse.
+    const id = setTimeout(() => {
+      const root = groupRef.current;
+      if (!root) return;
 
-    // Only reset the identified screen meshes when the model itself changes.
-    // When only deviceColor changes, keep screenMeshes intact so applyMaterials
-    // can skip them and never paint the screen with the frame color.
-    const modelChanged = prevTransform.current !== transform;
-    prevTransform.current = transform;
-    if (modelChanged) screenMeshes.current = [];
+      const modelChanged = prevTransform.current !== transform;
+      prevTransform.current = transform;
+      if (modelChanged) screenMeshes.current = [];
 
-    const hasBaked = applyMaterials(root, deviceColor, screenMeshes.current, !!def.screenFacesBack);
+      const hasBaked = applyMaterials(root, deviceColor, screenMeshes.current, !!def.screenFacesBack);
 
-    // For multi-mesh models that didn't have an explicitly named screen mesh,
-    // detect it geometrically from world-space positions (group transforms applied).
-    if (modelChanged && !hasBaked && screenMeshes.current.length === 0) {
-      detectAndMarkScreen(root, transform.screenFaceZ, screenMeshes.current);
-    }
-
-    // After any material changes, IMMEDIATELY re-apply the current texture to all
-    // screen meshes. Reads from the global singleton for guaranteed freshness.
-    // For ScreenOverlay models (screenMeshes is empty) this is a no-op.
-    const tex = getGlobalScreenTexture();
-    screenMeshes.current.forEach(mesh => {
-      const mat = mesh.material as THREE.MeshStandardMaterial;
-      if (tex) {
-        mat.map = tex;
-        mat.color.set('#ffffff');
-        mat.needsUpdate = true;
+      if (modelChanged && !hasBaked && screenMeshes.current.length === 0) {
+        detectAndMarkScreen(root, transform.screenFaceZ, screenMeshes.current);
       }
-    });
 
+      const tex = getGlobalScreenTexture();
+      screenMeshes.current.forEach(mesh => {
+        const mat = mesh.material as THREE.MeshBasicMaterial;
+        if (tex) { mat.map = tex; mat.color.set('#ffffff'); mat.needsUpdate = true; }
+      });
+    }, 0);
+    return () => clearTimeout(id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceColor, transform]);
 
@@ -788,9 +779,10 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
   ctRef.current = contentType;
 
   useFrame(() => {
+    // ── Per-frame texture sync ──────────────────────────────────────
     const tex = getGlobalScreenTexture();
     screenMeshes.current.forEach(mesh => {
-      const mat = mesh.material as THREE.MeshStandardMaterial;
+      const mat = mesh.material as THREE.MeshBasicMaterial;
       if (tex) {
         const needMap   = mat.map !== tex;
         const needColor = mat.color.r < 0.99;
@@ -802,7 +794,7 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
         if (ctRef.current === 'video') tex.needsUpdate = true;
       } else if (mat.map || mat.color.r > 0.04) {
         mat.map = null;
-        mat.color.set('#020208');
+        mat.color.set('#000000');
         mat.needsUpdate = true;
       }
     });
