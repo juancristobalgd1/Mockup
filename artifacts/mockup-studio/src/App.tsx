@@ -195,48 +195,25 @@ function Editor() {
           </div>
         )}
 
-        {/* ── Floating content sheet — appears above tab bar ─── */}
+        {/* ── Floating glass panel — appears above tab bar ─── */}
         {mobileTab !== null && (
           <>
-            {/* Dim overlay — tap to close */}
+            {/* Invisible tap-to-close overlay (no dim) */}
             <div
-              style={{ position: 'absolute', inset: 0, zIndex: 20, background: 'rgba(0,0,0,0.45)' }}
+              style={{ position: 'absolute', inset: 0, zIndex: 20 }}
               onClick={() => setMobileTab(null)}
             />
             <div style={{
-              position: 'absolute', bottom: 64, left: 0, right: 0, zIndex: 30,
-              maxHeight: '76vh',
-              background: 'var(--rt-panel)',
-              borderRadius: '20px 20px 0 0',
-              borderTop: '1px solid var(--rt-border-mid)',
-              boxShadow: '0 -12px 48px rgba(0,0,0,0.65)',
+              position: 'absolute', bottom: 58, left: 0, right: 0, zIndex: 30,
+              maxHeight: '68vh',
+              background: 'rgba(14, 16, 18, 0.72)',
+              backdropFilter: 'blur(28px)',
+              WebkitBackdropFilter: 'blur(28px)',
+              borderTop: '1px solid rgba(255,255,255,0.10)',
               display: 'flex', flexDirection: 'column',
               overflow: 'hidden',
-            }}>
-              {/* Handle */}
-              <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, paddingBottom: 4, flexShrink: 0 }}>
-                <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)' }} />
-              </div>
-
-              {/* Sheet header */}
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '2px 16px 10px', flexShrink: 0,
-                borderBottom: '1px solid var(--rt-border)',
-              }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--rt-text)' }}>
-                  {mobileTab === 'export' ? 'Export' : TAB_ICONS.find(t => t.id === mobileTab)?.label}
-                </span>
-                <button onClick={() => setMobileTab(null)} style={{
-                  width: 26, height: 26, borderRadius: 13, border: 'none',
-                  background: 'rgba(255,255,255,0.08)', color: 'var(--rt-text-2)',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <X size={13} />
-                </button>
-              </div>
-
-              {/* Sheet content */}
+            } as React.CSSProperties}>
+              {/* Content — no header, no handle, content starts immediately */}
               <div className="styled-scroll" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
                 {mobileTab === 'export' ? (
                   <RightPanel
@@ -257,10 +234,11 @@ function Editor() {
         {/* ── Floating tab bar — always visible at the bottom ── */}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 40,
-          display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 12px 14px',
-          background: 'rgba(18, 20, 21, 0.88)',
-          backdropFilter: 'blur(16px)',
-          borderTop: '1px solid rgba(255,255,255,0.08)',
+          display: 'flex', gap: 5, overflowX: 'auto', padding: '8px 12px 16px',
+          background: 'rgba(10, 12, 13, 0.55)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderTop: '1px solid rgba(255,255,255,0.07)',
           scrollbarWidth: 'none',
         } as React.CSSProperties}>
           {TAB_ICONS.map(({ id, icon: Icon, label }) => {
@@ -269,27 +247,29 @@ function Editor() {
               <button key={id}
                 onClick={() => setMobileTab(active ? null : id)}
                 style={{
-                  flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '9px 16px', borderRadius: 22, fontSize: 12, fontWeight: 600,
-                  background: active ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.09)',
-                  border: '1px solid transparent',
-                  color: active ? '#0d0e0f' : 'rgba(255,255,255,0.55)',
-                  cursor: 'pointer', transition: 'all 0.15s',
+                  flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                  background: active ? 'rgba(255,255,255,0.15)' : 'transparent',
+                  border: active ? '1px solid rgba(255,255,255,0.22)' : '1px solid rgba(255,255,255,0.10)',
+                  color: active ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.45)',
+                  cursor: 'pointer', transition: 'all 0.14s',
                   whiteSpace: 'nowrap',
                 }}>
-                <Icon size={13} strokeWidth={active ? 2.5 : 1.5} />
+                <Icon size={13} strokeWidth={active ? 2.2 : 1.5} />
                 {label}
               </button>
             );
           })}
-          {/* Export pill */}
+          {/* Export — always bright white pill to stand out */}
           <button
             onClick={() => setMobileTab(mobileTab === 'export' ? null : 'export')}
             style={{
-              flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
-              padding: '9px 16px', borderRadius: 22, fontSize: 12, fontWeight: 700,
-              background: mobileTab === 'export' ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.9)',
-              color: '#0d0e0f', border: 'none', cursor: 'pointer',
+              flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
+              padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+              background: mobileTab === 'export' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.88)',
+              border: '1px solid transparent',
+              color: mobileTab === 'export' ? 'rgba(255,255,255,0.95)' : '#0d0e0f',
+              cursor: 'pointer', transition: 'all 0.14s',
               whiteSpace: 'nowrap',
             }}>
             <Download size={13} />
