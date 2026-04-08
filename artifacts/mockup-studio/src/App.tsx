@@ -3,14 +3,17 @@ import { AppProvider, useApp } from './store';
 import { Canvas } from './components/canvas/Canvas';
 import { LeftPanel } from './components/panels/LeftPanel';
 import { RightPanel } from './components/panels/RightPanel';
-import { Download, Layers, X } from 'lucide-react';
+import { MovieTimeline } from './components/timeline/MovieTimeline';
+import { Download, Layers, X, Film } from 'lucide-react';
 import { getModelById } from './data/devices';
 import type { Device3DViewerHandle } from './components/devices3d/Device3DViewer';
 
 function Editor() {
-  const { state, updateText, removeText } = useApp();
+  const { state, updateState, updateText, removeText } = useApp();
   const canvasRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Device3DViewerHandle>(null);
+  const movieTimeRef = useRef<number>(0);
+  const [moviePlaying, setMoviePlaying] = useState(false);
   const [mobileSheet, setMobileSheet] = useState<'controls' | 'export' | null>(null);
 
   const currentModel = getModelById(state.deviceModel);
@@ -59,12 +62,49 @@ function Editor() {
                 </span>
               )}
             </div>
+
+            {/* Movie mode button */}
+            <button
+              onClick={() => {
+                updateState({ movieMode: !state.movieMode });
+                if (state.movieMode) setMoviePlaying(false);
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '4px 12px', borderRadius: 7, cursor: 'pointer',
+                fontSize: 11, fontWeight: 600,
+                background: state.movieMode ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)',
+                border: state.movieMode ? '1px solid rgba(239,68,68,0.35)' : '1px solid rgba(255,255,255,0.09)',
+                color: state.movieMode ? '#f87171' : '#6b7280',
+              }}
+            >
+              <Film size={12} />
+              Movie
+            </button>
           </div>
 
           {/* Canvas */}
           <div className="flex-1 overflow-hidden relative">
-            <Canvas ref={canvasRef} viewerRef={viewerRef} textOverlays={state.texts} onUpdateText={updateText} />
+            <Canvas
+              ref={canvasRef}
+              viewerRef={viewerRef}
+              textOverlays={state.texts}
+              onUpdateText={updateText}
+              moviePlaying={moviePlaying}
+              movieTimeRef={movieTimeRef}
+            />
           </div>
+
+          {/* Movie Timeline */}
+          {state.movieMode && (
+            <MovieTimeline
+              viewerRef={viewerRef}
+              movieTimeRef={movieTimeRef}
+              canvasRef={canvasRef}
+              onPlayingChange={setMoviePlaying}
+              onClose={() => { updateState({ movieMode: false }); setMoviePlaying(false); }}
+            />
+          )}
         </div>
 
         <RightPanel
