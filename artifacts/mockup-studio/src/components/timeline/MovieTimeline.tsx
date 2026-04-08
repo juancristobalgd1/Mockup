@@ -527,59 +527,6 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
         </div>
       </div>
 
-      {/* ── Instrucciones / estado ───────────────────────────────── */}
-      {cameraKeyframes.length === 0 && !liveRecording && (
-        <div style={{
-          padding: '7px 14px 9px', borderTop: '1px solid #e5e7eb',
-          display: 'flex', gap: 18, flexWrap: 'wrap',
-        }}>
-          {[
-            { n: '1', t: 'Graba movimiento', d: 'Presiona GRABAR y mueve el dispositivo con el ratón. Al parar se guardan los keyframes.' },
-            { n: '2', t: 'O añade manualmente', d: 'Mueve el playhead al tiempo deseado, rota el dispositivo y haz clic en "Añadir keyframe".' },
-            { n: '3', t: 'Edita y combina', d: 'Añade, ajusta o borra keyframes (clic derecho en el diamante). Usa Play para previsualizar.' },
-            { n: '4', t: 'Exporta', d: 'Con 2+ keyframes, pulsa "Exportar WebM" para descargar el video final.' },
-          ].map(s => (
-            <div key={s.n} style={{ display: 'flex', gap: 6, flex: 1, minWidth: 140, alignItems: 'flex-start' }}>
-              <div style={{
-                width: 15, height: 15, borderRadius: '50%', flexShrink: 0,
-                background: '#f3f4f6', border: '1px solid #d1d5db',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 9, fontWeight: 700, color: '#374151',
-              }}>{s.n}</div>
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#6b7280' }}>{s.t}</div>
-                <div style={{ fontSize: 9, color: '#374151', lineHeight: 1.4 }}>{s.d}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {cameraKeyframes.length > 0 && !liveRecording && (
-        <div style={{
-          padding: '5px 14px 7px', fontSize: 9, color: '#4b5563',
-          borderTop: '1px solid #e5e7eb',
-          display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
-        }}>
-          <span style={{ color: '#22c55e', fontWeight: 700 }}>✓</span>
-          <span>{cameraKeyframes.length} keyframes en la línea de tiempo.</span>
-          <span>Puedes seguir grabando o añadiendo más keyframes.</span>
-          <span style={{ color: '#374151' }}>Clic derecho en un diamante para eliminarlo.</span>
-        </div>
-      )}
-
-      {liveRecording && (
-        <div style={{
-          padding: '5px 14px 7px', fontSize: 9,
-          borderTop: '1px solid #e5e7eb',
-          display: 'flex', alignItems: 'center', gap: 6, color: '#dc2626',
-        }}>
-          <Circle size={7} fill="#f87171" color="#f87171" style={{ animation: 'recBlink 1s step-start infinite' }} />
-          Grabando — capturando posición de cámara cada 200ms. Mueve el dispositivo ahora.
-          Al presionar PARAR los movimientos aparecerán como keyframes en la línea de tiempo.
-        </div>
-      )}
-
       <style>{`
         @keyframes recBlink { 0%,100%{opacity:1} 50%{opacity:0} }
       `}</style>
