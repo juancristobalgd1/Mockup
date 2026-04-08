@@ -63,7 +63,7 @@ export interface AppState {
   lightWarmth: number;
   lightIBL: number;
   contactShadowOpacity: number;
-  cameraAngle: 'hero' | 'front' | 'side' | 'top';
+  cameraAngle: 'hero' | 'front' | 'side' | 'top' | 'tilt-right' | 'tilt-left' | 'low' | 'diagonal' | 'dramatic';
   cameraResetKey: number;
 
   deviceScale: number;
