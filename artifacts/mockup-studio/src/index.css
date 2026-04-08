@@ -202,30 +202,39 @@
 input[type="range"] {
   -webkit-appearance: none; appearance: none;
   background: transparent; cursor: pointer; width: 100%;
+  touch-action: none; /* prevent scroll hijack during drag */
 }
 input[type="range"]::-webkit-slider-runnable-track {
   background: rgba(255,255,255,0.12); height: 3px; border-radius: 2px;
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
-  background: rgba(255,255,255,0.88); height: 13px; width: 13px;
-  border-radius: 50%; margin-top: -5px;
+  background: rgba(255,255,255,0.88); height: 14px; width: 14px;
+  border-radius: 50%; margin-top: -5.5px;
   box-shadow: 0 0 0 2px rgba(0,0,0,0.5);
-  transition: transform 0.1s;
+  transition: transform 0.08s;
 }
+input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25); }
 input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
 /* ─── ms-range (panel range inputs) ─────────────────────────── */
-.ms-range { -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; width: 100%; }
-.ms-range::-webkit-slider-runnable-track { background: rgba(255,255,255,0.10); height: 3px; border-radius: 2px; }
+.ms-range {
+  -webkit-appearance: none; appearance: none;
+  background: transparent; cursor: pointer; width: 100%;
+  touch-action: none; /* prevent scroll hijack during drag */
+}
+.ms-range::-webkit-slider-runnable-track {
+  background: rgba(255,255,255,0.10); height: 3px; border-radius: 2px;
+}
 .ms-range::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
-  background: rgba(255,255,255,0.85); height: 13px; width: 13px;
-  border-radius: 50%; margin-top: -5px;
+  background: rgba(255,255,255,0.90); height: 14px; width: 14px;
+  border-radius: 50%; margin-top: -5.5px;
   box-shadow: 0 0 0 2px rgba(0,0,0,0.5);
-  transition: transform 0.1s;
+  transition: transform 0.08s;
 }
-.ms-range::-webkit-slider-thumb:hover { transform: scale(1.15); }
+.ms-range:active::-webkit-slider-thumb { transform: scale(1.25); }
+.ms-range::-webkit-slider-thumb:hover { transform: scale(1.18); }
 
 /* ─── Animations ─────────────────────────────────────────────── */
 @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import {
   Smartphone, Shuffle, Wand2, Image as ImageIcon, Sliders, Type,
   LayoutGrid, Link2, Video, X, RefreshCw, Sun, RotateCcw,
@@ -112,19 +112,69 @@ const Toggle = ({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
 );
 
 // ── Slider ────────────────────────────────────────────────────────
-const Slider = ({ label, value, min, max, step = 1, onChange, unit = '' }: {
+// Uses local state + rAF throttle to decouple drag from store updates.
+// • Label updates instantly (local state, no global re-render).
+// • Store commits at most once per animation frame (~60 fps).
+// • Pointer-up always flushes the final value.
+const Slider = memo(function Slider({ label, value, min, max, step = 1, onChange, unit = '' }: {
   label: string; value: number; min: number; max: number; step?: number;
   onChange: (v: number) => void; unit?: string;
-}) => (
-  <div style={{ marginBottom: 12 }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)' }}>{label}</span>
-      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.60)', fontVariantNumeric: 'tabular-nums' }}>{value}{unit}</span>
+}) {
+  const [local, setLocal] = useState(value);
+  const isDragging  = useRef(false);
+  const pending     = useRef<number | null>(null);
+  const rafId       = useRef<number>(0);
+
+  // Sync external value → local when a preset/template is applied externally
+  useEffect(() => {
+    if (!isDragging.current) setLocal(value);
+  }, [value]);
+
+  const scheduleFlush = (v: number) => {
+    pending.current = v;
+    if (!rafId.current) {
+      rafId.current = requestAnimationFrame(() => {
+        if (pending.current !== null) { onChange(pending.current); pending.current = null; }
+        rafId.current = 0;
+      });
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = Number(e.target.value);
+    setLocal(v);
+    scheduleFlush(v);
+  };
+
+  const handlePointerDown = () => { isDragging.current = true; };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLInputElement>) => {
+    isDragging.current = false;
+    if (rafId.current) { cancelAnimationFrame(rafId.current); rafId.current = 0; }
+    pending.current = null;
+    onChange(Number(e.currentTarget.value));
+  };
+
+  const display = Number.isInteger(step) ? String(local) : local.toFixed(2);
+
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)' }}>{label}</span>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.60)', fontVariantNumeric: 'tabular-nums' }}>
+          {display}{unit}
+        </span>
+      </div>
+      <input
+        type="range" min={min} max={max} step={step} value={local}
+        className="ms-range w-full"
+        onChange={handleChange}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+      />
     </div>
-    <input type="range" min={min} max={max} step={step} value={value}
-      onChange={e => onChange(Number(e.target.value))} className="ms-range w-full" />
-  </div>
-);
+  );
+});
 
 // ── Device thumbnail ──────────────────────────────────────────────
 function DeviceThumbnail({ modelId, isSelected }: { modelId: string; isSelected: boolean }) {
