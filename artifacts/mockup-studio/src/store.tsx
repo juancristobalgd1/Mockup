@@ -119,7 +119,7 @@ export const defaultState: AppState = {
   cameraAngle: "hero",
   cameraResetKey: 0,
 
-  deviceScale: 100,
+  deviceScale: 45,
   reflection: false,
   reflectionOpacity: 50,
   grain: false,
