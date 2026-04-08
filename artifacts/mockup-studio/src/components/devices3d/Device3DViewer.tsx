@@ -542,7 +542,13 @@ function DeviceScene({
       </Float>
     );
   }
-  return <>{inner}{screenClickMesh}{overlay}</>;
+  return (
+    <>
+      {inner}
+      {screenClickMesh}
+      {overlay}
+    </>
+  );
 }
 
 // ── Browser: screen content mesh (texture updated every frame) ────
