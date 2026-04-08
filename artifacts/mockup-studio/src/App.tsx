@@ -194,7 +194,7 @@ function Editor() {
             />
             <div style={{
               position: 'absolute',
-              bottom: state.movieMode ? 175 : 58,
+              bottom: state.movieMode ? 180 : 58,
               left: 8, right: 8, zIndex: 30,
               maxHeight: state.movieMode ? '48vh' : '70vh',
               background: 'rgba(22,24,26,0.92)',
