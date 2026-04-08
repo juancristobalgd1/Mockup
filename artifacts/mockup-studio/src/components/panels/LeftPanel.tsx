@@ -868,14 +868,27 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
     </>
   );
 
-  // ── Mobile shell (persistent bottom panel) ───────────────────────
+  // ── Mobile shell — content top, pill nav bottom (like reference image) ──
   if (mobile) {
     return (
-      <div>
-        {/* Pill tab strip */}
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+
+        {/* Active tab content — scrollable, fills space above the pill bar */}
+        <div className="styled-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '10px 14px 8px' }}>
+          {activeTab === 'presets'    && <PresetsTab />}
+          {activeTab === 'device'     && <DeviceTab />}
+          {activeTab === 'background' && <BackgroundTab />}
+          {activeTab === 'canvas'     && <SceneTab />}
+          {activeTab === 'lighting'   && <LightingTab />}
+          {activeTab === 'text'       && <TextTab />}
+        </div>
+
+        {/* Pill tab bar — fixed at the bottom of the panel */}
         <div style={{
-          display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 14px 10px',
-          scrollbarWidth: 'none', borderBottom: '1px solid rgba(255,255,255,0.07)',
+          display: 'flex', gap: 6, overflowX: 'auto',
+          padding: '8px 14px 12px', flexShrink: 0,
+          borderTop: '1px solid rgba(255,255,255,0.07)',
+          scrollbarWidth: 'none',
         } as React.CSSProperties}>
           {TAB_ICONS.map(({ id, icon: Icon, label }) => {
             const active = activeTab === id;
@@ -883,10 +896,10 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
               <button key={id} onClick={() => setActiveTab(id)}
                 style={{
                   flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '8px 15px', borderRadius: 22, fontSize: 12, fontWeight: 600,
+                  padding: '9px 16px', borderRadius: 22, fontSize: 12, fontWeight: 600,
                   background: active ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.07)',
                   border: '1px solid transparent',
-                  color: active ? '#0d0e0f' : 'rgba(255,255,255,0.50)',
+                  color: active ? '#0d0e0f' : 'rgba(255,255,255,0.48)',
                   cursor: 'pointer', transition: 'all 0.15s',
                   whiteSpace: 'nowrap',
                 }}>
@@ -895,16 +908,6 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
               </button>
             );
           })}
-        </div>
-
-        {/* Active tab content */}
-        <div style={{ padding: '12px 14px 16px' }}>
-          {activeTab === 'presets'    && <PresetsTab />}
-          {activeTab === 'device'     && <DeviceTab />}
-          {activeTab === 'background' && <BackgroundTab />}
-          {activeTab === 'canvas'     && <SceneTab />}
-          {activeTab === 'lighting'   && <LightingTab />}
-          {activeTab === 'text'       && <TextTab />}
         </div>
       </div>
     );

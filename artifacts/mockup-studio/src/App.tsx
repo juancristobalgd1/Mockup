@@ -249,22 +249,20 @@ function Editor() {
 
         {/* ── Persistent bottom control panel ───────────────────── */}
         <div style={{
-          flexShrink: 0,
+          flexShrink: 0, height: '46vh',
           background: 'var(--rt-panel)',
           borderTop: '1px solid var(--rt-border)',
           borderRadius: '18px 18px 0 0',
           boxShadow: '0 -8px 32px rgba(0,0,0,0.45)',
           display: 'flex', flexDirection: 'column',
-          maxHeight: '44vh',
+          overflow: 'hidden',
         }}>
           {/* Drag handle */}
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 9, paddingBottom: 2, flexShrink: 0 }}>
             <div style={{ width: 34, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.14)' }} />
           </div>
-          {/* Scrollable controls */}
-          <div className="styled-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-            <LeftPanel mobile />
-          </div>
+          {/* LeftPanel — controls its own internal layout (content top, pills bottom) */}
+          <LeftPanel mobile />
         </div>
 
         {/* ── Export bottom sheet ───────────────────────────────── */}
