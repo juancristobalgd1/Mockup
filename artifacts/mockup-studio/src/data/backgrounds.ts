@@ -59,6 +59,36 @@ export const MESH_GRADIENTS: MeshGradient[] = [
     label: 'Gold',
     css: `radial-gradient(at 25% 25%, #d97706 0px, transparent 50%), radial-gradient(at 75% 10%, #f59e0b 0px, transparent 50%), radial-gradient(at 80% 70%, #92400e 0px, transparent 50%), radial-gradient(at 15% 80%, #b45309 0px, transparent 50%), #1a1008`
   },
+  {
+    id: 'mesh-violet',
+    label: 'Violet',
+    css: `radial-gradient(at 20% 20%, #7c3aed 0px, transparent 50%), radial-gradient(at 80% 10%, #a855f7 0px, transparent 50%), radial-gradient(at 70% 70%, #6d28d9 0px, transparent 50%), radial-gradient(at 5% 75%, #8b5cf6 0px, transparent 50%), #0d0820`
+  },
+  {
+    id: 'mesh-rose',
+    label: 'Rose',
+    css: `radial-gradient(at 35% 15%, #f43f5e 0px, transparent 50%), radial-gradient(at 80% 20%, #fb7185 0px, transparent 50%), radial-gradient(at 60% 75%, #e11d48 0px, transparent 50%), radial-gradient(at 10% 65%, #fda4af 0px, transparent 50%), radial-gradient(at 85% 80%, #be123c 0px, transparent 50%), #1a0510`
+  },
+  {
+    id: 'mesh-midnight',
+    label: 'Midnight',
+    css: `radial-gradient(at 30% 30%, #1e3a5f 0px, transparent 55%), radial-gradient(at 75% 15%, #312e81 0px, transparent 50%), radial-gradient(at 85% 70%, #1e1b4b 0px, transparent 50%), radial-gradient(at 10% 80%, #0f172a 0px, transparent 50%), #020617`
+  },
+  {
+    id: 'mesh-neon',
+    label: 'Neon',
+    css: `radial-gradient(at 25% 25%, #22d3ee 0px, transparent 50%), radial-gradient(at 75% 15%, #a3e635 0px, transparent 50%), radial-gradient(at 80% 70%, #06b6d4 0px, transparent 50%), radial-gradient(at 10% 70%, #4ade80 0px, transparent 50%), #030a0a`
+  },
+  {
+    id: 'mesh-peach',
+    label: 'Peach',
+    css: `radial-gradient(at 30% 20%, #fb923c 0px, transparent 50%), radial-gradient(at 80% 10%, #fbbf24 0px, transparent 50%), radial-gradient(at 70% 70%, #f97316 0px, transparent 50%), radial-gradient(at 10% 75%, #fdba74 0px, transparent 50%), #1a0d05`
+  },
+  {
+    id: 'mesh-mint',
+    label: 'Mint',
+    css: `radial-gradient(at 20% 25%, #34d399 0px, transparent 50%), radial-gradient(at 75% 10%, #6ee7b7 0px, transparent 50%), radial-gradient(at 80% 65%, #059669 0px, transparent 50%), radial-gradient(at 10% 75%, #10b981 0px, transparent 50%), #021a10`
+  },
 ];
 
 export interface PatternOption {
@@ -93,6 +123,90 @@ export const PATTERNS: PatternOption[] = [
       backgroundColor: color,
       backgroundImage: 'repeating-linear-gradient(-45deg, rgba(255,255,255,0.05), rgba(255,255,255,0.05) 1px, transparent 0, transparent 50%)',
       backgroundSize: '16px 16px',
+    })
+  },
+  {
+    id: 'cross',
+    label: 'Cross',
+    bgStyle: (color: string) => ({
+      backgroundColor: color,
+      backgroundImage: `linear-gradient(rgba(255,255,255,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.10) 1px, transparent 1px)`,
+      backgroundSize: '32px 32px',
+      backgroundPosition: '-1px -1px',
+    })
+  },
+  {
+    id: 'dots-lg',
+    label: 'Circles',
+    bgStyle: (color: string) => ({
+      backgroundColor: color,
+      backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.12) 3px, transparent 3px)',
+      backgroundSize: '28px 28px',
+    })
+  },
+  {
+    id: 'checker',
+    label: 'Checker',
+    bgStyle: (color: string) => ({
+      backgroundColor: color,
+      backgroundImage: `linear-gradient(45deg, rgba(255,255,255,0.06) 25%, transparent 25%), linear-gradient(-45deg, rgba(255,255,255,0.06) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.06) 75%), linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.06) 75%)`,
+      backgroundSize: '20px 20px',
+      backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+    })
+  },
+  {
+    id: 'zigzag',
+    label: 'Zigzag',
+    bgStyle: (color: string) => ({
+      backgroundColor: color,
+      backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0.07) 25%, transparent 25%) -10px 0, linear-gradient(225deg, rgba(255,255,255,0.07) 25%, transparent 25%) -10px 0, linear-gradient(315deg, rgba(255,255,255,0.07) 25%, transparent 25%), linear-gradient(45deg, rgba(255,255,255,0.07) 25%, transparent 25%)`,
+      backgroundSize: '20px 20px',
+    })
+  },
+  {
+    id: 'waves',
+    label: 'Waves',
+    bgStyle: (color: string) => ({
+      backgroundColor: color,
+      backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 18px, rgba(255,255,255,0.06) 18px, rgba(255,255,255,0.06) 20px)`,
+      backgroundSize: '100% 20px',
+    })
+  },
+  {
+    id: 'diamond',
+    label: 'Diamond',
+    bgStyle: (color: string) => ({
+      backgroundColor: color,
+      backgroundImage: `linear-gradient(45deg, rgba(255,255,255,0.08) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.08) 75%), linear-gradient(45deg, rgba(255,255,255,0.08) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.08) 75%)`,
+      backgroundSize: '24px 24px',
+      backgroundPosition: '0 0, 12px 12px',
+    })
+  },
+  {
+    id: 'noise',
+    label: 'Noise',
+    bgStyle: (color: string) => ({
+      backgroundColor: color,
+      backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`,
+      backgroundSize: '200px 200px',
+    })
+  },
+  {
+    id: 'hexagon',
+    label: 'Hex',
+    bgStyle: (color: string) => ({
+      backgroundColor: color,
+      backgroundImage: `radial-gradient(circle farthest-side at 0% 50%, transparent 23%, rgba(255,255,255,0.07) 24%, rgba(255,255,255,0.07) 34%, transparent 35%), radial-gradient(circle farthest-side at 100% 50%, transparent 23%, rgba(255,255,255,0.07) 24%, rgba(255,255,255,0.07) 34%, transparent 35%)`,
+      backgroundSize: '30px 18px',
+    })
+  },
+  {
+    id: 'triangle',
+    label: 'Triangles',
+    bgStyle: (color: string) => ({
+      backgroundColor: color,
+      backgroundImage: `linear-gradient(60deg, rgba(255,255,255,0.07) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.07) 75%), linear-gradient(120deg, rgba(255,255,255,0.07) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.07) 75%)`,
+      backgroundSize: '24px 42px',
     })
   },
 ];
