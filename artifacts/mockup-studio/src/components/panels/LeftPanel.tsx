@@ -1087,9 +1087,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     const allBgs = [...GRADIENTS, ...MESH_GRADIENTS, ...WALLPAPERS];
     return (
       <>
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8,
-        }}>
+        <HScroll gap={8}>
           {PRESETS.map(preset => {
             const bg = allBgs.find(g => g.id === preset.thumb);
             const bgCss = bg ? ('css' in bg ? bg.css : '') : '';
@@ -1110,19 +1108,19 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   });
                 }}
                 style={{
-                  width: '100%', aspectRatio: '1', borderRadius: 16, overflow: 'hidden', position: 'relative',
+                  flexShrink: 0, width: 88, height: 88, borderRadius: 16, overflow: 'hidden', position: 'relative',
                   background: bgCss || '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer',
                   transition: 'all 0.15s',
                 }}>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-end', padding: 8 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.9)', textAlign: 'left', lineHeight: 1.2, textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.9)', textAlign: 'left', lineHeight: 1.2, textShadow: '0 1px 8px rgba(0,0,0,0.9)', whiteSpace: 'nowrap' }}>
                     {preset.label}
                   </span>
                 </div>
               </button>
             );
           })}
-        </div>
+        </HScroll>
       </>
     );
   };
