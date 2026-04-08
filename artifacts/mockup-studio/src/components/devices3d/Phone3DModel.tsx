@@ -446,9 +446,9 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
 
       {/* ── 3. FRONT CAMERA ─────────────────────────────────────── */}
       <group position={[0, sOffY, frontZ + 0.004]}>
-        {def.camera === 'dynamic-island' && <DynamicIsland sH={sH} isLandscape={false} />}
-        {def.camera === 'punch-hole'     && <PunchHole sH={sH} sW={sW} isLandscape={false} />}
-        {def.camera === 'notch'          && <Notch sH={sH} isLandscape={false} />}
+        {def.camera === 'dynamic-island' && <DynamicIsland sH={sH} isLandscape={isLandscape} />}
+        {def.camera === 'punch-hole'     && <PunchHole sH={sH} sW={sW} isLandscape={isLandscape} />}
+        {def.camera === 'notch'          && <Notch sH={sH} isLandscape={isLandscape} />}
       </group>
 
       {/* ── 4. BACK FACE — logo + shimmer ────────────────────────── */}
