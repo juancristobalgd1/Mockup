@@ -276,35 +276,29 @@ function FloorReflector({ isLaptop }: { isLaptop: boolean }) {
 // Uses em units so it scales naturally with the container font-size
 // (set imperatively from useFrame in DeviceScene).
 function ScreenDropZoneContent({ pencil }: { pencil: boolean }) {
+  const s = 'rgba(255,255,255,0.90)';
+  const label: React.CSSProperties = {
+    fontSize: '0.85em', color: 'rgba(255,255,255,0.88)',
+    fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 600,
+    letterSpacing: '0.01em', lineHeight: 1,
+  };
   return pencil ? (
     <>
-      <svg width="2em" height="2em" viewBox="0 0 24 24" fill="none">
+      <svg width="1.1em" height="1.1em" viewBox="0 0 24 24" fill="none">
         <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"
-          stroke="rgba(255,255,255,0.85)" strokeWidth="1.8"
-          strokeLinecap="round" strokeLinejoin="round"/>
+          stroke={s} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
-      <span style={{
-        fontSize: '0.72em', color: 'rgba(255,255,255,0.5)',
-        fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
-        letterSpacing: '0.01em', textAlign: 'center', lineHeight: 1.3,
-      }}>Cambiar imagen</span>
+      <span style={label}>Edit</span>
     </>
   ) : (
     <>
-      <svg width="2em" height="2em" viewBox="0 0 24 24" fill="none">
+      <svg width="1.1em" height="1.1em" viewBox="0 0 24 24" fill="none">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-          stroke="rgba(255,255,255,0.85)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-        <polyline points="17 8 12 3 7 8"
-          stroke="rgba(255,255,255,0.85)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-        <line x1="12" y1="3" x2="12" y2="15"
-          stroke="rgba(255,255,255,0.85)" strokeWidth="1.8" strokeLinecap="round"/>
+          stroke={s} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <polyline points="17 8 12 3 7 8" stroke={s} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <line x1="12" y1="3" x2="12" y2="15" stroke={s} strokeWidth="2" strokeLinecap="round"/>
       </svg>
-      <span style={{
-        fontSize: '0.72em', color: 'rgba(255,255,255,0.5)',
-        fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
-        letterSpacing: '0.01em', textAlign: 'center', lineHeight: 1.3,
-        padding: '0 0.6em',
-      }}>Drop image or video</span>
+      <span style={label}>Drop media</span>
     </>
   );
 }
@@ -541,26 +535,31 @@ function DeviceScene({
               onClick={() => fileRef.current?.click()}
               onMouseEnter={e => {
                 const el = e.currentTarget as HTMLDivElement;
-                el.style.background = 'rgba(20,20,28,0.72)';
-                el.style.borderColor = 'rgba(255,255,255,0.28)';
+                el.style.background = 'rgba(40,40,50,0.92)';
+                el.style.transform = 'scale(1.08)';
               }}
               onMouseLeave={e => {
                 const el = e.currentTarget as HTMLDivElement;
-                el.style.background = 'rgba(10,10,16,0.55)';
-                el.style.borderColor = 'rgba(255,255,255,0.14)';
+                el.style.background = 'rgba(20,20,28,0.78)';
+                el.style.transform = 'scale(1)';
               }}
               style={{
-                width: '100%', height: '100%', borderRadius: 10,
-                background: 'rgba(10,10,16,0.55)',
-                border: '1.5px dashed rgba(255,255,255,0.14)',
-                backdropFilter: 'blur(12px)',
-                display: 'flex', flexDirection: 'column',
+                display: 'inline-flex', flexDirection: 'row',
                 alignItems: 'center', justifyContent: 'center',
-                gap: '12%',
+                gap: '0.4em',
+                padding: '0.5em 0.85em',
+                borderRadius: '2em',
+                background: 'rgba(20,20,28,0.78)',
+                border: '1px solid rgba(255,255,255,0.18)',
+                backdropFilter: 'blur(14px)',
                 cursor: 'pointer', userSelect: 'none',
                 pointerEvents: 'auto',
-                transition: 'background 0.15s, border-color 0.15s',
-                overflow: 'hidden',
+                transition: 'background 0.12s, transform 0.12s',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
+                position: 'absolute',
+                top: '50%', left: '50%',
+                transform: 'translate(-50%,-50%)',
+                whiteSpace: 'nowrap',
               }}
             >
               {pencilVisible ? (
