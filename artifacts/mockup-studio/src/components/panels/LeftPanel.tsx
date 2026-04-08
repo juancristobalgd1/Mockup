@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import {
   Smartphone, Shuffle, Wand2, Image as ImageIcon, Sliders, Type,
-  LayoutGrid, X, RefreshCw, Sun, RotateCcw,
+  LayoutGrid, X, RefreshCw, Sun, RotateCcw, Search,
 } from 'lucide-react';
 import { useApp } from '../../store';
 import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS, PRESETS } from '../../data/backgrounds';
@@ -348,6 +348,7 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
 
   const [activeTab, setActiveTab]           = useState<Tab>(getDefaultTab(mode));
   const [selectedGroup, setSelectedGroup]   = useState<DeviceGroup>('iPhone');
+  const [deviceSearch, setDeviceSearch]     = useState('');
   const bgFileRef                            = useRef<HTMLInputElement>(null);
   const [extracting, setExtracting]         = useState(false);
 
@@ -387,97 +388,114 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
     } finally { setExtracting(false); }
   };
 
-  // ── Device tab content ──────────────────────────────────────────
-  const DeviceTab = () => (
-    <>
-      {/* Device category */}
-      <Section label="Device">
-        <HScroll gap={6}>
-          {DEVICE_GROUPS.map(group => (
-            <button key={group} onClick={() => setSelectedGroup(group)}
-              style={{
-                flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4,
-                padding: '4px 9px', borderRadius: 7, fontSize: 10, fontWeight: 700,
-                background: selectedGroup === group ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
-                border: selectedGroup === group ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
-                color: selectedGroup === group ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.40)',
-                cursor: 'pointer',
-              }}>
-              <span>{GROUP_ICONS[group]}</span>
-              <span>{group}</span>
-            </button>
-          ))}
-        </HScroll>
-      </Section>
+  // ── Device tab content — searchable 3-column grid ───────────────
+  const DeviceTab = () => {
+    const q = deviceSearch.trim().toLowerCase();
+    const models = q
+      ? DEVICE_MODELS.filter(m => m.label.toLowerCase().includes(q))
+      : DEVICE_MODELS;
 
-      {/* Device model — horizontal scroll cards */}
-      <Section label="Model">
-        <HScroll gap={7}>
-          {DEVICE_MODELS.filter(m => m.group === selectedGroup).map(model => {
+    return (
+      <>
+        {/* Search bar */}
+        <div style={{ position: 'relative', marginBottom: 12 }}>
+          <Search size={12} style={{
+            position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+            color: 'rgba(255,255,255,0.28)', pointerEvents: 'none',
+          }} />
+          <input
+            type="text"
+            placeholder="Search..."
+            value={deviceSearch}
+            onChange={e => setDeviceSearch(e.target.value)}
+            className="rt-input"
+            style={{ paddingLeft: 30, width: '100%', boxSizing: 'border-box' }}
+          />
+        </div>
+
+        {/* 3-column device grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7, marginBottom: 14 }}>
+          {models.map(model => {
             const isSelected = state.deviceModel === model.id;
             return (
               <button key={model.id}
                 onClick={() => updateState({ deviceModel: model.id, deviceType: model.storeType })}
                 style={{
-                  flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
-                  gap: 5, padding: '10px 8px 8px', borderRadius: 12, width: 64,
-                  background: isSelected ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.04)',
-                  border: isSelected ? '1.5px solid rgba(255,255,255,0.22)' : '1px solid rgba(255,255,255,0.07)',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  padding: '12px 4px 9px', borderRadius: 14, gap: 0,
+                  background: isSelected ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
+                  border: isSelected ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
                   cursor: 'pointer', transition: 'all 0.12s',
                 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                {/* Thumbnail — scaled up for the grid */}
+                <div style={{
+                  height: 60, width: '100%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transform: 'scale(1.4)', transformOrigin: 'center',
+                }}>
                   <DeviceThumbnail modelId={model.id} isSelected={isSelected} />
                 </div>
-                <span style={{ fontSize: 9, fontWeight: 600, textAlign: 'center', lineHeight: 1.2, color: isSelected ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.38)' }}>
+                {/* Name */}
+                <span style={{
+                  fontSize: 10, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
+                  marginTop: 6,
+                  color: isSelected ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.60)',
+                }}>
                   {model.label}
+                </span>
+                {/* Resolution */}
+                <span style={{
+                  fontSize: 8, marginTop: 3,
+                  color: 'rgba(255,255,255,0.25)', fontVariantNumeric: 'tabular-nums',
+                }}>
+                  {model.w}×{model.h}
                 </span>
               </button>
             );
           })}
-        </HScroll>
-      </Section>
+          {models.length === 0 && (
+            <div style={{
+              gridColumn: '1 / -1', textAlign: 'center', padding: '24px 0',
+              color: 'rgba(255,255,255,0.25)', fontSize: 11,
+            }}>
+              No devices found
+            </div>
+          )}
+        </div>
 
-      {/* Frame color */}
-      {state.deviceType === 'iphone' && (
-        <Section label="Frame Color">
-          <HScroll gap={8}>
+        {/* Frame color dots */}
+        {state.deviceType === 'iphone' && (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
             {IPHONE_COLORS.map(c => (
               <button key={c.id} title={c.label} onClick={() => updateState({ deviceColor: c.id })}
                 style={{
-                  flexShrink: 0, width: 28, height: 28, borderRadius: '50%', background: c.bg,
-                  border: state.deviceColor === c.id ? '2px solid rgba(255,255,255,0.7)' : `2px solid ${c.border}`,
-                  boxShadow: state.deviceColor === c.id ? '0 0 0 2.5px rgba(255,255,255,0.15)' : 'none',
-                  cursor: 'pointer', transition: 'all 0.15s',
+                  width: 26, height: 26, borderRadius: '50%', background: c.bg,
+                  border: state.deviceColor === c.id ? '2.5px solid rgba(255,255,255,0.80)' : `2px solid ${c.border}`,
+                  boxShadow: state.deviceColor === c.id ? '0 0 0 2.5px rgba(255,255,255,0.13)' : 'none',
+                  cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
                 }} />
             ))}
-            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.40)', display: 'flex', alignItems: 'center', paddingLeft: 2 }}>
-              {IPHONE_COLORS.find(c => c.id === state.deviceColor)?.label}
-            </span>
-          </HScroll>
-        </Section>
-      )}
+          </div>
+        )}
 
-      {/* Browser theme */}
-      {state.deviceType === 'browser' && (
-        <Section label="Browser Theme">
-          <HScroll gap={6}>
-            <Chip active={state.browserMode === 'dark'} onClick={() => updateState({ browserMode: 'dark' })}>Dark</Chip>
-            <Chip active={state.browserMode === 'light'} onClick={() => updateState({ browserMode: 'light' })}>Light</Chip>
-          </HScroll>
-        </Section>
-      )}
-
-      {/* Orientation */}
-      {(state.deviceType === 'iphone' || state.deviceType === 'android' || state.deviceType === 'ipad') && (
-        <Section label="Orientation">
-          <HScroll gap={6}>
+        {/* Orientation */}
+        {(state.deviceType === 'iphone' || state.deviceType === 'android' || state.deviceType === 'ipad') && (
+          <div style={{ display: 'flex', gap: 6 }}>
             <Chip active={!state.deviceLandscape} onClick={() => updateState({ deviceLandscape: false })}>Portrait</Chip>
             <Chip active={state.deviceLandscape}  onClick={() => updateState({ deviceLandscape: true })}>Landscape</Chip>
-          </HScroll>
-        </Section>
-      )}
-    </>
-  );
+          </div>
+        )}
+
+        {/* Browser theme */}
+        {state.deviceType === 'browser' && (
+          <div style={{ display: 'flex', gap: 6 }}>
+            <Chip active={state.browserMode === 'dark'}  onClick={() => updateState({ browserMode: 'dark' })}>Dark</Chip>
+            <Chip active={state.browserMode === 'light'} onClick={() => updateState({ browserMode: 'light' })}>Light</Chip>
+          </div>
+        )}
+      </>
+    );
+  };
 
   // ── Background tab content ──────────────────────────────────────
   const BackgroundTab = () => {
