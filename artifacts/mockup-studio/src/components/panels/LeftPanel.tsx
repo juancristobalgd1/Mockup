@@ -84,9 +84,9 @@ const Chip = ({ active, onClick, children, style }: {
     onClick={onClick}
     style={{
       flexShrink: 0, padding: '5px 10px', borderRadius: 10, fontSize: 11, fontWeight: 600,
-      background: active ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.04)',
-      border: active ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.07)',
-      color: active ? '#c4b5fd' : '#6b7280',
+      background: active ? '#f3f4f6' : '#ffffff',
+      border: active ? '1px solid #9ca3af' : '1px solid #e5e7eb',
+      color: active ? '#111827' : '#6b7280',
       cursor: 'pointer', transition: 'all 0.12s', whiteSpace: 'nowrap', ...style,
     }}
   >
@@ -99,7 +99,7 @@ const Toggle = ({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
   <button onClick={onToggle}
     style={{
       position: 'relative', width: 36, height: 20, borderRadius: 10, flexShrink: 0,
-      background: enabled ? '#7c3aed' : 'rgba(255,255,255,0.12)', border: 'none', cursor: 'pointer', transition: 'background 0.2s',
+      background: enabled ? '#374151' : '#d1d5db', border: 'none', cursor: 'pointer', transition: 'background 0.2s',
     }}>
     <div style={{
       position: 'absolute', top: 2, width: 16, height: 16, borderRadius: '50%',
@@ -133,8 +133,8 @@ function DeviceThumbnail({ modelId, isSelected }: { modelId: string; isSelected:
   const isMac     = def.storeType === 'macbook';
   const isBrowser = def.storeType === 'browser';
 
-  const accent = isSelected ? '#7c3aed' : def.accent;
-  const body   = isSelected ? '#2d1b69' : 'rgba(255,255,255,0.06)';
+  const accent = isSelected ? '#374151' : def.accent;
+  const body   = isSelected ? '#e5e7eb' : 'rgba(0,0,0,0.06)';
 
   if (isPhone) {
     const r = def.storeType === 'android' ? 6 : 8;
@@ -145,7 +145,7 @@ function DeviceThumbnail({ modelId, isSelected }: { modelId: string; isSelected:
           : def.camera === 'punch-hole' ? <circle cx="14" cy="5.5" r="1.5" fill={accent} opacity="0.8" />
           : def.camera === 'notch' ? <rect x="7" y="0" width="14" height="4" rx="2" fill={body} stroke={accent} strokeWidth="1" />
           : null}
-        <rect x="4" y="9" width="20" height="30" rx="2" fill={isSelected ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.04)'} />
+        <rect x="4" y="9" width="20" height="30" rx="2" fill={isSelected ? 'rgba(55,65,81,0.15)' : 'rgba(0,0,0,0.04)'} />
         <rect x="27" y="14" width="2" height="8" rx="1" fill={accent} opacity="0.6" />
       </svg>
     );
@@ -154,7 +154,7 @@ function DeviceThumbnail({ modelId, isSelected }: { modelId: string; isSelected:
     return (
       <svg width="30" height="40" viewBox="0 0 36 46" fill="none">
         <rect x="1" y="1" width="34" height="44" rx="4" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
-        <rect x="4" y="7" width="28" height="32" rx="2" fill={isSelected ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.04)'} />
+        <rect x="4" y="7" width="28" height="32" rx="2" fill={isSelected ? 'rgba(55,65,81,0.15)' : 'rgba(0,0,0,0.04)'} />
         <circle cx="18" cy="42" r="2" fill={accent} opacity="0.6" />
       </svg>
     );
@@ -165,7 +165,7 @@ function DeviceThumbnail({ modelId, isSelected }: { modelId: string; isSelected:
         <rect x="8" y="0" width="12" height="5" rx="2" fill={accent} opacity="0.4" />
         <rect x="8" y="33" width="12" height="5" rx="2" fill={accent} opacity="0.4" />
         <rect x="1" y="6" width="26" height="26" rx="8" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
-        <rect x="4" y="9" width="20" height="20" rx="6" fill={isSelected ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.04)'} />
+        <rect x="4" y="9" width="20" height="20" rx="6" fill={isSelected ? 'rgba(55,65,81,0.15)' : 'rgba(0,0,0,0.04)'} />
       </svg>
     );
   }
@@ -173,7 +173,7 @@ function DeviceThumbnail({ modelId, isSelected }: { modelId: string; isSelected:
     return (
       <svg width="40" height="30" viewBox="0 0 44 36" fill="none">
         <rect x="4" y="1" width="36" height="24" rx="2" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
-        <rect x="7" y="4" width="30" height="18" rx="1" fill={isSelected ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.04)'} />
+        <rect x="7" y="4" width="30" height="18" rx="1" fill={isSelected ? 'rgba(55,65,81,0.15)' : 'rgba(0,0,0,0.04)'} />
         <rect x="1" y="25" width="42" height="5" rx="1.5" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
       </svg>
     );
@@ -185,7 +185,7 @@ function DeviceThumbnail({ modelId, isSelected }: { modelId: string; isSelected:
         <rect x="1" y="1" width="42" height="8" rx="3" fill={accent} opacity="0.18" />
         <rect x="4" y="3.5" width="4" height="3" rx="1.5" fill={accent} opacity="0.5" />
         <rect x="10" y="3.5" width="4" height="3" rx="1.5" fill={accent} opacity="0.3" />
-        <rect x="4" y="11" width="36" height="16" rx="1" fill={isSelected ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.03)'} />
+        <rect x="4" y="11" width="36" height="16" rx="1" fill={isSelected ? 'rgba(55,65,81,0.12)' : 'rgba(0,0,0,0.03)'} />
       </svg>
     );
   }
@@ -232,9 +232,9 @@ function getApiBase() {
 
 // ── Mode accent helpers ────────────────────────────────────────────
 function getModeAccent(mode: string) {
-  if (mode === 'movie')      return { color: '#f87171', bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.4)' };
-  if (mode === 'screenshot') return { color: '#38bdf8', bg: 'rgba(56,189,248,0.15)', border: 'rgba(56,189,248,0.4)' };
-  return { color: '#a78bfa', bg: 'rgba(124,58,237,0.15)', border: 'rgba(124,58,237,0.4)' };
+  if (mode === 'movie')      return { color: '#dc2626', bg: 'rgba(220,38,38,0.08)', border: 'rgba(220,38,38,0.3)' };
+  if (mode === 'screenshot') return { color: '#0284c7', bg: 'rgba(2,132,199,0.08)', border: 'rgba(2,132,199,0.3)' };
+  return { color: '#374151', bg: 'rgba(55,65,81,0.07)', border: 'rgba(55,65,81,0.25)' };
 }
 
 function getDefaultTab(mode: string): Tab {
@@ -343,12 +343,12 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
       {mode === 'mockup' && (
         <div style={{
           marginBottom: 14, padding: '8px 10px', borderRadius: 10,
-          background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)',
+          background: 'rgba(55,65,81,0.05)', border: '1px solid rgba(55,65,81,0.15)',
           display: 'flex', alignItems: 'flex-start', gap: 8,
         }}>
           <span style={{ fontSize: 16, flexShrink: 0 }}>📱</span>
           <div>
-            <p style={{ fontSize: 10, fontWeight: 700, color: '#a78bfa', marginBottom: 2 }}>Mockup Mode</p>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#374151', marginBottom: 2 }}>Mockup Mode</p>
             <p style={{ fontSize: 10, color: '#6b7280', lineHeight: 1.4 }}>Upload an image or video, choose your device, then export a professional-quality mockup.</p>
           </div>
         </div>
@@ -356,7 +356,7 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
 
       {/* URL capture */}
       <Section label="Capture from URL">
-        <div style={{ borderRadius: 12, border: mode === 'screenshot' ? '1px solid rgba(56,189,248,0.3)' : '1px solid rgba(255,255,255,0.08)', background: mode === 'screenshot' ? 'rgba(56,189,248,0.04)' : 'rgba(255,255,255,0.02)', overflow: 'hidden' }}>
+        <div style={{ borderRadius: 12, border: mode === 'screenshot' ? '1px solid rgba(2,132,199,0.3)' : '1px solid #e5e7eb', background: mode === 'screenshot' ? 'rgba(2,132,199,0.04)' : '#fafafa', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px' }}>
             <Link2 size={12} style={{ color: '#6b7280', flexShrink: 0 }} />
             <input
@@ -364,10 +364,10 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
               onChange={e => { setUrlInput(e.target.value); setCaptureError(''); }}
               onKeyDown={e => e.key === 'Enter' && handleUrlCapture()}
               placeholder="https://example.com"
-              style={{ flex: 1, background: 'transparent', fontSize: 11, outline: 'none', color: '#e2e8f0', border: 'none' }}
+              style={{ flex: 1, background: 'transparent', fontSize: 11, outline: 'none', color: '#111827', border: 'none' }}
             />
             {urlInput && (
-              <button onClick={() => { setUrlInput(''); setCaptureError(''); }} style={{ color: '#4b5563', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              <button onClick={() => { setUrlInput(''); setCaptureError(''); }} style={{ color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                 <X size={11} />
               </button>
             )}
@@ -375,21 +375,21 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
           <button onClick={handleUrlCapture} disabled={capturing || !urlInput.trim()}
             style={{
               width: '100%', padding: '7px 0', fontSize: 11, fontWeight: 600,
-              borderTop: '1px solid rgba(255,255,255,0.06)',
-              background: capturing ? 'rgba(124,58,237,0.1)' : urlInput ? 'rgba(124,58,237,0.15)' : 'transparent',
-              color: urlInput ? '#a78bfa' : '#4b5563', border: 'none',
+              borderTop: '1px solid #e5e7eb',
+              background: capturing ? '#f3f4f6' : urlInput ? '#f3f4f6' : 'transparent',
+              color: urlInput ? '#374151' : '#9ca3af', border: 'none',
               cursor: capturing || !urlInput.trim() ? 'not-allowed' : 'pointer',
             }}>
             {capturing ? '⏳ Capturing…' : '📸 Capture Screenshot'}
           </button>
         </div>
-        {captureError && <p style={{ fontSize: 10, color: '#f87171', marginTop: 4 }}>{captureError}</p>}
+        {captureError && <p style={{ fontSize: 10, color: '#dc2626', marginTop: 4 }}>{captureError}</p>}
       </Section>
 
       {/* Upload */}
       <Section label="Upload Media">
         <HScroll gap={8}>
-          <UploadTile icon={<ImageIcon size={13} />} label="Image" accept="image/*" color="#a78bfa"
+          <UploadTile icon={<ImageIcon size={13} />} label="Image" accept="image/*" color="#374151"
             onFile={f => updateState({ screenshotUrl: URL.createObjectURL(f), videoUrl: null, contentType: 'image' })} />
           <UploadTile icon={<Video size={13} />} label="Video" accept="video/*" color="#4ade80"
             onFile={f => updateState({ videoUrl: URL.createObjectURL(f), screenshotUrl: null, contentType: 'video' })} />
@@ -424,9 +424,9 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
               style={{
                 flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4,
                 padding: '4px 9px', borderRadius: 8, fontSize: 10, fontWeight: 700,
-                background: selectedGroup === group ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.04)',
-                border: selectedGroup === group ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.07)',
-                color: selectedGroup === group ? '#c4b5fd' : '#4b5563', cursor: 'pointer',
+                background: selectedGroup === group ? '#f3f4f6' : '#ffffff',
+                border: selectedGroup === group ? '1px solid #9ca3af' : '1px solid #e5e7eb',
+                color: selectedGroup === group ? '#111827' : '#6b7280', cursor: 'pointer',
               }}>
               <span>{GROUP_ICONS[group]}</span>
               <span>{group}</span>
@@ -446,14 +446,14 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
                 style={{
                   flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
                   gap: 5, padding: '10px 8px 8px', borderRadius: 14, width: 64,
-                  background: isSelected ? 'rgba(124,58,237,0.16)' : 'rgba(255,255,255,0.03)',
-                  border: isSelected ? '1.5px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.07)',
+                  background: isSelected ? '#f3f4f6' : '#ffffff',
+                  border: isSelected ? '1.5px solid #9ca3af' : '1px solid #e5e7eb',
                   cursor: 'pointer', transition: 'all 0.12s',
                 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
                   <DeviceThumbnail modelId={model.id} isSelected={isSelected} />
                 </div>
-                <span style={{ fontSize: 9, fontWeight: 600, textAlign: 'center', lineHeight: 1.2, color: isSelected ? '#c4b5fd' : '#6b7280' }}>
+                <span style={{ fontSize: 9, fontWeight: 600, textAlign: 'center', lineHeight: 1.2, color: isSelected ? '#111827' : '#6b7280' }}>
                   {model.label}
                 </span>
               </button>
@@ -470,8 +470,8 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
               <button key={c.id} title={c.label} onClick={() => updateState({ deviceColor: c.id })}
                 style={{
                   flexShrink: 0, width: 28, height: 28, borderRadius: '50%', background: c.bg,
-                  border: state.deviceColor === c.id ? '2px solid #a78bfa' : `2px solid ${c.border}`,
-                  boxShadow: state.deviceColor === c.id ? '0 0 0 2.5px rgba(167,139,250,0.35)' : 'none',
+                  border: state.deviceColor === c.id ? '2px solid #374151' : `2px solid ${c.border}`,
+                  boxShadow: state.deviceColor === c.id ? '0 0 0 2.5px rgba(55,65,81,0.2)' : 'none',
                   cursor: 'pointer', transition: 'all 0.15s',
                 }} />
             ))}
@@ -512,8 +512,8 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
         <Section label="Type" action={
           <button onClick={handleShuffle} style={{
             display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8,
-            fontSize: 10, fontWeight: 700, background: 'rgba(124,58,237,0.14)',
-            border: '1px solid rgba(124,58,237,0.3)', color: '#c4b5fd', cursor: 'pointer',
+            fontSize: 10, fontWeight: 700, background: '#f3f4f6',
+            border: '1px solid #d1d5db', color: '#374151', cursor: 'pointer',
             transition: 'all 0.12s',
           }}>
             <Shuffle size={10} /> Shuffle
@@ -533,14 +533,14 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
           <Section label="Color">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ position: 'relative', flexShrink: 0 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: state.bgColor, border: '1px solid rgba(255,255,255,0.12)' }} />
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: state.bgColor, border: '1px solid #e5e7eb' }} />
                 <input type="color" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
                   style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
               </div>
               <input type="text" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
                 style={{
-                  flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 8, padding: '6px 10px', fontSize: 11, fontFamily: 'monospace', outline: 'none', color: '#9ca3af',
+                  flex: 1, background: '#fafafa', border: '1px solid #e5e7eb',
+                  borderRadius: 8, padding: '6px 10px', fontSize: 11, fontFamily: 'monospace', outline: 'none', color: '#374151',
                 }} />
             </div>
           </Section>
@@ -554,8 +554,8 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
                 <button key={g.id} title={g.label} onClick={() => updateState({ bgColor: g.id })}
                   style={{
                     flexShrink: 0, width: 56, height: 56, borderRadius: 14, background: g.css,
-                    border: state.bgColor === g.id ? '2.5px solid #a78bfa' : '1.5px solid rgba(255,255,255,0.07)',
-                    boxShadow: state.bgColor === g.id ? '0 0 0 2px rgba(167,139,250,0.3)' : 'none',
+                    border: state.bgColor === g.id ? '2.5px solid #374151' : '1.5px solid #e5e7eb',
+                    boxShadow: state.bgColor === g.id ? '0 0 0 2px rgba(55,65,81,0.2)' : 'none',
                     cursor: 'pointer', transition: 'all 0.12s',
                   }} />
               ))}
@@ -570,8 +570,8 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
               <button onClick={handleAutoBackground} disabled={extracting}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 7,
-                  fontSize: 10, fontWeight: 600, background: 'rgba(124,58,237,0.14)',
-                  border: '1px solid rgba(124,58,237,0.3)', color: '#c4b5fd', cursor: 'pointer',
+                  fontSize: 10, fontWeight: 600, background: '#f3f4f6',
+                  border: '1px solid #d1d5db', color: '#374151', cursor: 'pointer',
                 }}>
                 <Wand2 size={10} />
                 {extracting ? 'Extracting…' : 'Auto'}
@@ -583,7 +583,7 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
                 <button key={m.id} title={m.label} onClick={() => updateState({ bgColor: m.id })}
                   style={{
                     flexShrink: 0, width: 60, height: 60, borderRadius: 14, background: m.css,
-                    border: state.bgColor === m.id ? '2.5px solid #a78bfa' : '1.5px solid rgba(255,255,255,0.07)',
+                    border: state.bgColor === m.id ? '2.5px solid #374151' : '1.5px solid #e5e7eb',
                     cursor: 'pointer', transition: 'all 0.12s',
                   }} />
               ))}
@@ -599,7 +599,7 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
                 <button key={w.id} title={w.label} onClick={() => updateState({ bgColor: w.id })}
                   style={{
                     flexShrink: 0, width: 60, height: 60, borderRadius: 14, background: w.css, position: 'relative', overflow: 'hidden',
-                    border: state.bgColor === w.id ? '2.5px solid #a78bfa' : '1.5px solid rgba(255,255,255,0.07)',
+                    border: state.bgColor === w.id ? '2.5px solid #374151' : '1.5px solid #e5e7eb',
                     cursor: 'pointer', transition: 'all 0.12s',
                   }}>
                   <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2px 4px', background: 'rgba(0,0,0,0.55)' }}>
@@ -620,17 +620,17 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
                   <button key={p.id} onClick={() => updateState({ bgPattern: p.id })}
                     style={{
                       flexShrink: 0, width: 64, height: 48, borderRadius: 12, cursor: 'pointer',
-                      border: state.bgPattern === p.id ? '2px solid #a78bfa' : '1.5px solid rgba(255,255,255,0.08)',
+                      border: state.bgPattern === p.id ? '2px solid #374151' : '1.5px solid #e5e7eb',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      ...p.bgStyle('#1a1a2e'),
+                      ...p.bgStyle('#f3f4f6'),
                     }}>
-                    <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>{p.label}</span>
+                    <span style={{ fontSize: 9, color: '#6b7280' }}>{p.label}</span>
                   </button>
                 ))}
               </HScroll>
             </Section>
             <Section label="Pattern Color">
-              <div style={{ position: 'relative', width: '100%', height: 36, borderRadius: 10, background: state.bgColor, border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ position: 'relative', width: '100%', height: 36, borderRadius: 10, background: state.bgColor, border: '1px solid #e5e7eb' }}>
                 <input type="color" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
                   style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
               </div>
@@ -642,14 +642,14 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
         {state.bgType === 'image' && (
           <Section label="Background Image">
             {state.bgImage && (
-              <div style={{ width: '100%', height: 72, borderRadius: 12, overflow: 'hidden', marginBottom: 8, border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ width: '100%', height: 72, borderRadius: 12, overflow: 'hidden', marginBottom: 8, border: '1px solid #e5e7eb' }}>
                 <img src={state.bgImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="bg" />
               </div>
             )}
             <button onClick={() => bgFileRef.current?.click()}
               style={{
                 width: '100%', padding: '10px 0', borderRadius: 12, fontSize: 11, fontWeight: 600,
-                background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.12)',
+                background: '#fafafa', border: '1px dashed #d1d5db',
                 color: '#6b7280', cursor: 'pointer',
               }}>
               {state.bgImage ? 'Change Image' : '+ Upload Image'}
@@ -659,7 +659,7 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
         )}
 
         {/* Overlay */}
-        <div style={{ paddingTop: 10, marginTop: 4, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ paddingTop: 10, marginTop: 4, borderTop: '1px solid #e5e7eb' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.09em', textTransform: 'uppercase', color: '#374151' }}>
               Color Overlay
@@ -670,15 +670,15 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
             <>
               <HScroll gap={7}>
                 <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: state.overlayColor, border: '1px solid rgba(255,255,255,0.1)' }} />
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: state.overlayColor, border: '1px solid #e5e7eb' }} />
                   <input type="color" value={state.overlayColor} onChange={e => updateState({ overlayColor: e.target.value })}
                     style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
                 </div>
-                {['#000000', '#ffffff', '#7c3aed', '#0ea5e9', '#ec4899'].map(col => (
+                {['#000000', '#ffffff', '#374151', '#0ea5e9', '#ec4899'].map(col => (
                   <button key={col} onClick={() => updateState({ overlayColor: col })}
                     style={{
                       flexShrink: 0, width: 24, height: 24, borderRadius: '50%', background: col,
-                      border: state.overlayColor === col ? '2px solid #a78bfa' : '1px solid rgba(255,255,255,0.2)', cursor: 'pointer',
+                      border: state.overlayColor === col ? '2px solid #374151' : '1px solid #d1d5db', cursor: 'pointer',
                     }} />
                 ))}
               </HScroll>
@@ -779,9 +779,9 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
               style={{
                 flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                 padding: '8px 10px', borderRadius: 12,
-                background: state.envPreset === env.id && state.envEnabled !== false ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.03)',
-                border: state.envPreset === env.id && state.envEnabled !== false ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.07)',
-                color: state.envPreset === env.id && state.envEnabled !== false ? '#c4b5fd' : '#6b7280',
+                background: state.envPreset === env.id && state.envEnabled !== false ? '#f3f4f6' : '#ffffff',
+                border: state.envPreset === env.id && state.envEnabled !== false ? '1px solid #9ca3af' : '1px solid #e5e7eb',
+                color: state.envPreset === env.id && state.envEnabled !== false ? '#111827' : '#6b7280',
                 cursor: 'pointer', transition: 'all 0.12s',
                 opacity: state.envEnabled !== false ? 1 : 0.45,
               }}>
@@ -806,9 +806,9 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
               style={{
                 flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
                 padding: '6px 10px', borderRadius: 10, fontSize: 11, fontWeight: 600,
-                background: state.cameraAngle === cam.id ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.03)',
-                border: state.cameraAngle === cam.id ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.07)',
-                color: state.cameraAngle === cam.id ? '#c4b5fd' : '#6b7280', cursor: 'pointer', transition: 'all 0.12s',
+                background: state.cameraAngle === cam.id ? '#f3f4f6' : '#ffffff',
+                border: state.cameraAngle === cam.id ? '1px solid #9ca3af' : '1px solid #e5e7eb',
+                color: state.cameraAngle === cam.id ? '#111827' : '#6b7280', cursor: 'pointer', transition: 'all 0.12s',
               }}>
               <span>{cam.icon}</span>
               <span>{cam.label}</span>
@@ -874,8 +874,8 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
       <button onClick={addText}
         style={{
           width: '100%', padding: '12px 0', borderRadius: 14, fontSize: 12, fontWeight: 700,
-          background: 'linear-gradient(135deg, rgba(124,58,237,0.35), rgba(79,70,229,0.35))',
-          border: '1px solid rgba(124,58,237,0.45)', color: '#c4b5fd', cursor: 'pointer',
+          background: '#374151',
+          border: '1px solid #374151', color: '#ffffff', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
         }}>
         <Type size={14} /> Add Text Overlay
@@ -893,15 +893,15 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
         {/* Horizontal tab chips */}
         <div style={{
           display: 'flex', gap: 6, overflowX: 'auto', padding: '2px 14px 12px',
-          scrollbarWidth: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)',
+          scrollbarWidth: 'none', borderBottom: '1px solid #e5e7eb',
         } as React.CSSProperties}>
           {TAB_ICONS.map(({ id, icon: Icon, label }) => (
             <button key={id} onClick={() => setActiveTab(id)}
               style={{
                 flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
                 padding: '6px 12px', borderRadius: 10, fontSize: 11, fontWeight: 700,
-                background: activeTab === id ? modeAccent.bg : 'rgba(255,255,255,0.05)',
-                border: activeTab === id ? `1px solid ${modeAccent.border}` : '1px solid rgba(255,255,255,0.08)',
+                background: activeTab === id ? modeAccent.bg : 'transparent',
+                border: activeTab === id ? `1px solid ${modeAccent.border}` : '1px solid transparent',
                 color: activeTab === id ? modeAccent.color : '#6b7280', cursor: 'pointer',
               }}>
               <Icon size={13} strokeWidth={activeTab === id ? 2 : 1.5} />
@@ -930,11 +930,11 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
       <div style={{
         width: 52, display: 'flex', flexDirection: 'column', alignItems: 'center',
         padding: '10px 0', gap: 2, flexShrink: 0,
-        background: 'rgba(7,9,20,0.98)', borderRight: '1px solid rgba(255,255,255,0.05)',
+        background: '#f9fafb', borderRight: '1px solid #e5e7eb',
       }}>
         <div style={{
           width: 32, height: 32, borderRadius: 10, marginBottom: 8,
-          background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+          background: '#374151',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: '#fff', fontWeight: 900, fontSize: 13, flexShrink: 0,
         }}>M</div>
@@ -957,12 +957,12 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
       {/* Content panel */}
       <div style={{
         width: 240, display: 'flex', flexDirection: 'column', height: '100%', flexShrink: 0,
-        background: 'rgba(10,12,24,0.96)', borderRight: '1px solid rgba(255,255,255,0.05)',
+        background: '#ffffff', borderRight: '1px solid #e5e7eb',
       }}>
         {/* Tab header */}
-        <div style={{ padding: '10px 14px 8px', borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
+        <div style={{ padding: '10px 14px 8px', borderBottom: '1px solid #e5e7eb', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#e2e8f0' }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>
               {TAB_ICONS.find(t => t.id === activeTab)?.label}
             </span>
             <span style={{
@@ -998,7 +998,7 @@ function UploadTile({ icon, label, accept, color, onFile }: {
       style={{
         flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
         padding: '8px 14px', borderRadius: 12,
-        background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.12)',
+        background: '#fafafa', border: '1px dashed #d1d5db',
         cursor: 'pointer', transition: 'all 0.15s',
       }}>
       <span style={{ color }}>{icon}</span>

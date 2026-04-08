@@ -473,8 +473,8 @@ function DeviceScene({
               onClick={() => fileRef.current?.click()}
               onMouseEnter={e => {
                 const el = e.currentTarget as HTMLDivElement;
-                el.style.background = 'rgba(124,58,237,0.85)';
-                el.style.borderColor = 'rgba(196,181,253,0.7)';
+                el.style.background = 'rgba(55,65,81,0.85)';
+                el.style.borderColor = 'rgba(209,213,219,0.9)';
                 el.style.borderStyle = 'solid';
               }}
               onMouseLeave={e => {
@@ -1041,10 +1041,10 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
         {dragOver && (
           <div style={{
             position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none',
-            border: '2px solid rgba(124,58,237,0.7)',
+            border: '2px solid rgba(55,65,81,0.5)',
             borderRadius: 8,
-            background: 'rgba(124,58,237,0.08)',
-            boxShadow: 'inset 0 0 40px rgba(124,58,237,0.12)',
+            background: 'rgba(55,65,81,0.05)',
+            boxShadow: 'inset 0 0 40px rgba(55,65,81,0.07)',
           }} />
         )}
       </div>

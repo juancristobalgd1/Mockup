@@ -25,7 +25,6 @@ const EXPORT_SIZES: ExportSizeOption[] = [
 async function captureCanvas(el: HTMLDivElement, glEl?: HTMLCanvasElement | null) {
   const html2canvas = (await import('html2canvas')).default;
 
-  // Step 1: Capture CSS background (hides the WebGL canvas temporarily)
   const bgCanvas = await html2canvas(el, {
     useCORS: true,
     allowTaint: true,
@@ -36,7 +35,6 @@ async function captureCanvas(el: HTMLDivElement, glEl?: HTMLCanvasElement | null
     ignoreElements: (element) => element.tagName === 'CANVAS',
   });
 
-  // Step 2: If we have a WebGL canvas, composite it on top
   if (glEl) {
     const out = document.createElement('canvas');
     out.width = bgCanvas.width;
@@ -148,23 +146,23 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
   };
 
   const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-    <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: '#4b5563', letterSpacing: '0.08em' }}>
+    <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: '#6b7280', letterSpacing: '0.08em' }}>
       {children}
     </div>
   );
 
   return (
     <div className="right-panel flex flex-col h-full"
-      style={{ width: 220, background: 'rgba(10,12,24,0.96)', borderLeft: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
+      style={{ width: 220, background: '#ffffff', borderLeft: '1px solid #e5e7eb', flexShrink: 0 }}>
 
       {/* Header */}
       <div className="px-4 py-3.5 flex-shrink-0 flex items-center gap-2"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-        <Download size={14} style={{ color: '#a78bfa' }} />
-        <span className="text-sm font-bold" style={{ color: '#e2e8f0' }}>Export</span>
+        style={{ borderBottom: '1px solid #e5e7eb' }}>
+        <Download size={14} style={{ color: '#374151' }} />
+        <span className="text-sm font-bold" style={{ color: '#111827' }}>Export</span>
         {isVideo && (
           <span className="ml-auto flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
-            style={{ background: 'rgba(34,197,94,0.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)' }}>
+            style={{ background: 'rgba(22,163,74,0.08)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.2)' }}>
             <Video size={9} /> Video
           </span>
         )}
@@ -174,15 +172,15 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
 
         {/* Format indicator */}
         <div className="mb-4 p-3 rounded-xl flex items-start gap-2.5"
-          style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          style={{ background: '#f9fafb', border: '1px solid #e5e7eb' }}>
           {isVideo
-            ? <Film size={14} style={{ color: '#4ade80', flexShrink: 0, marginTop: 1 }} />
-            : <Image size={14} style={{ color: '#a78bfa', flexShrink: 0, marginTop: 1 }} />}
+            ? <Film size={14} style={{ color: '#16a34a', flexShrink: 0, marginTop: 1 }} />
+            : <Image size={14} style={{ color: '#374151', flexShrink: 0, marginTop: 1 }} />}
           <div>
-            <p className="text-xs font-semibold" style={{ color: isVideo ? '#4ade80' : '#a78bfa' }}>
+            <p className="text-xs font-semibold" style={{ color: isVideo ? '#16a34a' : '#374151' }}>
               {isVideo ? 'Video mode' : 'Image mode'}
             </p>
-            <p className="text-[10px] mt-0.5" style={{ color: '#4b5563' }}>
+            <p className="text-[10px] mt-0.5" style={{ color: '#6b7280' }}>
               {isVideo ? 'Export as WebM or download original MP4' : 'Export as PNG or copy to clipboard'}
             </p>
           </div>
@@ -198,18 +196,18 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
                   onClick={() => setSelectedSize(s.id)}
                   className="flex items-center justify-between px-3 py-2 rounded-xl text-left transition-all"
                   style={{
-                    background: selectedSize === s.id ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.025)',
-                    border: selectedSize === s.id ? '1px solid rgba(124,58,237,0.45)' : '1px solid rgba(255,255,255,0.06)',
+                    background: selectedSize === s.id ? '#f3f4f6' : '#ffffff',
+                    border: selectedSize === s.id ? '1px solid #9ca3af' : '1px solid #e5e7eb',
                   }}>
                   <div className="flex flex-col">
-                    <span className="text-[10px]" style={{ color: selectedSize === s.id ? '#a78bfa' : '#4b5563' }}>
+                    <span className="text-[10px]" style={{ color: selectedSize === s.id ? '#374151' : '#6b7280' }}>
                       {s.platform}
                     </span>
-                    <span className="text-xs font-semibold" style={{ color: selectedSize === s.id ? '#c4b5fd' : '#6b7280' }}>
+                    <span className="text-xs font-semibold" style={{ color: selectedSize === s.id ? '#111827' : '#9ca3af' }}>
                       {s.label}
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono" style={{ color: '#374151' }}>
+                  <span className="text-[10px] font-mono" style={{ color: '#9ca3af' }}>
                     {s.w}×{s.h}
                   </span>
                 </button>
@@ -229,7 +227,7 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
               style={{
                 background: 'linear-gradient(135deg, #16a34a, #15803d)',
                 color: '#fff',
-                boxShadow: '0 4px 16px rgba(22,163,74,0.35)',
+                boxShadow: '0 2px 8px rgba(22,163,74,0.2)',
                 cursor: state.videoUrl ? 'pointer' : 'not-allowed',
                 opacity: state.videoUrl ? 1 : 0.5,
               }}>
@@ -244,9 +242,9 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
               data-testid="export-video"
               className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2"
               style={{
-                background: recording ? 'rgba(124,58,237,0.2)' : 'rgba(124,58,237,0.15)',
-                border: '1px solid rgba(124,58,237,0.35)',
-                color: '#c4b5fd',
+                background: '#f3f4f6',
+                border: '1px solid #d1d5db',
+                color: '#374151',
                 cursor: recording ? 'not-allowed' : 'pointer',
               }}>
               <Film size={13} />
@@ -259,8 +257,8 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
               disabled={exporting}
               className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2"
               style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: '#ffffff',
+                border: '1px solid #e5e7eb',
                 color: '#6b7280',
                 cursor: exporting ? 'not-allowed' : 'pointer',
               }}>
@@ -276,9 +274,9 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
               disabled={exporting}
               className="w-full py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
               style={{
-                background: exporting ? 'rgba(124,58,237,0.3)' : 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+                background: exporting ? '#e5e7eb' : '#374151',
                 color: exporting ? '#9ca3af' : '#fff',
-                boxShadow: exporting ? 'none' : '0 4px 16px rgba(124,58,237,0.4)',
+                boxShadow: exporting ? 'none' : '0 2px 8px rgba(55,65,81,0.2)',
                 cursor: exporting ? 'not-allowed' : 'pointer',
               }}>
               <Download size={14} />
@@ -291,9 +289,9 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
               disabled={copying || copied}
               className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2"
               style={{
-                background: copied ? 'rgba(34,197,94,0.14)' : 'rgba(255,255,255,0.04)',
-                color: copied ? '#4ade80' : '#9ca3af',
-                border: copied ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.08)',
+                background: copied ? 'rgba(22,163,74,0.08)' : '#f9fafb',
+                color: copied ? '#16a34a' : '#6b7280',
+                border: copied ? '1px solid rgba(22,163,74,0.25)' : '1px solid #e5e7eb',
                 cursor: copying ? 'not-allowed' : 'pointer',
               }}>
               {copied ? <Check size={13} /> : <Copy size={13} />}
@@ -309,18 +307,18 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
             <div className="flex flex-col gap-2">
               {textOverlays.map(overlay => (
                 <div key={overlay.id} className="rounded-xl p-3"
-                  style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  style={{ background: '#f9fafb', border: '1px solid #e5e7eb' }}>
                   <input type="text" value={overlay.text}
                     onChange={e => onUpdateText(overlay.id, { text: e.target.value })}
                     className="w-full bg-transparent text-xs mb-2 outline-none"
-                    style={{ color: '#e2e8f0', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 4 }}
+                    style={{ color: '#111827', borderBottom: '1px solid #e5e7eb', paddingBottom: 4 }}
                     data-testid={`text-input-${overlay.id}`} />
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-[10px]" style={{ color: '#6b7280' }}>Size</span>
                     <input type="range" min={10} max={80} value={overlay.fontSize}
                       onChange={e => onUpdateText(overlay.id, { fontSize: Number(e.target.value) })}
                       className="flex-1 ms-range" />
-                    <span className="text-[10px] font-mono" style={{ color: '#4b5563' }}>{overlay.fontSize}</span>
+                    <span className="text-[10px] font-mono" style={{ color: '#9ca3af' }}>{overlay.fontSize}</span>
                   </div>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-[10px]" style={{ color: '#6b7280' }}>Color</span>
@@ -329,15 +327,15 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
                       className="w-6 h-6 rounded cursor-pointer border-0" />
                     <button onClick={() => onUpdateText(overlay.id, { isBold: !overlay.isBold })}
                       className="w-6 h-6 rounded text-xs font-bold flex items-center justify-center"
-                      style={{ background: overlay.isBold ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.06)', color: overlay.isBold ? '#c4b5fd' : '#6b7280', border: '1px solid transparent' }}>B</button>
+                      style={{ background: overlay.isBold ? '#374151' : '#f3f4f6', color: overlay.isBold ? '#ffffff' : '#6b7280', border: '1px solid #e5e7eb' }}>B</button>
                     <button onClick={() => onUpdateText(overlay.id, { isItalic: !overlay.isItalic })}
                       className="w-6 h-6 rounded text-xs italic flex items-center justify-center"
-                      style={{ background: overlay.isItalic ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.06)', color: overlay.isItalic ? '#c4b5fd' : '#6b7280', border: '1px solid transparent' }}>I</button>
+                      style={{ background: overlay.isItalic ? '#374151' : '#f3f4f6', color: overlay.isItalic ? '#ffffff' : '#6b7280', border: '1px solid #e5e7eb' }}>I</button>
                   </div>
                   <button onClick={() => onRemoveText(overlay.id)}
                     data-testid={`remove-text-${overlay.id}`}
-                    className="text-[10px] transition-colors hover:text-red-400"
-                    style={{ color: '#374151' }}>
+                    className="text-[10px] transition-colors hover:text-red-500"
+                    style={{ color: '#9ca3af' }}>
                     Remove layer
                   </button>
                 </div>
@@ -347,12 +345,12 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
         )}
 
         {/* Tips */}
-        <div className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="p-3 rounded-xl" style={{ background: '#f9fafb', border: '1px solid #e5e7eb' }}>
           <div className="flex items-center gap-2 mb-2">
-            <Info size={11} style={{ color: '#374151' }} />
-            <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#374151' }}>Tips</span>
+            <Info size={11} style={{ color: '#9ca3af' }} />
+            <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#9ca3af' }}>Tips</span>
           </div>
-          <ul className="text-[10px] space-y-1" style={{ color: '#374151' }}>
+          <ul className="text-[10px] space-y-1" style={{ color: '#9ca3af' }}>
             <li>Drop image/video on device screen</li>
             <li>Paste a URL to capture screenshot</li>
             <li>Drag text overlays on canvas</li>

@@ -269,15 +269,15 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
 
   return (
     <div style={{
-      width: '100%', background: 'rgba(8,10,22,0.99)',
-      borderTop: '1px solid rgba(255,255,255,0.07)',
+      width: '100%', background: '#ffffff',
+      borderTop: '1px solid #e5e7eb',
       flexShrink: 0, userSelect: 'none',
     }}>
 
       {/* ── Top controls bar ─────────────────────────────────────── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
-        padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)',
+        padding: '8px 14px', borderBottom: '1px solid #e5e7eb',
         flexWrap: 'wrap',
       }}>
 
@@ -287,11 +287,11 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
           disabled={isExporting || liveRecording}
           title={isPlaying ? 'Pausar' : 'Reproducir animación'}
           style={{
-            background: isPlaying ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.06)',
-            border: `1px solid ${isPlaying ? 'rgba(124,58,237,0.5)' : 'rgba(255,255,255,0.1)'}`,
+            background: isPlaying ? '#f3f4f6' : 'rgba(255,255,255,0.06)',
+            border: `1px solid ${isPlaying ? '#9ca3af' : 'rgba(255,255,255,0.1)'}`,
             borderRadius: 6, width: 28, height: 28, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: isPlaying ? '#a78bfa' : '#9ca3af',
+            color: isPlaying ? '#374151' : '#9ca3af',
             opacity: (isExporting || liveRecording) ? 0.4 : 1,
           }}
         >
@@ -351,10 +351,10 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
             onClick={handleAddKeyframe}
             title="Añadir keyframe manual en la posición actual del playhead"
             style={{
-              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)',
+              background: '#f9fafb', border: '1px solid #e5e7eb',
               borderRadius: 6, height: 28, padding: '0 10px', cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: 5,
-              color: '#9ca3af', fontSize: 11, fontWeight: 600,
+              color: '#6b7280', fontSize: 11, fontWeight: 600,
             }}
           >
             <Plus size={11} />
@@ -385,7 +385,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
         <div style={{ flex: 1 }} />
 
         {/* Time display */}
-        <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#a78bfa', fontWeight: 600 }}>
+        <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#374151', fontWeight: 600 }}>
           {formatTime(currentTime)}
         </span>
         <span style={{ fontSize: 10, color: '#374151' }}>de</span>
@@ -399,7 +399,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
             if (movieTimeRef.current > d) { movieTimeRef.current = d; setCurrentTime(d); }
           }}
           style={{
-            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+            background: '#f9fafb', border: '1px solid #e5e7eb',
             borderRadius: 5, color: '#6b7280', fontSize: 11, padding: '2px 6px', cursor: 'pointer',
           }}
         >
@@ -455,7 +455,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
               top: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
               transform: 'translateX(-50%)', pointerEvents: 'none',
             }}>
-              <div style={{ width: 1, height: 5, background: 'rgba(255,255,255,0.15)' }} />
+              <div style={{ width: 1, height: 5, background: '#d1d5db' }} />
               <span style={{ fontSize: 9, color: '#374151', marginTop: 1, fontFamily: 'monospace' }}>{s}s</span>
             </div>
           ))}
@@ -465,7 +465,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
               position: 'absolute', left: `${(s / movieDuration) * 100}%`,
               top: 0, transform: 'translateX(-50%)', pointerEvents: 'none',
             }}>
-              <div style={{ width: 1, height: 3, background: 'rgba(255,255,255,0.07)' }} />
+              <div style={{ width: 1, height: 3, background: '#e5e7eb' }} />
             </div>
           ))}
         </div>
@@ -474,8 +474,8 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
         <div style={{ height: 28, position: 'relative' }}>
           <div style={{
             position: 'absolute', inset: 0,
-            background: 'rgba(255,255,255,0.025)',
-            border: '1px solid rgba(255,255,255,0.06)', borderRadius: 4,
+            background: '#f9fafb',
+            border: '1px solid #e5e7eb', borderRadius: 4,
           }}>
             <span style={{
               position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)',
@@ -530,7 +530,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
       {/* ── Instrucciones / estado ───────────────────────────────── */}
       {cameraKeyframes.length === 0 && !liveRecording && (
         <div style={{
-          padding: '7px 14px 9px', borderTop: '1px solid rgba(255,255,255,0.04)',
+          padding: '7px 14px 9px', borderTop: '1px solid #e5e7eb',
           display: 'flex', gap: 18, flexWrap: 'wrap',
         }}>
           {[
@@ -542,9 +542,9 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
             <div key={s.n} style={{ display: 'flex', gap: 6, flex: 1, minWidth: 140, alignItems: 'flex-start' }}>
               <div style={{
                 width: 15, height: 15, borderRadius: '50%', flexShrink: 0,
-                background: 'rgba(124,58,237,0.2)', border: '1px solid rgba(124,58,237,0.35)',
+                background: '#f3f4f6', border: '1px solid #d1d5db',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 9, fontWeight: 700, color: '#a78bfa',
+                fontSize: 9, fontWeight: 700, color: '#374151',
               }}>{s.n}</div>
               <div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#6b7280' }}>{s.t}</div>
@@ -558,7 +558,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
       {cameraKeyframes.length > 0 && !liveRecording && (
         <div style={{
           padding: '5px 14px 7px', fontSize: 9, color: '#4b5563',
-          borderTop: '1px solid rgba(255,255,255,0.04)',
+          borderTop: '1px solid #e5e7eb',
           display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
         }}>
           <span style={{ color: '#22c55e', fontWeight: 700 }}>✓</span>
@@ -571,8 +571,8 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
       {liveRecording && (
         <div style={{
           padding: '5px 14px 7px', fontSize: 9,
-          borderTop: '1px solid rgba(255,255,255,0.04)',
-          display: 'flex', alignItems: 'center', gap: 6, color: '#f87171',
+          borderTop: '1px solid #e5e7eb',
+          display: 'flex', alignItems: 'center', gap: 6, color: '#dc2626',
         }}>
           <Circle size={7} fill="#f87171" color="#f87171" style={{ animation: 'recBlink 1s step-start infinite' }} />
           Grabando — capturando posición de cámara cada 200ms. Mueve el dispositivo ahora.

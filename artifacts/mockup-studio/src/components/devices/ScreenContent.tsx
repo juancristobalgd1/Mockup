@@ -7,7 +7,7 @@ interface ScreenContentProps {
   iconBg?: string;
 }
 
-export function ScreenContent({ accentColor = "#a855f7", iconBg = "rgba(168,85,247,0.2)" }: ScreenContentProps) {
+export function ScreenContent({ accentColor = "#374151", iconBg = "rgba(55,65,81,0.1)" }: ScreenContentProps) {
   const { state, updateState } = useApp();
   const fileRef = useRef<HTMLInputElement>(null);
 

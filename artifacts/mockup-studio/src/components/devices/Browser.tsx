@@ -45,7 +45,7 @@ export function Browser() {
             whiteSpace: 'nowrap', maxWidth: 140, overflow: 'hidden', gap: 6,
           }}
         >
-          <div style={{ width: 14, height: 14, borderRadius: 3, background: 'rgba(139,92,246,0.5)', flexShrink: 0 }} />
+          <div style={{ width: 14, height: 14, borderRadius: 3, background: 'rgba(55,65,81,0.3)', flexShrink: 0 }} />
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>My App — Dashboard</span>
         </div>
 

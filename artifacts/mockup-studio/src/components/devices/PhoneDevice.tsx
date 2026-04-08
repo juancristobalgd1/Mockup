@@ -88,8 +88,8 @@ export function PhoneDevice() {
   const insetRight  = isLandscape ? def.insetTop : def.insetSide;
 
   // Screen content accent based on device type
-  const accentColor = state.deviceType === 'iphone' ? '#a78bfa' : '#4ade80';
-  const iconBg      = state.deviceType === 'iphone' ? 'rgba(139,92,246,0.2)' : 'rgba(34,197,94,0.2)';
+  const accentColor = state.deviceType === 'iphone' ? '#374151' : '#4ade80';
+  const iconBg      = state.deviceType === 'iphone' ? 'rgba(55,65,81,0.1)' : 'rgba(34,197,94,0.2)';
 
   return (
     <div style={{ width: W, height: H, position: 'relative', flexShrink: 0 }}>

@@ -15,27 +15,27 @@ const CREATION_MODES: { id: CreationMode; label: string; icon: React.ReactNode; 
     label: 'Mockup',
     icon: <Smartphone size={13} />,
     desc: 'Device mockup with image or video',
-    accent: '#a78bfa',
-    glow: 'rgba(124,58,237,0.35)',
-    border: 'rgba(124,58,237,0.5)',
+    accent: '#374151',
+    glow: 'rgba(55,65,81,0.15)',
+    border: 'rgba(55,65,81,0.35)',
   },
   {
     id: 'movie',
     label: 'Movie',
     icon: <Film size={13} />,
     desc: 'Animated cinematic video export',
-    accent: '#f87171',
-    glow: 'rgba(239,68,68,0.35)',
-    border: 'rgba(239,68,68,0.5)',
+    accent: '#dc2626',
+    glow: 'rgba(220,38,38,0.15)',
+    border: 'rgba(220,38,38,0.35)',
   },
   {
     id: 'screenshot',
     label: 'Screenshot',
     icon: <Camera size={13} />,
     desc: 'Capture any website into a device',
-    accent: '#38bdf8',
-    glow: 'rgba(56,189,248,0.35)',
-    border: 'rgba(56,189,248,0.5)',
+    accent: '#0284c7',
+    glow: 'rgba(2,132,199,0.15)',
+    border: 'rgba(2,132,199,0.35)',
   },
 ];
 
@@ -66,7 +66,7 @@ function Editor() {
   };
 
   return (
-    <div className="app-root" style={{ background: '#070912' }}>
+    <div className="app-root" style={{ background: '#f9fafb' }}>
       {/* Desktop layout */}
       <div className="desktop-layout">
         <LeftPanel />
@@ -76,13 +76,12 @@ function Editor() {
           {/* Top bar */}
           <div className="topbar flex items-center justify-between px-5 py-3 flex-shrink-0"
             style={{
-              background: 'rgba(8,10,22,0.85)',
-              backdropFilter: 'blur(12px)',
-              borderBottom: '1px solid rgba(255,255,255,0.05)',
+              background: '#ffffff',
+              borderBottom: '1px solid #e5e7eb',
             }}>
 
             {/* Mode selector */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px', borderRadius: 12, background: '#f3f4f6', border: '1px solid #e5e7eb' }}>
               {CREATION_MODES.map(mode => {
                 const isActive = state.creationMode === mode.id;
                 return (
@@ -94,10 +93,10 @@ function Editor() {
                       display: 'flex', alignItems: 'center', gap: 6,
                       padding: '5px 12px', borderRadius: 9, cursor: 'pointer',
                       fontSize: 11, fontWeight: 700, transition: 'all 0.18s',
-                      background: isActive ? `rgba(${mode.id === 'mockup' ? '124,58,237' : mode.id === 'movie' ? '239,68,68' : '56,189,248'},0.18)` : 'transparent',
+                      background: isActive ? '#ffffff' : 'transparent',
                       border: isActive ? `1px solid ${mode.border}` : '1px solid transparent',
-                      color: isActive ? mode.accent : '#4b5563',
-                      boxShadow: isActive ? `0 0 12px ${mode.glow}` : 'none',
+                      color: isActive ? mode.accent : '#9ca3af',
+                      boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                     }}
                   >
                     {mode.icon}
@@ -112,22 +111,22 @@ function Editor() {
               {state.contentType && (
                 <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
                   style={{
-                    background: state.contentType === 'video' ? 'rgba(34,197,94,0.1)' : 'rgba(124,58,237,0.1)',
-                    color: state.contentType === 'video' ? '#4ade80' : '#a78bfa',
-                    border: state.contentType === 'video' ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(124,58,237,0.2)',
+                    background: state.contentType === 'video' ? 'rgba(22,163,74,0.08)' : 'rgba(55,65,81,0.07)',
+                    color: state.contentType === 'video' ? '#16a34a' : '#374151',
+                    border: state.contentType === 'video' ? '1px solid rgba(22,163,74,0.2)' : '1px solid rgba(55,65,81,0.15)',
                   }}>
                   {state.contentType === 'video' ? '▶ Video' : '⬛ Image'}
                 </span>
               )}
-              <span className="text-xs font-medium" style={{ color: '#4b5563' }}>{deviceLabel}</span>
+              <span className="text-xs font-medium" style={{ color: '#6b7280' }}>{deviceLabel}</span>
               {(state.deviceType === 'iphone' || state.deviceType === 'android' || state.deviceType === 'ipad') && (
-                <span className="text-xs" style={{ color: '#374151' }}>
+                <span className="text-xs" style={{ color: '#9ca3af' }}>
                   · {state.deviceLandscape ? 'Landscape' : 'Portrait'}
                 </span>
               )}
               {state.canvasRatio !== 'free' && (
                 <span className="text-[10px] px-2 py-0.5 rounded-full"
-                  style={{ background: 'rgba(255,255,255,0.05)', color: '#4b5563', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  style={{ background: '#f3f4f6', color: '#6b7280', border: '1px solid #e5e7eb' }}>
                   {state.canvasRatio}
                 </span>
               )}
@@ -137,8 +136,8 @@ function Editor() {
           {/* Mode hint bar */}
           <div style={{
             padding: '6px 20px',
-            background: `linear-gradient(90deg, ${activeMode.id === 'mockup' ? 'rgba(124,58,237,0.08)' : activeMode.id === 'movie' ? 'rgba(239,68,68,0.08)' : 'rgba(56,189,248,0.08)'}, transparent)`,
-            borderBottom: '1px solid rgba(255,255,255,0.03)',
+            background: `linear-gradient(90deg, ${activeMode.id === 'mockup' ? 'rgba(55,65,81,0.05)' : activeMode.id === 'movie' ? 'rgba(220,38,38,0.05)' : 'rgba(2,132,199,0.05)'}, transparent)`,
+            borderBottom: '1px solid #e5e7eb',
             display: 'flex', alignItems: 'center', gap: 8,
             transition: 'all 0.3s',
           }}>
@@ -185,16 +184,16 @@ function Editor() {
       <div className="mobile-layout">
         {/* Mobile topbar */}
         <div className="flex items-center justify-between px-4 py-2.5 flex-shrink-0"
-          style={{ background: 'rgba(8,10,22,0.95)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          style={{ background: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs text-white"
-              style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}>M</div>
-            <span className="text-sm font-bold" style={{ color: '#e2e8f0' }}>MockupStudio</span>
+              style={{ background: '#374151' }}>M</div>
+            <span className="text-sm font-bold" style={{ color: '#111827' }}>MockupStudio</span>
           </div>
           <div className="flex items-center gap-2">
             {state.contentType && (
               <span className="text-[10px] px-2 py-0.5 rounded-full"
-                style={{ background: 'rgba(124,58,237,0.15)', color: '#a78bfa', border: '1px solid rgba(124,58,237,0.25)' }}>
+                style={{ background: 'rgba(55,65,81,0.08)', color: '#374151', border: '1px solid rgba(55,65,81,0.18)' }}>
                 {state.contentType}
               </span>
             )}
@@ -225,7 +224,7 @@ function Editor() {
         )}
 
         {/* Mobile mode selector */}
-        <div style={{ display: 'flex', gap: 4, padding: '8px 16px 0', background: 'rgba(8,10,22,0.98)' }}>
+        <div style={{ display: 'flex', gap: 4, padding: '8px 16px 0', background: '#ffffff', borderTop: '1px solid #e5e7eb' }}>
           {CREATION_MODES.map(mode => {
             const isActive = state.creationMode === mode.id;
             return (
@@ -234,9 +233,9 @@ function Editor() {
                 onClick={() => handleModeChange(mode.id)}
                 className="flex-1 py-1.5 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1.5 transition-all"
                 style={{
-                  background: isActive ? `rgba(${mode.id === 'mockup' ? '124,58,237' : mode.id === 'movie' ? '239,68,68' : '56,189,248'},0.18)` : 'rgba(255,255,255,0.04)',
-                  border: isActive ? `1px solid ${mode.border}` : '1px solid rgba(255,255,255,0.07)',
-                  color: isActive ? mode.accent : '#4b5563',
+                  background: isActive ? '#f3f4f6' : 'transparent',
+                  border: isActive ? `1px solid ${mode.border}` : '1px solid #e5e7eb',
+                  color: isActive ? mode.accent : '#9ca3af',
                 }}>
                 {mode.icon}
                 {mode.label}
@@ -247,13 +246,13 @@ function Editor() {
 
         {/* Mobile bottom bar */}
         <div className="flex items-center gap-2 px-4 py-3 flex-shrink-0"
-          style={{ background: 'rgba(8,10,22,0.98)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          style={{ background: '#ffffff', borderTop: '1px solid #e5e7eb' }}>
           <button
             onClick={() => setMobileSheet(mobileSheet === 'controls' ? null : 'controls')}
             className="flex-1 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all"
             style={{
-              background: mobileSheet === 'controls' ? activeMode.glow.replace('0.35', '0.22') : 'rgba(255,255,255,0.05)',
-              border: mobileSheet === 'controls' ? `1px solid ${activeMode.border}` : '1px solid rgba(255,255,255,0.08)',
+              background: mobileSheet === 'controls' ? '#f3f4f6' : '#f9fafb',
+              border: mobileSheet === 'controls' ? `1px solid ${activeMode.border}` : '1px solid #e5e7eb',
               color: mobileSheet === 'controls' ? activeMode.accent : '#6b7280',
             }}>
             <Layers size={14} />
@@ -264,9 +263,9 @@ function Editor() {
             onClick={() => setMobileSheet(mobileSheet === 'export' ? null : 'export')}
             className="flex-1 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all"
             style={{
-              background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+              background: '#374151',
               color: '#fff',
-              boxShadow: '0 4px 16px rgba(124,58,237,0.35)',
+              boxShadow: '0 2px 8px rgba(55,65,81,0.2)',
             }}>
             <Download size={14} />
             Export
@@ -276,20 +275,20 @@ function Editor() {
         {/* Mobile bottom sheet */}
         {mobileSheet && (
           <>
-            <div className="fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,0.5)' }}
+            <div className="fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,0.25)' }}
               onClick={() => setMobileSheet(null)} />
             <div className="mobile-sheet fixed bottom-0 left-0 right-0 z-50 overflow-hidden"
-              style={{ maxHeight: '58vh', background: 'rgba(10,12,24,0.98)', borderRadius: '20px 20px 0 0', border: '1px solid rgba(255,255,255,0.08)', borderBottom: 'none' }}>
+              style={{ maxHeight: '58vh', background: '#ffffff', borderRadius: '20px 20px 0 0', border: '1px solid #e5e7eb', borderBottom: 'none' }}>
               {/* Drag handle */}
               <div className="flex items-center justify-center pt-3 pb-1 flex-shrink-0">
-                <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
+                <div className="w-10 h-1 rounded-full" style={{ background: '#d1d5db' }} />
               </div>
               {/* Sheet header */}
               <div className="flex items-center justify-between px-4 pt-1 pb-2 flex-shrink-0">
-                <span className="text-sm font-bold" style={{ color: '#e2e8f0' }}>
+                <span className="text-sm font-bold" style={{ color: '#111827' }}>
                   {mobileSheet === 'controls' ? 'Controls' : 'Export'}
                 </span>
-                <button onClick={() => setMobileSheet(null)} style={{ color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <button onClick={() => setMobileSheet(null)} style={{ color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer' }}>
                   <X size={18} />
                 </button>
               </div>
