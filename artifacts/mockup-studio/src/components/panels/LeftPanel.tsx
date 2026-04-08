@@ -7,6 +7,7 @@ import type { Tab } from './tabs';
 import { TAB_ICONS } from './tabs';
 import { useApp } from '../../store';
 import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS, PRESETS } from '../../data/backgrounds';
+import { LIGHT_OVERLAYS } from '../../data/lightOverlays';
 import { DEVICE_MODELS, DEVICE_GROUPS, GROUP_ICONS, getModelById } from '../../data/devices';
 import type { DeviceGroup } from '../../data/devices';
 import type { DeviceColor, EnvPreset } from '../../store';
@@ -882,7 +883,84 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           </Section>
         )}
 
-        {/* Overlay */}
+        {/* Light / Shadow Overlay */}
+        <div style={{ paddingTop: 10, marginTop: 4, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <div style={{ marginBottom: 8 }}>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>
+              Light Overlay
+            </span>
+          </div>
+          {/* Overlay preset strip */}
+          <HScroll gap={7}>
+            {/* None button */}
+            <button
+              onClick={() => updateState({ lightOverlay: null })}
+              style={{
+                flexShrink: 0, width: 52, height: 52, borderRadius: 12, border: 'none', cursor: 'pointer',
+                background: 'rgba(255,255,255,0.05)',
+                outline: !state.lightOverlay ? '2px solid rgba(255,255,255,0.5)' : '1px solid rgba(255,255,255,0.1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <circle cx="11" cy="11" r="9" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5"/>
+                <line x1="4" y1="4" x2="18" y2="18" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </button>
+            {/* Preset thumbnails */}
+            {LIGHT_OVERLAYS.map(preset => {
+              const active = state.lightOverlay === preset.id;
+              return (
+                <button
+                  key={preset.id}
+                  onClick={() => updateState({ lightOverlay: preset.id })}
+                  style={{
+                    flexShrink: 0, width: 52, height: 52, borderRadius: 12, border: 'none', cursor: 'pointer',
+                    overflow: 'hidden', position: 'relative',
+                    outline: active ? '2px solid rgba(255,255,255,0.7)' : '1px solid rgba(255,255,255,0.1)',
+                    background: '#fff',
+                  }}>
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    backgroundImage: preset.background,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    filter: preset.filter,
+                  }} />
+                  {active && (
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      boxShadow: 'inset 0 0 0 2px rgba(255,255,255,0.7)',
+                      borderRadius: 12,
+                    }} />
+                  )}
+                </button>
+              );
+            })}
+          </HScroll>
+
+          {/* Controls when a light overlay is selected */}
+          {state.lightOverlay && (
+            <div style={{ marginTop: 10 }}>
+              <Slider label="Opacity" value={state.lightOverlayOpacity} min={0} max={100}
+                onChange={v => updateState({ lightOverlayOpacity: v })} unit="%" />
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)' }}>Blend Mode</span>
+                </div>
+                <HScroll gap={5}>
+                  {(['multiply', 'overlay', 'screen', 'soft-light'] as const).map(mode => (
+                    <Chip key={mode} active={state.lightOverlayBlend === mode}
+                      onClick={() => updateState({ lightOverlayBlend: mode })}>
+                      {mode.charAt(0).toUpperCase() + mode.slice(1).replace('-', ' ')}
+                    </Chip>
+                  ))}
+                </HScroll>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Color Overlay */}
         <div style={{ paddingTop: 10, marginTop: 4, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>

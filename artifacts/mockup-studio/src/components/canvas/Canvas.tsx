@@ -2,6 +2,7 @@ import { forwardRef, useState, useEffect } from 'react';
 import { useApp } from '../../store';
 import type { TextOverlay } from '../../store';
 import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS } from '../../data/backgrounds';
+import { LIGHT_OVERLAYS } from '../../data/lightOverlays';
 import { Device3DViewer } from '../devices3d/Device3DViewer';
 import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
 import { CSSDeviceFallback, checkWebGL } from '../devices3d/WebGLFallback';
@@ -103,6 +104,23 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
       {state.overlayEnabled && (
         <div style={{ position: 'absolute', inset: 0, background: state.overlayColor, opacity: state.overlayOpacity / 100, pointerEvents: 'none', zIndex: 1, borderRadius }} />
       )}
+
+      {/* Light / shadow overlay */}
+      {state.lightOverlay && (() => {
+        const preset = LIGHT_OVERLAYS.find(p => p.id === state.lightOverlay);
+        if (!preset) return null;
+        return (
+          <div style={{
+            position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 18, borderRadius,
+            backgroundImage: preset.background,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: state.lightOverlayOpacity / 100,
+            mixBlendMode: state.lightOverlayBlend as React.CSSProperties['mixBlendMode'],
+            filter: preset.filter,
+          }} />
+        );
+      })()}
 
       {/* Film grain overlay */}
       {state.grain && (
