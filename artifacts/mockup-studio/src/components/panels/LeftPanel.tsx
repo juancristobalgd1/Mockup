@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import {
   Smartphone, Shuffle, Wand2, Image as ImageIcon, Sliders, Type,
-  LayoutGrid, Link2, Video, X, RefreshCw, Sun, RotateCcw,
+  LayoutGrid, X, RefreshCw, Sun, RotateCcw,
 } from 'lucide-react';
 import { useApp } from '../../store';
 import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS, PRESETS } from '../../data/backgrounds';
@@ -276,11 +276,7 @@ function extractColorsFromImage(imgSrc: string): Promise<string[]> {
   });
 }
 
-function getApiBase() {
-  const { protocol, hostname, port } = window.location;
-  const base = port ? `${protocol}//${hostname}:${port}` : `${protocol}//${hostname}`;
-  return `${base}/api-server/api`;
-}
+
 
 // ── Mode accent helpers ────────────────────────────────────────────
 function getModeAccent(mode: string) {
@@ -306,9 +302,6 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
   const [selectedGroup, setSelectedGroup]   = useState<DeviceGroup>('iPhone');
   const bgFileRef                            = useRef<HTMLInputElement>(null);
   const [extracting, setExtracting]         = useState(false);
-  const [urlInput, setUrlInput]             = useState('');
-  const [capturing, setCapturing]           = useState(false);
-  const [captureError, setCaptureError]     = useState('');
 
   const handleBgImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -346,87 +339,9 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
     } finally { setExtracting(false); }
   };
 
-  const handleUrlCapture = async () => {
-    if (!urlInput.trim()) return;
-    setCaptureError('');
-    setCapturing(true);
-    try {
-      let url = urlInput.trim();
-      if (!url.startsWith('http')) url = 'https://' + url;
-      const res = await fetch(`${getApiBase()}/screenshot?url=${encodeURIComponent(url)}`);
-      if (!res.ok) throw new Error('Screenshot failed');
-      const blob = await res.blob();
-      updateState({ screenshotUrl: URL.createObjectURL(blob), videoUrl: null, contentType: 'image' });
-    } catch {
-      setCaptureError('Could not capture. Check the URL.');
-    } finally { setCapturing(false); }
-  };
-
   // ── Device tab content ──────────────────────────────────────────
   const DeviceTab = () => (
     <>
-      {/* URL capture */}
-      <Section label="Capture from URL">
-        <div style={{ borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px' }}>
-            <Link2 size={12} style={{ color: 'rgba(255,255,255,0.35)', flexShrink: 0 }} />
-            <input
-              type="url" value={urlInput}
-              onChange={e => { setUrlInput(e.target.value); setCaptureError(''); }}
-              onKeyDown={e => e.key === 'Enter' && handleUrlCapture()}
-              placeholder="https://example.com"
-              style={{ flex: 1, background: 'transparent', fontSize: 11, outline: 'none', color: 'rgba(255,255,255,0.85)', border: 'none' }}
-            />
-            {urlInput && (
-              <button onClick={() => { setUrlInput(''); setCaptureError(''); }} style={{ color: 'rgba(255,255,255,0.35)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                <X size={11} />
-              </button>
-            )}
-          </div>
-          <button onClick={handleUrlCapture} disabled={capturing || !urlInput.trim()}
-            style={{
-              width: '100%', padding: '7px 0', fontSize: 11, fontWeight: 600,
-              borderTop: '1px solid rgba(255,255,255,0.07)',
-              background: urlInput ? 'rgba(255,255,255,0.08)' : 'transparent',
-              color: urlInput ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.25)', border: 'none',
-              cursor: capturing || !urlInput.trim() ? 'not-allowed' : 'pointer',
-            }}>
-            {capturing ? '⏳ Capturing…' : '📸 Capture Screenshot'}
-          </button>
-        </div>
-        {captureError && <p style={{ fontSize: 10, color: 'var(--rt-accent-red)', marginTop: 4 }}>{captureError}</p>}
-      </Section>
-
-      {/* Upload */}
-      <Section label="Upload Media">
-        <HScroll gap={8}>
-          <UploadTile icon={<ImageIcon size={13} />} label="Image" accept="image/*" color="rgba(255,255,255,0.7)"
-            onFile={f => updateState({ screenshotUrl: URL.createObjectURL(f), videoUrl: null, contentType: 'image' })} />
-          <UploadTile icon={<Video size={13} />} label="Video" accept="video/*" color="rgba(48,209,88,0.9)"
-            onFile={f => updateState({ videoUrl: URL.createObjectURL(f), screenshotUrl: null, contentType: 'video' })} />
-          {(state.screenshotUrl || state.videoUrl) && (
-            <button
-              onClick={() => updateState({ screenshotUrl: null, videoUrl: null, contentType: null })}
-              style={{
-                flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px',
-                borderRadius: 10, fontSize: 11, fontWeight: 600,
-                background: 'rgba(255,69,58,0.12)', border: '1px solid rgba(255,69,58,0.25)', color: 'var(--rt-accent-red)',
-                cursor: 'pointer',
-              }}>
-              <X size={11} /> Clear
-            </button>
-          )}
-        </HScroll>
-        {(state.screenshotUrl || state.videoUrl) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, padding: '4px 8px', borderRadius: 8, background: 'rgba(48,209,88,0.08)', border: '1px solid rgba(48,209,88,0.18)' }}>
-            {state.contentType === 'video' ? <Video size={11} style={{ color: 'var(--rt-accent-green)' }} /> : <ImageIcon size={11} style={{ color: 'var(--rt-accent-green)' }} />}
-            <span style={{ fontSize: 10, color: 'var(--rt-accent-green)' }}>
-              {state.contentType === 'video' ? 'Video loaded' : 'Image loaded'}
-            </span>
-          </div>
-        )}
-      </Section>
-
       {/* Device category */}
       <Section label="Device">
         <HScroll gap={6}>
@@ -1012,23 +927,3 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
   );
 }
 
-// ── Upload tile ───────────────────────────────────────────────────
-function UploadTile({ icon, label, accept, color, onFile }: {
-  icon: React.ReactNode; label: string; accept: string; color: string; onFile: (f: File) => void;
-}) {
-  const ref = useRef<HTMLInputElement>(null);
-  return (
-    <button onClick={() => ref.current?.click()}
-      style={{
-        flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-        padding: '8px 14px', borderRadius: 10,
-        background: 'rgba(255,255,255,0.05)', border: '1px dashed rgba(255,255,255,0.15)',
-        cursor: 'pointer', transition: 'all 0.15s',
-      }}>
-      <span style={{ color }}>{icon}</span>
-      <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.42)' }}>{label}</span>
-      <input ref={ref} type="file" accept={accept} style={{ display: 'none' }}
-        onChange={e => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
-    </button>
-  );
-}
