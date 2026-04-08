@@ -294,8 +294,7 @@ function Editor() {
         }}>
           {/* Tab pill row */}
           <div style={{
-            display: 'flex', gap: 8, overflowX: 'auto',
-            padding: state.movieMode ? '8px 14px 10px' : '10px 14px 22px',
+            display: 'flex', gap: 8, overflowX: 'auto', padding: '10px 14px 22px',
             background: 'transparent', scrollbarWidth: 'none',
           } as React.CSSProperties}>
             {TAB_ICONS.map(({ id, icon: Icon, label }) => {
@@ -304,15 +303,9 @@ function Editor() {
                 <button key={id}
                   onClick={() => setMobileTab(active ? null : id)}
                   style={{
-                    flexShrink: 0,
-                    display: 'flex',
-                    flexDirection: state.movieMode ? 'column' : 'row',
-                    alignItems: 'center',
-                    gap: state.movieMode ? 3 : 7,
-                    padding: state.movieMode ? '8px 14px' : '10px 16px',
-                    borderRadius: 24,
-                    fontSize: state.movieMode ? 10 : 13,
-                    fontWeight: 600, letterSpacing: '-0.01em',
+                    flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '10px 16px', borderRadius: 24,
+                    fontSize: 13, fontWeight: 600, letterSpacing: '-0.01em',
                     background: active ? 'rgba(255,255,255,0.18)' : 'rgba(30,30,32,0.88)',
                     border: active ? '1px solid rgba(255,255,255,0.25)' : '1px solid rgba(255,255,255,0.06)',
                     color: active ? '#fff' : 'rgba(255,255,255,0.78)',
@@ -320,13 +313,8 @@ function Editor() {
                     boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
                     backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
                   }}>
-                  {state.movieMode && (
-                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.01em' }}>
-                      {label}
-                    </span>
-                  )}
-                  <Icon size={state.movieMode ? 13 : 14} strokeWidth={active ? 2.2 : 1.8} />
-                  {!state.movieMode && label}
+                  <Icon size={14} strokeWidth={active ? 2.2 : 1.8} />
+                  {label}
                 </button>
               );
             })}
