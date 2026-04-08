@@ -272,6 +272,43 @@ function FloorReflector({ isLaptop }: { isLaptop: boolean }) {
   );
 }
 
+// ── Drop-zone content for the device screen face ─────────────────
+// Uses em units so it scales naturally with the container font-size
+// (set imperatively from useFrame in DeviceScene).
+function ScreenDropZoneContent({ pencil }: { pencil: boolean }) {
+  return pencil ? (
+    <>
+      <svg width="2em" height="2em" viewBox="0 0 24 24" fill="none">
+        <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"
+          stroke="rgba(255,255,255,0.85)" strokeWidth="1.8"
+          strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      <span style={{
+        fontSize: '0.72em', color: 'rgba(255,255,255,0.5)',
+        fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
+        letterSpacing: '0.01em', textAlign: 'center', lineHeight: 1.3,
+      }}>Cambiar imagen</span>
+    </>
+  ) : (
+    <>
+      <svg width="2em" height="2em" viewBox="0 0 24 24" fill="none">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+          stroke="rgba(255,255,255,0.85)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        <polyline points="17 8 12 3 7 8"
+          stroke="rgba(255,255,255,0.85)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        <line x1="12" y1="3" x2="12" y2="15"
+          stroke="rgba(255,255,255,0.85)" strokeWidth="1.8" strokeLinecap="round"/>
+      </svg>
+      <span style={{
+        fontSize: '0.72em', color: 'rgba(255,255,255,0.5)',
+        fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
+        letterSpacing: '0.01em', textAlign: 'center', lineHeight: 1.3,
+        padding: '0 0.6em',
+      }}>Drop image or video</span>
+    </>
+  );
+}
+
 // ── Device scene (all geometry) ───────────────────────────────────
 function DeviceScene({
   floatEnabled, pencilVisible, onShowPencil, onHidePencil,
@@ -346,16 +383,20 @@ function DeviceScene({
     const isFront = _wn.current.dot(_tc.current) > 0.05;
     wrapperRef.current.style.display = isFront ? '' : 'none';
 
-    // Scale icon to match the device's zoom level
+    // Compute screen pixel dimensions from the projected device face
     _pjA.current.copy(_wp.current).project(camera);
     _pjB.current.set(_wp.current.x + 1, _wp.current.y, _wp.current.z).project(camera);
     const pxPerUnit = Math.abs(_pjB.current.x - _pjA.current.x) *
       (gl.domElement.clientWidth / 2);
-    // planeW ≈ 0.85 world units for phones; icon target ≈ 15% of that
-    // base CSS size is 16px → compute scale factor
-    const targetPx = Math.max(14, Math.min(56, pxPerUnit * 0.15));
-    const scale = targetPx / 16;
-    wrapperRef.current.style.transform = `scale(${scale.toFixed(3)})`;
+    // Fill ~80% of the actual screen face so the drop zone sits inside the bezel
+    const w = Math.round(Math.max(36, Math.min(600, pxPerUnit * planeW * 0.80)));
+    const h = Math.round(Math.max(56, Math.min(900, pxPerUnit * planeH * 0.80)));
+    wrapperRef.current.style.width     = `${w}px`;
+    wrapperRef.current.style.height    = `${h}px`;
+    wrapperRef.current.style.transform = '';
+    // Set font-size so em units in ScreenDropZoneContent scale with the container
+    const fs = Math.max(8, Math.min(18, w * 0.10));
+    wrapperRef.current.style.fontSize  = `${fs.toFixed(1)}px`;
   });
 
   // ── Show icon? ───────────────────────────────────────────────────
@@ -493,44 +534,39 @@ function DeviceScene({
         zIndexRange={[100, 0]}
         style={{ pointerEvents: 'none' }}
       >
-        {/* wrapperRef toggled by useFrame face-detection (no re-renders) */}
-        <div ref={wrapperRef} style={{ pointerEvents: 'none' }}>
+        {/* wrapperRef sized by useFrame to match device screen face */}
+        <div ref={wrapperRef} style={{ pointerEvents: 'none', position: 'relative' }}>
           {showIcon && (
             <div
               onClick={() => fileRef.current?.click()}
               onMouseEnter={e => {
                 const el = e.currentTarget as HTMLDivElement;
-                el.style.background = 'rgba(55,65,81,0.85)';
-                el.style.borderColor = 'rgba(209,213,219,0.9)';
-                el.style.borderStyle = 'solid';
+                el.style.background = 'rgba(20,20,28,0.72)';
+                el.style.borderColor = 'rgba(255,255,255,0.28)';
               }}
               onMouseLeave={e => {
                 const el = e.currentTarget as HTMLDivElement;
-                el.style.background = 'rgba(0,0,0,0.55)';
-                el.style.borderColor = 'rgba(255,255,255,0.40)';
-                el.style.borderStyle = 'dashed';
+                el.style.background = 'rgba(10,10,16,0.55)';
+                el.style.borderColor = 'rgba(255,255,255,0.14)';
               }}
               style={{
-                width: 16, height: 16, borderRadius: '50%',
-                background: 'rgba(0,0,0,0.55)',
-                border: '1px dashed rgba(255,255,255,0.40)',
-                backdropFilter: 'blur(8px)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: '100%', height: '100%', borderRadius: 10,
+                background: 'rgba(10,10,16,0.55)',
+                border: '1.5px dashed rgba(255,255,255,0.14)',
+                backdropFilter: 'blur(12px)',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                gap: '12%',
                 cursor: 'pointer', userSelect: 'none',
                 pointerEvents: 'auto',
-                transition: 'background 0.12s, border-color 0.12s, border-style 0.12s',
+                transition: 'background 0.15s, border-color 0.15s',
+                overflow: 'hidden',
               }}
             >
               {pencilVisible ? (
-                <svg width="8" height="8" viewBox="0 0 16 16" fill="none">
-                  <path d="M11.5 2.5l2 2L5 13l-2.5.5.5-2.5L11.5 2.5z"
-                    stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+                <ScreenDropZoneContent pencil />
               ) : (
-                <svg width="8" height="8" viewBox="0 0 18 18" fill="none">
-                  <line x1="9" y1="3" x2="9" y2="15" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-                  <line x1="3" y1="9" x2="15" y2="9" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-                </svg>
+                <ScreenDropZoneContent pencil={false} />
               )}
             </div>
           )}
