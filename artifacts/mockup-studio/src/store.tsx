@@ -55,6 +55,10 @@ export interface AppState {
   overlayColor: string;
   overlayOpacity: number;
 
+  lightOverlay: string | null;
+  lightOverlayOpacity: number;
+  lightOverlayBlend: string;
+
   animation: "none" | "float" | "spin" | "pulse" | "slide-in";
   autoRotate: boolean;
   autoRotateSpeed: number;
@@ -107,6 +111,10 @@ export const defaultState: AppState = {
   overlayEnabled: false,
   overlayColor: "#000000",
   overlayOpacity: 30,
+
+  lightOverlay: null,
+  lightOverlayOpacity: 60,
+  lightOverlayBlend: 'multiply',
 
   animation: "float",
   autoRotate: false,
