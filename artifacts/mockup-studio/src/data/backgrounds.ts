@@ -8,7 +8,7 @@ export interface BackgroundGradient {
 }
 
 export const GRADIENTS: BackgroundGradient[] = [
-  { id: 'purple-blue', label: 'Purple Blue', css: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+  { id: 'purple-blue', label: 'Blue Violet', css: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' },
   { id: 'ocean', label: 'Ocean', css: 'linear-gradient(135deg, #0093E9 0%, #80D0C7 100%)' },
   { id: 'sunset', label: 'Sunset', css: 'linear-gradient(135deg, #FA8BFF 0%, #2BD2FF 52%, #2BFF88 90%)' },
   { id: 'fire', label: 'Fire', css: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
@@ -16,7 +16,7 @@ export const GRADIENTS: BackgroundGradient[] = [
   { id: 'forest', label: 'Forest', css: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' },
   { id: 'night', label: 'Night', css: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)' },
   { id: 'golden', label: 'Golden', css: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)' },
-  { id: 'candy', label: 'Candy', css: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)' },
+  { id: 'candy', label: 'Candy', css: 'linear-gradient(135deg, #f43f5e 0%, #fb7185 100%)' },
   { id: 'coral', label: 'Coral', css: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)' },
   { id: 'dark-blue', label: 'Deep Sea', css: 'linear-gradient(135deg, #141E30 0%, #243B55 100%)' },
   { id: 'neon', label: 'Neon', css: 'linear-gradient(135deg, #08AEEA 0%, #2AF598 100%)' },
@@ -32,7 +32,7 @@ export const MESH_GRADIENTS: MeshGradient[] = [
   {
     id: 'mesh-aurora',
     label: 'Aurora',
-    css: `radial-gradient(at 40% 20%, #7c3aed 0px, transparent 50%), radial-gradient(at 80% 0%, #0ea5e9 0px, transparent 50%), radial-gradient(at 0% 50%, #ec4899 0px, transparent 50%), radial-gradient(at 80% 50%, #6d28d9 0px, transparent 50%), radial-gradient(at 0% 100%, #0891b2 0px, transparent 50%), #0f0a1e`
+    css: `radial-gradient(at 40% 20%, #0ea5e9 0px, transparent 50%), radial-gradient(at 80% 0%, #06b6d4 0px, transparent 50%), radial-gradient(at 0% 50%, #ec4899 0px, transparent 50%), radial-gradient(at 80% 50%, #0284c7 0px, transparent 50%), radial-gradient(at 0% 100%, #0891b2 0px, transparent 50%), #03111e`
   },
   {
     id: 'mesh-forest',
@@ -52,7 +52,7 @@ export const MESH_GRADIENTS: MeshGradient[] = [
   {
     id: 'mesh-candy',
     label: 'Candy',
-    css: `radial-gradient(at 30% 20%, #a855f7 0px, transparent 50%), radial-gradient(at 75% 15%, #ec4899 0px, transparent 50%), radial-gradient(at 85% 65%, #f43f5e 0px, transparent 50%), radial-gradient(at 10% 75%, #8b5cf6 0px, transparent 50%), #1a0b1e`
+    css: `radial-gradient(at 30% 20%, #f43f5e 0px, transparent 50%), radial-gradient(at 75% 15%, #ec4899 0px, transparent 50%), radial-gradient(at 85% 65%, #f97316 0px, transparent 50%), radial-gradient(at 10% 75%, #e11d48 0px, transparent 50%), #1a080e`
   },
   {
     id: 'mesh-gold',
@@ -167,9 +167,9 @@ export const WALLPAPERS: WallpaperOption[] = [
   },
   {
     id: 'lavender',
-    label: 'Lavender Fields',
-    css: `radial-gradient(ellipse at 50% 60%, #ede9fe 0%, #ddd6fe 25%, #c4b5fd 50%, #7c3aed 80%, #4c1d95 100%)`,
-    thumb: '#c4b5fd',
+    label: 'Sky Dusk',
+    css: `radial-gradient(ellipse at 50% 60%, #e0f2fe 0%, #bae6fd 25%, #7dd3fc 50%, #0284c7 80%, #0c4a6e 100%)`,
+    thumb: '#7dd3fc',
   },
   {
     id: 'sand-dunes',

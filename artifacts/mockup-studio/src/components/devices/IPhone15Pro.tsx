@@ -75,7 +75,7 @@ export function IPhone15Pro() {
         }}
         data-testid="iphone-screen"
       >
-        <ScreenContent accentColor="#a78bfa" iconBg="rgba(139,92,246,0.2)" />
+        <ScreenContent accentColor="#374151" iconBg="rgba(55,65,81,0.1)" />
 
         {/* Dynamic island */}
         {!isLandscape && (
