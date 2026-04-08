@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Download, Copy, Image, Check, Video, Film, ChevronDown } from 'lucide-react';
 import { useApp } from '../../store';
 import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
@@ -43,6 +43,44 @@ async function captureCanvas(el: HTMLDivElement, glEl?: HTMLCanvasElement | null
 function downloadBlob(url: string, filename: string) {
   const a = document.createElement('a');
   a.href = url; a.download = filename; a.click();
+}
+
+// ── Font-size slider with rAF throttle ───────────────────────────
+function FontSizeSlider({ value, onCommit }: { value: number; onCommit: (v: number) => void }) {
+  const [local, setLocal] = useState(value);
+  const isDragging = useRef(false);
+  const pending = useRef<number | null>(null);
+  const rafId = useRef<number>(0);
+
+  useEffect(() => { if (!isDragging.current) setLocal(value); }, [value]);
+
+  const scheduleFlush = (v: number) => {
+    pending.current = v;
+    if (!rafId.current) {
+      rafId.current = requestAnimationFrame(() => {
+        if (pending.current !== null) { onCommit(pending.current); pending.current = null; }
+        rafId.current = 0;
+      });
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', minWidth: 28 }}>Size</span>
+      <input type="range" min={10} max={80} value={local}
+        className="flex-1 ms-range"
+        onChange={e => { const v = Number(e.target.value); setLocal(v); scheduleFlush(v); }}
+        onPointerDown={() => { isDragging.current = true; }}
+        onPointerUp={e => {
+          isDragging.current = false;
+          if (rafId.current) { cancelAnimationFrame(rafId.current); rafId.current = 0; }
+          pending.current = null;
+          onCommit(Number(e.currentTarget.value));
+        }}
+      />
+      <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.35)', minWidth: 20 }}>{local}</span>
+    </div>
+  );
 }
 
 function SectionHeader({ label, open, onToggle }: { label: string; open: boolean; onToggle: () => void }) {
@@ -282,13 +320,10 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
                       className="rt-input w-full"
                       style={{ marginBottom: 8 }}
                       data-testid={`text-input-${overlay.id}`} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', minWidth: 28 }}>Size</span>
-                      <input type="range" min={10} max={80} value={overlay.fontSize}
-                        onChange={e => onUpdateText(overlay.id, { fontSize: Number(e.target.value) })}
-                        className="flex-1 ms-range" />
-                      <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.35)', minWidth: 20 }}>{overlay.fontSize}</span>
-                    </div>
+                    <FontSizeSlider
+                      value={overlay.fontSize}
+                      onCommit={v => onUpdateText(overlay.id, { fontSize: v })}
+                    />
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', minWidth: 28 }}>Color</span>
                       <input type="color" value={overlay.color}
