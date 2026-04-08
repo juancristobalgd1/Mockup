@@ -340,6 +340,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const [activeTab, setActiveTab]           = useState<Tab>(getDefaultTab(mode));
   const [selectedGroup, setSelectedGroup]   = useState<DeviceGroup>('iPhone');
   const [deviceSearch, setDeviceSearch]     = useState('');
+  const [mobileDeviceFilter, setMobileDeviceFilter] = useState<DeviceGroup | 'All'>('All');
   const bgFileRef                            = useRef<HTMLInputElement>(null);
   const [extracting, setExtracting]         = useState(false);
 
@@ -380,15 +381,56 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   };
 
   // ── Device tab content — searchable 3-column grid ───────────────
+  const GROUP_TO_STORETYPE: Record<DeviceGroup, string> = {
+    iPhone: 'iphone', Android: 'android', Tablet: 'ipad',
+    Desktop: 'macbook', Browser: 'browser', Watch: 'watch',
+  };
+
   const DeviceTab = () => {
     const q = deviceSearch.trim().toLowerCase();
-    const models = q
+    const baseModels = q
       ? DEVICE_MODELS.filter(m => m.label.toLowerCase().includes(q))
       : DEVICE_MODELS;
 
+    const models = (mobile && mobileDeviceFilter !== 'All')
+      ? baseModels.filter(m => m.storeType === GROUP_TO_STORETYPE[mobileDeviceFilter as DeviceGroup])
+      : baseModels;
+
+    const filterGroups: (DeviceGroup | 'All')[] = ['All', ...DEVICE_GROUPS];
+
     return (
       <>
-        {/* Search bar */}
+        {/* Mobile filter strip */}
+        {mobile && (
+          <div style={{
+            display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 12, paddingBottom: 2,
+            scrollbarWidth: 'none',
+          } as React.CSSProperties}>
+            {filterGroups.map(group => {
+              const active = mobileDeviceFilter === group;
+              const icon = group === 'All' ? '✦' : GROUP_ICONS[group as DeviceGroup];
+              return (
+                <button key={group}
+                  onClick={() => setMobileDeviceFilter(group)}
+                  style={{
+                    flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
+                    padding: '6px 13px', borderRadius: 20,
+                    fontSize: 12, fontWeight: active ? 700 : 500,
+                    background: active ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
+                    border: active ? '1px solid rgba(255,255,255,0.28)' : '1px solid rgba(255,255,255,0.07)',
+                    color: active ? '#fff' : 'rgba(255,255,255,0.5)',
+                    cursor: 'pointer', transition: 'all 0.12s', whiteSpace: 'nowrap',
+                  }}>
+                  <span style={{ fontSize: 13 }}>{icon}</span>
+                  {group}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Desktop search bar */}
+        {!mobile && (
         <div style={{ position: 'relative', marginBottom: 12 }}>
           <Search size={12} style={{
             position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
@@ -403,6 +445,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
             style={{ paddingLeft: 30, width: '100%', boxSizing: 'border-box' }}
           />
         </div>
+        )}
 
         {/* Device list — horizontal slider on mobile, 3-col grid on desktop */}
         {mobile ? (
