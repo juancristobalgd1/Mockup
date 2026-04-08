@@ -642,14 +642,14 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {/* Gradients */}
         {state.bgType === 'gradient' && (
           <Section label="Gradients">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7, marginBottom: 4 }}>
+            <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' } as React.CSSProperties}>
               {GRADIENTS.map(g => {
                 const active = state.bgColor === g.id;
                 return (
                   <button key={g.id} onClick={() => updateState({ bgColor: g.id })}
                     style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center',
-                      padding: '10px 4px 8px', borderRadius: 14, gap: 0, border: 'none',
+                      flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                      padding: '10px 8px 8px', borderRadius: 14, gap: 0, border: 'none',
                       background: active ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
                       outline: active ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
                       cursor: 'pointer', transition: 'all 0.12s',
@@ -661,7 +661,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     <span style={{
                       fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
                       color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.50)',
-                      maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      whiteSpace: 'nowrap',
                     }}>{g.label}</span>
                   </button>
                 );
@@ -685,14 +685,14 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               </button>
             ) : undefined
           }>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7, marginBottom: 4 }}>
+            <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' } as React.CSSProperties}>
               {MESH_GRADIENTS.filter(m => m.id !== '__auto__').map(m => {
                 const active = state.bgColor === m.id;
                 return (
                   <button key={m.id} onClick={() => updateState({ bgColor: m.id })}
                     style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center',
-                      padding: '10px 4px 8px', borderRadius: 14, gap: 0, border: 'none',
+                      flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                      padding: '10px 8px 8px', borderRadius: 14, gap: 0, border: 'none',
                       background: active ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
                       outline: active ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
                       cursor: 'pointer', transition: 'all 0.12s',
@@ -704,6 +704,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     <span style={{
                       fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
                       color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.50)',
+                      whiteSpace: 'nowrap',
                     }}>{m.label}</span>
                   </button>
                 );
@@ -715,14 +716,14 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {/* Wallpapers */}
         {state.bgType === 'wallpaper' && (
           <Section label="Wallpapers">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7, marginBottom: 4 }}>
+            <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' } as React.CSSProperties}>
               {WALLPAPERS.map(w => {
                 const active = state.bgColor === w.id;
                 return (
                   <button key={w.id} onClick={() => updateState({ bgColor: w.id })}
                     style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center',
-                      padding: '10px 4px 8px', borderRadius: 14, gap: 0, border: 'none',
+                      flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                      padding: '10px 8px 8px', borderRadius: 14, gap: 0, border: 'none',
                       background: active ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
                       outline: active ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
                       cursor: 'pointer', transition: 'all 0.12s',
@@ -734,7 +735,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     <span style={{
                       fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
                       color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.50)',
-                      maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      whiteSpace: 'nowrap',
                     }}>{w.label}</span>
                   </button>
                 );
@@ -747,14 +748,14 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {state.bgType === 'pattern' && (
           <>
             <Section label="Pattern">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7, marginBottom: 4 }}>
+              <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' } as React.CSSProperties}>
                 {PATTERNS.map(p => {
                   const active = state.bgPattern === p.id;
                   return (
                     <button key={p.id} onClick={() => updateState({ bgPattern: p.id })}
                       style={{
-                        display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        padding: '10px 4px 8px', borderRadius: 14, gap: 0, border: 'none',
+                        flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        padding: '10px 8px 8px', borderRadius: 14, gap: 0, border: 'none',
                         background: active ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
                         outline: active ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
                         cursor: 'pointer', transition: 'all 0.12s',
@@ -767,6 +768,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                       <span style={{
                         fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
                         color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.50)',
+                        whiteSpace: 'nowrap',
                       }}>{p.label}</span>
                     </button>
                   );
