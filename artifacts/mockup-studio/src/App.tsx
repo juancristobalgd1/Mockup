@@ -5,7 +5,7 @@ import { Canvas } from './components/canvas/Canvas';
 import { LeftPanel } from './components/panels/LeftPanel';
 import { RightPanel } from './components/panels/RightPanel';
 import { MovieTimeline } from './components/timeline/MovieTimeline';
-import { Download, Layers, X, Film, Smartphone, ChevronDown } from 'lucide-react';
+import { Download, X, Film, Smartphone } from 'lucide-react';
 import { getModelById } from './data/devices';
 import type { Device3DViewerHandle } from './components/devices3d/Device3DViewer';
 
@@ -35,7 +35,7 @@ function Editor() {
   const viewerRef = useRef<Device3DViewerHandle>(null);
   const movieTimeRef = useRef<number>(0);
   const [moviePlaying, setMoviePlaying] = useState(false);
-  const [mobileSheet, setMobileSheet] = useState<'controls' | 'export' | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const currentModel = getModelById(state.deviceModel);
   const deviceLabel = currentModel.label;
@@ -170,7 +170,7 @@ function Editor() {
         {/* Mobile topbar */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0 16px', height: 50, flexShrink: 0,
+          padding: '0 14px', height: 50, flexShrink: 0,
           background: 'var(--rt-panel)',
           borderBottom: '1px solid var(--rt-border)',
         }}>
@@ -180,41 +180,52 @@ function Editor() {
               width: 26, height: 26, borderRadius: 7,
               background: 'rgba(255,255,255,0.9)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#0d0e0f', fontWeight: 900, fontSize: 12, flexShrink: 0,
-              fontStyle: 'italic',
+              color: '#0d0e0f', fontWeight: 900, fontSize: 12, fontStyle: 'italic',
             }}>M</div>
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--rt-text)', letterSpacing: '-0.01em' }}>
               MockupStudio
             </span>
           </div>
 
-          {/* Mode + Export */}
+          {/* Mode picker + Export */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{
-              fontSize: 10, fontWeight: 600, color: 'var(--rt-text-2)',
-              padding: '3px 8px', borderRadius: 6,
-              background: 'rgba(255,255,255,0.06)',
+            <div style={{
+              display: 'flex', alignItems: 'center',
+              background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: 2,
               border: '1px solid var(--rt-border)',
             }}>
-              {activeMode.label}
-            </span>
+              {CREATION_MODES.map(mode => {
+                const isActive = state.creationMode === mode.id;
+                return (
+                  <button key={mode.id} onClick={() => handleModeChange(mode.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      padding: '4px 9px', borderRadius: 6, cursor: 'pointer',
+                      fontSize: 11, fontWeight: 600, transition: 'all 0.12s',
+                      background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
+                      border: isActive ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
+                      color: isActive ? 'var(--rt-text)' : 'var(--rt-text-3)',
+                    }}>
+                    {mode.icon} {mode.label}
+                  </button>
+                );
+              })}
+            </div>
             <button
-              onClick={() => setMobileSheet(mobileSheet === 'export' ? null : 'export')}
+              onClick={() => setExportOpen(true)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
                 padding: '7px 13px', borderRadius: 20, cursor: 'pointer',
                 fontSize: 11, fontWeight: 700,
-                background: 'rgba(255,255,255,0.9)', color: '#0d0e0f',
-                border: 'none',
+                background: 'rgba(255,255,255,0.9)', color: '#0d0e0f', border: 'none',
               }}>
-              <Download size={12} />
-              Export
+              <Download size={12} /> Export
             </button>
           </div>
         </div>
 
-        {/* Mobile canvas */}
-        <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }} className="canvas-bg">
+        {/* Canvas — flex: 1, always visible above the bottom panel */}
+        <div style={{ flex: 1, overflow: 'hidden', position: 'relative', minHeight: 0 }} className="canvas-bg">
           <Canvas
             ref={canvasRef}
             viewerRef={viewerRef}
@@ -232,96 +243,62 @@ function Editor() {
             movieTimeRef={movieTimeRef}
             canvasRef={canvasRef}
             onPlayingChange={setMoviePlaying}
-            onClose={() => { updateState({ movieMode: false }); setMoviePlaying(false); setMobileSheet(null); }}
+            onClose={() => { updateState({ movieMode: false }); setMoviePlaying(false); }}
           />
         )}
 
-        {/* Mobile mode tabs */}
+        {/* ── Persistent bottom control panel ───────────────────── */}
         <div style={{
-          display: 'flex', gap: 4, padding: '8px 12px 4px',
+          flexShrink: 0,
           background: 'var(--rt-panel)',
           borderTop: '1px solid var(--rt-border)',
+          borderRadius: '18px 18px 0 0',
+          boxShadow: '0 -8px 32px rgba(0,0,0,0.45)',
+          display: 'flex', flexDirection: 'column',
+          maxHeight: '44vh',
         }}>
-          {CREATION_MODES.map(mode => {
-            const isActive = state.creationMode === mode.id;
-            return (
-              <button
-                key={mode.id}
-                onClick={() => handleModeChange(mode.id)}
-                style={{
-                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                  padding: '8px 4px', borderRadius: 8, cursor: 'pointer',
-                  fontSize: 11, fontWeight: 600, transition: 'all 0.15s',
-                  background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
-                  border: isActive ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
-                  color: isActive ? 'var(--rt-text)' : 'var(--rt-text-3)',
-                }}>
-                {mode.icon}
-                {mode.label}
-              </button>
-            );
-          })}
+          {/* Drag handle */}
+          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 9, paddingBottom: 2, flexShrink: 0 }}>
+            <div style={{ width: 34, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.14)' }} />
+          </div>
+          {/* Scrollable controls */}
+          <div className="styled-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+            <LeftPanel mobile />
+          </div>
         </div>
 
-        {/* Mobile bottom actions */}
-        <div style={{
-          display: 'flex', gap: 8, padding: '6px 12px 14px',
-          background: 'var(--rt-panel)',
-        }}>
-          <button
-            onClick={() => setMobileSheet(mobileSheet === 'controls' ? null : 'controls')}
-            style={{
-              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '12px 8px', borderRadius: 12, cursor: 'pointer',
-              fontSize: 12, fontWeight: 700, transition: 'all 0.15s',
-              background: mobileSheet === 'controls' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)',
-              border: '1px solid var(--rt-border)',
-              color: 'var(--rt-text)',
-            }}>
-            <Layers size={15} />
-            Controls
-          </button>
-
-          <button
-            onClick={() => setMobileSheet(mobileSheet === 'export' ? null : 'export')}
-            style={{
-              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '12px 8px', borderRadius: 12, cursor: 'pointer',
-              fontSize: 12, fontWeight: 700,
-              background: 'rgba(255,255,255,0.9)', color: '#0d0e0f',
-              border: 'none',
-            }}>
-            <Download size={15} />
-            Export
-          </button>
-        </div>
-
-        {/* Mobile bottom sheet */}
-        {mobileSheet && (
+        {/* ── Export bottom sheet ───────────────────────────────── */}
+        {exportOpen && (
           <>
-            <div className="fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,0.55)' }}
-              onClick={() => setMobileSheet(null)} />
-            <div className="mobile-sheet fixed bottom-0 left-0 right-0 z-50 overflow-hidden"
+            <div
               style={{
-                maxHeight: '75vh',
+                position: 'fixed', inset: 0, zIndex: 40,
+                background: 'rgba(0,0,0,0.55)',
+              }}
+              onClick={() => setExportOpen(false)}
+            />
+            <div
+              style={{
+                position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
+                maxHeight: '78vh',
                 background: 'var(--rt-panel)',
                 borderRadius: '16px 16px 0 0',
                 borderTop: '1px solid var(--rt-border-mid)',
                 boxShadow: '0 -12px 48px rgba(0,0,0,0.6)',
-              }}>
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
+                display: 'flex', flexDirection: 'column',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px', flexShrink: 0 }}>
                 <div style={{ width: 32, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)' }} />
               </div>
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '4px 18px 10px',
+                padding: '4px 18px 10px', flexShrink: 0,
                 borderBottom: '1px solid var(--rt-border)',
               }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--rt-text)' }}>
-                  {mobileSheet === 'controls' ? 'Controls' : 'Export'}
-                </span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--rt-text)' }}>Export</span>
                 <button
-                  onClick={() => setMobileSheet(null)}
+                  onClick={() => setExportOpen(false)}
                   style={{
                     width: 26, height: 26, borderRadius: 13, border: 'none',
                     background: 'rgba(255,255,255,0.1)', color: 'var(--rt-text-2)',
@@ -330,11 +307,14 @@ function Editor() {
                   <X size={13} />
                 </button>
               </div>
-              <div className="overflow-y-auto styled-scroll" style={{ maxHeight: 'calc(75vh - 80px)' }}>
-                {mobileSheet === 'controls' && <LeftPanel mobile />}
-                {mobileSheet === 'export' && (
-                  <RightPanel canvasRef={canvasRef} viewerRef={viewerRef} textOverlays={state.texts} onUpdateText={updateText} onRemoveText={removeText} />
-                )}
+              <div className="overflow-y-auto styled-scroll" style={{ flex: 1, minHeight: 0 }}>
+                <RightPanel
+                  canvasRef={canvasRef}
+                  viewerRef={viewerRef}
+                  textOverlays={state.texts}
+                  onUpdateText={updateText}
+                  onRemoveText={removeText}
+                />
               </div>
             </div>
           </>
