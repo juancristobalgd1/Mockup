@@ -204,9 +204,14 @@ function Editor() {
               onClick={() => setMobileTab(null)}
             />
             <div style={{
-              position: 'absolute', bottom: 58, left: 0, right: 0, zIndex: 30,
-              maxHeight: '68vh',
-              background: 'transparent',
+              position: 'absolute', bottom: 58, left: 8, right: 8, zIndex: 30,
+              maxHeight: '70vh',
+              background: 'rgba(22,24,26,0.92)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              borderRadius: 20,
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
               display: 'flex', flexDirection: 'column',
               overflow: 'hidden',
             } as React.CSSProperties}>
@@ -228,10 +233,10 @@ function Editor() {
           </>
         )}
 
-        {/* ── Floating tab bar — always visible at the bottom ── */}
+        {/* ── Floating tab bar — dark pill style ── */}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 40,
-          display: 'flex', gap: 5, overflowX: 'auto', padding: '8px 12px 20px',
+          display: 'flex', gap: 8, overflowX: 'auto', padding: '10px 14px 22px',
           background: 'transparent',
           scrollbarWidth: 'none',
         } as React.CSSProperties}>
@@ -241,32 +246,46 @@ function Editor() {
               <button key={id}
                 onClick={() => setMobileTab(active ? null : id)}
                 style={{
-                  flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
-                  padding: '7px 12px', borderRadius: 20, fontSize: 12, fontWeight: active ? 700 : 500,
-                  background: 'transparent', border: 'none',
-                  color: active ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.38)',
-                  cursor: 'pointer', transition: 'color 0.14s',
+                  flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '10px 16px', borderRadius: 24,
+                  fontSize: 13, fontWeight: 600, letterSpacing: '-0.01em',
+                  background: active
+                    ? 'rgba(255,255,255,0.18)'
+                    : 'rgba(30,30,32,0.88)',
+                  border: active ? '1px solid rgba(255,255,255,0.25)' : '1px solid rgba(255,255,255,0.06)',
+                  color: active ? '#fff' : 'rgba(255,255,255,0.78)',
+                  cursor: 'pointer', transition: 'all 0.14s',
                   whiteSpace: 'nowrap',
-                  textShadow: active ? '0 1px 8px rgba(0,0,0,0.8)' : '0 1px 4px rgba(0,0,0,0.6)',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
                 }}>
-                <Icon size={13} strokeWidth={active ? 2.4 : 1.5} />
+                <Icon size={14} strokeWidth={active ? 2.2 : 1.8} />
                 {label}
               </button>
             );
           })}
-          {/* Export — same transparent style, bold to distinguish */}
+          {/* Export pill — slightly brighter */}
           <button
             onClick={() => setMobileTab(mobileTab === 'export' ? null : 'export')}
             style={{
-              flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
-              padding: '7px 12px', borderRadius: 20, fontSize: 12, fontWeight: mobileTab === 'export' ? 700 : 600,
-              background: 'transparent', border: 'none',
-              color: mobileTab === 'export' ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.65)',
-              cursor: 'pointer', transition: 'color 0.14s',
+              flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7,
+              padding: '10px 16px', borderRadius: 24,
+              fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em',
+              background: mobileTab === 'export'
+                ? 'rgba(255,255,255,0.18)'
+                : 'rgba(30,30,32,0.88)',
+              border: mobileTab === 'export'
+                ? '1px solid rgba(255,255,255,0.25)'
+                : '1px solid rgba(255,255,255,0.06)',
+              color: '#fff',
+              cursor: 'pointer', transition: 'all 0.14s',
               whiteSpace: 'nowrap',
-              textShadow: '0 1px 8px rgba(0,0,0,0.8)',
-            }}>
-            <Download size={13} />
+              boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+            } as React.CSSProperties}>
+            <Download size={14} />
             Export
           </button>
         </div>
