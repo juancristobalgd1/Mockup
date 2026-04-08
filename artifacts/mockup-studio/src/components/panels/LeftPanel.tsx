@@ -3,6 +3,8 @@ import {
   Smartphone, Shuffle, Wand2, Image as ImageIcon, Sliders, Type,
   LayoutGrid, X, RefreshCw, Sun, RotateCcw, Search,
 } from 'lucide-react';
+import type { Tab } from './tabs';
+import { TAB_ICONS } from './tabs';
 import { useApp } from '../../store';
 import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS, PRESETS } from '../../data/backgrounds';
 import { DEVICE_MODELS, DEVICE_GROUPS, GROUP_ICONS, getModelById } from '../../data/devices';
@@ -38,17 +40,6 @@ const CANVAS_RATIOS = [
   { id: '16:9',  label: '16:9'  },
   { id: '9:16',  label: '9:16'  },
 ] as const;
-
-type Tab = 'presets' | 'device' | 'background' | 'canvas' | 'lighting' | 'text';
-
-const TAB_ICONS: { id: Tab; icon: React.ComponentType<IconProps>; label: string }[] = [
-  { id: 'presets',    icon: LayoutGrid, label: 'Presets'    },
-  { id: 'device',     icon: Smartphone, label: 'Device'     },
-  { id: 'background', icon: ImageIcon,  label: 'Background' },
-  { id: 'canvas',     icon: Sliders,    label: 'Scene'      },
-  { id: 'lighting',   icon: Sun,        label: 'Lighting'   },
-  { id: 'text',       icon: Type,       label: 'Text'       },
-];
 
 // ── Horizontal-scroll strip ───────────────────────────────────────
 const HScroll = ({ children, gap = 8 }: { children: React.ReactNode; gap?: number }) => (
@@ -341,7 +332,7 @@ function getDefaultTab(mode: string): Tab {
 }
 
 // ── Main component ────────────────────────────────────────────────
-export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
+export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: boolean; mobileContentOnly?: Tab }) {
   const { state, updateState, addText } = useApp();
   const mode = state.creationMode ?? 'mockup';
   const modeAccent = getModeAccent(mode);
@@ -885,6 +876,20 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
       </p>
     </>
   );
+
+  // ── Mobile content-only mode (rendered by App.tsx inside a floating sheet) ──
+  if (mobile && mobileContentOnly !== undefined) {
+    return (
+      <div style={{ padding: '12px 14px 16px' }}>
+        {mobileContentOnly === 'presets'    && <PresetsTab />}
+        {mobileContentOnly === 'device'     && <DeviceTab />}
+        {mobileContentOnly === 'background' && <BackgroundTab />}
+        {mobileContentOnly === 'canvas'     && <SceneTab />}
+        {mobileContentOnly === 'lighting'   && <LightingTab />}
+        {mobileContentOnly === 'text'       && <TextTab />}
+      </div>
+    );
+  }
 
   // ── Mobile shell — content top, pill nav bottom (like reference image) ──
   if (mobile) {
