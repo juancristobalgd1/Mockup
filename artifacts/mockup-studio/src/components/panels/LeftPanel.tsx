@@ -176,6 +176,53 @@ const Slider = memo(function Slider({ label, value, min, max, step = 1, onChange
   );
 });
 
+// ── MiniSlider — compact 2-column variant of Slider ──────────────
+const MiniSlider = memo(function MiniSlider({ label, value, min, max, step = 1, onChange, unit = '' }: {
+  label: string; value: number; min: number; max: number; step?: number;
+  onChange: (v: number) => void; unit?: string;
+}) {
+  const [local, setLocal] = useState(value);
+  const isDragging = useRef(false);
+  const pending    = useRef<number | null>(null);
+  const rafId      = useRef<number>(0);
+
+  useEffect(() => { if (!isDragging.current) setLocal(value); }, [value]);
+
+  const scheduleFlush = (v: number) => {
+    pending.current = v;
+    if (!rafId.current) {
+      rafId.current = requestAnimationFrame(() => {
+        if (pending.current !== null) { onChange(pending.current); pending.current = null; }
+        rafId.current = 0;
+      });
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = Number(e.target.value); setLocal(v); scheduleFlush(v);
+  };
+  const handlePointerDown = () => { isDragging.current = true; };
+  const handlePointerUp = (e: React.PointerEvent<HTMLInputElement>) => {
+    isDragging.current = false;
+    if (rafId.current) { cancelAnimationFrame(rafId.current); rafId.current = 0; }
+    pending.current = null;
+    onChange(Number(e.currentTarget.value));
+  };
+
+  const display = Number.isInteger(step) ? String(local) : local.toFixed(2);
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+        <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.02em', color: 'rgba(255,255,255,0.38)' }}>{label}</span>
+        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.52)', fontVariantNumeric: 'tabular-nums' }}>{display}{unit}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={local}
+        className="ms-range w-full"
+        onChange={handleChange} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} />
+    </div>
+  );
+});
+
 // ── Device thumbnail ──────────────────────────────────────────────
 function DeviceThumbnail({ modelId, isSelected }: { modelId: string; isSelected: boolean }) {
   const def = getModelById(modelId);
@@ -619,120 +666,112 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
   // ── Scene tab content ───────────────────────────────────────────
   const SceneTab = () => (
     <>
-      {/* Canvas ratio */}
-      <Section label="Canvas Ratio">
+      {/* Canvas — ratio chips + corner radius */}
+      <Section label="Canvas">
         <HScroll gap={6}>
           {CANVAS_RATIOS.map(r => (
             <Chip key={r.id} active={state.canvasRatio === r.id} onClick={() => updateState({ canvasRatio: r.id })}>{r.label}</Chip>
           ))}
         </HScroll>
+        <div style={{ marginTop: 10 }}>
+          <Slider label="Corner Radius" value={state.canvasRadius ?? 0} min={0} max={80} step={2}
+            onChange={v => updateState({ canvasRadius: v })} unit="px" />
+        </div>
       </Section>
 
-      {/* Canvas corner radius */}
-      <Section label="Canvas Shape">
-        <Slider label="Corner Radius" value={state.canvasRadius ?? 0} min={0} max={80} step={2}
-          onChange={v => updateState({ canvasRadius: v })} unit="px" />
-      </Section>
-
-      {/* Device scale */}
-      <Section label="Device">
+      {/* Device & Motion — scale + rotate + float */}
+      <Section label="Device & Motion">
         <Slider label="Scale" value={state.deviceScale ?? 100} min={40} max={160} step={5}
           onChange={v => updateState({ deviceScale: v })} unit="%" />
-      </Section>
-
-      {/* Motion */}
-      <Section label="Motion">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <RefreshCw size={12} style={{ color: 'rgba(255,255,255,0.35)' }} />
+              <RefreshCw size={11} style={{ color: 'rgba(255,255,255,0.30)' }} />
               <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Auto Rotate</span>
             </div>
             <Toggle enabled={state.autoRotate} onToggle={() => updateState({ autoRotate: !state.autoRotate })} />
           </div>
           {state.autoRotate && (
-            <Slider label="Speed"
-              value={Math.round(state.autoRotateSpeed * 10) / 10}
-              min={0.5} max={8} step={0.5}
-              onChange={v => updateState({ autoRotateSpeed: v })} />
+            <Slider label="Speed" value={Math.round(state.autoRotateSpeed * 10) / 10}
+              min={0.5} max={8} step={0.5} onChange={v => updateState({ autoRotateSpeed: v })} />
           )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <RotateCcw size={12} style={{ color: 'rgba(255,255,255,0.35)' }} />
+              <RotateCcw size={11} style={{ color: 'rgba(255,255,255,0.30)' }} />
               <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Float</span>
             </div>
-            <Toggle
-              enabled={state.animation === 'float'}
+            <Toggle enabled={state.animation === 'float'}
               onToggle={() => updateState({ animation: state.animation === 'float' ? 'none' : 'float' })} />
           </div>
         </div>
       </Section>
 
-      {/* Reflection */}
-      <Section label="Reflection" action={
-        <Toggle enabled={state.reflection ?? false} onToggle={() => updateState({ reflection: !(state.reflection ?? false) })} />
-      }>
-        {(state.reflection ?? false) && (
-          <Slider label="Strength" value={state.reflectionOpacity ?? 50} min={0} max={100}
-            onChange={v => updateState({ reflectionOpacity: v })} unit="%" />
-        )}
+      {/* Effects — reflection + grain as toggle rows */}
+      <Section label="Effects">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Floor Reflection</span>
+            <Toggle enabled={state.reflection ?? false} onToggle={() => updateState({ reflection: !(state.reflection ?? false) })} />
+          </div>
+          {(state.reflection ?? false) && (
+            <Slider label="Strength" value={state.reflectionOpacity ?? 50} min={0} max={100}
+              onChange={v => updateState({ reflectionOpacity: v })} unit="%" />
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Film Grain</span>
+            <Toggle enabled={state.grain ?? false} onToggle={() => updateState({ grain: !(state.grain ?? false) })} />
+          </div>
+          {(state.grain ?? false) && (
+            <Slider label="Intensity" value={state.grainIntensity ?? 35} min={5} max={100}
+              onChange={v => updateState({ grainIntensity: v })} unit="%" />
+          )}
+        </div>
       </Section>
 
-      {/* Film Grain */}
-      <Section label="Film Grain" action={
-        <Toggle enabled={state.grain ?? false} onToggle={() => updateState({ grain: !(state.grain ?? false) })} />
-      }>
-        {(state.grain ?? false) && (
-          <Slider label="Intensity" value={state.grainIntensity ?? 35} min={5} max={100}
-            onChange={v => updateState({ grainIntensity: v })} unit="%" />
-        )}
-      </Section>
-
-      {/* Lighting controls */}
+      {/* Lighting — compact 2-column grid */}
       <Section label="Lighting">
-        <Slider label="Brightness" value={state.lightBrightness ?? 40} min={0} max={100} step={1} unit="%"
-          onChange={v => updateState({ lightBrightness: v })} />
-        <Slider label="Ambient" value={state.lightAmbient ?? 45} min={0} max={100} step={1} unit="%"
-          onChange={v => updateState({ lightAmbient: v })} />
-        <Slider label="Warmth" value={state.lightWarmth ?? 0} min={-50} max={50} step={1}
-          onChange={v => updateState({ lightWarmth: v })} />
-        <Slider label="Reflections" value={state.lightIBL ?? 40} min={0} max={100} step={1} unit="%"
-          onChange={v => updateState({ lightIBL: v })} />
-        <Slider label="Exposure" value={Math.round((state.lightExposure ?? 1.0) * 100) / 100}
-          min={0.4} max={2.0} step={0.05}
-          onChange={v => updateState({ lightExposure: v })} />
-        <Slider label="Bloom" value={state.bloomIntensity ?? 22} min={0} max={100} step={1}
-          onChange={v => updateState({ bloomIntensity: v })} unit="%" />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 12 }}>
+          <MiniSlider label="Brightness" value={state.lightBrightness ?? 40} min={0} max={100} step={1} unit="%"
+            onChange={v => updateState({ lightBrightness: v })} />
+          <MiniSlider label="Ambient" value={state.lightAmbient ?? 45} min={0} max={100} step={1} unit="%"
+            onChange={v => updateState({ lightAmbient: v })} />
+          <MiniSlider label="Warmth" value={state.lightWarmth ?? 0} min={-50} max={50} step={1}
+            onChange={v => updateState({ lightWarmth: v })} />
+          <MiniSlider label="Reflections" value={state.lightIBL ?? 40} min={0} max={100} step={1} unit="%"
+            onChange={v => updateState({ lightIBL: v })} />
+          <MiniSlider label="Exposure" value={Math.round((state.lightExposure ?? 1.0) * 100) / 100}
+            min={0.4} max={2.0} step={0.05} onChange={v => updateState({ lightExposure: v })} />
+          <MiniSlider label="Bloom" value={state.bloomIntensity ?? 22} min={0} max={100} step={1} unit="%"
+            onChange={v => updateState({ bloomIntensity: v })} />
+        </div>
       </Section>
 
       {/* Environment */}
       <Section label="Environment" action={
-        <Toggle
-          enabled={state.envEnabled !== false}
-          onToggle={() => updateState({ envEnabled: !(state.envEnabled !== false) })}
-        />
+        <Toggle enabled={state.envEnabled !== false}
+          onToggle={() => updateState({ envEnabled: !(state.envEnabled !== false) })} />
       }>
         <HScroll gap={7}>
           {ENV_PRESETS.map(env => (
             <button key={env.id} onClick={() => updateState({ envPreset: env.id, envEnabled: true })}
               style={{
                 flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                padding: '8px 10px', borderRadius: 10,
+                padding: '7px 9px', borderRadius: 10,
                 background: state.envPreset === env.id && state.envEnabled !== false ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
                 border: state.envPreset === env.id && state.envEnabled !== false ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
                 color: state.envPreset === env.id && state.envEnabled !== false ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.4)',
                 cursor: 'pointer', transition: 'all 0.12s',
                 opacity: state.envEnabled !== false ? 1 : 0.35,
               }}>
-              <span style={{ fontSize: 18, lineHeight: 1 }}>{env.icon}</span>
+              <span style={{ fontSize: 16, lineHeight: 1 }}>{env.icon}</span>
               <span style={{ fontSize: 9, fontWeight: 600 }}>{env.label}</span>
             </button>
           ))}
         </HScroll>
       </Section>
 
-      {/* Camera */}
-      <Section label="Camera">
+      {/* Camera & Shadow — presets + shadow intensity */}
+      <Section label="Camera & Shadow">
         <HScroll gap={6}>
           {([
             { id: 'hero',  label: 'Hero',  icon: '🎬' },
@@ -750,17 +789,14 @@ export function LeftPanel({ mobile = false }: { mobile?: boolean }) {
                 color: state.cameraAngle === cam.id ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.40)',
                 cursor: 'pointer', transition: 'all 0.12s',
               }}>
-              <span>{cam.icon}</span>
-              <span>{cam.label}</span>
+              <span>{cam.icon}</span><span>{cam.label}</span>
             </button>
           ))}
         </HScroll>
-      </Section>
-
-      {/* Shadow */}
-      <Section label="Shadow">
-        <Slider label="Intensity" value={state.contactShadowOpacity} min={0} max={100}
-          onChange={v => updateState({ contactShadowOpacity: v })} unit="%" />
+        <div style={{ marginTop: 10 }}>
+          <Slider label="Shadow" value={state.contactShadowOpacity} min={0} max={100}
+            onChange={v => updateState({ contactShadowOpacity: v })} unit="%" />
+        </div>
       </Section>
     </>
   );
