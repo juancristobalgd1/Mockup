@@ -133,27 +133,55 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
     try {
       const DURATION_MS = 4000;
       const el = canvasRef.current;
-      const rect = el.getBoundingClientRect();
+      const glEl = viewerRef?.current?.getGLElement() ?? null;
+      const html2canvas = (await import('html2canvas')).default;
+
+      // 1. Determine output dimensions from the DOM element (reliable even in proxied iframes)
+      const W = el.offsetWidth || 800;
+      const H = el.offsetHeight || 600;
+
+      // 2. Try capturing background once (CSS, gradients, text overlays — no WebGL canvas)
+      let bgCanvas: HTMLCanvasElement | null = null;
+      try {
+        const snap = await html2canvas(el, {
+          useCORS: true, allowTaint: true, scale: 1, backgroundColor: null,
+          width: W, height: H,
+          ignoreElements: (element) => element.tagName === 'CANVAS',
+        });
+        if (snap.width > 0 && snap.height > 0) bgCanvas = snap;
+      } catch { /* fall through — GL-only capture below */ }
+
+      // 3. Offscreen canvas → MediaRecorder stream
       const offscreen = document.createElement('canvas');
-      offscreen.width = rect.width * 2; offscreen.height = rect.height * 2;
-      const ctx = offscreen.getContext('2d');
-      if (!ctx) return;
-      const stream = offscreen.captureStream(30);
-      const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+      offscreen.width = W; offscreen.height = H;
+      const ctx = offscreen.getContext('2d')!;
+
+      const mimeType = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+        .find(m => MediaRecorder.isTypeSupported(m)) ?? '';
+      const recorder = new MediaRecorder(
+        offscreen.captureStream(30),
+        mimeType ? { mimeType } : undefined,
+      );
       const chunks: BlobPart[] = [];
       recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
       recorder.start(100);
-      const startTime = Date.now();
-      const html2canvas = (await import('html2canvas')).default;
-      const drawLoop = async () => {
-        if (Date.now() - startTime < DURATION_MS) {
-          const snap = await html2canvas(el, { useCORS: true, allowTaint: true, scale: 2, backgroundColor: null });
-          ctx.clearRect(0, 0, offscreen.width, offscreen.height);
-          ctx.drawImage(snap, 0, 0);
+
+      // 4. Draw loop: composite static bg (if captured) + live GL frame each rAF
+      const startTs = performance.now();
+      const drawLoop = (ts: number) => {
+        ctx.clearRect(0, 0, W, H);
+        if (bgCanvas) ctx.drawImage(bgCanvas, 0, 0, W, H);
+        if (glEl && glEl.width > 0 && glEl.height > 0) {
+          ctx.drawImage(glEl, 0, 0, W, H);
+        }
+        if (ts - startTs < DURATION_MS) {
           requestAnimationFrame(drawLoop);
-        } else { recorder.stop(); }
+        } else {
+          recorder.stop();
+        }
       };
-      drawLoop();
+      requestAnimationFrame(drawLoop);
+
       await new Promise<void>(resolve => { recorder.onstop = () => resolve(); });
       const blob = new Blob(chunks, { type: 'video/webm' });
       downloadBlob(URL.createObjectURL(blob), `mockup-animated-${Date.now()}.webm`);
