@@ -1078,43 +1078,51 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           </HScroll>
         </Section>
 
-        {/* Templates */}
-        <Section label="Templates">
-          <HScroll gap={8}>
-            {PRESETS.map(preset => {
-              const bg = allBgs.find(g => g.id === preset.thumb);
-              const bgCss = bg ? ('css' in bg ? bg.css : '') : '';
-              return (
-                <button key={preset.id}
-                  onClick={() => {
-                    const s = preset.state;
-                    const defaultModel = DEVICE_MODELS.find(m => m.storeType === s.deviceType);
-                    updateState({
-                      deviceType: s.deviceType,
-                      deviceModel: defaultModel?.id ?? 'iphone-17-pro',
-                      deviceLandscape: s.deviceLandscape ?? false,
-                      bgType: s.bgType, bgColor: s.bgColor,
-                      animation: s.animation,
-                      autoRotate: s.autoRotate ?? false,
-                      envPreset: (s.envPreset ?? 'studio') as EnvPreset,
-                      contactShadowOpacity: s.contactShadowOpacity ?? 65,
-                    });
-                  }}
-                  style={{
-                    flexShrink: 0, width: 80, height: 80, borderRadius: 16, overflow: 'hidden', position: 'relative',
-                    background: bgCss || '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer',
-                    transition: 'all 0.12s',
-                  }}>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-end', padding: 6 }}>
-                    <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.9)', textAlign: 'left', lineHeight: 1.2, textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}>
-                      {preset.label}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </HScroll>
-        </Section>
+      </>
+    );
+  };
+
+  // ── Template tab ─────────────────────────────────────────────────
+  const TemplateTab = () => {
+    const allBgs = [...GRADIENTS, ...MESH_GRADIENTS, ...WALLPAPERS];
+    return (
+      <>
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8,
+        }}>
+          {PRESETS.map(preset => {
+            const bg = allBgs.find(g => g.id === preset.thumb);
+            const bgCss = bg ? ('css' in bg ? bg.css : '') : '';
+            return (
+              <button key={preset.id}
+                onClick={() => {
+                  const s = preset.state;
+                  const defaultModel = DEVICE_MODELS.find(m => m.storeType === s.deviceType);
+                  updateState({
+                    deviceType: s.deviceType,
+                    deviceModel: defaultModel?.id ?? 'iphone-17-pro',
+                    deviceLandscape: s.deviceLandscape ?? false,
+                    bgType: s.bgType, bgColor: s.bgColor,
+                    animation: s.animation,
+                    autoRotate: s.autoRotate ?? false,
+                    envPreset: (s.envPreset ?? 'studio') as EnvPreset,
+                    contactShadowOpacity: s.contactShadowOpacity ?? 65,
+                  });
+                }}
+                style={{
+                  width: '100%', aspectRatio: '1', borderRadius: 16, overflow: 'hidden', position: 'relative',
+                  background: bgCss || '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-end', padding: 8 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.9)', textAlign: 'left', lineHeight: 1.2, textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}>
+                    {preset.label}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </>
     );
   };
@@ -1142,6 +1150,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     return (
       <div style={{ padding: '12px 14px 16px' }}>
         {mobileContentOnly === 'presets'    && <PresetsTab />}
+        {mobileContentOnly === 'template'   && <TemplateTab />}
         {mobileContentOnly === 'device'     && <DeviceTab />}
         {mobileContentOnly === 'background' && <BackgroundTab />}
         {mobileContentOnly === 'canvas'     && <SceneTab />}
@@ -1159,6 +1168,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {/* Active tab content — scrollable, fills space above the pill bar */}
         <div className="styled-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '10px 14px 8px' }}>
           {activeTab === 'presets'    && <PresetsTab />}
+          {activeTab === 'template'   && <TemplateTab />}
           {activeTab === 'device'     && <DeviceTab />}
           {activeTab === 'background' && <BackgroundTab />}
           {activeTab === 'canvas'     && <SceneTab />}
@@ -1250,6 +1260,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {/* Scrollable content */}
         <div className="styled-scroll" style={{ flex: 1, overflowY: 'auto', padding: '12px 14px 20px' }}>
           {activeTab === 'presets'    && <PresetsTab />}
+          {activeTab === 'template'   && <TemplateTab />}
           {activeTab === 'device'     && <DeviceTab />}
           {activeTab === 'background' && <BackgroundTab />}
           {activeTab === 'canvas'     && <SceneTab />}
