@@ -572,9 +572,18 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
 
   // ── Background tab content ──────────────────────────────────────
   const BackgroundTab = () => {
-    const bgTypes = ['solid', 'gradient', 'mesh', 'wallpaper', 'pattern', 'image'] as const;
+    const bgTypeCards = [
+      { id: 'solid',    label: 'Solid',    preview: { background: state.bgType === 'solid' ? state.bgColor : '#374151' } },
+      { id: 'gradient', label: 'Gradient', preview: { background: 'linear-gradient(135deg, #3b82f6 0%, #ec4899 100%)' } },
+      { id: 'mesh',     label: 'Mesh',     preview: { background: 'radial-gradient(at 30% 20%, #0ea5e9 0px, transparent 55%), radial-gradient(at 80% 70%, #ec4899 0px, transparent 55%), #03111e' } },
+      { id: 'wallpaper',label: 'Wallpaper',preview: { background: 'radial-gradient(ellipse at 50% 0%, #bfdbfe 0%, #60a5fa 60%, #dbeafe 100%)' } },
+      { id: 'pattern',  label: 'Pattern',  preview: { backgroundColor: '#1a1c2e', backgroundImage: 'radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1px)', backgroundSize: '10px 10px' } },
+      { id: 'image',    label: 'Image',    preview: null },
+    ] as const;
+
     return (
       <>
+        {/* Type grid */}
         <Section label="Type" action={
           <button onClick={handleShuffle} style={{
             display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8,
@@ -585,13 +594,34 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
             <Shuffle size={10} /> Shuffle
           </button>
         }>
-          <HScroll gap={6}>
-            {bgTypes.map(t => (
-              <Chip key={t} active={state.bgType === t} onClick={() => updateState({ bgType: t })}>
-                {t}
-              </Chip>
-            ))}
-          </HScroll>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7, marginBottom: 4 }}>
+            {bgTypeCards.map(({ id, label, preview }) => {
+              const active = state.bgType === id;
+              return (
+                <button key={id} onClick={() => updateState({ bgType: id })}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    padding: '10px 4px 8px', borderRadius: 14, gap: 0, border: 'none',
+                    background: active ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
+                    outline: active ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
+                    cursor: 'pointer', transition: 'all 0.12s',
+                  }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 10, marginBottom: 6, overflow: 'hidden',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    ...(preview ?? { background: '#1a1c2e' }),
+                  }}>
+                    {!preview && <ImageIcon size={16} color="rgba(255,255,255,0.40)" />}
+                  </div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
+                    color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.55)',
+                  }}>{label}</span>
+                </button>
+              );
+            })}
+          </div>
         </Section>
 
         {/* Solid color */}
@@ -612,17 +642,31 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {/* Gradients */}
         {state.bgType === 'gradient' && (
           <Section label="Gradients">
-            <HScroll gap={8}>
-              {GRADIENTS.map(g => (
-                <button key={g.id} title={g.label} onClick={() => updateState({ bgColor: g.id })}
-                  style={{
-                    flexShrink: 0, width: 56, height: 56, borderRadius: 12, background: g.css,
-                    border: state.bgColor === g.id ? '2.5px solid rgba(255,255,255,0.7)' : '1.5px solid rgba(255,255,255,0.08)',
-                    boxShadow: state.bgColor === g.id ? '0 0 0 2px rgba(255,255,255,0.12)' : 'none',
-                    cursor: 'pointer', transition: 'all 0.12s',
-                  }} />
-              ))}
-            </HScroll>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7, marginBottom: 4 }}>
+              {GRADIENTS.map(g => {
+                const active = state.bgColor === g.id;
+                return (
+                  <button key={g.id} onClick={() => updateState({ bgColor: g.id })}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center',
+                      padding: '10px 4px 8px', borderRadius: 14, gap: 0, border: 'none',
+                      background: active ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
+                      outline: active ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
+                      cursor: 'pointer', transition: 'all 0.12s',
+                    }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 10, marginBottom: 6,
+                      background: g.css, border: '1px solid rgba(255,255,255,0.08)',
+                    }} />
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
+                      color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.50)',
+                      maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{g.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </Section>
         )}
 
@@ -641,36 +685,61 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               </button>
             ) : undefined
           }>
-            <HScroll gap={8}>
-              {MESH_GRADIENTS.filter(m => m.id !== '__auto__').map(m => (
-                <button key={m.id} title={m.label} onClick={() => updateState({ bgColor: m.id })}
-                  style={{
-                    flexShrink: 0, width: 60, height: 60, borderRadius: 12, background: m.css,
-                    border: state.bgColor === m.id ? '2.5px solid rgba(255,255,255,0.65)' : '1.5px solid rgba(255,255,255,0.08)',
-                    cursor: 'pointer', transition: 'all 0.12s',
-                  }} />
-              ))}
-            </HScroll>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7, marginBottom: 4 }}>
+              {MESH_GRADIENTS.filter(m => m.id !== '__auto__').map(m => {
+                const active = state.bgColor === m.id;
+                return (
+                  <button key={m.id} onClick={() => updateState({ bgColor: m.id })}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center',
+                      padding: '10px 4px 8px', borderRadius: 14, gap: 0, border: 'none',
+                      background: active ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
+                      outline: active ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
+                      cursor: 'pointer', transition: 'all 0.12s',
+                    }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 10, marginBottom: 6,
+                      background: m.css, border: '1px solid rgba(255,255,255,0.08)',
+                    }} />
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
+                      color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.50)',
+                    }}>{m.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </Section>
         )}
 
         {/* Wallpapers */}
         {state.bgType === 'wallpaper' && (
           <Section label="Wallpapers">
-            <HScroll gap={8}>
-              {WALLPAPERS.map(w => (
-                <button key={w.id} title={w.label} onClick={() => updateState({ bgColor: w.id })}
-                  style={{
-                    flexShrink: 0, width: 60, height: 60, borderRadius: 12, background: w.css, position: 'relative', overflow: 'hidden',
-                    border: state.bgColor === w.id ? '2.5px solid rgba(255,255,255,0.65)' : '1.5px solid rgba(255,255,255,0.08)',
-                    cursor: 'pointer', transition: 'all 0.12s',
-                  }}>
-                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2px 4px', background: 'rgba(0,0,0,0.55)' }}>
-                    <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.8)', display: 'block', lineHeight: 1.2 }}>{w.label}</span>
-                  </div>
-                </button>
-              ))}
-            </HScroll>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7, marginBottom: 4 }}>
+              {WALLPAPERS.map(w => {
+                const active = state.bgColor === w.id;
+                return (
+                  <button key={w.id} onClick={() => updateState({ bgColor: w.id })}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center',
+                      padding: '10px 4px 8px', borderRadius: 14, gap: 0, border: 'none',
+                      background: active ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
+                      outline: active ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
+                      cursor: 'pointer', transition: 'all 0.12s',
+                    }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 10, marginBottom: 6,
+                      background: w.css, border: '1px solid rgba(255,255,255,0.08)',
+                    }} />
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
+                      color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.50)',
+                      maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{w.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </Section>
         )}
 
@@ -678,19 +747,31 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {state.bgType === 'pattern' && (
           <>
             <Section label="Pattern">
-              <HScroll gap={8}>
-                {PATTERNS.map(p => (
-                  <button key={p.id} onClick={() => updateState({ bgPattern: p.id })}
-                    style={{
-                      flexShrink: 0, width: 64, height: 48, borderRadius: 10, cursor: 'pointer',
-                      border: state.bgPattern === p.id ? '2px solid rgba(255,255,255,0.5)' : '1.5px solid rgba(255,255,255,0.08)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      ...p.bgStyle('#1a1c1e'),
-                    }}>
-                    <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>{p.label}</span>
-                  </button>
-                ))}
-              </HScroll>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7, marginBottom: 4 }}>
+                {PATTERNS.map(p => {
+                  const active = state.bgPattern === p.id;
+                  return (
+                    <button key={p.id} onClick={() => updateState({ bgPattern: p.id })}
+                      style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        padding: '10px 4px 8px', borderRadius: 14, gap: 0, border: 'none',
+                        background: active ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.04)',
+                        outline: active ? '2px solid rgba(255,255,255,0.30)' : '1.5px solid rgba(255,255,255,0.07)',
+                        cursor: 'pointer', transition: 'all 0.12s',
+                      }}>
+                      <div style={{
+                        width: 40, height: 40, borderRadius: 10, marginBottom: 6,
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        ...p.bgStyle('#1a1c2e'),
+                      }} />
+                      <span style={{
+                        fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
+                        color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.50)',
+                      }}>{p.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </Section>
             <Section label="Pattern Color">
               <div style={{ position: 'relative', width: '100%', height: 36, borderRadius: 10, background: state.bgColor, border: '1px solid rgba(255,255,255,0.1)' }}>
