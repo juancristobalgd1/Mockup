@@ -26,6 +26,11 @@ A device mockup creator web app inspired by PostSpark.app. Built with React + Vi
 - 8 preset templates
 - PNG export: Download + Copy to Clipboard, 4 size options
 
+**3D Device Screen Rendering — DO NOT MODIFY:**
+- iPhone 17 Pro: `skipOverlay: true` + `screenMeshName: 'Object_55'` — screen is the "Display" mesh (GLB node Object_55). Uses `markScreenByName` for direct lookup. Material name detection + geometric fallback are bypassed intentionally.
+- iPhone 16: uses the default ScreenOverlay plane (no `skipOverlay`, no `screenMeshName`). Do not add these flags.
+- These configs are confirmed working. Any future device work must not alter the iPhone 17 Pro or iPhone 16 screen logic in `GLBDeviceModel.tsx` or `devices.ts`.
+
 **Stack:** React 18, Vite, Framer Motion, html2canvas, Tailwind CSS v4, shadcn/ui
 **State:** React Context (no backend/persistence needed)
 **Key files:**
