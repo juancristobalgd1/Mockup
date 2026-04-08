@@ -185,7 +185,7 @@ function Editor() {
 
         {/* Movie Timeline */}
         {state.movieMode && (
-          <div style={{ position: 'absolute', top: 58, left: 0, right: 0, zIndex: 15 }}>
+          <div style={{ position: 'absolute', bottom: 64, left: 0, right: 0, zIndex: 15 }}>
             <MovieTimeline
               viewerRef={viewerRef}
               movieTimeRef={movieTimeRef}
