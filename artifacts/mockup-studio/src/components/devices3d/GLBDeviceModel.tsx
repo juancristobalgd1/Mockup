@@ -765,7 +765,7 @@ interface Props {
   isLandscape?: boolean;
 }
 
-export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }: Props) {
+export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType, isLandscape = false }: Props) {
   const gltf    = useGLTF(def.glbUrl!) as any;
   const sceneObj: THREE.Object3D | null =
     gltf?.scene ?? gltf?.scenes?.[0] ?? null;
@@ -869,7 +869,7 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
     : 0;
 
   return (
-    <>
+    <group rotation={isLandscape ? [0, 0, -Math.PI / 2] : [0, 0, 0]}>
       {/* 3D model */}
       <group ref={groupRef} position={position} rotation={rotation} scale={scale}>
         <primitive object={sceneObj} />
@@ -890,6 +890,6 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType }:
           contentType={contentType}
         />
       )}
-    </>
+    </group>
   );
 }
