@@ -10,6 +10,7 @@ import {
 import { EffectComposer, Bloom, SMAA } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { useApp } from '../../store';
+import type { CameraKeyframe } from '../../store';
 import { getModelById } from '../../data/devices';
 import { useScreenTexture } from './useScreenTexture';
 import { getGlobalScreenTexture } from './textureGlobal';
@@ -31,6 +32,7 @@ useGLTF.preload('/models/applewatch.glb');
 
 export interface Device3DViewerHandle {
   getGLElement: () => HTMLCanvasElement | null;
+  getCameraState: () => { position: [number, number, number]; target: [number, number, number] } | null;
 }
 
 // ── Loading indicator ─────────────────────────────────────────────
@@ -736,15 +738,61 @@ const CAMERA_PRESETS: Record<string, { phi: number; theta: number }> = {
   top:   { phi: 0.18,                theta:  0    },
 };
 
+// ── Interpolate between camera keyframes ──────────────────────────
+function interpolateKeyframes(
+  keyframes: CameraKeyframe[],
+  t: number,
+): { position: THREE.Vector3; target: THREE.Vector3 } | null {
+  if (keyframes.length === 0) return null;
+  if (keyframes.length === 1) {
+    return {
+      position: new THREE.Vector3(...keyframes[0].position),
+      target: new THREE.Vector3(...keyframes[0].target),
+    };
+  }
+  if (t <= keyframes[0].time) {
+    return {
+      position: new THREE.Vector3(...keyframes[0].position),
+      target: new THREE.Vector3(...keyframes[0].target),
+    };
+  }
+  if (t >= keyframes[keyframes.length - 1].time) {
+    const last = keyframes[keyframes.length - 1];
+    return {
+      position: new THREE.Vector3(...last.position),
+      target: new THREE.Vector3(...last.target),
+    };
+  }
+  let a = keyframes[0], b = keyframes[1];
+  for (let i = 0; i < keyframes.length - 1; i++) {
+    if (t >= keyframes[i].time && t <= keyframes[i + 1].time) {
+      a = keyframes[i];
+      b = keyframes[i + 1];
+      break;
+    }
+  }
+  const span = b.time - a.time;
+  const alpha = span > 0 ? (t - a.time) / span : 0;
+  const smooth = alpha * alpha * (3 - 2 * alpha); // smoothstep
+  const position = new THREE.Vector3(...a.position).lerp(new THREE.Vector3(...b.position), smooth);
+  const target = new THREE.Vector3(...a.target).lerp(new THREE.Vector3(...b.target), smooth);
+  return { position, target };
+}
+
 // ── OrbitControls ────────────────────────────────────────────────
 function HeroOrbitControls({
   deviceType, autoRotate, autoRotateSpeed, cameraAngle, cameraResetKey,
+  moviePlaying, movieTimeRef, movieKeyframes, cameraStateRef,
 }: {
   deviceType: string;
   autoRotate: boolean;
   autoRotateSpeed: number;
   cameraAngle: string;
   cameraResetKey: number;
+  moviePlaying: boolean;
+  movieTimeRef: React.MutableRefObject<number>;
+  movieKeyframes: CameraKeyframe[];
+  cameraStateRef: React.MutableRefObject<{ position: [number, number, number]; target: [number, number, number] } | null>;
 }) {
   const isLaptop = deviceType === 'macbook';
   const controlsRef = useRef<any>(null);
@@ -790,21 +838,43 @@ function HeroOrbitControls({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceType]);
 
+  // Every frame: export camera state and (if playing) drive camera via keyframes
+  useFrame(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+
+    // Always export current camera state for keyframe capture
+    cameraStateRef.current = {
+      position: [camera.position.x, camera.position.y, camera.position.z],
+      target: [controls.target.x, controls.target.y, controls.target.z],
+    };
+
+    // Drive camera during movie playback
+    if (moviePlaying && movieKeyframes.length >= 2) {
+      const result = interpolateKeyframes(movieKeyframes, movieTimeRef.current);
+      if (result) {
+        camera.position.copy(result.position);
+        controls.target.copy(result.target);
+        controls.update();
+      }
+    }
+  });
+
   return (
     <OrbitControls
       ref={controlsRef}
       enablePan={false}
-      enableZoom={true}
-      enableRotate={true}
+      enableZoom={!moviePlaying}
+      enableRotate={!moviePlaying}
       minDistance={isLaptop ? 3 : 2.2}
       maxDistance={isLaptop ? 18 : 15}
       minPolarAngle={Math.PI * 0.05}
       maxPolarAngle={Math.PI * 0.92}
       dampingFactor={0.05}
-      enableDamping={true}
+      enableDamping={!moviePlaying}
       rotateSpeed={0.7}
       zoomSpeed={0.75}
-      autoRotate={autoRotate}
+      autoRotate={autoRotate && !moviePlaying}
       autoRotateSpeed={autoRotateSpeed}
       target={[0, 0, 0]}
     />
@@ -815,12 +885,17 @@ function HeroOrbitControls({
 interface Device3DViewerProps {
   style?: React.CSSProperties;
   className?: string;
+  moviePlaying?: boolean;
+  movieTimeRef?: React.MutableRefObject<number>;
 }
 
 export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerProps>(
-  function Device3DViewer({ style, className }, ref) {
+  function Device3DViewer({ style, className, moviePlaying = false, movieTimeRef: externalMovieTimeRef }, ref) {
     const { state, updateState } = useApp();
     const glRef = useRef<THREE.WebGLRenderer | null>(null);
+    const cameraStateRef = useRef<{ position: [number, number, number]; target: [number, number, number] } | null>(null);
+    const internalMovieTimeRef = useRef(0);
+    const movieTimeRef = externalMovieTimeRef ?? internalMovieTimeRef;
     const [hintVisible, setHintVisible] = useState(true);
     const [dragOver, setDragOver] = useState(false);
     const [pencilVisible, setPencilVisible] = useState(false);
@@ -837,6 +912,7 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
 
     useImperativeHandle(ref, () => ({
       getGLElement: () => glRef.current?.domElement ?? null,
+      getCameraState: () => cameraStateRef.current,
     }));
 
     const handleDrop = useCallback((e: React.DragEvent) => {
@@ -949,6 +1025,10 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
             autoRotateSpeed={state.autoRotateSpeed}
             cameraAngle={state.cameraAngle}
             cameraResetKey={state.cameraResetKey}
+            moviePlaying={moviePlaying}
+            movieTimeRef={movieTimeRef}
+            movieKeyframes={state.cameraKeyframes}
+            cameraStateRef={cameraStateRef}
           />
         </R3FCanvas>
 

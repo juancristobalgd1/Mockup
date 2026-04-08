@@ -8,6 +8,13 @@ export type ShadowStyle = "none" | "spread" | "hug";
 export type CanvasRatio = "free" | "1:1" | "4:5" | "16:9" | "9:16";
 export type ContentType = "image" | "video" | null;
 
+export interface CameraKeyframe {
+  id: string;
+  time: number;
+  position: [number, number, number];
+  target: [number, number, number];
+}
+
 export interface TextOverlay {
   id: string;
   text: string;
@@ -58,6 +65,10 @@ export interface AppState {
   cameraResetKey: number;
 
   texts: TextOverlay[];
+
+  movieMode: boolean;
+  movieDuration: number;
+  cameraKeyframes: CameraKeyframe[];
 }
 
 export const defaultState: AppState = {
@@ -96,7 +107,11 @@ export const defaultState: AppState = {
   cameraAngle: "hero",
   cameraResetKey: 0,
 
-  texts: []
+  texts: [],
+
+  movieMode: false,
+  movieDuration: 5,
+  cameraKeyframes: [],
 };
 
 interface AppContextType {
@@ -105,6 +120,9 @@ interface AppContextType {
   addText: () => void;
   updateText: (id: string, updates: Partial<TextOverlay>) => void;
   removeText: (id: string) => void;
+  addCameraKeyframe: (kf: Omit<CameraKeyframe, 'id'>) => void;
+  removeCameraKeyframe: (id: string) => void;
+  clearCameraKeyframes: () => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -144,8 +162,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
+  const addCameraKeyframe = (kf: Omit<CameraKeyframe, 'id'>) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    setState(prev => {
+      const existing = prev.cameraKeyframes.filter(k => Math.abs(k.time - kf.time) > 0.1);
+      const updated = [...existing, { ...kf, id }].sort((a, b) => a.time - b.time);
+      return { ...prev, cameraKeyframes: updated };
+    });
+  };
+
+  const removeCameraKeyframe = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      cameraKeyframes: prev.cameraKeyframes.filter(k => k.id !== id)
+    }));
+  };
+
+  const clearCameraKeyframes = () => {
+    setState(prev => ({ ...prev, cameraKeyframes: [] }));
+  };
+
   return (
-    <AppContext.Provider value={{ state, updateState, addText, updateText, removeText }}>
+    <AppContext.Provider value={{ state, updateState, addText, updateText, removeText, addCameraKeyframe, removeCameraKeyframe, clearCameraKeyframes }}>
       {children}
     </AppContext.Provider>
   );

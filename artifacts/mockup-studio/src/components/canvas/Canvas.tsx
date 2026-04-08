@@ -10,6 +10,8 @@ interface CanvasProps {
   textOverlays: TextOverlay[];
   onUpdateText: (id: string, updates: Partial<TextOverlay>) => void;
   viewerRef?: React.RefObject<Device3DViewerHandle | null>;
+  moviePlaying?: boolean;
+  movieTimeRef?: React.MutableRefObject<number>;
 }
 
 const RATIO_VALUES: Record<string, number> = {
@@ -19,7 +21,7 @@ const RATIO_VALUES: Record<string, number> = {
   '9:16': 9 / 16,
 };
 
-export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, onUpdateText, viewerRef }, ref) => {
+export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, onUpdateText, viewerRef, moviePlaying, movieTimeRef }, ref) => {
   const { state } = useApp();
   const [webglAvailable, setWebglAvailable] = useState<boolean | null>(null);
 
@@ -119,6 +121,8 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
         <Device3DViewer
           ref={viewerRef}
           style={{ position: 'absolute', inset: 0, zIndex: 2 }}
+          moviePlaying={moviePlaying}
+          movieTimeRef={movieTimeRef}
         />
       ) : null /* loading – will resolve synchronously */}
 

@@ -22,6 +22,16 @@ A device mockup creator web app inspired by PostSpark.app. Built with React + Vi
 - Canvas aspect ratio guide: Free / 1:1 / 4:5 / 16:9 / 9:16 (dashed overlay)
 - Advanced shadow: None / Spread / Hug styles + Intensity + Direction (angle slider)
 - Animations: float, pulse, spin, slide-in
+- **Movie mode**: Rotato-style timeline editor for camera animation
+  - Toggle via "Movie" button in the top bar
+  - Camera track with keyframe diamonds on a timeline ruler
+  - Add keyframe: captures current 3D camera position + target at the playhead time
+  - Drag playhead to scrub through the animation timeline
+  - Play/pause: previews the camera animation in real time
+  - Smooth interpolation (smoothstep) between keyframes
+  - Right-click keyframes to delete individual ones; Trash button to clear all
+  - Configurable duration: 3s / 5s / 8s / 10s / 15s / 20s / 30s
+  - Export WebM: records the full camera-animated scene as a WebM video
 - Draggable text overlays with font size, color, bold, italic controls
 - 8 preset templates
 - PNG export: Download + Copy to Clipboard, 4 size options
