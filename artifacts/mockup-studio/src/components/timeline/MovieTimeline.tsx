@@ -466,13 +466,45 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
         </div>
       </div>
 
-      {/* Help hint */}
-      {cameraKeyframes.length === 0 && (
+      {/* Step-by-step guide */}
+      {cameraKeyframes.length < 2 && (
         <div style={{
-          padding: '4px 14px 8px', fontSize: 10, color: '#374151',
+          padding: '8px 14px 10px',
           borderTop: '1px solid rgba(255,255,255,0.04)',
+          display: 'flex', gap: 20, flexWrap: 'wrap',
         }}>
-          Position the camera, then click "Add keyframe" to record it. Move the playhead and add more keyframes to create movement.
+          {[
+            { n: '1', label: 'Set start angle', desc: 'Drag the playhead to 0s, rotate the device to your starting position.' },
+            { n: '2', label: 'Add keyframe', desc: 'Click "Add keyframe" to save that camera angle at this moment.' },
+            { n: '3', label: 'Move & add more', desc: 'Drag the playhead forward (e.g. 2s), rotate to a new angle, add another keyframe.' },
+            { n: '4', label: 'Preview & export', desc: 'Hit Play to preview the animation, then Export WebM to download the movie.' },
+          ].map(step => (
+            <div key={step.n} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, minWidth: 160, flex: 1 }}>
+              <div style={{
+                width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
+                background: 'rgba(124,58,237,0.25)', border: '1px solid rgba(124,58,237,0.4)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 9, fontWeight: 700, color: '#a78bfa',
+              }}>{step.n}</div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', marginBottom: 1 }}>{step.label}</div>
+                <div style={{ fontSize: 9, color: '#374151', lineHeight: 1.4 }}>{step.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Status when ready */}
+      {cameraKeyframes.length >= 2 && (
+        <div style={{
+          padding: '5px 14px 7px', fontSize: 9, color: '#4b5563',
+          borderTop: '1px solid rgba(255,255,255,0.04)',
+          display: 'flex', alignItems: 'center', gap: 6,
+        }}>
+          <span style={{ color: '#22c55e', fontWeight: 700 }}>✓</span>
+          {cameraKeyframes.length} keyframes · Press Play to preview, then Export WebM to download the animated movie.
+          <span style={{ color: '#374151' }}> Right-click a diamond to delete it.</span>
         </div>
       )}
     </div>
