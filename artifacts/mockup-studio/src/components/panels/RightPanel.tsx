@@ -213,6 +213,9 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
   const [copying, setCopying] = useState(false);
   const [copied, setCopied] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [recordProgress, setRecordProgress] = useState(0);   // 0–100
+  const [recordSecsLeft, setRecordSecsLeft] = useState(0);
+  const recordIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [selectedSize, setSelectedSize] = useState('ig-post');
   const [showSize, setShowSize] = useState(true);
   const [showLayers, setShowLayers] = useState(true);
@@ -238,9 +241,31 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
 
   const handleRecordWebM = async () => {
     if (!canvasRef.current) return;
+    const totalSecs = state.movieDuration ?? 4;
+    const DURATION_MS = totalSecs * 1000;
+
     setRecording(true);
+    setRecordProgress(0);
+    setRecordSecsLeft(totalSecs);
+
+    // Tick every 100ms to update progress bar and countdown
+    const recStart = performance.now();
+    recordIntervalRef.current = setInterval(() => {
+      const elapsed = performance.now() - recStart;
+      const pct = Math.min(100, (elapsed / DURATION_MS) * 100);
+      const secsLeft = Math.max(0, Math.ceil((DURATION_MS - elapsed) / 1000));
+      setRecordProgress(pct);
+      setRecordSecsLeft(secsLeft);
+    }, 100);
+
+    const stopInterval = () => {
+      if (recordIntervalRef.current) {
+        clearInterval(recordIntervalRef.current);
+        recordIntervalRef.current = null;
+      }
+    };
+
     try {
-      const DURATION_MS = (state.movieDuration ?? 4) * 1000;
       const el = canvasRef.current;
       const glEl = viewerRef?.current?.getGLElement() ?? null;
 
@@ -248,13 +273,12 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
       const W = el.offsetWidth || 800;
       const H = el.offsetHeight || 600;
 
-      // 2. Check if background is animated — if so, draw it per-frame via canvas API
+      // 2. Animated background: draw per-frame; static: capture once
       const isAnimatedBg = state.bgType === 'animated';
       const animatedBg = isAnimatedBg
         ? (ANIMATED_BACKGROUNDS.find(b => b.id === state.bgAnimated) ?? ANIMATED_BACKGROUNDS[0])
         : null;
 
-      // 3. For non-animated backgrounds, capture once with html2canvas
       let bgCanvas: HTMLCanvasElement | null = null;
       if (!isAnimatedBg) {
         try {
@@ -265,10 +289,10 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
             ignoreElements: (element) => element.tagName === 'CANVAS',
           });
           if (snap.width > 0 && snap.height > 0) bgCanvas = snap;
-        } catch { /* fall through — GL-only capture below */ }
+        } catch { /* GL-only capture */ }
       }
 
-      // 4. Offscreen canvas → MediaRecorder stream
+      // 3. Offscreen canvas → MediaRecorder stream
       const offscreen = document.createElement('canvas');
       offscreen.width = W; offscreen.height = H;
       const ctx = offscreen.getContext('2d')!;
@@ -283,7 +307,7 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
       recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
       recorder.start(100);
 
-      // 5. Draw loop: animated bg drawn per-frame; static bg drawn once
+      // 4. Draw loop: composite animated bg + live GL frame each rAF
       const startTs = performance.now();
       const drawLoop = (ts: number) => {
         const elapsed = ts - startTs;
@@ -298,6 +322,7 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
         if (glEl && glEl.width > 0 && glEl.height > 0) {
           ctx.drawImage(glEl, 0, 0, W, H);
         }
+
         if (elapsed < DURATION_MS) {
           requestAnimationFrame(drawLoop);
         } else {
@@ -307,10 +332,19 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
       requestAnimationFrame(drawLoop);
 
       await new Promise<void>(resolve => { recorder.onstop = () => resolve(); });
+      stopInterval();
+      setRecordProgress(100);
+
       const blob = new Blob(chunks, { type: 'video/webm' });
       downloadBlob(URL.createObjectURL(blob), `mockup-animated-${Date.now()}.webm`);
-    } catch (err) { console.error('Record failed', err); }
-    finally { setRecording(false); }
+    } catch (err) {
+      console.error('Record failed', err);
+      stopInterval();
+    } finally {
+      setRecording(false);
+      setRecordProgress(0);
+      setRecordSecsLeft(0);
+    }
   };
 
   const handleCopy = async () => {
@@ -356,23 +390,39 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
           {isMovieMode ? (
             <>
               {/* PRIMARY: record the live canvas and download as WebM — always available */}
-              <button data-testid="export-video"
-                onClick={handleRecordWebM}
-                disabled={recording}
-                style={{
-                  width: '100%', padding: '10px', borderRadius: 10, fontSize: 12, fontWeight: 700,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                  background: recording ? 'rgba(255,100,80,0.18)' : 'rgba(255,255,255,0.9)',
-                  color: recording ? 'rgba(255,160,140,0.9)' : '#0d0e0f',
-                  border: recording ? '1px solid rgba(255,100,80,0.3)' : 'none',
-                  cursor: recording ? 'not-allowed' : 'pointer',
-                  transition: 'background 0.2s, color 0.2s',
-                }}>
-                {recording ? <Film size={13} /> : <Download size={13} />}
-                {recording
-                  ? `Grabando ${state.movieDuration ?? 4}s…`
-                  : 'Descargar video (.webm)'}
-              </button>
+              <div style={{ position: 'relative', width: '100%' }}>
+                <button data-testid="export-video"
+                  onClick={handleRecordWebM}
+                  disabled={recording}
+                  style={{
+                    width: '100%', padding: '10px', borderRadius: 10, fontSize: 12, fontWeight: 700,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                    background: recording ? 'rgba(30,12,8,0.85)' : 'rgba(255,255,255,0.9)',
+                    color: recording ? '#fca5a5' : '#0d0e0f',
+                    border: recording ? '1px solid rgba(239,68,68,0.35)' : 'none',
+                    cursor: recording ? 'not-allowed' : 'pointer',
+                    transition: 'background 0.3s, color 0.3s',
+                    overflow: 'hidden',
+                    position: 'relative',
+                  }}>
+                  {/* Progress fill behind text */}
+                  {recording && (
+                    <div style={{
+                      position: 'absolute', left: 0, top: 0, bottom: 0,
+                      width: `${recordProgress}%`,
+                      background: 'rgba(239,68,68,0.22)',
+                      transition: 'width 0.1s linear',
+                      borderRadius: '10px 0 0 10px',
+                    }} />
+                  )}
+                  <span style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 7 }}>
+                    {recording ? <Film size={13} /> : <Download size={13} />}
+                    {recording
+                      ? `Renderizando… ${recordSecsLeft}s`
+                      : 'Descargar video (.webm)'}
+                  </span>
+                </button>
+              </div>
 
               {/* SECONDARY: download the raw source video if one was loaded */}
               {state.videoUrl && (
