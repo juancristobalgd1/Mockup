@@ -1627,6 +1627,28 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               </span>
             </div>
           </div>
+
+          {/* Separator */}
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.09)', margin: '0 -2px' }} />
+
+          {/* Grosor slider */}
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.38)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 8 }}>
+              Grosor
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="range"
+                min={1} max={40} step={1}
+                value={state.annotateLineWidth ?? 5}
+                onChange={e => updateState({ annotateLineWidth: Number(e.target.value) })}
+                style={{ flex: 1, accentColor: '#a78bfa', cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.65)', minWidth: 34, textAlign: 'right' }}>
+                {state.annotateLineWidth ?? 5}px
+              </span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1649,7 +1671,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
             const dotPx = sz === 'S' ? 5 : sz === 'M' ? 10 : sz === 'L' ? 17 : 26;
             return (
               <button key={sz}
-                onClick={() => { updateState({ annotateSize: sz }); setAnnotatePopup(null); }}
+                onClick={() => { updateState({ annotateSize: sz, annotateLineWidth: { S: 2, M: 5, L: 10, XL: 18 }[sz] }); setAnnotatePopup(null); }}
                 style={{
                   width: 52, height: 52, borderRadius: 13, border: 'none', cursor: 'pointer',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
