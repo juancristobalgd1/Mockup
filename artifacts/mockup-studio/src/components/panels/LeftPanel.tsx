@@ -434,6 +434,12 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const colorBtnRef                          = useRef<HTMLButtonElement>(null);
   const sizeBtnRef                           = useRef<HTMLButtonElement>(null);
 
+  const [overlayPopup, setOverlayPopup]     = useState<null | 'color' | 'opacity'>(null);
+  const [overlayPopupAnchor, setOverlayPopupAnchor] = useState<{ x: number; y: number } | null>(null);
+  const overlayPopupRef                      = useRef<HTMLDivElement>(null);
+  const overlayColorBtnRef                   = useRef<HTMLButtonElement>(null);
+  const overlayOpacityBtnRef                 = useRef<HTMLButtonElement>(null);
+
   // Close annotate popup when clicking outside
   useEffect(() => {
     if (!annotatePopup) return;
@@ -445,6 +451,18 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, [annotatePopup]);
+
+  // Close overlay popup when clicking outside
+  useEffect(() => {
+    if (!overlayPopup) return;
+    const onDown = (e: MouseEvent) => {
+      if (overlayPopupRef.current && !overlayPopupRef.current.contains(e.target as Node)) {
+        setOverlayPopup(null);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [overlayPopup]);
 
   const handleBgImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -911,12 +929,122 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   };
 
   // ── Overlay tab content ─────────────────────────────────────────
+  const OVERLAY_COLOR_GRID = [
+    '#ffffff', '#aaaaaa', '#666666', '#333333', '#000000',
+    '#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e',
+    '#14b8a6', '#06b6d4', '#3b82f6', '#6366f1', '#a855f7',
+    '#ec4899', '#f43f5e', '#fb923c', '#fbbf24', '__custom__',
+  ];
+  const OVERLAY_OPACITY_PRESETS = [5, 10, 15, 20, 30, 45, 60, 75, 90];
+
   const OverlayTab = () => (
-    <>
+    <div ref={overlayPopupRef} style={{ position: 'relative' }}>
+
+      {/* ── Floating overlay color popup ──────────────────────── */}
+      {overlayPopup === 'color' && overlayPopupAnchor && (
+        <div style={{
+          position: 'fixed',
+          left: overlayPopupAnchor.x,
+          top: overlayPopupAnchor.y - 215,
+          transform: 'translateX(-50%)',
+          background: 'rgba(22,24,28,0.98)', borderRadius: 18,
+          padding: 14, zIndex: 9999,
+          boxShadow: '0 8px 40px rgba(0,0,0,0.75), 0 2px 12px rgba(0,0,0,0.5)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          backdropFilter: 'blur(20px)',
+        }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+            {OVERLAY_COLOR_GRID.map(col => {
+              if (col === '__custom__') {
+                return (
+                  <div key="custom" style={{ position: 'relative' }}>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: '50%', cursor: 'pointer',
+                      background: 'rgba(255,255,255,0.1)',
+                      border: '1.5px solid rgba(255,255,255,0.2)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2" strokeLinecap="round">
+                        <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+                        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+                      </svg>
+                    </div>
+                    <input type="color" value={state.overlayColor}
+                      onChange={e => updateState({ overlayColor: e.target.value })}
+                      style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
+                    />
+                  </div>
+                );
+              }
+              const sel = state.overlayColor === col;
+              return (
+                <button key={col}
+                  onClick={() => { updateState({ overlayColor: col }); setOverlayPopup(null); }}
+                  style={{
+                    width: 36, height: 36, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                    background: col, flexShrink: 0,
+                    outline: sel ? '3px solid rgba(255,255,255,0.9)' : '2px solid rgba(255,255,255,0.08)',
+                    outlineOffset: sel ? '2px' : '0px',
+                    boxShadow: sel ? `0 0 14px ${col}88` : '0 1px 4px rgba(0,0,0,0.4)',
+                    transform: sel ? 'scale(1.15)' : 'scale(1)',
+                    transition: 'all 0.12s',
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Floating overlay opacity popup ────────────────────── */}
+      {overlayPopup === 'opacity' && overlayPopupAnchor && (
+        <div style={{
+          position: 'fixed',
+          left: overlayPopupAnchor.x,
+          top: overlayPopupAnchor.y - 180,
+          transform: 'translateX(-50%)',
+          background: 'rgba(22,24,28,0.98)', borderRadius: 16,
+          padding: '14px 16px', zIndex: 9999,
+          boxShadow: '0 8px 40px rgba(0,0,0,0.75)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          backdropFilter: 'blur(20px)',
+          minWidth: 200,
+        }}>
+          <div style={{ marginBottom: 10 }}>
+            <input type="range" min={0} max={90} value={state.overlayOpacity}
+              onChange={e => updateState({ overlayOpacity: Number(e.target.value) })}
+              style={{ width: '100%', accentColor: state.overlayColor }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>0%</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>{state.overlayOpacity}%</span>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>90%</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+            {OVERLAY_OPACITY_PRESETS.map(v => {
+              const sel = state.overlayOpacity === v;
+              return (
+                <button key={v}
+                  onClick={() => updateState({ overlayOpacity: v })}
+                  style={{
+                    padding: '4px 8px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                    background: sel ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)',
+                    outline: sel ? '1.5px solid rgba(255,255,255,0.7)' : '1px solid rgba(255,255,255,0.1)',
+                    color: sel ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.5)',
+                    fontSize: 11, fontWeight: 700, transition: 'all 0.12s',
+                  }}>
+                  {v}%
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Light / Shadow Overlay */}
       <Section label="Light Overlay">
         <HScroll gap={7}>
-          {/* None button */}
           <button
             onClick={() => updateState({ lightOverlay: null })}
             style={{
@@ -930,13 +1058,10 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               <line x1="4" y1="4" x2="18" y2="18" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           </button>
-          {/* Preset thumbnails */}
           {LIGHT_OVERLAYS.map(preset => {
             const active = state.lightOverlay === preset.id;
             return (
-              <button
-                key={preset.id}
-                onClick={() => updateState({ lightOverlay: preset.id })}
+              <button key={preset.id} onClick={() => updateState({ lightOverlay: preset.id })}
                 style={{
                   flexShrink: 0, width: 56, height: 56, borderRadius: 12, border: 'none', cursor: 'pointer',
                   overflow: 'hidden', position: 'relative',
@@ -945,24 +1070,19 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                 }}>
                 <div style={{
                   position: 'absolute', inset: 0,
-                  backgroundImage: preset.background,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
+                  backgroundImage: preset.background, backgroundSize: 'cover', backgroundPosition: 'center',
                   filter: preset.filter,
                 }} />
                 {active && (
                   <div style={{
-                    position: 'absolute', inset: 0,
+                    position: 'absolute', inset: 0, borderRadius: 12,
                     boxShadow: 'inset 0 0 0 2px rgba(255,255,255,0.7)',
-                    borderRadius: 12,
                   }} />
                 )}
               </button>
             );
           })}
         </HScroll>
-
-        {/* Controls when a light overlay is selected */}
         {state.lightOverlay && (
           <div style={{ marginTop: 12 }}>
             <Slider label="Opacity" value={state.lightOverlayOpacity} min={0} max={100}
@@ -982,36 +1102,79 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         )}
       </Section>
 
-      {/* Color Overlay */}
-      <Section label="Color Overlay" action={
-        <Toggle enabled={state.overlayEnabled} onToggle={() => updateState({ overlayEnabled: !state.overlayEnabled })} />
-      }>
-        {state.overlayEnabled && (
-          <>
-            <HScroll gap={7}>
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: state.overlayColor, border: '1px solid rgba(255,255,255,0.1)' }} />
-                <input type="color" value={state.overlayColor} onChange={e => updateState({ overlayColor: e.target.value })}
-                  style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
-              </div>
-              {['#000000', '#ffffff', '#374151', '#0ea5e9', '#ec4899'].map(col => (
-                <button key={col} onClick={() => updateState({ overlayColor: col })}
-                  style={{
-                    flexShrink: 0, width: 28, height: 28, borderRadius: '50%', background: col,
-                    border: state.overlayColor === col ? '2px solid rgba(255,255,255,0.7)' : '1px solid rgba(255,255,255,0.15)', cursor: 'pointer',
-                  }} />
-              ))}
-            </HScroll>
-            <div style={{ marginTop: 10 }}>
-              <Slider label="Opacity" value={state.overlayOpacity} min={0} max={90} onChange={v => updateState({ overlayOpacity: v })} unit="%" />
-            </div>
-          </>
-        )}
-        {!state.overlayEnabled && (
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', margin: 0 }}>Toggle on to add a solid color tint.</p>
-        )}
+      {/* Color Overlay — compact single-row toolbar */}
+      <Section label="Color Overlay">
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'rgba(0,0,0,0.55)', borderRadius: 16,
+          padding: '8px 12px',
+          border: '1px solid rgba(255,255,255,0.1)',
+          opacity: state.overlayEnabled ? 1 : 0.5,
+          transition: 'opacity 0.2s',
+        }}>
+          {/* Enable toggle */}
+          <button
+            onClick={() => updateState({ overlayEnabled: !state.overlayEnabled })}
+            style={{
+              width: 36, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer', flexShrink: 0,
+              background: state.overlayEnabled ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.15)',
+              position: 'relative', transition: 'background 0.2s',
+            }}>
+            <div style={{
+              position: 'absolute', top: 3, left: state.overlayEnabled ? 17 : 3,
+              width: 16, height: 16, borderRadius: '50%',
+              background: state.overlayEnabled ? '#1a1a1a' : 'rgba(255,255,255,0.6)',
+              transition: 'left 0.2s, background 0.2s',
+            }} />
+          </button>
+
+          {/* Divider */}
+          <div style={{ width: 1, height: 22, background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
+
+          {/* Color button */}
+          <button
+            ref={overlayColorBtnRef}
+            onClick={() => {
+              if (overlayPopup === 'color') { setOverlayPopup(null); return; }
+              const r = overlayColorBtnRef.current?.getBoundingClientRect();
+              if (r) setOverlayPopupAnchor({ x: r.left + r.width / 2, y: r.top });
+              setOverlayPopup('color');
+            }}
+            style={{
+              width: 30, height: 30, borderRadius: '50%', border: 'none', cursor: 'pointer', flexShrink: 0,
+              background: state.overlayColor,
+              outline: overlayPopup === 'color' ? '3px solid rgba(255,255,255,0.9)' : '2px solid rgba(255,255,255,0.25)',
+              outlineOffset: '2px',
+              boxShadow: `0 0 10px ${state.overlayColor}55`,
+              transition: 'all 0.14s',
+            }}
+          />
+
+          {/* Opacity button */}
+          <button
+            ref={overlayOpacityBtnRef}
+            onClick={() => {
+              if (overlayPopup === 'opacity') { setOverlayPopup(null); return; }
+              const r = overlayOpacityBtnRef.current?.getBoundingClientRect();
+              if (r) setOverlayPopupAnchor({ x: r.left + r.width / 2, y: r.top });
+              setOverlayPopup('opacity');
+            }}
+            style={{
+              flex: 1, height: 30, borderRadius: 9, border: 'none', cursor: 'pointer',
+              background: overlayPopup === 'opacity' ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.07)',
+              outline: overlayPopup === 'opacity' ? '1.5px solid rgba(255,255,255,0.7)' : '1px solid rgba(255,255,255,0.12)',
+              color: 'rgba(255,255,255,0.85)',
+              fontSize: 11, fontWeight: 700, transition: 'all 0.14s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+            }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+            </svg>
+            {state.overlayOpacity}%
+          </button>
+        </div>
       </Section>
-    </>
+    </div>
   );
 
   // ── Annotate tab content ────────────────────────────────────────
