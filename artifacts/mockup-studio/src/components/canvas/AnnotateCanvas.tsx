@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { useApp } from '../../store';
+import paletteIcon from '@assets/image_1775735507491.png';
 
 type Point = { x: number; y: number };
 
@@ -851,12 +852,14 @@ export function AnnotateCanvas() {
                     border: '1px solid rgba(255,255,255,0.1)',
                   }}>
                     <div style={{
-                      width: 18, height: 18, borderRadius: 5,
-                      background: currentColor,
-                      border: '1.5px solid rgba(255,255,255,0.3)',
-                      flexShrink: 0,
-                      position: 'relative', overflow: 'hidden',
+                      width: 20, height: 20, flexShrink: 0,
+                      position: 'relative',
                     }}>
+                      <img
+                        src={paletteIcon}
+                        alt="palette"
+                        style={{ width: 20, height: 20, objectFit: 'contain', display: 'block' }}
+                      />
                       <input
                         type="color"
                         value={currentColor}
