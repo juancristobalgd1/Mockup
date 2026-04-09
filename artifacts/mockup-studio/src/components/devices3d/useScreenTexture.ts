@@ -40,6 +40,7 @@ export function useScreenTexture(
       setGlobalScreenTexture(tex);
     } else if (contentType === 'image' && screenshotUrl) {
       const loader = new THREE.TextureLoader();
+      loader.crossOrigin = 'anonymous';
       loader.load(screenshotUrl, (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace;
         textureRef.current = tex;
