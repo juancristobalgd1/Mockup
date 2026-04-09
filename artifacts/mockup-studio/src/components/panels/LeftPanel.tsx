@@ -796,6 +796,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
             {/* Color button */}
             {hasColors && (
               <button
+                aria-label="Device color"
                 ref={deviceColorBtnRef}
                 onClick={() => {
                   const next = deviceOptPopup === 'color' ? null : 'color';
@@ -818,13 +819,13 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   background: IPHONE_COLORS.find(c => c.id === state.deviceColor)?.bg ?? IPHONE_COLORS[0].bg,
                   border: '1.5px solid rgba(255,255,255,0.3)',
                 }} />
-                <span style={{ fontSize: 8, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Color</span>
               </button>
             )}
 
             {/* Orient / Theme button */}
             {(hasOrientation || hasBrowserTheme) && (
               <button
+                aria-label={hasBrowserTheme ? 'Browser theme' : 'Device orientation'}
                 ref={deviceOrientBtnRef}
                 onClick={() => {
                   const next = deviceOptPopup === 'orient' ? null : 'orient';
@@ -848,9 +849,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     : <><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 014 0v2"/></>
                   }
                 </svg>
-                <span style={{ fontSize: 8, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                  {hasBrowserTheme ? 'Theme' : (state.deviceLandscape ? 'Land.' : 'Port.')}
-                </span>
               </button>
             )}
           </div>
