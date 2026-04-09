@@ -596,6 +596,53 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     return () => document.removeEventListener('mousedown', onDown);
   }, [envPopupOpen]);
 
+  // Close any open popup on pinch (2-finger touch) or drag gesture
+  useEffect(() => {
+    const anyOpen =
+      annotatePopup || overlayPopup || bgPopup || deviceGroupPopup ||
+      deviceOptPopup || presentsPopupOpen || scenePopup || lightPopupOpen || envPopupOpen;
+    if (!anyOpen) return;
+
+    const closeAll = () => {
+      setAnnotatePopup(null);
+      setOverlayPopup(null);
+      setBgPopup(null);
+      setDeviceGroupPopup(null);
+      setDeviceOptPopup(null);
+      setPresentsPopupOpen(false);
+      setScenePopup(null);
+      setLightPopupOpen(false);
+      setEnvPopupOpen(false);
+    };
+
+    const allPopupRefs = [
+      annotatePopupRef, overlayPopupRef, bgPopupRef, deviceGroupPopupRef,
+      deviceOptRef, presentsPopupRef, scenePopupRef, lightPopupRef, envPopupRef,
+    ];
+
+    const isInsideAnyPopup = (target: EventTarget | null): boolean =>
+      allPopupRefs.some(r => r.current?.contains(target as Node));
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length >= 2) closeAll();
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length >= 2) { closeAll(); return; }
+      if (!isInsideAnyPopup(e.target)) closeAll();
+    };
+
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchmove', onTouchMove, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchmove', onTouchMove);
+    };
+  }, [
+    annotatePopup, overlayPopup, bgPopup, deviceGroupPopup,
+    deviceOptPopup, presentsPopupOpen, scenePopup, lightPopupOpen, envPopupOpen,
+  ]);
+
   const handleBgImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) updateState({ bgType: 'image', bgImage: URL.createObjectURL(file) });
