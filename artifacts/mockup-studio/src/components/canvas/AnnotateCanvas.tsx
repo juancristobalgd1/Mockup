@@ -334,8 +334,10 @@ export function AnnotateCanvas() {
   // Drag/resize mode — kept in refs so pointer handlers don't need closure rebinding
   const dragMode = useRef<'move' | 'resize' | null>(null);
   const dragStart = useRef<Point>({ x: 0, y: 0 });
+  const dragMoved = useRef(false);
   const resizeHandle = useRef<HandleName | null>(null);
   const resizeBBoxStart = useRef<BBox | null>(null);
+  const resizeMoved = useRef(false);
 
   const lw = state.annotateLineWidth ?? SIZE_MAP[state.annotateSize] ?? 5;
   const fontSize = FONT_SIZE_MAP[state.annotateSize] ?? 20;
@@ -640,6 +642,7 @@ export function AnnotateCanvas() {
         e.currentTarget.setPointerCapture(e.pointerId);
         dragMode.current = 'move';
         dragStart.current = p;
+        dragMoved.current = false;
       } else {
         setSelectedId(null);
         dragMode.current = null;
@@ -692,6 +695,7 @@ export function AnnotateCanvas() {
       const p = getPos(e);
       const dx = p.x - dragStart.current.x;
       const dy = p.y - dragStart.current.y;
+      if (dx !== 0 || dy !== 0) dragMoved.current = true;
       dragStart.current = p;
       strokesRef.current = strokesRef.current.map(s => s.id === selectedId ? translateStroke(s, dx, dy) : s);
       redrawStrokes(ctx, strokesRef.current);
@@ -717,7 +721,9 @@ export function AnnotateCanvas() {
   const onCanvasPointerUp = () => {
     if (dragMode.current === 'move') {
       dragMode.current = null;
-      updateState({ annotateStrokes: [...strokesRef.current] });
+      if (dragMoved.current) {
+        updateState({ annotateStrokes: [...strokesRef.current] });
+      }
       return;
     }
     if (!isDrawing.current || !activeRef.current) return;
@@ -756,6 +762,7 @@ export function AnnotateCanvas() {
     dragStart.current = { x: cx, y: cy };
     resizeHandle.current = handle;
     resizeBBoxStart.current = { ...bb };
+    resizeMoved.current = false;
   };
 
   const onHandlePointerMove = (e: React.PointerEvent<SVGCircleElement>) => {
@@ -769,6 +776,7 @@ export function AnnotateCanvas() {
     const cy = (e.clientY - rect.top) * scaleY;
 
     const delta = { x: cx - dragStart.current.x, y: cy - dragStart.current.y };
+    if (delta.x !== 0 || delta.y !== 0) resizeMoved.current = true;
     const oldBB = resizeBBoxStart.current;
     const newBB = applyHandle(resizeHandle.current, oldBB, delta);
 
@@ -790,7 +798,9 @@ export function AnnotateCanvas() {
     dragMode.current = null;
     resizeHandle.current = null;
     resizeBBoxStart.current = null;
-    updateState({ annotateStrokes: [...strokesRef.current] });
+    if (resizeMoved.current) {
+      updateState({ annotateStrokes: [...strokesRef.current] });
+    }
   };
 
   const cursor = () => {
