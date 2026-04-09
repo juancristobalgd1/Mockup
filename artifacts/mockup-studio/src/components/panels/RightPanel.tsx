@@ -2,6 +2,51 @@ import { useState, useRef, useEffect } from 'react';
 import { Download, Copy, Image, Check, Video, Film, ChevronDown } from 'lucide-react';
 import { useApp } from '../../store';
 import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
+import { ANIMATED_BACKGROUNDS } from '../../data/backgrounds';
+import type { AnimatedBackground } from '../../data/backgrounds';
+
+// ── Animated background canvas drawing ───────────────────────────────────────
+// Computes the background-position for each keyframe animation at time t (0–1)
+function animPosX(animStr: string, t: number): number {
+  if (animStr.includes('bgShift2')) {
+    if (t < 0.33) return t / 0.33;
+    if (t < 0.66) return 1;
+    return 1 - (t - 0.66) / 0.34;
+  }
+  if (animStr.includes('bgShift3')) {
+    if (t < 0.25) return t / 0.25;
+    if (t < 0.75) return 1;
+    return 1 - (t - 0.75) / 0.25;
+  }
+  // bgShift: triangular wave 0→1→0
+  return t < 0.5 ? t * 2 : (1 - t) * 2;
+}
+
+function drawAnimatedBg(ctx: CanvasRenderingContext2D, bg: AnimatedBackground, elapsedMs: number, W: number, H: number) {
+  const rawBg = bg.type === 'css' ? bg.animStyle?.background : undefined;
+  const bgCss = typeof rawBg === 'string' ? rawBg : (typeof bg.thumb.background === 'string' ? bg.thumb.background : '');
+  const animStr = typeof bg.animStyle?.animation === 'string' ? bg.animStyle.animation : 'bgShift 12s';
+
+  const periodMatch = animStr.match(/(\d+(?:\.\d+)?)s/);
+  const period = periodMatch ? parseFloat(periodMatch[1]) * 1000 : 12000;
+  const t = (elapsedMs % period) / period;
+  const posX = animPosX(animStr, t);
+  const posY = 0.5;
+
+  const colors = bgCss.match(/#[0-9a-fA-F]{3,8}/g) ?? ['#111113', '#1e1b4b'];
+
+  // Simulate background-size:400% 400% + background-position:X% Y%
+  const bgW = W * 4;
+  const bgH = H * 4;
+  const xOff = posX * (bgW - W);   // how far into the 4× tile we are
+  const yOff = posY * (bgH - H);
+
+  // -45deg gradient: first color at top-right, last at bottom-left (of the 4× tile)
+  const gradient = ctx.createLinearGradient(bgW - xOff, -yOff, -xOff, bgH - yOff);
+  colors.forEach((c: string, i: number) => gradient.addColorStop(i / Math.max(colors.length - 1, 1), c));
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, W, H);
+}
 
 interface RightPanelProps {
   canvasRef: React.RefObject<HTMLDivElement | null>;
@@ -131,27 +176,35 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
     if (!canvasRef.current) return;
     setRecording(true);
     try {
-      const DURATION_MS = 4000;
+      const DURATION_MS = (state.movieDuration ?? 4) * 1000;
       const el = canvasRef.current;
       const glEl = viewerRef?.current?.getGLElement() ?? null;
-      const html2canvas = (await import('html2canvas')).default;
 
-      // 1. Determine output dimensions from the DOM element (reliable even in proxied iframes)
+      // 1. Determine output dimensions
       const W = el.offsetWidth || 800;
       const H = el.offsetHeight || 600;
 
-      // 2. Try capturing background once (CSS, gradients, text overlays — no WebGL canvas)
-      let bgCanvas: HTMLCanvasElement | null = null;
-      try {
-        const snap = await html2canvas(el, {
-          useCORS: true, allowTaint: true, scale: 1, backgroundColor: null,
-          width: W, height: H,
-          ignoreElements: (element) => element.tagName === 'CANVAS',
-        });
-        if (snap.width > 0 && snap.height > 0) bgCanvas = snap;
-      } catch { /* fall through — GL-only capture below */ }
+      // 2. Check if background is animated — if so, draw it per-frame via canvas API
+      const isAnimatedBg = state.bgType === 'animated';
+      const animatedBg = isAnimatedBg
+        ? (ANIMATED_BACKGROUNDS.find(b => b.id === state.bgAnimated) ?? ANIMATED_BACKGROUNDS[0])
+        : null;
 
-      // 3. Offscreen canvas → MediaRecorder stream
+      // 3. For non-animated backgrounds, capture once with html2canvas
+      let bgCanvas: HTMLCanvasElement | null = null;
+      if (!isAnimatedBg) {
+        try {
+          const html2canvas = (await import('html2canvas')).default;
+          const snap = await html2canvas(el, {
+            useCORS: true, allowTaint: true, scale: 1, backgroundColor: null,
+            width: W, height: H,
+            ignoreElements: (element) => element.tagName === 'CANVAS',
+          });
+          if (snap.width > 0 && snap.height > 0) bgCanvas = snap;
+        } catch { /* fall through — GL-only capture below */ }
+      }
+
+      // 4. Offscreen canvas → MediaRecorder stream
       const offscreen = document.createElement('canvas');
       offscreen.width = W; offscreen.height = H;
       const ctx = offscreen.getContext('2d')!;
@@ -166,15 +219,22 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
       recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
       recorder.start(100);
 
-      // 4. Draw loop: composite static bg (if captured) + live GL frame each rAF
+      // 5. Draw loop: animated bg drawn per-frame; static bg drawn once
       const startTs = performance.now();
       const drawLoop = (ts: number) => {
+        const elapsed = ts - startTs;
         ctx.clearRect(0, 0, W, H);
-        if (bgCanvas) ctx.drawImage(bgCanvas, 0, 0, W, H);
+
+        if (isAnimatedBg && animatedBg) {
+          drawAnimatedBg(ctx, animatedBg, elapsed, W, H);
+        } else if (bgCanvas) {
+          ctx.drawImage(bgCanvas, 0, 0, W, H);
+        }
+
         if (glEl && glEl.width > 0 && glEl.height > 0) {
           ctx.drawImage(glEl, 0, 0, W, H);
         }
-        if (ts - startTs < DURATION_MS) {
+        if (elapsed < DURATION_MS) {
           requestAnimationFrame(drawLoop);
         } else {
           recorder.stop();
