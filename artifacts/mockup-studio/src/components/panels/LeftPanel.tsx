@@ -606,9 +606,10 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
 
   // ── Device tab content ──────────────────────────────────────────
   const DeviceTab = () => {
-    const activeGroup = DEVICE_MODELS.find(m => m.id === state.deviceModel)?.group;
-    const hasColors = state.deviceType === 'iphone';
-    const hasOrientation = state.deviceType === 'iphone' || state.deviceType === 'android' || state.deviceType === 'ipad';
+    const activeModel  = getModelById(state.deviceModel);
+    const activeGroup  = activeModel?.group;
+    const hasColors    = !!activeModel?.hasColors;
+    const hasOrientation = !!activeModel?.hasOrientation;
     const hasBrowserTheme = state.deviceType === 'browser';
     const hasOptions = hasColors || hasOrientation || hasBrowserTheme;
 
