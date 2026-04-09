@@ -649,7 +649,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
             <div ref={deviceGroupPopupRef} style={{
               position: 'fixed',
               left: Math.max(8, Math.min(deviceGroupAnchor.x - 140, window.innerWidth - 296)),
-              bottom: window.innerHeight - deviceGroupAnchor.y + 8,
+              top: Math.min(deviceGroupAnchor.y + 52, window.innerHeight - 300),
               width: 280,
               background: 'rgba(18,20,26,0.98)',
               borderRadius: 18, padding: '12px 12px 10px', zIndex: 9999,
@@ -692,7 +692,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           <div ref={deviceOptRef} style={{
             position: 'fixed',
             left: Math.max(8, Math.min(deviceOptAnchor.x - 120, window.innerWidth - 256)),
-            bottom: window.innerHeight - deviceOptAnchor.y + 8,
+            top: Math.min(deviceOptAnchor.y + 52, window.innerHeight - 160),
             width: 240,
             background: 'rgba(18,20,26,0.98)',
             borderRadius: 18, padding: '14px 16px', zIndex: 9999,
@@ -720,7 +720,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           <div ref={deviceOptRef} style={{
             position: 'fixed',
             left: Math.max(8, Math.min(deviceOptAnchor.x - 100, window.innerWidth - 220)),
-            bottom: window.innerHeight - deviceOptAnchor.y + 8,
+            top: Math.min(deviceOptAnchor.y + 52, window.innerHeight - 160),
             width: 200,
             background: 'rgba(18,20,26,0.98)',
             borderRadius: 18, padding: '14px 16px', zIndex: 9999,
@@ -767,7 +767,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                       const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
                       setDeviceGroupAnchor({ x: r.left + r.width / 2, y: r.top });
                       setDeviceGroupPopup(group);
-                      setDeviceOptPopup(false);
+                      setDeviceOptPopup(null);
                     }}
                     title={group}
                     style={{
