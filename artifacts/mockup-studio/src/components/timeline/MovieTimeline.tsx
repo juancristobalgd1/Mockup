@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { Play, Pause, Plus, Trash2, Circle, Film, X, Square, Sparkles, Copy, ChevronDown, ChevronUp, Palette } from 'lucide-react';
+import { Play, Pause, Plus, Trash2, Circle, X, Square, Sparkles, Copy, ChevronDown, ChevronUp, Palette } from 'lucide-react';
 import { useApp } from '../../store';
 import type { CameraKeyframe, EasingType } from '../../store';
 import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
@@ -146,8 +146,6 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
 
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportProgress, setExportProgress] = useState(0);
   const [activeKfId, setActiveKfId] = useState<string | null>(null);
   const [showPresets, setShowPresets] = useState(false);
   const [editingLabel, setEditingLabel] = useState<string | null>(null);
@@ -237,7 +235,6 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
   }, [onPlayingChange]);
 
   const startPlayback = useCallback(() => {
-    if (isExporting) return;
     setIsPlaying(true);
     onPlayingChange?.(true);
     kfLastTsRef.current = null;
@@ -253,7 +250,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
       kfRafRef.current = requestAnimationFrame(tick);
     };
     kfRafRef.current = requestAnimationFrame(tick);
-  }, [isExporting, movieDuration, movieTimeRef, onPlayingChange]);
+  }, [movieDuration, movieTimeRef, onPlayingChange]);
 
   const togglePlayback = () => { isPlaying ? stopPlayback() : startPlayback(); };
 
@@ -300,61 +297,6 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
     setActiveKfId(null);
   }, [addCameraKeyframe, clearCameraKeyframes, movieDuration, movieTimeRef, viewerRef]);
 
-  const handleExport = async () => {
-    if (!canvasRef.current || cameraKeyframes.length < 2) return;
-    setIsExporting(true);
-    setExportProgress(0);
-    stopPlayback();
-    try {
-      const DURATION_MS = movieDuration * 1000;
-      const el = canvasRef.current;
-      const glEl = viewerRef.current?.getGLElement() ?? null;
-      const html2canvas = (await import('html2canvas')).default;
-      const bgCanvas = await html2canvas(el, {
-        useCORS: true, allowTaint: true, scale: 1, backgroundColor: null,
-        ignoreElements: (element) => element.tagName === 'CANVAS',
-      });
-      let W = bgCanvas.width, H = bgCanvas.height;
-      if (W === 0 || H === 0) {
-        W = el.offsetWidth; H = el.offsetHeight;
-        if (W > 0 && H > 0) { bgCanvas.width = W; bgCanvas.height = H; }
-      }
-      if (W === 0 || H === 0) throw new Error('Canvas has zero dimensions');
-      const offscreen = document.createElement('canvas');
-      offscreen.width = W; offscreen.height = H;
-      const ctx = offscreen.getContext('2d')!;
-      const mimeType = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
-        .find(m => MediaRecorder.isTypeSupported(m)) ?? '';
-      const recorder = new MediaRecorder(offscreen.captureStream(30), mimeType ? { mimeType } : undefined);
-      const chunks: BlobPart[] = [];
-      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-      recorder.start(100);
-      const startTs = performance.now();
-      movieTimeRef.current = 0; setCurrentTime(0);
-      const drawLoop = (ts: number) => {
-        const elapsed = ts - startTs;
-        const t = Math.min(elapsed / 1000, movieDuration);
-        movieTimeRef.current = t; setCurrentTime(t);
-        setExportProgress(Math.min(100, Math.round((elapsed / DURATION_MS) * 100)));
-        ctx.clearRect(0, 0, W, H);
-        ctx.drawImage(bgCanvas, 0, 0);
-        if (glEl) ctx.drawImage(glEl, 0, 0, W, H);
-        if (elapsed < DURATION_MS) requestAnimationFrame(drawLoop);
-        else recorder.stop();
-      };
-      requestAnimationFrame(drawLoop);
-      await new Promise<void>(resolve => { recorder.onstop = () => resolve(); });
-      setExportProgress(100);
-      const blob = new Blob(chunks, { type: 'video/webm' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `movie-${Date.now()}.webm`; a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-      movieTimeRef.current = 0; setCurrentTime(0);
-    } catch (err) { console.error(err); }
-    finally { setIsExporting(false); setExportProgress(0); }
-  };
-
   const playheadPct = movieDuration > 0 ? (currentTime / movieDuration) * 100 : 0;
   const RULERS = Array.from({ length: Math.ceil(movieDuration) + 1 }, (_, i) => i);
 
@@ -375,7 +317,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
         }}>
           <button
             onClick={togglePlayback}
-            disabled={isExporting || liveRecording}
+            disabled={liveRecording}
             style={{
               background: isPlaying ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)',
               border: `1px solid ${isPlaying ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'}`,
@@ -420,7 +362,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
         {/* Play / Pause */}
         <button
           onClick={togglePlayback}
-          disabled={isExporting || liveRecording}
+          disabled={liveRecording}
           title={isPlaying ? 'Pausar' : 'Reproducir animación'}
           style={{
             background: isPlaying ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)',
@@ -428,7 +370,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
             borderRadius: 6, width: 28, height: 28, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: isPlaying ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)',
-            opacity: (isExporting || liveRecording) ? 0.35 : 1,
+            opacity: liveRecording ? 0.35 : 1,
           }}
         >
           {isPlaying ? <Pause size={12} /> : <Play size={12} />}
@@ -438,14 +380,14 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
         {!liveRecording ? (
           <button
             onClick={startLiveRec}
-            disabled={isPlaying || isExporting}
+            disabled={isPlaying}
             title="Grabar movimiento del dispositivo como keyframes"
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '0 12px', height: 28, borderRadius: 6, cursor: 'pointer',
               background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(239,68,68,0.4)',
               color: '#f87171', fontSize: 11, fontWeight: 700,
-              opacity: (isPlaying || isExporting) ? 0.35 : 1,
+              opacity: isPlaying ? 0.35 : 1,
             }}
           >
             <Circle size={9} fill="#f87171" color="#f87171" />
@@ -592,39 +534,6 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
         >
           {[3, 5, 8, 10, 15, 20, 30].map(d => <option key={d} value={d}>{d}s</option>)}
         </select>
-
-        {/* Export WebM */}
-        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <button
-            onClick={handleExport}
-            disabled={isExporting || cameraKeyframes.length < 2 || liveRecording}
-            title={cameraKeyframes.length < 2 ? 'Necesitas al menos 2 keyframes para exportar' : 'Exportar animación como WebM'}
-            style={{
-              background: isExporting ? 'rgba(239,68,68,0.25)' : 'rgba(239,68,68,0.1)',
-              border: '1px solid rgba(239,68,68,0.25)',
-              borderRadius: 6, height: 28, padding: '0 10px',
-              cursor: (cameraKeyframes.length < 2 || isExporting || liveRecording) ? 'not-allowed' : 'pointer',
-              display: 'flex', alignItems: 'center', gap: 5,
-              color: (cameraKeyframes.length < 2 || liveRecording) ? 'rgba(255,255,255,0.2)' : '#f87171',
-              fontSize: 11, fontWeight: 600,
-              opacity: (cameraKeyframes.length < 2 || liveRecording) ? 0.45 : 1,
-              overflow: 'hidden', position: 'relative',
-            }}
-          >
-            {isExporting && (
-              <div style={{
-                position: 'absolute', left: 0, top: 0, bottom: 0,
-                width: `${exportProgress}%`,
-                background: 'rgba(239,68,68,0.25)',
-                transition: 'width 0.1s',
-              }} />
-            )}
-            <Film size={11} style={{ position: 'relative', zIndex: 1 }} />
-            <span style={{ position: 'relative', zIndex: 1 }}>
-              {isExporting ? `Exportando ${exportProgress}%` : 'Exportar WebM'}
-            </span>
-          </button>
-        </div>
 
         {/* Color accent picker */}
         <div style={{ position: 'relative' }}>
