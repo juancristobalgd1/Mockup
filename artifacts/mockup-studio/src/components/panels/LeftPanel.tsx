@@ -744,8 +744,8 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     }}
                     title={group}
                     style={{
-                      flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                      padding: '5px', borderRadius: 11, border: 'none', cursor: 'pointer',
+                      flexShrink: 0, width: 46, height: 46, padding: 0, borderRadius: 11, border: 'none', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
                       background: isActive || isOpen ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
                       outline: isOpen
                         ? '1.5px solid rgba(167,139,250,0.8)'
@@ -755,11 +755,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                       color: isActive || isOpen ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.45)',
                       transition: 'all 0.12s',
                     }}>
-                    {repModel && (
-                      <div style={{ transform: 'scale(0.85)', transformOrigin: 'center', lineHeight: 0 }}>
-                        <DeviceThumbnail modelId={repModel.id} isSelected={isActive || isOpen} />
-                      </div>
-                    )}
+                    {repModel && <DeviceThumbnail modelId={repModel.id} isSelected={isActive || isOpen} />}
                   </button>
                 );
               })}
@@ -1063,21 +1059,16 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   }}
                   title={label}
                   style={{
-                    flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    padding: '5px', borderRadius: 13, gap: 0, border: 'none',
+                    flexShrink: 0, width: 46, height: 46, padding: 0, borderRadius: 11, border: 'none',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
                     background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
                     outline: popupOpen ? '2px solid rgba(167,139,250,0.8)' : active ? '2px solid rgba(255,255,255,0.85)' : '1.5px solid rgba(255,255,255,0.14)',
                     cursor: 'pointer', transition: 'all 0.12s',
-                  }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 10,
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    overflow: 'hidden',
                     ...(icon ? {} : (preview ?? { background: '#1a1c2e' })),
                   }}>
-                    {icon ? icon : (!preview && id !== 'none' && <ImageIcon size={16} color="rgba(255,255,255,0.40)" />)}
-                  </div>
+                  {icon
+                    ? icon
+                    : (!preview && id !== 'none' && <ImageIcon size={16} color="rgba(255,255,255,0.40)" />)}
                 </button>
               );
             })}
