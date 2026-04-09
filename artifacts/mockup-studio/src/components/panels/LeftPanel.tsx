@@ -768,7 +768,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
 
             {/* Divider */}
             {(hasColors || hasOrientation || hasBrowserTheme) && (
-              <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
+              <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
             )}
 
             {/* Color button */}
@@ -784,6 +784,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                 }}
                 style={{
                   flexShrink: 0, padding: '5px 9px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                  alignSelf: 'stretch', justifyContent: 'center',
                   background: deviceOptPopup === 'color' ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.07)',
                   outline: deviceOptPopup === 'color' ? '1.5px solid rgba(167,139,250,0.8)' : '1px solid rgba(255,255,255,0.12)',
                   color: deviceOptPopup === 'color' ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.55)',
@@ -812,6 +813,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                 }}
                 style={{
                   flexShrink: 0, padding: '5px 9px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                  alignSelf: 'stretch', justifyContent: 'center',
                   background: deviceOptPopup === 'orient' ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.07)',
                   outline: deviceOptPopup === 'orient' ? '1.5px solid rgba(167,139,250,0.8)' : '1px solid rgba(255,255,255,0.12)',
                   color: deviceOptPopup === 'orient' ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.55)',
