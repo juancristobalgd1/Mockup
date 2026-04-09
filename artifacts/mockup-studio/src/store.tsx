@@ -141,6 +141,7 @@ export interface AppState {
   bgBlur: number;
   bgVignette: boolean;
   bgVignetteIntensity: number;
+  grainBgOnly: boolean;
 
   texts: TextOverlay[];
 
@@ -214,6 +215,7 @@ export const defaultState: AppState = {
   bgBlur: 0,
   bgVignette: false,
   bgVignetteIntensity: 50,
+  grainBgOnly: false,
 
   texts: [],
 
