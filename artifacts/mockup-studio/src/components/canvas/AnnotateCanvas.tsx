@@ -480,6 +480,7 @@ export function AnnotateCanvas() {
           kind: 'text',
           color: textInput.color,
           fontSize: textInput.fontSize,
+          opacity: state.annotateOpacity ?? 1,
           text: trimmed,
           position: { x: textInput.canvasX, y: textInput.canvasY },
         };
@@ -542,18 +543,21 @@ export function AnnotateCanvas() {
     const p = getPos(e);
 
     if (tool === 'pen' || tool === 'marker' || tool === 'eraser') {
+      const globalOp = state.annotateOpacity ?? 1;
       const stroke: FreeStroke = {
         id: uid(), kind: 'free', tool,
         color: tool === 'eraser' ? '#000000' : state.annotateColor,
         lineWidth: tool === 'eraser' ? lw * 3 : lw,
-        opacity: tool === 'marker' ? MARKER_ALPHA : 1,
+        opacity: tool === 'eraser' ? 1 : tool === 'marker' ? MARKER_ALPHA * globalOp : globalOp,
         points: [p],
       };
       activeRef.current = stroke;
     } else {
       const stroke: ShapeStroke = {
         id: uid(), kind: 'shape', tool: tool as 'arrow' | 'rect',
-        color: state.annotateColor, lineWidth: lw, start: p, end: p,
+        color: state.annotateColor, lineWidth: lw,
+        opacity: state.annotateOpacity ?? 1,
+        start: p, end: p,
       };
       activeRef.current = stroke;
     }
