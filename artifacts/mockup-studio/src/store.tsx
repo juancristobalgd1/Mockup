@@ -47,6 +47,7 @@ export interface AppState {
   bgColor: string;
   bgImage: string | null;
   bgPattern: string;
+  bgOpacity: number;
 
   canvasRatio: CanvasRatio;
   canvasRadius: number;
@@ -110,6 +111,7 @@ export const defaultState: AppState = {
   bgColor: "purple-blue",
   bgImage: null,
   bgPattern: "dots",
+  bgOpacity: 100,
 
   canvasRatio: "free",
   canvasRadius: 0,

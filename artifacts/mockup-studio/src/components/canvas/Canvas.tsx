@@ -105,14 +105,21 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
 
   const borderRadius = state.canvasRadius ? `${state.canvasRadius}px` : undefined;
 
+  const bgOpacity = state.bgType === 'none' || state.bgType === 'transparent'
+    ? 1
+    : (state.bgOpacity ?? 100) / 100;
+
   return (
     <div
       ref={ref}
       data-canvas-root="true"
       className="relative w-full h-full flex items-center justify-center overflow-hidden"
-      style={{ ...getBackground(), borderRadius }}
+      style={{ borderRadius }}
       data-testid="canvas-area"
     >
+      {/* Background layer — separate div so opacity doesn't affect children */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0, borderRadius, opacity: bgOpacity, ...getBackground() }} />
+
       {/* Color overlay */}
       {state.overlayEnabled && (
         <div style={{ position: 'absolute', inset: 0, background: state.overlayColor, opacity: state.overlayOpacity / 100, pointerEvents: 'none', zIndex: 1, borderRadius }} />
