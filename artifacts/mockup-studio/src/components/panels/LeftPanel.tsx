@@ -495,9 +495,9 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
                     padding: '6px 13px', borderRadius: 20,
                     fontSize: 12, fontWeight: active ? 700 : 500,
-                    background: active ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
-                    border: active ? '1px solid rgba(255,255,255,0.28)' : '1px solid rgba(255,255,255,0.07)',
-                    color: active ? '#fff' : 'rgba(255,255,255,0.5)',
+                    background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
+                    border: active ? '1.5px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.18)',
+                    color: active ? '#fff' : 'rgba(255,255,255,0.75)',
                     cursor: 'pointer', transition: 'all 0.12s', whiteSpace: 'nowrap',
                   }}>
                   <span style={{ fontSize: 13 }}>{icon}</span>
