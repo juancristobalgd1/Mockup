@@ -14,10 +14,12 @@ interface FreeStroke {
   points: Point[];
 }
 
+type ShapeTool = 'arrow' | 'rect' | 'circle' | 'ellipse' | 'triangle' | 'diamond' | 'star' | 'hexagon' | 'spiral' | 'wave';
+
 interface ShapeStroke {
   id: string;
   kind: 'shape';
-  tool: 'arrow' | 'rect';
+  tool: ShapeTool;
   color: string;
   lineWidth: number;
   opacity?: number;
@@ -203,6 +205,77 @@ function drawArrow(ctx: CanvasRenderingContext2D, from: Point, to: Point) {
   );
 }
 
+function drawShapeTool(ctx: CanvasRenderingContext2D, tool: ShapeTool, start: Point, end: Point) {
+  const x = Math.min(start.x, end.x);
+  const y = Math.min(start.y, end.y);
+  const w = Math.max(Math.abs(end.x - start.x), 2);
+  const h = Math.max(Math.abs(end.y - start.y), 2);
+  const cx = x + w / 2, cy = y + h / 2;
+  const rx = w / 2, ry = h / 2;
+
+  if (tool === 'arrow') {
+    drawArrow(ctx, start, end);
+    return;
+  }
+  ctx.beginPath();
+  if (tool === 'rect') {
+    ctx.roundRect(x, y, w, h, 4);
+  } else if (tool === 'circle' || tool === 'ellipse') {
+    ctx.ellipse(cx, cy, Math.max(rx, 1), Math.max(ry, 1), 0, 0, Math.PI * 2);
+  } else if (tool === 'triangle') {
+    ctx.moveTo(cx, y);
+    ctx.lineTo(x + w, y + h);
+    ctx.lineTo(x, y + h);
+    ctx.closePath();
+  } else if (tool === 'diamond') {
+    ctx.moveTo(cx, y);
+    ctx.lineTo(x + w, cy);
+    ctx.lineTo(cx, y + h);
+    ctx.lineTo(x, cy);
+    ctx.closePath();
+  } else if (tool === 'star') {
+    const outerR = Math.min(rx, ry);
+    const innerR = outerR * 0.4;
+    for (let i = 0; i < 10; i++) {
+      const angle = (i * Math.PI / 5) - Math.PI / 2;
+      const r = i % 2 === 0 ? outerR : innerR;
+      const px = cx + r * Math.cos(angle);
+      const py = cy + r * Math.sin(angle);
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+  } else if (tool === 'hexagon') {
+    const r = Math.min(rx, ry);
+    for (let i = 0; i < 6; i++) {
+      const angle = (i * Math.PI / 3) - Math.PI / 6;
+      const px = cx + r * Math.cos(angle);
+      const py = cy + r * Math.sin(angle);
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+  } else if (tool === 'spiral') {
+    const maxR = Math.min(rx, ry);
+    const steps = 200;
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const angle = t * 3 * Math.PI * 2;
+      const r = t * maxR;
+      const px = cx + r * Math.cos(angle);
+      const py = cy + r * Math.sin(angle);
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+  } else if (tool === 'wave') {
+    const steps = 120;
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const px = x + t * w;
+      const py = cy + ry * 0.65 * Math.sin(t * 3 * Math.PI * 2);
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+  }
+  ctx.stroke();
+}
+
 function redrawStrokes(ctx: CanvasRenderingContext2D, strokes: AnyStroke[]) {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   for (const s of strokes) {
@@ -229,17 +302,7 @@ function redrawStrokes(ctx: CanvasRenderingContext2D, strokes: AnyStroke[]) {
       ctx.lineWidth = s.lineWidth;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-      ctx.beginPath();
-      if (s.tool === 'arrow') {
-        drawArrow(ctx, s.start, s.end);
-      } else {
-        ctx.roundRect(
-          s.start.x, s.start.y,
-          s.end.x - s.start.x, s.end.y - s.start.y,
-          4,
-        );
-      }
-      ctx.stroke();
+      drawShapeTool(ctx, s.tool, s.start, s.end);
     } else if (s.kind === 'text') {
       ctx.globalAlpha = s.opacity ?? 1;
       ctx.fillStyle = s.color;
@@ -621,8 +684,9 @@ export function AnnotateCanvas() {
       };
       activeRef.current = stroke;
     } else {
+      const shapeTool: ShapeTool = tool === 'rect' ? (state.annotateShape ?? 'rect') : (tool as ShapeTool);
       const stroke: ShapeStroke = {
-        id: uid(), kind: 'shape', tool: tool as 'arrow' | 'rect',
+        id: uid(), kind: 'shape', tool: shapeTool,
         color: state.annotateColor, lineWidth: lw,
         opacity: state.annotateOpacity ?? 1,
         start: p, end: p,

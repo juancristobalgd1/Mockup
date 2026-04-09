@@ -438,11 +438,12 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const [mobileDeviceFilter, setMobileDeviceFilter] = useState<DeviceGroup | 'All'>('All');
   const bgFileRef                            = useRef<HTMLInputElement>(null);
   const [extracting, setExtracting]         = useState(false);
-  const [annotatePopup, setAnnotatePopup]   = useState<null | 'color' | 'size'>(null);
+  const [annotatePopup, setAnnotatePopup]   = useState<null | 'color' | 'size' | 'shapes'>(null);
   const [annotatePopupAnchor, setAnnotatePopupAnchor] = useState<{ x: number; y: number } | null>(null);
   const annotatePopupRef                     = useRef<HTMLDivElement>(null);
   const colorBtnRef                          = useRef<HTMLButtonElement>(null);
   const sizeBtnRef                           = useRef<HTMLButtonElement>(null);
+  const shapeBtnRef                          = useRef<HTMLButtonElement>(null);
 
   const [overlayPopup, setOverlayPopup]     = useState<null | 'color' | 'opacity' | 'light'>(null);
   const [overlayPopupAnchor, setOverlayPopupAnchor] = useState<{ x: number; y: number } | null>(null);
@@ -1531,6 +1532,21 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   ];
   const ANNOTATE_SIZES: ('S' | 'M' | 'L' | 'XL')[] = ['S', 'M', 'L', 'XL'];
 
+  type AnnotateShapeId = 'rect' | 'circle' | 'ellipse' | 'triangle' | 'diamond' | 'star' | 'hexagon' | 'spiral' | 'wave';
+  const ANNOTATE_SHAPES: { id: AnnotateShapeId; label: string; icon: React.ReactNode }[] = [
+    { id: 'rect',     label: 'Rect',    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> },
+    { id: 'circle',   label: 'Círculo', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/></svg> },
+    { id: 'ellipse',  label: 'Elipse',  icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6"/></svg> },
+    { id: 'triangle', label: 'Triáng.', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,2 22,22 2,22"/></svg> },
+    { id: 'diamond',  label: 'Rombo',   icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,1 23,12 12,23 1,12"/></svg> },
+    { id: 'star',     label: 'Estrella',icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,1 15.09,8.26 23,9.27 17.5,14.63 18.18,22.54 12,19.27 5.82,22.54 6.5,14.63 1,9.27 8.91,8.26"/></svg> },
+    { id: 'hexagon',  label: 'Hexág.',  icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,1 21.66,6.5 21.66,17.5 12,23 2.34,17.5 2.34,6.5"/></svg> },
+    { id: 'spiral',   label: 'Espiral', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 12 C12 12, 18 10, 18 6 C18 2, 12 1, 8 3 C3 5, 2 11, 5 15 C8 19, 15 20, 19 17 C23 14, 22 7, 19 4"/></svg> },
+    { id: 'wave',     label: 'Onda',    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12 Q5 6, 8 12 Q11 18, 14 12 Q17 6, 20 12 Q21.5 15, 22 12"/></svg> },
+  ];
+
+  const currentShapeItem = ANNOTATE_SHAPES.find(s => s.id === (state.annotateShape ?? 'rect')) ?? ANNOTATE_SHAPES[0];
+
   const AnnotateTab = () => (
     <div ref={annotatePopupRef} style={{ position: 'relative' }}>
 
@@ -1658,6 +1674,47 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         </div>
       )}
 
+      {/* ── Floating shapes popup ──────────────────────────────── */}
+      {annotatePopup === 'shapes' && annotatePopupAnchor && (
+        <div style={{
+          position: 'fixed',
+          left: annotatePopupAnchor.x,
+          top: annotatePopupAnchor.y - 230,
+          transform: 'translateX(-50%)',
+          background: 'rgba(22,24,28,0.98)', borderRadius: 18,
+          padding: 14, zIndex: 9999,
+          boxShadow: '0 8px 40px rgba(0,0,0,0.75), 0 2px 12px rgba(0,0,0,0.5)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          backdropFilter: 'blur(20px)',
+          display: 'flex', flexDirection: 'column', gap: 8,
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', textAlign: 'center', marginBottom: 2 }}>Forma</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            {ANNOTATE_SHAPES.map(sh => {
+              const sel = (state.annotateShape ?? 'rect') === sh.id;
+              return (
+                <button key={sh.id}
+                  onClick={() => {
+                    updateState({ annotateShape: sh.id, annotateTool: 'rect', annotateMode: true });
+                    setAnnotatePopup(null);
+                  }}
+                  style={{
+                    width: 64, height: 64, borderRadius: 14, border: 'none', cursor: 'pointer',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    background: sel ? `${state.annotateColor}22` : 'rgba(255,255,255,0.07)',
+                    outline: sel ? `2px solid ${state.annotateColor}` : '1px solid rgba(255,255,255,0.1)',
+                    color: sel ? state.annotateColor : 'rgba(255,255,255,0.7)',
+                    transition: 'all 0.12s',
+                  }}>
+                  {sh.icon}
+                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', color: sel ? state.annotateColor : 'rgba(255,255,255,0.45)', textTransform: 'uppercase' }}>{sh.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── Single toolbar row ────────────────────────────────── */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1669,6 +1726,31 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {/* Tool buttons */}
         {ANNOTATE_TOOLS_BAR.map(t => {
           const active = state.annotateTool === t.id;
+          if (t.id === 'rect') {
+            return (
+              <button key={t.id} ref={shapeBtnRef}
+                onClick={() => {
+                  updateState({ annotateTool: 'rect', annotateMode: true });
+                  if (annotatePopup === 'shapes') { setAnnotatePopup(null); return; }
+                  const r = shapeBtnRef.current?.getBoundingClientRect();
+                  if (r) setAnnotatePopupAnchor({ x: r.left + r.width / 2, y: r.top });
+                  setAnnotatePopup('shapes');
+                }}
+                style={{
+                  flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  height: 38, borderRadius: 11, border: 'none', cursor: 'pointer', gap: 1,
+                  background: active ? 'rgba(255,255,255,0.18)' : 'transparent',
+                  outline: annotatePopup === 'shapes' ? '1.5px solid rgba(255,255,255,0.7)' : active ? '1.5px solid rgba(255,255,255,0.7)' : 'none',
+                  color: active ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.55)',
+                  transition: 'all 0.14s', position: 'relative',
+                }}>
+                {currentShapeItem.icon}
+                <svg width="7" height="5" viewBox="0 0 7 5" style={{ opacity: 0.5, position: 'absolute', bottom: 3, right: 4 }}>
+                  <path d="M0.5 0.5L3.5 3.5L6.5 0.5" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
+                </svg>
+              </button>
+            );
+          }
           return (
             <button key={t.id}
               onClick={() => { updateState({ annotateTool: t.id, annotateMode: true }); setAnnotatePopup(null); }}
