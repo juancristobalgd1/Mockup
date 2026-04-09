@@ -137,18 +137,20 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
         <div style={{ position: 'absolute', inset: 0, background: state.overlayColor, opacity: state.overlayOpacity / 100, pointerEvents: 'none', zIndex: 1, borderRadius }} />
       )}
 
-      {/* Light / shadow overlay */}
+      {/* Light / shadow overlay — zIndex 1 when bgOnly (behind device), 18 otherwise */}
       {state.lightOverlay && (() => {
         const preset = LIGHT_OVERLAYS.find(p => p.id === state.lightOverlay);
         if (!preset) return null;
         return (
           <div style={{
-            position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 18, borderRadius,
+            position: 'absolute', inset: 0, pointerEvents: 'none',
+            zIndex: state.lightOverlayBgOnly ? 1 : 18,
+            borderRadius,
             backgroundImage: preset.background,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             opacity: state.lightOverlayOpacity / 100,
-            mixBlendMode: state.lightOverlayBlend as React.CSSProperties['mixBlendMode'],
+            mixBlendMode: state.lightOverlayBgOnly ? 'normal' : state.lightOverlayBlend as React.CSSProperties['mixBlendMode'],
             filter: preset.filter,
           }} />
         );

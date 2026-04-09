@@ -1419,27 +1419,57 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
             />
           </div>
 
-          {/* Blend mode */}
-          <div>
-            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', display: 'block', marginBottom: 6 }}>Blend mode</span>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-              {(['multiply', 'overlay', 'screen', 'soft-light'] as const).map(mode => {
-                const sel = state.lightOverlayBlend === mode;
-                return (
-                  <button key={mode}
-                    onClick={() => updateState({ lightOverlayBlend: mode })}
-                    style={{
-                      padding: '4px 9px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                      background: sel ? 'rgba(167,139,250,0.25)' : 'rgba(255,255,255,0.07)',
-                      outline: sel ? '1.5px solid rgba(167,139,250,0.7)' : '1px solid rgba(255,255,255,0.1)',
-                      color: sel ? '#c4b5fd' : 'rgba(255,255,255,0.5)',
-                      fontSize: 11, fontWeight: 600, transition: 'all 0.12s',
-                    }}>
-                    {mode.charAt(0).toUpperCase() + mode.slice(1).replace('-', ' ')}
-                  </button>
-                );
-              })}
+          {/* Blend mode — hidden when bgOnly since overlay is rendered normally behind device */}
+          {!state.lightOverlayBgOnly && (
+            <div style={{ marginBottom: 12 }}>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', display: 'block', marginBottom: 6 }}>Blend mode</span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                {(['multiply', 'overlay', 'screen', 'soft-light'] as const).map(mode => {
+                  const sel = state.lightOverlayBlend === mode;
+                  return (
+                    <button key={mode}
+                      onClick={() => updateState({ lightOverlayBlend: mode })}
+                      style={{
+                        padding: '4px 9px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                        background: sel ? 'rgba(167,139,250,0.25)' : 'rgba(255,255,255,0.07)',
+                        outline: sel ? '1.5px solid rgba(167,139,250,0.7)' : '1px solid rgba(255,255,255,0.1)',
+                        color: sel ? '#c4b5fd' : 'rgba(255,255,255,0.5)',
+                        fontSize: 11, fontWeight: 600, transition: 'all 0.12s',
+                      }}>
+                      {mode.charAt(0).toUpperCase() + mode.slice(1).replace('-', ' ')}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+          )}
+
+          {/* Solo fondo toggle */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.08)',
+          }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: state.lightOverlayBgOnly ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)' }}>
+                Solo fondo
+              </div>
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 1 }}>
+                El overlay no cubre el dispositivo
+              </div>
+            </div>
+            <button
+              onClick={() => updateState({ lightOverlayBgOnly: !state.lightOverlayBgOnly })}
+              style={{
+                width: 38, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer',
+                background: state.lightOverlayBgOnly ? 'rgba(167,139,250,0.85)' : 'rgba(255,255,255,0.12)',
+                position: 'relative', transition: 'all 0.18s', flexShrink: 0,
+              }}>
+              <div style={{
+                position: 'absolute', top: 3, left: state.lightOverlayBgOnly ? 19 : 3, width: 16, height: 16,
+                borderRadius: '50%', background: '#fff', transition: 'left 0.18s',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+              }} />
+            </button>
           </div>
         </div>
       )}
