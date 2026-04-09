@@ -321,6 +321,7 @@ function DeviceScene({
   const [menuUrl,  setMenuUrl]        = useState('');
   const [capturing, setCapturing]     = useState(false);
   const [captureError, setCaptureError] = useState('');
+  const [captureDelay, setCaptureDelay] = useState(0);
 
   const applyFile = (file: File) => {
     const url = URL.createObjectURL(file);
@@ -341,7 +342,9 @@ function DeviceScene({
       if (!url.startsWith('http')) url = 'https://' + url;
       const { protocol, hostname, port } = window.location;
       const base = port ? `${protocol}//${hostname}:${port}` : `${protocol}//${hostname}`;
-      const res = await fetch(`${base}/api-server/api/screenshot?url=${encodeURIComponent(url)}`);
+      const params = new URLSearchParams({ url });
+      if (captureDelay > 0) params.set('delay', String(captureDelay));
+      const res = await fetch(`${base}/api-server/api/screenshot?${params}`);
       if (!res.ok) throw new Error('Failed');
       const blob = await res.blob();
       updateState({ screenshotUrl: URL.createObjectURL(blob), videoUrl: null, contentType: 'image' });
@@ -617,6 +620,34 @@ function DeviceScene({
                         </button>
                       )}
                     </div>
+                    {/* Delay selector */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '0.4em',
+                      padding: '0.45em 0.7em', borderTop: '1px solid rgba(255,255,255,0.07)',
+                    }}>
+                      <span style={{ fontSize: '0.72em', color: 'rgba(255,255,255,0.38)', whiteSpace: 'nowrap', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                        Wait
+                      </span>
+                      <div style={{ display: 'flex', gap: 4, flex: 1 }}>
+                        {[0, 1, 2, 3, 5, 8].map(s => (
+                          <button
+                            key={s}
+                            onClick={() => setCaptureDelay(s)}
+                            style={{
+                              flex: 1, padding: '0.2em 0', fontSize: '0.75em', fontWeight: 700,
+                              borderRadius: 5, border: 'none', cursor: 'pointer',
+                              background: captureDelay === s ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)',
+                              color: captureDelay === s ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.35)',
+                              outline: captureDelay === s ? '1.5px solid rgba(255,255,255,0.5)' : '1px solid rgba(255,255,255,0.1)',
+                              transition: 'all 0.1s',
+                            }}
+                          >
+                            {s === 0 ? '0s' : `${s}s`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <button
                       onClick={handleUrlCapture}
                       disabled={capturing || !menuUrl.trim()}
@@ -629,7 +660,9 @@ function DeviceScene({
                         transition: 'background 0.12s',
                       }}
                     >
-                      {capturing ? '⏳ Capturing…' : '📸 Capture Screenshot'}
+                      {capturing
+                        ? `⏳ ${captureDelay > 0 ? `Waiting ${captureDelay}s…` : 'Capturing…'}`
+                        : '📸 Capture Screenshot'}
                     </button>
                   </div>
                   {captureError && (

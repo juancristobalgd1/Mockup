@@ -10,14 +10,20 @@ router.get("/screenshot", (req, res) => {
     return;
   }
 
+  const rawDelay = parseInt((req.query.delay as string) || "0", 10);
+  const delayMs = Number.isNaN(rawDelay) ? 0 : Math.min(Math.max(rawDelay, 0), 15) * 1000;
+
   let targetUrl: string;
   try {
     const cleanUrl = decodeURIComponent(url);
-    targetUrl = `https://image.thum.io/get/width/1400/crop/900/noanimate/${cleanUrl}`;
+    const delaySegment = delayMs > 0 ? `delay/${delayMs}/` : "";
+    targetUrl = `https://image.thum.io/get/width/1400/crop/900/noanimate/${delaySegment}${cleanUrl}`;
   } catch {
     res.status(400).json({ error: "Invalid URL" });
     return;
   }
+
+  const timeoutMs = 20000 + delayMs;
 
   const request = https.get(targetUrl, (response) => {
     if (response.statusCode && response.statusCode >= 400) {
@@ -34,7 +40,7 @@ router.get("/screenshot", (req, res) => {
     res.status(500).json({ error: err.message });
   });
 
-  request.setTimeout(15000, () => {
+  request.setTimeout(timeoutMs, () => {
     request.destroy();
     res.status(504).json({ error: "Screenshot timed out" });
   });
