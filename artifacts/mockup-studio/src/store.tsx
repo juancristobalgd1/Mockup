@@ -105,6 +105,7 @@ export interface AppState {
   lightOverlay: string | null;
   lightOverlayOpacity: number;
   lightOverlayBlend: string;
+  lightOverlayBgOnly: boolean;
 
   annotateMode: boolean;
   annotateTool: 'select' | 'pen' | 'marker' | 'eraser' | 'arrow' | 'rect' | 'text';
@@ -177,6 +178,7 @@ export const defaultState: AppState = {
   lightOverlay: null,
   lightOverlayOpacity: 60,
   lightOverlayBlend: 'multiply',
+  lightOverlayBgOnly: false,
 
   annotateMode: false,
   annotateTool: 'pen',
