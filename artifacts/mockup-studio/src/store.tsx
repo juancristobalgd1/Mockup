@@ -65,6 +65,7 @@ export interface AppState {
   annotateColor: string;
   annotateSize: 'S' | 'M' | 'L' | 'XL';
   annotateOpacity: number;
+  annotateShape: 'rect' | 'circle' | 'ellipse' | 'triangle' | 'diamond' | 'star' | 'hexagon' | 'spiral' | 'wave';
   annotateClearKey: number;
 
   animation: "none" | "float" | "spin" | "pulse" | "slide-in";
@@ -130,6 +131,7 @@ export const defaultState: AppState = {
   annotateColor: '#ef4444',
   annotateSize: 'M',
   annotateOpacity: 1,
+  annotateShape: 'rect',
   annotateClearKey: 0,
 
   animation: "float",
