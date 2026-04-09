@@ -726,13 +726,29 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
       whiteSpace: 'nowrap',
     });
 
-    const bgTypeCards = [
-      { id: 'solid',    label: 'Solid',    preview: { background: state.bgType === 'solid' ? state.bgColor : '#374151' } as React.CSSProperties },
-      { id: 'gradient', label: 'Gradient', preview: { background: 'linear-gradient(135deg, #3b82f6 0%, #ec4899 100%)' } as React.CSSProperties },
-      { id: 'mesh',     label: 'Mesh',     preview: { background: 'radial-gradient(at 30% 20%, #0ea5e9 0px, transparent 55%), radial-gradient(at 80% 70%, #ec4899 0px, transparent 55%), #03111e' } as React.CSSProperties },
-      { id: 'wallpaper',label: 'Wallpaper',preview: { background: 'radial-gradient(ellipse at 50% 0%, #bfdbfe 0%, #60a5fa 60%, #dbeafe 100%)' } as React.CSSProperties },
-      { id: 'pattern',  label: 'Pattern',  preview: { backgroundColor: '#1a1c2e', backgroundImage: 'radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1px)', backgroundSize: '10px 10px' } as React.CSSProperties },
+    const NO_POPUP_TYPES = new Set(['none', 'transparent']);
+    const bgTypeCards: { id: string; label: string; preview: React.CSSProperties | null; icon?: React.ReactNode }[] = [
+      { id: 'none',     label: 'None',    preview: { background: '#111113' }, icon:
+          <svg width="16" height="16" viewBox="0 0 22 22" fill="none">
+            <circle cx="11" cy="11" r="9" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5"/>
+            <line x1="4" y1="4" x2="18" y2="18" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>,
+      },
+      { id: 'solid',    label: 'Solid',    preview: { background: state.bgType === 'solid' ? state.bgColor : '#374151' } },
+      { id: 'gradient', label: 'Gradient', preview: { background: 'linear-gradient(135deg, #3b82f6 0%, #ec4899 100%)' } },
+      { id: 'mesh',     label: 'Mesh',     preview: { background: 'radial-gradient(at 30% 20%, #0ea5e9 0px, transparent 55%), radial-gradient(at 80% 70%, #ec4899 0px, transparent 55%), #03111e' } },
+      { id: 'wallpaper',label: 'Wallpaper',preview: { background: 'radial-gradient(ellipse at 50% 0%, #bfdbfe 0%, #60a5fa 60%, #dbeafe 100%)' } },
+      { id: 'pattern',  label: 'Pattern',  preview: { backgroundColor: '#1a1c2e', backgroundImage: 'radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1px)', backgroundSize: '10px 10px' } },
       { id: 'image',    label: 'Image',    preview: null },
+      { id: 'transparent', label: 'Alpha', preview: null, icon:
+          <div style={{
+            width: '100%', height: '100%', borderRadius: 10,
+            backgroundImage: 'linear-gradient(45deg, #3a3a3a 25%, transparent 25%), linear-gradient(-45deg, #3a3a3a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #3a3a3a 75%), linear-gradient(-45deg, transparent 75%, #3a3a3a 75%)',
+            backgroundSize: '8px 8px',
+            backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px',
+            backgroundColor: '#222',
+          }} />,
+      },
     ];
 
     const popupStyle: React.CSSProperties = {
@@ -901,13 +917,15 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           </button>
         }>
           <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' } as React.CSSProperties}>
-            {bgTypeCards.map(({ id, label, preview }) => {
+            {bgTypeCards.map(({ id, label, preview, icon }) => {
               const active = state.bgType === id;
               const popupOpen = bgPopup === id;
+              const hasPopup = !NO_POPUP_TYPES.has(id);
               return (
                 <button key={id}
                   onClick={e => {
                     updateState({ bgType: id as any });
+                    if (!hasPopup) { setBgPopup(null); return; }
                     if (popupOpen) { setBgPopup(null); return; }
                     const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
                     setBgPopupAnchor({ x: r.left + r.width / 2, y: r.top });
@@ -922,12 +940,12 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   }}>
                   <div style={{
                     width: 40, height: 40, borderRadius: 10, marginBottom: 5,
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.1)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     overflow: 'hidden',
-                    ...(preview ?? { background: '#1a1c2e' }),
+                    ...(icon ? {} : (preview ?? { background: '#1a1c2e' })),
                   }}>
-                    {!preview && <ImageIcon size={16} color="rgba(255,255,255,0.40)" />}
+                    {icon ? icon : (!preview && id !== 'none' && <ImageIcon size={16} color="rgba(255,255,255,0.40)" />)}
                   </div>
                   <span style={{
                     fontSize: 9, fontWeight: 700, color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.50)',
