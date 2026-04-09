@@ -1842,7 +1842,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
 
         {/* Clear */}
         <button
-          onClick={() => updateState({ annotateClearKey: (state.annotateClearKey ?? 0) + 1 })}
+          onClick={() => updateState({ annotateClearKey: (state.annotateClearKey ?? 0) + 1, annotateStrokes: [] })}
           style={{
             padding: '0 8px', height: 34, borderRadius: 10, border: 'none', cursor: 'pointer', flexShrink: 0,
             background: 'transparent', color: 'rgba(239,100,100,0.9)',

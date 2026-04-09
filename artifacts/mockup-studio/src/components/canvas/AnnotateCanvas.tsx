@@ -1,47 +1,14 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { useApp } from '../../store';
+import type {
+  AnnotatePoint as Point,
+  AnnotateFreeStroke as FreeStroke,
+  AnnotateShapeStroke as ShapeStroke,
+  AnnotateTextStroke as TextStroke,
+  AnnotateShapeTool as ShapeTool,
+  AnyAnnotateStroke as AnyStroke,
+} from '../../store';
 import paletteIcon from '@assets/image_1775735507491.png';
-
-type Point = { x: number; y: number };
-
-interface FreeStroke {
-  id: string;
-  kind: 'free';
-  tool: 'pen' | 'marker' | 'eraser';
-  color: string;
-  lineWidth: number;
-  opacity: number;
-  points: Point[];
-}
-
-type ShapeTool = 'arrow' | 'rect' | 'circle' | 'ellipse' | 'triangle' | 'diamond' | 'star' | 'hexagon' | 'spiral' | 'wave';
-
-interface ShapeStroke {
-  id: string;
-  kind: 'shape';
-  tool: ShapeTool;
-  color: string;
-  lineWidth: number;
-  opacity?: number;
-  start: Point;
-  end: Point;
-}
-
-interface TextStroke {
-  id: string;
-  kind: 'text';
-  color: string;
-  fontSize: number;
-  opacity?: number;
-  bold?: boolean;
-  italic?: boolean;
-  strikethrough?: boolean;
-  align?: 'left' | 'center' | 'right';
-  text: string;
-  position: Point;
-}
-
-type AnyStroke = FreeStroke | ShapeStroke | TextStroke;
 
 interface BBox { x: number; y: number; w: number; h: number }
 
@@ -401,6 +368,13 @@ export function AnnotateCanvas() {
     return { x: cp.x * scaleX, y: cp.y * scaleY };
   }, []);
 
+  // ── Sync canvas from global state (enables undo/redo) ─────────────
+  useEffect(() => {
+    strokesRef.current = [...state.annotateStrokes];
+    const ctx = canvasRef.current?.getContext('2d');
+    if (ctx) redrawStrokes(ctx, strokesRef.current);
+  }, [state.annotateStrokes]);
+
   // ── Resize canvas to match display size ───────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -419,12 +393,11 @@ export function AnnotateCanvas() {
     return () => ro.disconnect();
   }, []);
 
-  // ── Clear when annotateClearKey changes ───────────────────────────
+  // ── Clear UI state when annotateClearKey changes ──────────────────
+  // Strokes are cleared by the caller via updateState({ annotateStrokes: [] })
+  // in the same update, so the sync effect above handles the canvas redraw.
   useEffect(() => {
-    const ctx = canvasRef.current?.getContext('2d');
-    if (!ctx) return;
-    strokesRef.current = [];
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    if (state.annotateClearKey === 0) return;
     setTextInput(null);
     setTextValue('');
     setSelectedId(null);
@@ -470,57 +443,55 @@ export function AnnotateCanvas() {
 
   // ── Actions ───────────────────────────────────────────────────────
   const deleteSelected = useCallback(() => {
-    setSelectedId(prev => {
-      if (!prev) return null;
-      strokesRef.current = strokesRef.current.filter(s => s.id !== prev);
-      const ctx = canvasRef.current?.getContext('2d');
-      if (ctx) redrawStrokes(ctx, strokesRef.current);
-      return null;
-    });
+    if (!selectedId) return;
+    strokesRef.current = strokesRef.current.filter(s => s.id !== selectedId);
+    const ctx = canvasRef.current?.getContext('2d');
+    if (ctx) redrawStrokes(ctx, strokesRef.current);
+    updateState({ annotateStrokes: [...strokesRef.current] });
+    setSelectedId(null);
     setShowContextMenu(false);
-  }, []);
+  }, [selectedId, updateState]);
 
   const duplicateSelected = useCallback((offsetPx = 16) => {
-    setSelectedId(prev => {
-      if (!prev) return prev;
-      const orig = strokesRef.current.find(s => s.id === prev);
-      if (!orig) return prev;
-      const copy = translateStroke({ ...orig, id: uid() }, offsetPx, offsetPx);
-      strokesRef.current.push(copy);
-      const ctx = canvasRef.current?.getContext('2d');
-      if (ctx) redrawStrokes(ctx, strokesRef.current);
-      return copy.id;
-    });
+    if (!selectedId) return;
+    const orig = strokesRef.current.find(s => s.id === selectedId);
+    if (!orig) return;
+    const copy = translateStroke({ ...orig, id: uid() }, offsetPx, offsetPx);
+    strokesRef.current = [...strokesRef.current, copy];
+    const ctx = canvasRef.current?.getContext('2d');
+    if (ctx) redrawStrokes(ctx, strokesRef.current);
+    updateState({ annotateStrokes: [...strokesRef.current] });
+    setSelectedId(copy.id);
     setShowContextMenu(false);
-  }, []);
+  }, [selectedId, updateState]);
 
   const sendToBack = useCallback(() => {
-    setSelectedId(prev => {
-      if (!prev) return prev;
-      const idx = strokesRef.current.findIndex(s => s.id === prev);
-      if (idx <= 0) return prev;
-      const [s] = strokesRef.current.splice(idx, 1);
-      strokesRef.current.unshift(s);
-      const ctx = canvasRef.current?.getContext('2d');
-      if (ctx) redrawStrokes(ctx, strokesRef.current);
-      return prev;
-    });
+    if (!selectedId) return;
+    const arr = [...strokesRef.current];
+    const idx = arr.findIndex(s => s.id === selectedId);
+    if (idx <= 0) return;
+    const [s] = arr.splice(idx, 1);
+    arr.unshift(s);
+    strokesRef.current = arr;
+    const ctx = canvasRef.current?.getContext('2d');
+    if (ctx) redrawStrokes(ctx, strokesRef.current);
+    updateState({ annotateStrokes: [...strokesRef.current] });
     setShowContextMenu(false);
-  }, []);
+  }, [selectedId, updateState]);
 
   const bringToFront = useCallback(() => {
-    setSelectedId(prev => {
-      if (!prev) return prev;
-      const idx = strokesRef.current.findIndex(s => s.id === prev);
-      if (idx < 0 || idx === strokesRef.current.length - 1) return prev;
-      const [s] = strokesRef.current.splice(idx, 1);
-      strokesRef.current.push(s);
-      const ctx = canvasRef.current?.getContext('2d');
-      if (ctx) redrawStrokes(ctx, strokesRef.current);
-      return prev;
-    });
+    if (!selectedId) return;
+    const arr = [...strokesRef.current];
+    const idx = arr.findIndex(s => s.id === selectedId);
+    if (idx < 0 || idx === arr.length - 1) return;
+    const [s] = arr.splice(idx, 1);
+    arr.push(s);
+    strokesRef.current = arr;
+    const ctx = canvasRef.current?.getContext('2d');
+    if (ctx) redrawStrokes(ctx, strokesRef.current);
+    updateState({ annotateStrokes: [...strokesRef.current] });
     setShowContextMenu(false);
-  }, []);
+  }, [selectedId, updateState]);
 
   const copyToClipboard = useCallback(() => {
     if (!selectedId) return;
@@ -536,8 +507,9 @@ export function AnnotateCanvas() {
     );
     const ctx = canvasRef.current?.getContext('2d');
     if (ctx) redrawStrokes(ctx, strokesRef.current);
+    updateState({ annotateStrokes: [...strokesRef.current] });
     setSelectionFrame(f => f + 1);
-  }, [selectedId]);
+  }, [selectedId, updateState]);
 
   const changeSelectedOpacity = useCallback((opacity: number) => {
     if (!selectedId) return;
@@ -546,8 +518,9 @@ export function AnnotateCanvas() {
     );
     const ctx = canvasRef.current?.getContext('2d');
     if (ctx) redrawStrokes(ctx, strokesRef.current);
+    updateState({ annotateStrokes: [...strokesRef.current] });
     setSelectionFrame(f => f + 1);
-  }, [selectedId]);
+  }, [selectedId, updateState]);
 
   const changeSelectedLineWidth = useCallback((lineWidth: number) => {
     if (!selectedId) return;
@@ -556,8 +529,9 @@ export function AnnotateCanvas() {
     );
     const ctx = canvasRef.current?.getContext('2d');
     if (ctx) redrawStrokes(ctx, strokesRef.current);
+    updateState({ annotateStrokes: [...strokesRef.current] });
     setSelectionFrame(f => f + 1);
-  }, [selectedId]);
+  }, [selectedId, updateState]);
 
   const changeTextFontSize = useCallback((delta: number) => {
     if (!selectedId) return;
@@ -567,8 +541,9 @@ export function AnnotateCanvas() {
     });
     const ctx = canvasRef.current?.getContext('2d');
     if (ctx) redrawStrokes(ctx, strokesRef.current);
+    updateState({ annotateStrokes: [...strokesRef.current] });
     setSelectionFrame(f => f + 1);
-  }, [selectedId]);
+  }, [selectedId, updateState]);
 
   const toggleTextProp = useCallback((prop: 'bold' | 'italic' | 'strikethrough') => {
     if (!selectedId) return;
@@ -580,8 +555,9 @@ export function AnnotateCanvas() {
     });
     const ctx = canvasRef.current?.getContext('2d');
     if (ctx) redrawStrokes(ctx, strokesRef.current);
+    updateState({ annotateStrokes: [...strokesRef.current] });
     setSelectionFrame(f => f + 1);
-  }, [selectedId]);
+  }, [selectedId, updateState]);
 
   const cycleTextAlign = useCallback(() => {
     if (!selectedId) return;
@@ -592,8 +568,9 @@ export function AnnotateCanvas() {
     });
     const ctx = canvasRef.current?.getContext('2d');
     if (ctx) redrawStrokes(ctx, strokesRef.current);
+    updateState({ annotateStrokes: [...strokesRef.current] });
     setSelectionFrame(f => f + 1);
-  }, [selectedId]);
+  }, [selectedId, updateState]);
 
   // Close color menu on outside click
   useEffect(() => {
@@ -623,17 +600,17 @@ export function AnnotateCanvas() {
           text: trimmed,
           position: { x: textInput.canvasX, y: textInput.canvasY },
         };
-        strokesRef.current.push(stroke);
+        strokesRef.current = [...strokesRef.current, stroke];
         redrawStrokes(ctx, strokesRef.current);
+        updateState({ annotateStrokes: [...strokesRef.current], annotateTool: 'select' });
         // Auto-select the new text stroke
         setSelectedId(stroke.id);
-        updateState({ annotateTool: 'select' });
         setSelectionFrame(f => f + 1);
       }
     }
     setTextInput(null);
     setTextValue('');
-  }, [textInput, textValue]);
+  }, [textInput, textValue, updateState]);
 
   const dismissText = useCallback(() => {
     setTextInput(null);
@@ -740,19 +717,22 @@ export function AnnotateCanvas() {
   const onCanvasPointerUp = () => {
     if (dragMode.current === 'move') {
       dragMode.current = null;
+      updateState({ annotateStrokes: [...strokesRef.current] });
       return;
     }
     if (!isDrawing.current || !activeRef.current) return;
     isDrawing.current = false;
     const finished = activeRef.current;
-    strokesRef.current.push(finished);
+    strokesRef.current = [...strokesRef.current, finished];
     activeRef.current = null;
 
     // Auto-select shapes (arrow/rect) after drawing
     if (finished.kind === 'shape') {
       setSelectedId(finished.id);
-      updateState({ annotateTool: 'select' });
+      updateState({ annotateStrokes: [...strokesRef.current], annotateTool: 'select' });
       setSelectionFrame(f => f + 1);
+    } else {
+      updateState({ annotateStrokes: [...strokesRef.current] });
     }
   };
 
@@ -810,6 +790,7 @@ export function AnnotateCanvas() {
     dragMode.current = null;
     resizeHandle.current = null;
     resizeBBoxStart.current = null;
+    updateState({ annotateStrokes: [...strokesRef.current] });
   };
 
   const cursor = () => {
