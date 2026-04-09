@@ -1006,15 +1006,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
 
   const AnnotateTab = () => (
     <>
-      {/* Active toggle */}
-      <Section label="Drawing Mode" action={
-        <Toggle
-          enabled={state.annotateMode}
-          onToggle={() => updateState({ annotateMode: !state.annotateMode })}
-        />
-      }>
-      </Section>
-
       {/* Tool strip — horizontal slider */}
       <Section label="Tool">
         <HScroll gap={10}>
