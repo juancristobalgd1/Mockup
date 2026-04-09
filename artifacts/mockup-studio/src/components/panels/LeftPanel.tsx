@@ -2079,95 +2079,91 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
 
   // ── Template tab ─────────────────────────────────────────────────
   const TemplateTab = () => {
-    const SOCIAL_FORMATS: {
-      id: CanvasRatio; label: string; name: string; platforms: string; value: number; accent: string;
-    }[] = [
-      { id: '1:1',  label: '1:1',  name: 'Square',     platforms: 'Instagram · Facebook',  value: 1,      accent: '#E1306C' },
-      { id: '4:5',  label: '4:5',  name: 'Portrait',   platforms: 'Instagram Post',         value: 4/5,    accent: '#E1306C' },
-      { id: '9:16', label: '9:16', name: 'Story',       platforms: 'Instagram · TikTok',    value: 9/16,   accent: '#FF0050' },
-      { id: '16:9', label: '16:9', name: 'Widescreen',  platforms: 'YouTube · Twitter',     value: 16/9,   accent: '#FF0000' },
-      { id: '4:3',  label: '4:3',  name: 'Standard',   platforms: 'Slides · Presentation', value: 4/3,    accent: '#FBBC05' },
-      { id: '3:2',  label: '3:2',  name: 'Classic',    platforms: 'X / Twitter',            value: 3/2,    accent: '#1A8CD8' },
-      { id: '2:3',  label: '2:3',  name: 'Pin',        platforms: 'Pinterest',              value: 2/3,    accent: '#E60023' },
-      { id: '3:1',  label: '3:1',  name: 'Banner',     platforms: 'Twitter · LinkedIn',     value: 3,      accent: '#0A66C2' },
+    type Fmt = { id: CanvasRatio; label: string; name: string; platforms: string; value: number; accent: string };
+
+    const SOCIAL: Fmt[] = [
+      { id: '1:1',  label: '1:1',  name: 'Square',   platforms: 'Instagram · Facebook', value: 1,      accent: '#E1306C' },
+      { id: '4:5',  label: '4:5',  name: 'Portrait', platforms: 'Instagram Post',        value: 4/5,    accent: '#C13584' },
+      { id: '9:16', label: '9:16', name: 'Story',    platforms: 'Instagram · TikTok',   value: 9/16,   accent: '#FF0050' },
+      { id: '16:9', label: '16:9', name: 'Video',    platforms: 'YouTube · Twitter',    value: 16/9,   accent: '#FF0000' },
+      { id: '2:3',  label: '2:3',  name: 'Pin',      platforms: 'Pinterest',             value: 2/3,    accent: '#E60023' },
+      { id: '3:1',  label: '3:1',  name: 'Banner',   platforms: 'Twitter · LinkedIn',   value: 3,      accent: '#0A66C2' },
+    ];
+
+    const SLIDES: Fmt[] = [
+      { id: '16:9', label: '16:9', name: 'Widescreen', platforms: 'Google Slides · PowerPoint', value: 16/9, accent: '#4285F4' },
+      { id: '4:3',  label: '4:3',  name: 'Standard',   platforms: 'PowerPoint · Keynote',       value: 4/3,  accent: '#D24726' },
+      { id: '3:2',  label: '3:2',  name: 'Classic',    platforms: 'Keynote · Photography',      value: 3/2,  accent: '#9B9B9B' },
+      { id: '5:4',  label: '5:4',  name: 'Photo',      platforms: 'Print · Presentation',       value: 5/4,  accent: '#FBBC05' },
     ];
 
     const MAX_W = 46, MAX_H = 38;
 
+    const RatioTile = ({ fmt }: { fmt: Fmt }) => {
+      const isActive = state.canvasRatio === fmt.id;
+      const rw = Math.min(MAX_W, MAX_H * fmt.value);
+      const rh = Math.min(MAX_H, MAX_W / fmt.value);
+      return (
+        <button
+          onClick={() => updateState({ canvasRatio: fmt.id })}
+          style={{
+            position: 'relative', width: '100%', height: 90, borderRadius: 13,
+            background: isActive ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.45)',
+            border: 'none', cursor: 'pointer', padding: 0,
+            outline: isActive ? `2px solid ${fmt.accent}` : '1.5px solid rgba(255,255,255,0.09)',
+            transition: 'all 0.13s',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            boxShadow: isActive ? `0 0 0 1px ${fmt.accent}33, 0 4px 16px rgba(0,0,0,0.5)` : '0 2px 6px rgba(0,0,0,0.3)',
+          }}>
+          <div style={{
+            width: rw, height: rh, flexShrink: 0, marginBottom: 9,
+            border: `1.5px solid ${isActive ? fmt.accent : 'rgba(255,255,255,0.3)'}`,
+            borderRadius: 3,
+            background: isActive ? `${fmt.accent}1a` : 'rgba(255,255,255,0.05)',
+            transition: 'all 0.13s',
+          }} />
+          <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1,
+            color: isActive ? '#fff' : 'rgba(255,255,255,0.75)' }}>
+            {fmt.label}
+          </span>
+          <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
+            color: isActive ? fmt.accent : 'rgba(255,255,255,0.35)', marginTop: 3, lineHeight: 1 }}>
+            {fmt.name}
+          </span>
+          <span style={{
+            position: 'absolute', bottom: 5, fontSize: 7, fontWeight: 500,
+            color: 'rgba(255,255,255,0.24)', letterSpacing: '0.01em',
+            whiteSpace: 'nowrap', overflow: 'hidden', maxWidth: '90%', textOverflow: 'ellipsis',
+          }}>
+            {fmt.platforms}
+          </span>
+          {isActive && (
+            <div style={{
+              position: 'absolute', top: 7, right: 7, width: 7, height: 7,
+              borderRadius: '50%', background: fmt.accent, boxShadow: `0 0 6px ${fmt.accent}`,
+            }} />
+          )}
+        </button>
+      );
+    };
+
+    const SectionLabel = ({ children }: { children: string }) => (
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
+        color: 'rgba(255,255,255,0.38)', marginBottom: 7, marginTop: 2 }}>
+        {children}
+      </div>
+    );
+
     return (
       <div style={{ paddingBottom: 4 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {SOCIAL_FORMATS.map(fmt => {
-            const isActive = state.canvasRatio === fmt.id;
-            const rw = Math.min(MAX_W, MAX_H * fmt.value);
-            const rh = Math.min(MAX_H, MAX_W / fmt.value);
+        <SectionLabel>Social Media</SectionLabel>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginBottom: 16 }}>
+          {SOCIAL.map(fmt => <RatioTile key={fmt.id + fmt.name} fmt={fmt} />)}
+        </div>
 
-            return (
-              <button key={fmt.id}
-                onClick={() => updateState({ canvasRatio: fmt.id })}
-                style={{
-                  position: 'relative', width: '100%', height: 96, borderRadius: 14,
-                  background: isActive ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.45)',
-                  border: 'none', cursor: 'pointer', padding: 0,
-                  outline: isActive ? `2px solid ${fmt.accent}` : '1.5px solid rgba(255,255,255,0.1)',
-                  transition: 'all 0.14s',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  justifyContent: 'center', gap: 0,
-                  boxShadow: isActive ? `0 0 0 1px ${fmt.accent}33, 0 4px 18px rgba(0,0,0,0.5)` : '0 2px 8px rgba(0,0,0,0.35)',
-                }}>
-
-                {/* Proportional rect */}
-                <div style={{
-                  width: rw, height: rh,
-                  border: `1.5px solid ${isActive ? fmt.accent : 'rgba(255,255,255,0.32)'}`,
-                  borderRadius: 3,
-                  background: isActive ? `${fmt.accent}22` : 'rgba(255,255,255,0.06)',
-                  transition: 'all 0.14s',
-                  marginBottom: 10,
-                  flexShrink: 0,
-                }} />
-
-                {/* Ratio label */}
-                <span style={{
-                  fontSize: 13, fontWeight: 800, letterSpacing: '-0.02em',
-                  color: isActive ? 'rgba(255,255,255,0.98)' : 'rgba(255,255,255,0.75)',
-                  lineHeight: 1,
-                }}>
-                  {fmt.label}
-                </span>
-
-                {/* Format name */}
-                <span style={{
-                  fontSize: 8.5, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase',
-                  color: isActive ? fmt.accent : 'rgba(255,255,255,0.38)',
-                  marginTop: 3, lineHeight: 1,
-                }}>
-                  {fmt.name}
-                </span>
-
-                {/* Platforms tooltip row */}
-                <span style={{
-                  position: 'absolute', bottom: 6,
-                  fontSize: 7.5, fontWeight: 500,
-                  color: 'rgba(255,255,255,0.28)', letterSpacing: '0.01em',
-                  whiteSpace: 'nowrap', overflow: 'hidden',
-                  maxWidth: '90%', textOverflow: 'ellipsis',
-                }}>
-                  {fmt.platforms}
-                </span>
-
-                {/* Active dot */}
-                {isActive && (
-                  <div style={{
-                    position: 'absolute', top: 8, right: 8,
-                    width: 7, height: 7, borderRadius: '50%',
-                    background: fmt.accent,
-                    boxShadow: `0 0 6px ${fmt.accent}`,
-                  }} />
-                )}
-              </button>
-            );
-          })}
+        <SectionLabel>Slides</SectionLabel>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
+          {SLIDES.map(fmt => <RatioTile key={fmt.id + fmt.name} fmt={fmt} />)}
         </div>
       </div>
     );
