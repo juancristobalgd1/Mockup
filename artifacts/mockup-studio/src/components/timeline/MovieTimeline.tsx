@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { Play, Pause, Plus, Trash2, Circle, Film, X, Square, Sparkles, Copy, ChevronDown } from 'lucide-react';
+import { Play, Pause, Plus, Trash2, Circle, Film, X, Square, Sparkles, Copy, ChevronDown, ChevronUp, Palette } from 'lucide-react';
 import { useApp } from '../../store';
 import type { CameraKeyframe, EasingType } from '../../store';
 import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
@@ -151,6 +151,9 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
   const [activeKfId, setActiveKfId] = useState<string | null>(null);
   const [showPresets, setShowPresets] = useState(false);
   const [editingLabel, setEditingLabel] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
+  const [accentColor, setAccentColor] = useState('#161819');
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const kfRafRef = useRef<number | null>(null);
   const kfLastTsRef = useRef<number | null>(null);
@@ -169,10 +172,21 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
   }, []);
 
   useEffect(() => {
-    const handleClick = () => setShowPresets(false);
-    if (showPresets) document.addEventListener('click', handleClick);
+    const handleClick = () => { setShowPresets(false); setShowColorPicker(false); };
+    if (showPresets || showColorPicker) document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
-  }, [showPresets]);
+  }, [showPresets, showColorPicker]);
+
+  const BAR_COLORS = [
+    { value: '#161819', label: 'Oscuro (por defecto)' },
+    { value: '#0f172a', label: 'Medianoche' },
+    { value: '#1a0a2e', label: 'Púrpura oscuro' },
+    { value: '#0a1628', label: 'Azul marino' },
+    { value: '#0d1f1a', label: 'Verde bosque' },
+    { value: '#1f0d0d', label: 'Rojo sangre' },
+    { value: '#1a1200', label: 'Ámbar oscuro' },
+    { value: '#111827', label: 'Pizarra' },
+  ];
 
   const startLiveRec = useCallback(() => {
     capturedFramesRef.current = [];
@@ -346,13 +360,58 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
 
   return (
     <div style={{
-      width: '100%', background: '#161819',
+      width: '100%', background: accentColor,
       borderTop: '1px solid rgba(255,255,255,0.08)',
       flexShrink: 0, userSelect: 'none',
+      transition: 'background 0.3s',
     }}>
 
+      {/* ── Collapsed strip ───────────────────────────────────────── */}
+      {collapsed && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '5px 14px',
+          background: `linear-gradient(90deg, ${accentColor}, rgba(255,255,255,0.03) 60%, ${accentColor})`,
+        }}>
+          <button
+            onClick={togglePlayback}
+            disabled={isExporting || liveRecording}
+            style={{
+              background: isPlaying ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)',
+              border: `1px solid ${isPlaying ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'}`,
+              borderRadius: 5, width: 24, height: 24, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: isPlaying ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)',
+            }}
+          >
+            {isPlaying ? <Pause size={10} /> : <Play size={10} />}
+          </button>
+          <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>
+            {formatTime(currentTime)} / {movieDuration}s
+          </span>
+          {cameraKeyframes.length > 0 && (
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>
+              · {cameraKeyframes.length} keyframes
+            </span>
+          )}
+          <div style={{ flex: 1 }} />
+          <button
+            onClick={() => setCollapsed(false)}
+            title="Expandir editor"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: 4,
+              fontSize: 10, padding: '2px 6px',
+            }}
+          >
+            <ChevronUp size={13} />
+            <span>Expandir</span>
+          </button>
+        </div>
+      )}
+
       {/* ── Top controls bar ─────────────────────────────────────── */}
-      <div style={{
+      {!collapsed && <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
         padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)',
         flexWrap: 'wrap',
@@ -567,6 +626,68 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
           </button>
         </div>
 
+        {/* Color accent picker */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={e => { e.stopPropagation(); setShowColorPicker(v => !v); }}
+            title="Color de la barra"
+            style={{
+              background: showColorPicker ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 5, width: 24, height: 24, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'rgba(255,255,255,0.45)',
+            }}
+          >
+            <Palette size={12} />
+          </button>
+          {showColorPicker && (
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                position: 'absolute', bottom: '100%', right: 0, marginBottom: 6,
+                background: '#1e2022', border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 8, padding: 8, zIndex: 100,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                display: 'flex', flexDirection: 'column', gap: 4, minWidth: 160,
+              }}
+            >
+              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginBottom: 2 }}>
+                Color de barra
+              </span>
+              {BAR_COLORS.map(c => (
+                <button
+                  key={c.value}
+                  onClick={() => { setAccentColor(c.value); setShowColorPicker(false); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    background: accentColor === c.value ? 'rgba(255,255,255,0.1)' : 'none',
+                    border: `1px solid ${accentColor === c.value ? 'rgba(255,255,255,0.2)' : 'transparent'}`,
+                    borderRadius: 5, padding: '4px 8px', cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ width: 14, height: 14, borderRadius: 3, background: c.value, border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0 }} />
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>{c.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Collapse button */}
+        <button
+          onClick={() => setCollapsed(true)}
+          title="Minimizar editor"
+          style={{
+            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 5, width: 24, height: 24, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'rgba(255,255,255,0.45)',
+          }}
+        >
+          <ChevronDown size={13} />
+        </button>
+
         <button
           onClick={() => { stopLiveRec(); stopPlayback(); onClose(); }}
           style={{
@@ -577,9 +698,10 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
         >
           <X size={14} />
         </button>
-      </div>
+      </div>}
 
       {/* ── Timeline track ───────────────────────────────────────── */}
+      {!collapsed && <>
       <div
         ref={trackRef}
         onPointerDown={handleTrackPointerDown}
@@ -760,6 +882,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
           </button>
         </div>
       )}
+      </>}
 
       <style>{`
         @keyframes recBlink { 0%,100%{opacity:1} 50%{opacity:0} }
