@@ -340,14 +340,17 @@ function DeviceScene({
     try {
       let url = menuUrl.trim();
       if (!url.startsWith('http')) url = 'https://' + url;
-      const { protocol, hostname, port } = window.location;
-      const base = port ? `${protocol}//${hostname}:${port}` : `${protocol}//${hostname}`;
-      const params = new URLSearchParams({ url });
-      if (captureDelay > 0) params.set('delay', String(captureDelay));
-      const res = await fetch(`${base}/api-server/api/screenshot?${params}`);
-      if (!res.ok) throw new Error('Failed');
-      const blob = await res.blob();
-      updateState({ screenshotUrl: URL.createObjectURL(blob), videoUrl: null, contentType: 'image' });
+      const delaySegment = captureDelay > 0 ? `delay/${captureDelay * 1000}/` : '';
+      const thumUrl = `https://image.thum.io/get/width/1400/crop/900/noanimate/${delaySegment}${url}`;
+      // Verify the image loads before setting state
+      await new Promise<void>((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Image failed to load'));
+        img.src = thumUrl;
+      });
+      updateState({ screenshotUrl: thumUrl, videoUrl: null, contentType: 'image' });
       setMenuOpen(false);
       setMenuUrl('');
     } catch {
