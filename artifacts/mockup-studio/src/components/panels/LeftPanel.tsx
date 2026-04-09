@@ -434,7 +434,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const colorBtnRef                          = useRef<HTMLButtonElement>(null);
   const sizeBtnRef                           = useRef<HTMLButtonElement>(null);
 
-  const [overlayPopup, setOverlayPopup]     = useState<null | 'color' | 'opacity'>(null);
+  const [overlayPopup, setOverlayPopup]     = useState<null | 'color' | 'opacity' | 'light'>(null);
   const [overlayPopupAnchor, setOverlayPopupAnchor] = useState<{ x: number; y: number } | null>(null);
   const overlayPopupRef                      = useRef<HTMLDivElement>(null);
   const overlayColorBtnRef                   = useRef<HTMLButtonElement>(null);
@@ -1042,11 +1042,85 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         </div>
       )}
 
+      {/* ── Floating light overlay controls popup ──────────────── */}
+      {overlayPopup === 'light' && overlayPopupAnchor && (
+        <div style={{
+          position: 'fixed',
+          left: Math.min(overlayPopupAnchor.x, window.innerWidth - 220),
+          top: overlayPopupAnchor.y - 190,
+          transform: overlayPopupAnchor.x > window.innerWidth - 220 ? 'none' : 'translateX(-30%)',
+          background: 'rgba(22,24,28,0.98)', borderRadius: 16,
+          padding: '14px 16px', zIndex: 9999,
+          boxShadow: '0 8px 40px rgba(0,0,0,0.75)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          backdropFilter: 'blur(20px)',
+          minWidth: 210,
+        }}>
+          {/* Preset name */}
+          <div style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: 7, overflow: 'hidden', flexShrink: 0,
+              background: '#fff',
+            }}>
+              {(() => {
+                const p = LIGHT_OVERLAYS.find(x => x.id === state.lightOverlay);
+                return p ? (
+                  <div style={{
+                    width: '100%', height: '100%',
+                    backgroundImage: p.background, backgroundSize: 'cover',
+                    filter: p.filter,
+                  }} />
+                ) : null;
+              })()}
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>
+              {LIGHT_OVERLAYS.find(x => x.id === state.lightOverlay)?.label ?? 'Overlay'}
+            </span>
+          </div>
+
+          {/* Opacity slider */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>Opacity</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>{state.lightOverlayOpacity}%</span>
+            </div>
+            <input type="range" min={0} max={100} value={state.lightOverlayOpacity}
+              onChange={e => updateState({ lightOverlayOpacity: Number(e.target.value) })}
+              style={{ width: '100%', accentColor: '#a78bfa' }}
+            />
+          </div>
+
+          {/* Blend mode */}
+          <div>
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', display: 'block', marginBottom: 6 }}>Blend mode</span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+              {(['multiply', 'overlay', 'screen', 'soft-light'] as const).map(mode => {
+                const sel = state.lightOverlayBlend === mode;
+                return (
+                  <button key={mode}
+                    onClick={() => updateState({ lightOverlayBlend: mode })}
+                    style={{
+                      padding: '4px 9px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                      background: sel ? 'rgba(167,139,250,0.25)' : 'rgba(255,255,255,0.07)',
+                      outline: sel ? '1.5px solid rgba(167,139,250,0.7)' : '1px solid rgba(255,255,255,0.1)',
+                      color: sel ? '#c4b5fd' : 'rgba(255,255,255,0.5)',
+                      fontSize: 11, fontWeight: 600, transition: 'all 0.12s',
+                    }}>
+                    {mode.charAt(0).toUpperCase() + mode.slice(1).replace('-', ' ')}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Light / Shadow Overlay */}
       <Section label="Light Overlay">
         <HScroll gap={7}>
+          {/* None */}
           <button
-            onClick={() => updateState({ lightOverlay: null })}
+            onClick={() => { updateState({ lightOverlay: null }); setOverlayPopup(null); }}
             style={{
               flexShrink: 0, width: 56, height: 56, borderRadius: 12, border: 'none', cursor: 'pointer',
               background: 'rgba(255,255,255,0.05)',
@@ -1058,15 +1132,29 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               <line x1="4" y1="4" x2="18" y2="18" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           </button>
+          {/* Presets — click to select + open popup */}
           {LIGHT_OVERLAYS.map(preset => {
             const active = state.lightOverlay === preset.id;
+            const popupOpen = overlayPopup === 'light' && active;
             return (
-              <button key={preset.id} onClick={() => updateState({ lightOverlay: preset.id })}
+              <button key={preset.id}
+                onClick={e => {
+                  const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                  setOverlayPopupAnchor({ x: r.left + r.width / 2, y: r.top });
+                  if (active && overlayPopup === 'light') {
+                    setOverlayPopup(null);
+                  } else {
+                    updateState({ lightOverlay: preset.id });
+                    setOverlayPopup('light');
+                  }
+                }}
                 style={{
                   flexShrink: 0, width: 56, height: 56, borderRadius: 12, border: 'none', cursor: 'pointer',
                   overflow: 'hidden', position: 'relative',
                   outline: active ? '2px solid rgba(255,255,255,0.7)' : '1px solid rgba(255,255,255,0.1)',
                   background: '#fff',
+                  boxShadow: popupOpen ? '0 0 0 3px rgba(167,139,250,0.5)' : 'none',
+                  transition: 'box-shadow 0.15s',
                 }}>
                 <div style={{
                   position: 'absolute', inset: 0,
@@ -1079,25 +1167,37 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     boxShadow: 'inset 0 0 0 2px rgba(255,255,255,0.7)',
                   }} />
                 )}
+                {/* small settings gear when popup is open */}
+                {popupOpen && (
+                  <div style={{
+                    position: 'absolute', bottom: 3, right: 3,
+                    width: 14, height: 14, borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.65)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+                      <circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+                    </svg>
+                  </div>
+                )}
               </button>
             );
           })}
         </HScroll>
-        {state.lightOverlay && (
-          <div style={{ marginTop: 12 }}>
-            <Slider label="Opacity" value={state.lightOverlayOpacity} min={0} max={100}
-              onChange={v => updateState({ lightOverlayOpacity: v })} unit="%" />
-            <div style={{ marginBottom: 4 }}>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', display: 'block', marginBottom: 6 }}>Blend Mode</span>
-              <HScroll gap={5}>
-                {(['multiply', 'overlay', 'screen', 'soft-light'] as const).map(mode => (
-                  <Chip key={mode} active={state.lightOverlayBlend === mode}
-                    onClick={() => updateState({ lightOverlayBlend: mode })}>
-                    {mode.charAt(0).toUpperCase() + mode.slice(1).replace('-', ' ')}
-                  </Chip>
-                ))}
-              </HScroll>
-            </div>
+        {/* Subtle hint when a preset is active and popup is closed */}
+        {state.lightOverlay && overlayPopup !== 'light' && (
+          <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>
+              {state.lightOverlayOpacity}% · {state.lightOverlayBlend}
+            </span>
+            <span style={{ fontSize: 10, color: 'rgba(167,139,250,0.5)', cursor: 'pointer' }}
+              onClick={e => {
+                const r = (e.currentTarget as HTMLSpanElement).getBoundingClientRect();
+                setOverlayPopupAnchor({ x: r.left, y: r.top });
+                setOverlayPopup('light');
+              }}>
+              Edit ›
+            </span>
           </div>
         )}
       </Section>
