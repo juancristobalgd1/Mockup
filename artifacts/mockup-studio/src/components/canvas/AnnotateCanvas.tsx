@@ -31,6 +31,10 @@ interface TextStroke {
   color: string;
   fontSize: number;
   opacity?: number;
+  bold?: boolean;
+  italic?: boolean;
+  strikethrough?: boolean;
+  align?: 'left' | 'center' | 'right';
   text: string;
   position: Point;
 }
@@ -83,12 +87,17 @@ function getBBox(s: AnyStroke): BBox {
   const ctx = getMeasureCtx();
   let textWidth = s.text.length * s.fontSize * 0.6; // fallback
   if (ctx) {
-    ctx.font = `bold ${s.fontSize}px Inter, sans-serif`;
+    const fontStr = [s.italic ? 'italic' : '', s.bold !== false ? 'bold' : ''].filter(Boolean).join(' ');
+    ctx.font = `${fontStr} ${s.fontSize}px Inter, sans-serif`;
     const m = ctx.measureText(s.text);
     textWidth = m.width;
   }
   const textHeight = s.fontSize * 1.4;
-  return { x: s.position.x, y: s.position.y - s.fontSize, w: Math.max(textWidth, 4), h: Math.max(textHeight, 4) };
+  const align = s.align ?? 'left';
+  const bboxX = align === 'center' ? s.position.x - textWidth / 2
+              : align === 'right'  ? s.position.x - textWidth
+              : s.position.x;
+  return { x: bboxX, y: s.position.y - s.fontSize, w: Math.max(textWidth, 4), h: Math.max(textHeight, 4) };
 }
 
 function hitTest(s: AnyStroke, p: Point): boolean {
@@ -234,8 +243,27 @@ function redrawStrokes(ctx: CanvasRenderingContext2D, strokes: AnyStroke[]) {
     } else if (s.kind === 'text') {
       ctx.globalAlpha = s.opacity ?? 1;
       ctx.fillStyle = s.color;
-      ctx.font = `bold ${s.fontSize}px Inter, sans-serif`;
+      const fontStr = [s.italic ? 'italic' : '', s.bold !== false ? 'bold' : ''].filter(Boolean).join(' ');
+      ctx.font = `${fontStr} ${s.fontSize}px Inter, sans-serif`;
+      ctx.textAlign = s.align ?? 'left';
       ctx.fillText(s.text, s.position.x, s.position.y);
+      if (s.strikethrough) {
+        const tw = ctx.measureText(s.text).width;
+        const strikeY = s.position.y - s.fontSize * 0.32;
+        const align = s.align ?? 'left';
+        const startX = align === 'center' ? s.position.x - tw / 2
+                     : align === 'right'  ? s.position.x - tw
+                     : s.position.x;
+        ctx.save();
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = Math.max(1.5, s.fontSize / 16);
+        ctx.beginPath();
+        ctx.moveTo(startX, strikeY);
+        ctx.lineTo(startX + tw, strikeY);
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.textAlign = 'left'; // reset
     }
     ctx.restore();
   }
@@ -451,6 +479,42 @@ export function AnnotateCanvas() {
     strokesRef.current = strokesRef.current.map(s =>
       s.id === selectedId ? { ...s, opacity } as AnyStroke : s
     );
+    const ctx = canvasRef.current?.getContext('2d');
+    if (ctx) redrawStrokes(ctx, strokesRef.current);
+    setSelectionFrame(f => f + 1);
+  }, [selectedId]);
+
+  const changeTextFontSize = useCallback((delta: number) => {
+    if (!selectedId) return;
+    strokesRef.current = strokesRef.current.map(s => {
+      if (s.id !== selectedId || s.kind !== 'text') return s;
+      return { ...s, fontSize: Math.max(8, Math.min(120, s.fontSize + delta)) };
+    });
+    const ctx = canvasRef.current?.getContext('2d');
+    if (ctx) redrawStrokes(ctx, strokesRef.current);
+    setSelectionFrame(f => f + 1);
+  }, [selectedId]);
+
+  const toggleTextProp = useCallback((prop: 'bold' | 'italic' | 'strikethrough') => {
+    if (!selectedId) return;
+    strokesRef.current = strokesRef.current.map(s => {
+      if (s.id !== selectedId || s.kind !== 'text') return s;
+      if (prop === 'bold') return { ...s, bold: !(s.bold !== false) };
+      if (prop === 'italic') return { ...s, italic: !s.italic };
+      return { ...s, strikethrough: !s.strikethrough };
+    });
+    const ctx = canvasRef.current?.getContext('2d');
+    if (ctx) redrawStrokes(ctx, strokesRef.current);
+    setSelectionFrame(f => f + 1);
+  }, [selectedId]);
+
+  const cycleTextAlign = useCallback(() => {
+    if (!selectedId) return;
+    strokesRef.current = strokesRef.current.map(s => {
+      if (s.id !== selectedId || s.kind !== 'text') return s;
+      const next = s.align === 'left' ? 'center' : s.align === 'center' ? 'right' : 'left';
+      return { ...s, align: next } as TextStroke;
+    });
     const ctx = canvasRef.current?.getContext('2d');
     if (ctx) redrawStrokes(ctx, strokesRef.current);
     setSelectionFrame(f => f + 1);
@@ -767,6 +831,81 @@ export function AnnotateCanvas() {
             <DuplicateIcon />
           </button>
 
+          {/* ── Text-specific controls (only when text stroke selected) ── */}
+          {selectedStroke.kind === 'text' && (() => {
+            const ts = selectedStroke as TextStroke;
+            const isBold = ts.bold !== false;
+            const isItalic = !!ts.italic;
+            const isStrike = !!ts.strikethrough;
+            const align = ts.align ?? 'left';
+            return (
+              <>
+                <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.15)' }} />
+
+                {/* Font size − / value / + */}
+                <button onClick={() => changeTextFontSize(-2)} title="Decrease size" style={TOOLBAR_BTN_STYLE}>
+                  <MinusIcon />
+                </button>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.85)', minWidth: 22, textAlign: 'center', userSelect: 'none' }}>
+                  {ts.fontSize}
+                </span>
+                <button onClick={() => changeTextFontSize(2)} title="Increase size" style={TOOLBAR_BTN_STYLE}>
+                  <PlusIcon />
+                </button>
+
+                <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.15)' }} />
+
+                {/* Bold (Aa) */}
+                <button
+                  onClick={() => toggleTextProp('bold')}
+                  title={isBold ? 'Remove bold' : 'Bold'}
+                  style={{
+                    ...TOOLBAR_BTN_STYLE,
+                    background: isBold ? 'rgba(255,255,255,0.15)' : 'transparent',
+                    outline: isBold ? '1.5px solid rgba(255,255,255,0.4)' : 'none',
+                    fontWeight: 800, fontSize: 13, letterSpacing: '-0.01em',
+                  }}>
+                  Aa
+                </button>
+
+                {/* Italic */}
+                <button
+                  onClick={() => toggleTextProp('italic')}
+                  title={isItalic ? 'Remove italic' : 'Italic'}
+                  style={{
+                    ...TOOLBAR_BTN_STYLE,
+                    background: isItalic ? 'rgba(255,255,255,0.15)' : 'transparent',
+                    outline: isItalic ? '1.5px solid rgba(255,255,255,0.4)' : 'none',
+                    fontStyle: 'italic', fontWeight: 700, fontSize: 13,
+                  }}>
+                  I
+                </button>
+
+                {/* Strikethrough */}
+                <button
+                  onClick={() => toggleTextProp('strikethrough')}
+                  title={isStrike ? 'Remove strikethrough' : 'Strikethrough'}
+                  style={{
+                    ...TOOLBAR_BTN_STYLE,
+                    background: isStrike ? 'rgba(255,255,255,0.15)' : 'transparent',
+                    outline: isStrike ? '1.5px solid rgba(255,255,255,0.4)' : 'none',
+                  }}>
+                  <StrikethroughIcon />
+                </button>
+
+                {/* Align cycle */}
+                <button
+                  onClick={cycleTextAlign}
+                  title={`Align: ${align}`}
+                  style={TOOLBAR_BTN_STYLE}>
+                  <AlignIcon align={align} />
+                </button>
+
+                <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.15)' }} />
+              </>
+            );
+          })()}
+
           {/* Color dot — click to open color picker */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <button
@@ -1070,6 +1209,52 @@ function FrontIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 7h18M9 12h12M15 17h6"/>
+    </svg>
+  );
+}
+function MinusIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  );
+}
+function PlusIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <line x1="12" y1="5" x2="12" y2="19"/>
+      <line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  );
+}
+function StrikethroughIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line x1="4" y1="12" x2="20" y2="12"/>
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+    </svg>
+  );
+}
+function AlignIcon({ align }: { align: 'left' | 'center' | 'right' }) {
+  if (align === 'center') return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="6" y1="12" x2="18" y2="12"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  );
+  if (align === 'right') return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="9" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  );
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="3" y1="12" x2="15" y2="12"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
     </svg>
   );
 }
