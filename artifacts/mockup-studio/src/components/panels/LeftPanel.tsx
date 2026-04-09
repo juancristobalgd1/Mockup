@@ -928,6 +928,37 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {bgPopup && bgPopupAnchor && (
           <div ref={bgPopupRef} style={popupStyle}>
 
+            {/* Opacity */}
+            {bgPopup === 'opacity' && (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 12, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Opacity</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <input
+                    type="range" min={0} max={100} step={1}
+                    value={state.bgOpacity ?? 100}
+                    onChange={e => updateState({ bgOpacity: Number(e.target.value) })}
+                    className="rt-slider"
+                    style={{ flex: 1, accentColor: 'rgba(255,255,255,0.7)' }}
+                  />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.75)', minWidth: 34, textAlign: 'right' }}>
+                    {state.bgOpacity ?? 100}%
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: 5 }}>
+                  {[20, 40, 60, 80, 100].map(v => (
+                    <button key={v} onClick={() => updateState({ bgOpacity: v })}
+                      style={{
+                        flex: 1, padding: '5px 0', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700,
+                        background: (state.bgOpacity ?? 100) === v ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)',
+                        color: (state.bgOpacity ?? 100) === v ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)',
+                        outline: (state.bgOpacity ?? 100) === v ? '1.5px solid rgba(255,255,255,0.45)' : '1px solid rgba(255,255,255,0.1)',
+                        transition: 'all 0.1s',
+                      }}>{v}%</button>
+                  ))}
+                </div>
+              </>
+            )}
+
             {/* Solid color */}
             {bgPopup === 'solid' && (
               <>
@@ -1099,26 +1130,44 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                 </button>
               );
             })}
-          </div>
 
-          {/* Opacity row — shown for all types except none/transparent */}
-          {state.bgType !== 'none' && state.bgType !== 'transparent' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
-              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.38)', flexShrink: 0, width: 44 }}>
-                Opacity
-              </span>
-              <input
-                type="range" min={0} max={100} step={1}
-                value={state.bgOpacity ?? 100}
-                onChange={e => updateState({ bgOpacity: Number(e.target.value) })}
-                className="rt-slider"
-                style={{ flex: 1, accentColor: 'rgba(255,255,255,0.7)', height: 3 }}
-              />
-              <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.55)', minWidth: 28, textAlign: 'right' }}>
-                {state.bgOpacity ?? 100}%
-              </span>
-            </div>
-          )}
+            {/* Divider */}
+            {state.bgType !== 'none' && state.bgType !== 'transparent' && (
+              <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.10)', flexShrink: 0, alignSelf: 'center' }} />
+            )}
+
+            {/* Opacity button — same style as all other panel buttons */}
+            {state.bgType !== 'none' && state.bgType !== 'transparent' && (() => {
+              const opacityOpen = bgPopup === 'opacity';
+              const isModified = (state.bgOpacity ?? 100) < 100;
+              return (
+                <button
+                  title="Opacity"
+                  onClick={e => {
+                    if (opacityOpen) { setBgPopup(null); return; }
+                    const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                    setBgPopupAnchor({ x: r.left + r.width / 2, y: r.top });
+                    setBgPopup('opacity');
+                  }}
+                  style={{
+                    flexShrink: 0, width: 46, height: 46, padding: 0, borderRadius: 11, border: 'none',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1,
+                    background: opacityOpen ? 'rgba(255,255,255,0.15)' : isModified ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
+                    outline: opacityOpen ? '2px solid rgba(167,139,250,0.8)' : isModified ? '2px solid rgba(255,255,255,0.85)' : '1.5px solid rgba(255,255,255,0.14)',
+                    cursor: 'pointer', transition: 'all 0.12s',
+                    color: opacityOpen ? 'rgba(167,139,250,1)' : isModified ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
+                  }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 2a10 10 0 0 1 0 20V2z" fill="currentColor" stroke="none" opacity="0.5"/>
+                  </svg>
+                  <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: '0.01em', lineHeight: 1 }}>
+                    {state.bgOpacity ?? 100}%
+                  </span>
+                </button>
+              );
+            })()}
+          </div>
         </Section>
       </>
     );
