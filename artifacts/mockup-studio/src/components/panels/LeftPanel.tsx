@@ -460,6 +460,11 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const presentsPopupRef                      = useRef<HTMLDivElement>(null);
   const presentsBtnRef                        = useRef<HTMLButtonElement>(null);
 
+  const [deviceOptPopup, setDeviceOptPopup]   = useState(false);
+  const [deviceOptAnchor, setDeviceOptAnchor] = useState<{ x: number; y: number } | null>(null);
+  const deviceOptRef                          = useRef<HTMLDivElement>(null);
+  const deviceOptBtnRef                       = useRef<HTMLButtonElement>(null);
+
   // Close annotate popup when clicking outside
   useEffect(() => {
     if (!annotatePopup) return;
@@ -495,6 +500,19 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, [bgPopup]);
+
+  // Close device options popup when clicking outside
+  useEffect(() => {
+    if (!deviceOptPopup) return;
+    const onDown = (e: MouseEvent) => {
+      if (deviceOptRef.current && !deviceOptRef.current.contains(e.target as Node)
+        && deviceOptBtnRef.current && !deviceOptBtnRef.current.contains(e.target as Node)) {
+        setDeviceOptPopup(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [deviceOptPopup]);
 
   // Close presents popup when clicking outside
   useEffect(() => {
@@ -570,102 +588,153 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     } finally { setExtracting(false); }
   };
 
-  // ── Device tab content — searchable 3-column grid ───────────────
-  // Auto-derived from DEVICE_MODELS: no manual update needed when adding new groups.
-  const GROUP_TO_STORETYPE = Object.fromEntries(
-    DEVICE_MODELS.map(m => [m.group, m.storeType])
-  ) as Record<DeviceGroup, string>;
-
+  // ── Device tab content ──────────────────────────────────────────
   const DeviceTab = () => {
-    const q = deviceSearch.trim().toLowerCase();
-    const baseModels = q
-      ? DEVICE_MODELS.filter(m => m.label.toLowerCase().includes(q))
-      : DEVICE_MODELS;
-
-    const models = (mobile && mobileDeviceFilter !== 'All')
-      ? baseModels.filter(m => m.storeType === GROUP_TO_STORETYPE[mobileDeviceFilter as DeviceGroup])
-      : baseModels;
-
-    const filterGroups: (DeviceGroup | 'All')[] = ['All', ...DEVICE_GROUPS];
+    const groupModels = DEVICE_MODELS.filter(m => m.group === selectedGroup);
+    const hasColors = state.deviceType === 'iphone';
+    const hasOrientation = state.deviceType === 'iphone' || state.deviceType === 'android' || state.deviceType === 'ipad';
+    const hasBrowserTheme = state.deviceType === 'browser';
+    const hasOptions = hasColors || hasOrientation || hasBrowserTheme;
 
     return (
       <>
-        {/* Mobile filter strip */}
-        {mobile && (
-          <div style={{
-            display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 12, paddingBottom: 2,
-            scrollbarWidth: 'none',
-          } as React.CSSProperties}>
-            {filterGroups.map(group => {
-              const active = mobileDeviceFilter === group;
-              const icon = group === 'All' ? '✦' : GROUP_ICONS[group as DeviceGroup];
-              return (
-                <button key={group}
-                  onClick={() => setMobileDeviceFilter(group)}
-                  style={{
-                    flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
-                    padding: '6px 13px', borderRadius: 20,
-                    fontSize: 12, fontWeight: active ? 700 : 500,
-                    background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
-                    border: active ? '1.5px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.18)',
-                    color: active ? '#fff' : 'rgba(255,255,255,0.75)',
-                    cursor: 'pointer', transition: 'all 0.12s', whiteSpace: 'nowrap',
-                  }}>
-                  <span style={{ fontSize: 13 }}>{icon}</span>
-                  {group}
-                </button>
-              );
-            })}
+        {/* ── Options popup ────────────────────────────────── */}
+        {deviceOptPopup && deviceOptAnchor && (
+          <div ref={deviceOptRef} style={{
+            position: 'fixed',
+            left: Math.max(8, Math.min(deviceOptAnchor.x - 130, window.innerWidth - 278)),
+            bottom: window.innerHeight - deviceOptAnchor.y + 8,
+            width: 262,
+            background: 'rgba(18,20,26,0.98)',
+            borderRadius: 18, padding: '14px 16px', zIndex: 9999,
+            boxShadow: '0 8px 40px rgba(0,0,0,0.80)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            backdropFilter: 'blur(22px)',
+          }}>
+            {/* Frame colors */}
+            {hasColors && (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Frame Color</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+                  {IPHONE_COLORS.map(c => (
+                    <button key={c.id} title={c.label} onClick={() => updateState({ deviceColor: c.id })}
+                      style={{
+                        width: 26, height: 26, borderRadius: '50%', background: c.bg,
+                        border: state.deviceColor === c.id ? '2.5px solid rgba(255,255,255,0.80)' : `2px solid ${c.border}`,
+                        boxShadow: state.deviceColor === c.id ? '0 0 0 2.5px rgba(255,255,255,0.13)' : 'none',
+                        cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
+                      }} />
+                  ))}
+                </div>
+              </>
+            )}
+            {/* Orientation */}
+            {hasOrientation && (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Orientation</div>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
+                  <Chip active={!state.deviceLandscape} onClick={() => updateState({ deviceLandscape: false })}>Portrait</Chip>
+                  <Chip active={state.deviceLandscape}  onClick={() => updateState({ deviceLandscape: true })}>Landscape</Chip>
+                </div>
+              </>
+            )}
+            {/* Browser theme */}
+            {hasBrowserTheme && (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Theme</div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <Chip active={state.browserMode === 'dark'}  onClick={() => updateState({ browserMode: 'dark' })}>Dark</Chip>
+                  <Chip active={state.browserMode === 'light'} onClick={() => updateState({ browserMode: 'light' })}>Light</Chip>
+                </div>
+              </>
+            )}
+            {!hasOptions && (
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '8px 0' }}>No options for this device</div>
+            )}
           </div>
         )}
 
-        {/* Desktop search bar */}
-        {!mobile && (
-        <div style={{ position: 'relative', marginBottom: 12 }}>
-          <Search size={12} style={{
-            position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
-            color: 'rgba(255,255,255,0.28)', pointerEvents: 'none',
-          }} />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={deviceSearch}
-            onChange={e => setDeviceSearch(e.target.value)}
-            className="rt-input"
-            style={{ paddingLeft: 30, width: '100%', boxSizing: 'border-box' }}
-          />
-        </div>
-        )}
+        <Section label="Device">
+          {/* Row 1: group chips + options button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+            <div style={{
+              flex: 1, display: 'flex', gap: 5, overflowX: 'auto',
+              scrollbarWidth: 'none', msOverflowStyle: 'none',
+            } as React.CSSProperties}>
+              {DEVICE_GROUPS.map(group => {
+                const active = selectedGroup === group;
+                return (
+                  <button key={group}
+                    onClick={() => setSelectedGroup(group)}
+                    style={{
+                      flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4,
+                      padding: '5px 10px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                      background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
+                      outline: active ? '2px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.14)',
+                      color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.45)',
+                      fontSize: 10, fontWeight: 700, transition: 'all 0.12s', whiteSpace: 'nowrap',
+                    }}>
+                    <span style={{ fontSize: 12 }}>{GROUP_ICONS[group]}</span>
+                    {group}
+                  </button>
+                );
+              })}
+            </div>
 
-        {/* Device list — horizontal slider on mobile, 3-col grid on desktop */}
-        {mobile ? (
+            {/* Divider */}
+            <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
+
+            {/* Options button */}
+            <button
+              ref={deviceOptBtnRef}
+              onClick={() => {
+                if (deviceOptPopup) { setDeviceOptPopup(false); return; }
+                const r = deviceOptBtnRef.current?.getBoundingClientRect();
+                if (r) setDeviceOptAnchor({ x: r.left + r.width / 2, y: r.top });
+                setDeviceOptPopup(true);
+              }}
+              style={{
+                flexShrink: 0, padding: '5px 9px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                background: deviceOptPopup ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.07)',
+                outline: deviceOptPopup ? '1.5px solid rgba(167,139,250,0.8)' : '1px solid rgba(255,255,255,0.12)',
+                color: deviceOptPopup ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.55)',
+                fontSize: 10, fontWeight: 700, transition: 'all 0.14s',
+                display: 'flex', alignItems: 'center', gap: 4,
+              }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+              </svg>
+              Options
+            </button>
+          </div>
+
+          {/* Row 2: device cards horizontal scroll */}
           <div style={{
-            display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6,
+            display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 4,
             scrollbarWidth: 'none', msOverflowStyle: 'none',
-            marginBottom: 14,
           } as React.CSSProperties}>
-            {models.map(model => {
+            {groupModels.map(model => {
               const isSelected = state.deviceModel === model.id;
               return (
                 <button key={model.id}
-                  onClick={() => updateState({ deviceModel: model.id, deviceType: model.storeType })}
+                  onClick={() => { updateState({ deviceModel: model.id, deviceType: model.storeType }); setSelectedGroup(model.group); }}
                   style={{
                     flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    width: 80, padding: '14px 6px 10px', borderRadius: 18, gap: 0,
+                    width: 72, padding: '10px 4px 8px', borderRadius: 14, gap: 0,
                     background: isSelected ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.45)',
                     border: isSelected ? '2px solid rgba(255,255,255,0.85)' : '1.5px solid rgba(255,255,255,0.16)',
                     cursor: 'pointer', transition: 'all 0.12s',
                   }}>
                   <div style={{
-                    height: 68, width: '100%',
+                    height: 52, width: '100%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transform: 'scale(1.5)', transformOrigin: 'center',
+                    transform: 'scale(1.25)', transformOrigin: 'center',
                   }}>
                     <DeviceThumbnail modelId={model.id} isSelected={isSelected} />
                   </div>
                   <span style={{
-                    fontSize: 10, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
-                    marginTop: 8, color: isSelected ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.58)',
+                    fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
+                    marginTop: 6, color: isSelected ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.55)',
                     maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
                     {model.label}
@@ -673,89 +742,8 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                 </button>
               );
             })}
-            {models.length === 0 && (
-              <div style={{ padding: '24px 0', color: 'rgba(255,255,255,0.25)', fontSize: 11 }}>
-                No devices found
-              </div>
-            )}
           </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7, marginBottom: 14 }}>
-            {models.map(model => {
-              const isSelected = state.deviceModel === model.id;
-              return (
-                <button key={model.id}
-                  onClick={() => updateState({ deviceModel: model.id, deviceType: model.storeType })}
-                  style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    padding: '12px 4px 9px', borderRadius: 14, gap: 0,
-                    background: isSelected ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.45)',
-                    border: isSelected ? '2px solid rgba(255,255,255,0.85)' : '1.5px solid rgba(255,255,255,0.16)',
-                    cursor: 'pointer', transition: 'all 0.12s',
-                  }}>
-                  <div style={{
-                    height: 60, width: '100%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transform: 'scale(1.4)', transformOrigin: 'center',
-                  }}>
-                    <DeviceThumbnail modelId={model.id} isSelected={isSelected} />
-                  </div>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
-                    marginTop: 6, color: isSelected ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.60)',
-                  }}>
-                    {model.label}
-                  </span>
-                  <span style={{
-                    fontSize: 8, marginTop: 3,
-                    color: 'rgba(255,255,255,0.25)', fontVariantNumeric: 'tabular-nums',
-                  }}>
-                    {model.w}×{model.h}
-                  </span>
-                </button>
-              );
-            })}
-            {models.length === 0 && (
-              <div style={{
-                gridColumn: '1 / -1', textAlign: 'center', padding: '24px 0',
-                color: 'rgba(255,255,255,0.25)', fontSize: 11,
-              }}>
-                No devices found
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Frame color dots */}
-        {state.deviceType === 'iphone' && (
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
-            {IPHONE_COLORS.map(c => (
-              <button key={c.id} title={c.label} onClick={() => updateState({ deviceColor: c.id })}
-                style={{
-                  width: 26, height: 26, borderRadius: '50%', background: c.bg,
-                  border: state.deviceColor === c.id ? '2.5px solid rgba(255,255,255,0.80)' : `2px solid ${c.border}`,
-                  boxShadow: state.deviceColor === c.id ? '0 0 0 2.5px rgba(255,255,255,0.13)' : 'none',
-                  cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
-                }} />
-            ))}
-          </div>
-        )}
-
-        {/* Orientation */}
-        {(state.deviceType === 'iphone' || state.deviceType === 'android' || state.deviceType === 'ipad') && (
-          <div style={{ display: 'flex', gap: 6 }}>
-            <Chip active={!state.deviceLandscape} onClick={() => updateState({ deviceLandscape: false })}>Portrait</Chip>
-            <Chip active={state.deviceLandscape}  onClick={() => updateState({ deviceLandscape: true })}>Landscape</Chip>
-          </div>
-        )}
-
-        {/* Browser theme */}
-        {state.deviceType === 'browser' && (
-          <div style={{ display: 'flex', gap: 6 }}>
-            <Chip active={state.browserMode === 'dark'}  onClick={() => updateState({ browserMode: 'dark' })}>Dark</Chip>
-            <Chip active={state.browserMode === 'light'} onClick={() => updateState({ browserMode: 'light' })}>Light</Chip>
-          </div>
-        )}
+        </Section>
       </>
     );
   };
