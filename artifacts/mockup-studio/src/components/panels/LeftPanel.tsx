@@ -428,6 +428,20 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const [mobileDeviceFilter, setMobileDeviceFilter] = useState<DeviceGroup | 'All'>('All');
   const bgFileRef                            = useRef<HTMLInputElement>(null);
   const [extracting, setExtracting]         = useState(false);
+  const [annotatePopup, setAnnotatePopup]   = useState<null | 'color' | 'size'>(null);
+  const annotatePopupRef                     = useRef<HTMLDivElement>(null);
+
+  // Close annotate popup when clicking outside
+  useEffect(() => {
+    if (!annotatePopup) return;
+    const onDown = (e: MouseEvent) => {
+      if (annotatePopupRef.current && !annotatePopupRef.current.contains(e.target as Node)) {
+        setAnnotatePopup(null);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [annotatePopup]);
 
   const handleBgImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -998,175 +1012,195 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   );
 
   // ── Annotate tab content ────────────────────────────────────────
-  const ANNOTATE_TOOLS: { id: 'pen' | 'marker' | 'eraser' | 'arrow' | 'rect' | 'text'; icon: React.ReactNode; label: string }[] = [
-    { id: 'pen',    label: 'Pen',     icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg> },
-    { id: 'marker', label: 'Marker',  icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg> },
-    { id: 'eraser', label: 'Eraser',  icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg> },
-    { id: 'arrow',  label: 'Arrow',   icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></svg> },
-    { id: 'rect',   label: 'Rect',    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> },
-    { id: 'text',   label: 'Text',    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg> },
+  const ANNOTATE_TOOLS_BAR = [
+    { id: 'pen'    as const, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg> },
+    { id: 'marker' as const, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg> },
+    { id: 'eraser' as const, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg> },
+    { id: 'arrow'  as const, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></svg> },
+    { id: 'rect'   as const, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> },
+    { id: 'text'   as const, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg> },
   ];
 
-  const ANNOTATE_COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#a855f7','#ffffff','#000000'];
+  // 5-column color palette (matches reference image)
+  const ANNOTATE_COLOR_GRID = [
+    '#ffffff', '#aaaaaa', '#666666', '#333333', '#000000',
+    '#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e',
+    '#14b8a6', '#06b6d4', '#3b82f6', '#6366f1', '#a855f7',
+    '#ec4899', '#f43f5e', '#fb923c', '#fbbf24', '__custom__',
+  ];
   const ANNOTATE_SIZES: ('S' | 'M' | 'L' | 'XL')[] = ['S', 'M', 'L', 'XL'];
 
   const AnnotateTab = () => (
-    <>
-      {/* Tool strip — horizontal slider */}
-      <Section label="Tool">
-        <HScroll gap={10}>
-          {ANNOTATE_TOOLS.map(t => {
-            const active = state.annotateTool === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => updateState({ annotateTool: t.id, annotateMode: true })}
-                style={{
-                  flexShrink: 0, width: 68,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  gap: 7, padding: '14px 4px 11px', borderRadius: 13, border: 'none', cursor: 'pointer',
-                  background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.45)',
-                  outline: active ? '2px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.14)',
-                  boxShadow: active ? '0 4px 18px rgba(0,0,0,0.45)' : 'none',
-                  transform: active ? 'scale(1.04)' : 'scale(1)',
-                  transition: 'all 0.16s ease',
-                  position: 'relative', overflow: 'hidden',
-                }}>
-                {/* color bar on active */}
-                {active && (
-                  <div style={{
-                    position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-                    background: state.annotateColor, borderRadius: '13px 13px 0 0',
-                    opacity: 0.9,
-                  }} />
-                )}
-                <span style={{
-                  color: active ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.72)',
-                  display: 'flex', transition: 'color 0.16s',
-                }}>
-                  {/* re-render icons at 20px */}
-                  {t.id === 'pen'    && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>}
-                  {t.id === 'marker' && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>}
-                  {t.id === 'eraser' && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>}
-                  {t.id === 'arrow'  && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></svg>}
-                  {t.id === 'rect'   && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>}
-                  {t.id === 'text'   && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>}
-                </span>
-                <span style={{
-                  fontSize: 10, fontWeight: 700, letterSpacing: '0.05em',
-                  color: active ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.6)',
-                  textTransform: 'uppercase', transition: 'color 0.16s',
-                }}>{t.label}</span>
-              </button>
-            );
-          })}
-        </HScroll>
-      </Section>
+    <div ref={annotatePopupRef} style={{ position: 'relative' }}>
 
-      {/* Color picker */}
-      <Section label="Color">
-        {/* Swatch row: custom picker + presets */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          {/* Custom color — square swatch */}
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <div style={{
-              width: 34, height: 34, borderRadius: 9,
-              background: state.annotateColor,
-              border: '2px solid rgba(255,255,255,0.22)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer',
-            }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="2.5" strokeLinecap="round">
-                <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-              </svg>
-            </div>
-            <input type="color" value={state.annotateColor}
-              onChange={e => updateState({ annotateColor: e.target.value })}
-              style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
-            />
+      {/* ── Floating color popup ───────────────────────────────── */}
+      {annotatePopup === 'color' && (
+        <div style={{
+          position: 'absolute', bottom: 'calc(100% + 10px)', left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(28,30,34,0.97)', borderRadius: 18,
+          padding: 14, zIndex: 200,
+          boxShadow: '0 8px 40px rgba(0,0,0,0.7), 0 2px 12px rgba(0,0,0,0.5)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          backdropFilter: 'blur(16px)',
+        }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+            {ANNOTATE_COLOR_GRID.map(col => {
+              if (col === '__custom__') {
+                return (
+                  <div key="custom" style={{ position: 'relative' }}>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: '50%', cursor: 'pointer',
+                      background: 'rgba(255,255,255,0.1)',
+                      border: '1.5px solid rgba(255,255,255,0.2)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2" strokeLinecap="round">
+                        <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+                        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+                      </svg>
+                    </div>
+                    <input type="color" value={state.annotateColor}
+                      onChange={e => { updateState({ annotateColor: e.target.value }); }}
+                      style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
+                    />
+                  </div>
+                );
+              }
+              const sel = state.annotateColor === col;
+              return (
+                <button key={col}
+                  onClick={() => { updateState({ annotateColor: col }); setAnnotatePopup(null); }}
+                  style={{
+                    width: 36, height: 36, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                    background: col, flexShrink: 0,
+                    outline: sel ? `3px solid rgba(255,255,255,0.9)` : '2px solid rgba(255,255,255,0.08)',
+                    outlineOffset: sel ? '2px' : '0px',
+                    boxShadow: sel ? `0 0 14px ${col}88` : '0 1px 4px rgba(0,0,0,0.4)',
+                    transform: sel ? 'scale(1.15)' : 'scale(1)',
+                    transition: 'all 0.12s',
+                  }}
+                />
+              );
+            })}
           </div>
-          {/* Preset circles */}
-          {ANNOTATE_COLORS.map(col => {
-            const sel = state.annotateColor === col;
-            return (
-              <button key={col} onClick={() => updateState({ annotateColor: col })}
-                style={{
-                  width: 28, height: 28, borderRadius: '50%',
-                  background: col, flexShrink: 0, cursor: 'pointer', border: 'none',
-                  outline: sel ? `3px solid ${col}` : '1.5px solid rgba(255,255,255,0.12)',
-                  outlineOffset: sel ? '2px' : '0px',
-                  boxShadow: sel ? `0 0 12px ${col}66, 0 2px 6px rgba(0,0,0,0.4)` : '0 1px 4px rgba(0,0,0,0.3)',
-                  transform: sel ? 'scale(1.18)' : 'scale(1)',
-                  transition: 'all 0.13s',
-                }}
-              />
-            );
-          })}
         </div>
-        {/* Current color label */}
-        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 7 }}>
-          <div style={{
-            width: 16, height: 3, borderRadius: 2, background: state.annotateColor,
-            boxShadow: `0 0 8px ${state.annotateColor}99`,
-          }} />
-          <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.45)', fontFamily: 'monospace', letterSpacing: '0.03em' }}>
-            {state.annotateColor.toUpperCase()}
-          </span>
-        </div>
-      </Section>
+      )}
 
-      {/* Size — visual dot buttons */}
-      <Section label="Stroke Size">
-        <div style={{ display: 'flex', gap: 7 }}>
+      {/* ── Floating size popup ───────────────────────────────── */}
+      {annotatePopup === 'size' && (
+        <div style={{
+          position: 'absolute', bottom: 'calc(100% + 10px)', left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(28,30,34,0.97)', borderRadius: 16,
+          padding: '12px 16px', zIndex: 200,
+          boxShadow: '0 8px 40px rgba(0,0,0,0.7)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          backdropFilter: 'blur(16px)',
+          display: 'flex', gap: 10, alignItems: 'center',
+        }}>
           {ANNOTATE_SIZES.map(sz => {
             const sel = state.annotateSize === sz;
-            const dotSize = sz === 'S' ? 4 : sz === 'M' ? 9 : sz === 'L' ? 16 : 24;
+            const dotPx = sz === 'S' ? 5 : sz === 'M' ? 10 : sz === 'L' ? 17 : 26;
             return (
-              <button key={sz} onClick={() => updateState({ annotateSize: sz })}
+              <button key={sz}
+                onClick={() => { updateState({ annotateSize: sz }); setAnnotatePopup(null); }}
                 style={{
-                  flex: 1, height: 52, borderRadius: 11, border: 'none', cursor: 'pointer',
+                  width: 52, height: 52, borderRadius: 13, border: 'none', cursor: 'pointer',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
-                  background: sel ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.45)',
-                  outline: sel ? '2px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.13)',
-                  transition: 'all 0.13s',
+                  background: sel ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.07)',
+                  outline: sel ? '2px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.1)',
+                  transition: 'all 0.12s',
                 }}>
-                {/* dot preview */}
                 <div style={{
-                  width: dotSize, height: dotSize, borderRadius: '50%',
-                  background: sel ? state.annotateColor : 'rgba(255,255,255,0.45)',
-                  boxShadow: sel ? `0 0 8px ${state.annotateColor}88` : 'none',
-                  transition: 'all 0.13s',
+                  width: dotPx, height: dotPx, borderRadius: '50%',
+                  background: sel ? state.annotateColor : 'rgba(255,255,255,0.5)',
+                  boxShadow: sel ? `0 0 10px ${state.annotateColor}88` : 'none',
+                  transition: 'all 0.12s',
                 }} />
                 <span style={{
                   fontSize: 9, fontWeight: 800, letterSpacing: '0.06em',
-                  color: sel ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.5)',
+                  color: sel ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.45)',
                   textTransform: 'uppercase',
                 }}>{sz}</span>
               </button>
             );
           })}
         </div>
-      </Section>
+      )}
 
-      {/* Actions */}
-      <Section label="Actions">
+      {/* ── Single toolbar row ────────────────────────────────── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: 4, padding: '10px 6px',
+        background: 'rgba(0,0,0,0.55)',
+        borderRadius: 18,
+        border: '1px solid rgba(255,255,255,0.1)',
+      }}>
+        {/* Tool buttons */}
+        {ANNOTATE_TOOLS_BAR.map(t => {
+          const active = state.annotateTool === t.id;
+          return (
+            <button key={t.id}
+              onClick={() => { updateState({ annotateTool: t.id, annotateMode: true }); setAnnotatePopup(null); }}
+              style={{
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                height: 38, borderRadius: 11, border: 'none', cursor: 'pointer',
+                background: active ? 'rgba(255,255,255,0.18)' : 'transparent',
+                outline: active ? '1.5px solid rgba(255,255,255,0.7)' : 'none',
+                color: active ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.55)',
+                transition: 'all 0.14s',
+              }}>
+              {t.icon}
+            </button>
+          );
+        })}
+
+        {/* Divider */}
+        <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.12)', flexShrink: 0, margin: '0 2px' }} />
+
+        {/* Color button */}
+        <button
+          onClick={() => setAnnotatePopup(annotatePopup === 'color' ? null : 'color')}
+          style={{
+            width: 34, height: 34, borderRadius: '50%', border: 'none', cursor: 'pointer', flexShrink: 0,
+            background: state.annotateColor,
+            outline: annotatePopup === 'color' ? '3px solid rgba(255,255,255,0.9)' : '2px solid rgba(255,255,255,0.25)',
+            outlineOffset: '2px',
+            boxShadow: `0 0 12px ${state.annotateColor}66`,
+            transition: 'all 0.14s',
+          }}
+        />
+
+        {/* Size button */}
+        <button
+          onClick={() => setAnnotatePopup(annotatePopup === 'size' ? null : 'size')}
+          style={{
+            width: 34, height: 34, borderRadius: 10, border: 'none', cursor: 'pointer', flexShrink: 0,
+            background: annotatePopup === 'size' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)',
+            outline: annotatePopup === 'size' ? '1.5px solid rgba(255,255,255,0.7)' : '1px solid rgba(255,255,255,0.15)',
+            color: 'rgba(255,255,255,0.85)',
+            fontSize: 11, fontWeight: 800, letterSpacing: '0.04em',
+            transition: 'all 0.14s',
+          }}>
+          {state.annotateSize}
+        </button>
+
+        {/* Divider */}
+        <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.12)', flexShrink: 0, margin: '0 2px' }} />
+
+        {/* Clear */}
         <button
           onClick={() => updateState({ annotateClearKey: (state.annotateClearKey ?? 0) + 1 })}
           style={{
-            width: '100%', padding: '11px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
-            background: 'rgba(239,68,68,0.13)', color: 'rgba(239,68,68,0.92)',
-            outline: '1px solid rgba(239,68,68,0.28)',
-            fontSize: 12, fontWeight: 700, letterSpacing: '0.02em', transition: 'all 0.12s',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+            padding: '0 8px', height: 34, borderRadius: 10, border: 'none', cursor: 'pointer', flexShrink: 0,
+            background: 'transparent', color: 'rgba(239,100,100,0.9)',
+            fontSize: 11, fontWeight: 700, transition: 'all 0.14s',
           }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
-          </svg>
-          Clear All Annotations
+          Clear
         </button>
-      </Section>
-    </>
+      </div>
+    </div>
   );
 
   // ── Scene tab content ───────────────────────────────────────────
