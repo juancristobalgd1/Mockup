@@ -1061,15 +1061,16 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     setBgPopupAnchor({ x: r.left + r.width / 2, y: r.top });
                     setBgPopup(id);
                   }}
+                  title={label}
                   style={{
                     flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    padding: '8px 7px 7px', borderRadius: 13, gap: 0, border: 'none',
+                    padding: '5px', borderRadius: 13, gap: 0, border: 'none',
                     background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
                     outline: popupOpen ? '2px solid rgba(167,139,250,0.8)' : active ? '2px solid rgba(255,255,255,0.85)' : '1.5px solid rgba(255,255,255,0.14)',
                     cursor: 'pointer', transition: 'all 0.12s',
                   }}>
                   <div style={{
-                    width: 40, height: 40, borderRadius: 10, marginBottom: 5,
+                    width: 40, height: 40, borderRadius: 10,
                     border: '1px solid rgba(255,255,255,0.1)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     overflow: 'hidden',
@@ -1077,9 +1078,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   }}>
                     {icon ? icon : (!preview && id !== 'none' && <ImageIcon size={16} color="rgba(255,255,255,0.40)" />)}
                   </div>
-                  <span style={{
-                    fontSize: 9, fontWeight: 700, color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.50)',
-                  }}>{label}</span>
                 </button>
               );
             })}
