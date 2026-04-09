@@ -1,6 +1,132 @@
 import type React from 'react';
 import type { DeviceType } from '../store';
 
+// ── Animated backgrounds ────────────────────────────────────────────────────
+
+export interface AnimatedBackground {
+  id: string;
+  label: string;
+  type: 'iframe' | 'css';
+  src?: string;
+  animStyle?: React.CSSProperties;
+  thumb: React.CSSProperties;
+}
+
+export const ANIMATED_BG_KEYFRAMES = `
+@keyframes bgShift  { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+@keyframes bgShift2 { 0%{background-position:0% 0%} 33%{background-position:100% 100%} 66%{background-position:100% 0%} 100%{background-position:0% 0%} }
+@keyframes bgShift3 { 0%,100%{background-position:0% 0%} 25%{background-position:100% 0%} 50%{background-position:100% 100%} 75%{background-position:0% 100%} }
+`;
+
+export const ANIMATED_BACKGROUNDS: AnimatedBackground[] = [
+  {
+    id: '3d-aura',
+    label: '3D Aura',
+    type: 'iframe',
+    src: 'https://my.spline.design/3dgradient-AcpgG6LxFkpnJSoowRHPfcbO',
+    thumb: { background: 'radial-gradient(ellipse at 30% 30%, #7c3aed 0%, #3b82f6 40%, #06b6d4 70%, #0f172a 100%)' },
+  },
+  {
+    id: 'aurora',
+    label: 'Aurora',
+    type: 'css',
+    animStyle: {
+      background: 'linear-gradient(-45deg, #0d1b2a, #7e22ce, #0ea5e9, #065f46)',
+      backgroundSize: '400% 400%',
+      animation: 'bgShift 12s ease infinite',
+    },
+    thumb: { background: 'linear-gradient(135deg, #0d1b2a 0%, #7e22ce 40%, #0ea5e9 70%, #065f46 100%)' },
+  },
+  {
+    id: 'sunset-flow',
+    label: 'Sunset Flow',
+    type: 'css',
+    animStyle: {
+      background: 'linear-gradient(-45deg, #f97316, #ec4899, #a855f7, #f59e0b)',
+      backgroundSize: '400% 400%',
+      animation: 'bgShift 10s ease infinite',
+    },
+    thumb: { background: 'linear-gradient(135deg, #f97316, #ec4899, #a855f7, #f59e0b)' },
+  },
+  {
+    id: 'neon-dark',
+    label: 'Neon Dark',
+    type: 'css',
+    animStyle: {
+      background: 'linear-gradient(-45deg, #050014, #1a0533, #00d4ff, #7c00ff, #050014)',
+      backgroundSize: '400% 400%',
+      animation: 'bgShift2 14s ease infinite',
+    },
+    thumb: { background: 'linear-gradient(135deg, #050014, #7c00ff, #00d4ff, #1a0533)' },
+  },
+  {
+    id: 'ocean-depth',
+    label: 'Ocean Depth',
+    type: 'css',
+    animStyle: {
+      background: 'linear-gradient(-45deg, #0c4a6e, #0ea5e9, #06b6d4, #0369a1, #164e63)',
+      backgroundSize: '400% 400%',
+      animation: 'bgShift3 15s linear infinite',
+    },
+    thumb: { background: 'linear-gradient(135deg, #0c4a6e, #0ea5e9, #06b6d4)' },
+  },
+  {
+    id: 'rose-gold',
+    label: 'Rose Gold',
+    type: 'css',
+    animStyle: {
+      background: 'linear-gradient(-45deg, #fdf2f8, #fce7f3, #fbcfe8, #f9a8d4, #ec4899)',
+      backgroundSize: '400% 400%',
+      animation: 'bgShift 13s ease infinite',
+    },
+    thumb: { background: 'linear-gradient(135deg, #fdf2f8, #fbcfe8, #ec4899)' },
+  },
+  {
+    id: 'forest-mist',
+    label: 'Forest Mist',
+    type: 'css',
+    animStyle: {
+      background: 'linear-gradient(-45deg, #052e16, #166534, #4ade80, #16a34a, #052e16)',
+      backgroundSize: '400% 400%',
+      animation: 'bgShift2 16s ease infinite',
+    },
+    thumb: { background: 'linear-gradient(135deg, #052e16, #166534, #4ade80)' },
+  },
+  {
+    id: 'cosmic',
+    label: 'Cosmic',
+    type: 'css',
+    animStyle: {
+      background: 'linear-gradient(-45deg, #030712, #1e1b4b, #4c1d95, #0c0a09, #1c1917)',
+      backgroundSize: '400% 400%',
+      animation: 'bgShift3 18s ease infinite',
+    },
+    thumb: { background: 'linear-gradient(135deg, #030712, #4c1d95, #1e1b4b)' },
+  },
+  {
+    id: 'lava',
+    label: 'Lava',
+    type: 'css',
+    animStyle: {
+      background: 'linear-gradient(-45deg, #7f1d1d, #dc2626, #f97316, #b91c1c)',
+      backgroundSize: '400% 400%',
+      animation: 'bgShift2 9s ease infinite',
+    },
+    thumb: { background: 'linear-gradient(135deg, #7f1d1d, #dc2626, #f97316)' },
+  },
+  {
+    id: 'mint-sky',
+    label: 'Mint Sky',
+    type: 'css',
+    animStyle: {
+      background: 'linear-gradient(-45deg, #ecfdf5, #6ee7b7, #a5f3fc, #bfdbfe, #ddd6fe)',
+      backgroundSize: '400% 400%',
+      animation: 'bgShift 11s ease infinite',
+    },
+    thumb: { background: 'linear-gradient(135deg, #ecfdf5, #6ee7b7, #a5f3fc, #bfdbfe)' },
+  },
+];
+
 export interface BackgroundGradient {
   id: string;
   label: string;

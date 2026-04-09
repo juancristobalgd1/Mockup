@@ -1,7 +1,7 @@
 import { forwardRef, useState, useEffect } from 'react';
 import { useApp } from '../../store';
 import type { TextOverlay } from '../../store';
-import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS } from '../../data/backgrounds';
+import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS, ANIMATED_BACKGROUNDS, ANIMATED_BG_KEYFRAMES } from '../../data/backgrounds';
 import { LIGHT_OVERLAYS } from '../../data/lightOverlays';
 import { AnnotateCanvas } from './AnnotateCanvas';
 import { Device3DViewer } from '../devices3d/Device3DViewer';
@@ -37,6 +37,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
   }, []);
 
   const getBackground = (): React.CSSProperties => {
+    if (state.bgType === 'animated') return {};
     if (state.bgType === 'none') return { background: '#111113' };
     if (state.bgType === 'transparent') return {
       backgroundImage: 'linear-gradient(45deg, #2a2a2a 25%, transparent 25%), linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #2a2a2a 75%), linear-gradient(-45deg, transparent 75%, #2a2a2a 75%)',
@@ -117,12 +118,37 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
       style={{ width: '100%', height: '100%', borderRadius }}
       data-testid="canvas-area"
     >
+      {/* Animated background keyframes injection */}
+      {state.bgType === 'animated' && <style>{ANIMATED_BG_KEYFRAMES}</style>}
+
       {/* Background layer — separate div so opacity doesn't affect children */}
-      <div style={{
-        position: 'absolute', inset: 0, zIndex: 0, borderRadius, opacity: bgOpacity,
-        ...getBackground(),
-        ...(state.bgBlur > 0 ? { filter: `blur(${state.bgBlur}px)`, transform: 'scale(1.05)' } : {}),
-      }} />
+      {state.bgType === 'animated' ? (() => {
+        const bg = ANIMATED_BACKGROUNDS.find(b => b.id === state.bgAnimated) ?? ANIMATED_BACKGROUNDS[0];
+        if (bg.type === 'iframe' && bg.src) {
+          return (
+            <iframe
+              key={bg.id}
+              src={bg.src}
+              title={bg.label}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', zIndex: 0, borderRadius, opacity: bgOpacity }}
+              sandbox="allow-scripts allow-same-origin"
+            />
+          );
+        }
+        return (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 0, borderRadius, opacity: bgOpacity,
+            ...(bg.animStyle ?? {}),
+            ...(state.bgBlur > 0 ? { filter: `blur(${state.bgBlur}px)`, transform: 'scale(1.05)' } : {}),
+          }} />
+        );
+      })() : (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 0, borderRadius, opacity: bgOpacity,
+          ...getBackground(),
+          ...(state.bgBlur > 0 ? { filter: `blur(${state.bgBlur}px)`, transform: 'scale(1.05)' } : {}),
+        }} />
+      )}
 
       {/* Vignette overlay */}
       {state.bgVignette && (

@@ -7,7 +7,7 @@ import {
 import type { Tab } from './tabs';
 import { TAB_ICONS } from './tabs';
 import { useApp } from '../../store';
-import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS, PRESETS } from '../../data/backgrounds';
+import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS, PRESETS, ANIMATED_BACKGROUNDS, ANIMATED_BG_KEYFRAMES } from '../../data/backgrounds';
 import { LIGHT_OVERLAYS } from '../../data/lightOverlays';
 import { DEVICE_MODELS, DEVICE_GROUPS, GROUP_ICONS, getModelById } from '../../data/devices';
 import type { DeviceGroup } from '../../data/devices';
@@ -948,7 +948,16 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
             backgroundColor: '#222',
           }} />,
       },
+      { id: 'animated', label: 'Animated', preview: null, icon:
+          <div style={{
+            width: '100%', height: '100%', borderRadius: 10,
+            background: 'linear-gradient(-45deg, #7e22ce, #0ea5e9, #ec4899, #f59e0b)',
+            backgroundSize: '300% 300%',
+            animation: 'bgShift 4s ease infinite',
+          }} />,
+      },
     ];
+    
 
     const popupStyle: React.CSSProperties = {
       position: 'fixed',
@@ -970,6 +979,8 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
 
     return (
       <>
+        <style>{ANIMATED_BG_KEYFRAMES}</style>
+
         {/* ── Background type popup ───────────────────────────── */}
         {bgPopup && bgPopupAnchor && (
           <div ref={bgPopupRef} style={popupStyle}>
@@ -1108,6 +1119,58 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     <input type="color" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
                       style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
                   </div>
+                </div>
+              </>
+            )}
+
+            {/* Animated backgrounds */}
+            {bgPopup === 'animated' && (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 12, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  Animated Backgrounds
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                  {ANIMATED_BACKGROUNDS.map(bg => {
+                    const active = state.bgAnimated === bg.id;
+                    return (
+                      <button
+                        key={bg.id}
+                        onClick={() => updateState({ bgAnimated: bg.id })}
+                        title={bg.label}
+                        style={{
+                          position: 'relative', border: 'none', padding: 0,
+                          borderRadius: 10, overflow: 'hidden', cursor: 'pointer',
+                          outline: active ? '2.5px solid rgba(167,139,250,0.9)' : '1.5px solid rgba(255,255,255,0.1)',
+                          outlineOffset: active ? 1 : 0,
+                          transition: 'outline 0.1s',
+                        }}
+                      >
+                        <div style={{
+                          width: '100%', aspectRatio: '16/9',
+                          ...bg.thumb,
+                          display: 'flex', alignItems: 'flex-end',
+                        }}>
+                          {bg.type === 'iframe' && (
+                            <div style={{
+                              position: 'absolute', top: 4, right: 4,
+                              background: 'rgba(0,0,0,0.5)', borderRadius: 4,
+                              fontSize: 8, color: 'rgba(255,255,255,0.7)', padding: '1px 4px',
+                              fontWeight: 700, letterSpacing: '0.05em',
+                            }}>3D</div>
+                          )}
+                        </div>
+                        <div style={{
+                          position: 'absolute', bottom: 0, left: 0, right: 0,
+                          background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)',
+                          padding: '10px 7px 5px',
+                          fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.9)',
+                          textAlign: 'left',
+                        }}>
+                          {bg.label}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </>
             )}
