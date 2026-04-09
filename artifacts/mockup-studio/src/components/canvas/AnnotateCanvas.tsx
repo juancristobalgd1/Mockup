@@ -262,6 +262,8 @@ export function AnnotateCanvas() {
   const [selectionFrame, setSelectionFrame] = useState(0);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const contextMenuRef = useRef<HTMLDivElement>(null);
+  const [showColorMenu, setShowColorMenu] = useState(false);
+  const colorMenuRef = useRef<HTMLDivElement>(null);
   const clipboardRef = useRef<AnyStroke | null>(null);
 
   // Drag/resize mode — kept in refs so pointer handlers don't need closure rebinding
@@ -428,6 +430,29 @@ export function AnnotateCanvas() {
     if (orig) clipboardRef.current = { ...orig };
     setShowContextMenu(false);
   }, [selectedId]);
+
+  const changeSelectedColor = useCallback((color: string) => {
+    if (!selectedId) return;
+    strokesRef.current = strokesRef.current.map(s =>
+      s.id === selectedId ? { ...s, color } as AnyStroke : s
+    );
+    const ctx = canvasRef.current?.getContext('2d');
+    if (ctx) redrawStrokes(ctx, strokesRef.current);
+    setSelectionFrame(f => f + 1);
+    setShowColorMenu(false);
+  }, [selectedId]);
+
+  // Close color menu on outside click
+  useEffect(() => {
+    if (!showColorMenu) return;
+    const onDown = (e: PointerEvent) => {
+      if (colorMenuRef.current && !colorMenuRef.current.contains(e.target as Node)) {
+        setShowColorMenu(false);
+      }
+    };
+    document.addEventListener('pointerdown', onDown, { capture: true });
+    return () => document.removeEventListener('pointerdown', onDown, { capture: true });
+  }, [showColorMenu]);
 
   // ── Text input ────────────────────────────────────────────────────
   const commitText = useCallback(() => {
@@ -724,13 +749,77 @@ export function AnnotateCanvas() {
             <DuplicateIcon />
           </button>
 
-          {/* Color dot */}
-          <div style={{
-            width: 18, height: 18, borderRadius: '50%',
-            background: 'color' in selectedStroke ? selectedStroke.color : '#fff',
-            border: '2px solid rgba(255,255,255,0.35)',
-            flexShrink: 0,
-          }} />
+          {/* Color dot — click to open color picker */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <button
+              onPointerDown={e => e.stopPropagation()}
+              onClick={() => setShowColorMenu(v => !v)}
+              title="Change color"
+              style={{
+                width: 30, height: 30, borderRadius: 8,
+                background: showColorMenu ? 'rgba(255,255,255,0.15)' : 'transparent',
+                border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                outline: showColorMenu ? '1.5px solid rgba(255,255,255,0.4)' : 'none',
+                transition: 'all 0.1s',
+              }}
+            >
+              <div style={{
+                width: 16, height: 16, borderRadius: '50%',
+                background: 'color' in selectedStroke ? selectedStroke.color : '#fff',
+                border: '2px solid rgba(255,255,255,0.4)',
+                flexShrink: 0,
+              }} />
+            </button>
+
+            {/* Color picker popup */}
+            {showColorMenu && (
+              <div
+                ref={colorMenuRef}
+                onPointerDown={e => e.stopPropagation()}
+                style={{
+                  position: 'absolute',
+                  top: '100%', left: '50%',
+                  transform: 'translateX(-50%)',
+                  marginTop: 8,
+                  background: 'rgba(20,20,24,0.97)',
+                  borderRadius: 14,
+                  padding: 10,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.75)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  backdropFilter: 'blur(16px)',
+                  zIndex: 50,
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(5, 22px)',
+                  gap: 6,
+                }}
+              >
+                {[
+                  '#ffffff','#aaaaaa','#555555','#000000',
+                  '#ef4444','#f97316','#eab308','#84cc16',
+                  '#22c55e','#14b8a6','#06b6d4','#3b82f6',
+                  '#6366f1','#a855f7','#ec4899',
+                ].map(col => {
+                  const current = 'color' in selectedStroke ? selectedStroke.color : '#fff';
+                  const isActive = col === current;
+                  return (
+                    <button
+                      key={col}
+                      onClick={() => changeSelectedColor(col)}
+                      title={col}
+                      style={{
+                        width: 22, height: 22, borderRadius: '50%',
+                        background: col, border: 'none', cursor: 'pointer', padding: 0,
+                        outline: isActive ? '2.5px solid rgba(255,255,255,0.9)' : '1.5px solid rgba(255,255,255,0.2)',
+                        boxShadow: isActive ? '0 0 0 3px rgba(255,255,255,0.15)' : 'none',
+                        transition: 'all 0.12s',
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           {/* Divider */}
           <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.15)' }} />
