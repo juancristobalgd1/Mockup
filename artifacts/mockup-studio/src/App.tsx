@@ -7,7 +7,7 @@ import { TAB_ICONS } from './components/panels/tabs';
 import type { Tab } from './components/panels/tabs';
 import { RightPanel } from './components/panels/RightPanel';
 import { MovieTimeline } from './components/timeline/MovieTimeline';
-import { Download, X, Film, Smartphone } from 'lucide-react';
+import { Download, X, Film, Smartphone, Undo2, Redo2 } from 'lucide-react';
 import { getModelById } from './data/devices';
 import type { Device3DViewerHandle } from './components/devices3d/Device3DViewer';
 
@@ -32,7 +32,7 @@ const CREATION_MODES: {
 ];
 
 function Editor() {
-  const { state, updateState, updateText, removeText } = useApp();
+  const { state, updateState, updateText, removeText, undo, redo, canUndo, canRedo } = useApp();
   const canvasRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Device3DViewerHandle>(null);
   const movieTimeRef = useRef<number>(0);
@@ -64,72 +64,111 @@ function Editor() {
             padding: '0 14px', height: 42, flexShrink: 0,
             background: 'var(--rt-panel)',
             borderBottom: '1px solid var(--rt-border)',
-            gap: 14,
+            position: 'relative',
           }}>
-            {/* macOS traffic lights */}
-            <div className="rt-traffic" style={{ flexShrink: 0 }}>
-              <span className="tl-red" />
-              <span className="tl-yellow" />
-              <span className="tl-green" />
-            </div>
+            {/* Left: traffic lights + title */}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+              {/* macOS traffic lights */}
+              <div className="rt-traffic" style={{ flexShrink: 0 }}>
+                <span className="tl-red" />
+                <span className="tl-yellow" />
+                <span className="tl-green" />
+              </div>
 
-            {/* Document / device title */}
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--rt-text-2)' }}>
-                {deviceLabel}
-                {(state.deviceType === 'iphone' || state.deviceType === 'android') && (
-                  <span style={{ color: 'var(--rt-text-3)' }}>
-                    {' '}· {state.deviceLandscape ? 'Landscape' : 'Portrait'}
+              {/* Document / device title */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--rt-text-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {deviceLabel}
+                  {(state.deviceType === 'iphone' || state.deviceType === 'android') && (
+                    <span style={{ color: 'var(--rt-text-3)' }}>
+                      {' '}· {state.deviceLandscape ? 'Landscape' : 'Portrait'}
+                    </span>
+                  )}
+                </span>
+                {state.contentType && (
+                  <span style={{
+                    fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+                    padding: '2px 7px', borderRadius: 20, flexShrink: 0,
+                    background: state.contentType === 'video'
+                      ? 'rgba(48,209,88,0.12)' : 'rgba(255,255,255,0.07)',
+                    color: state.contentType === 'video'
+                      ? 'var(--rt-accent-green)' : 'var(--rt-text-3)',
+                    border: state.contentType === 'video'
+                      ? '1px solid rgba(48,209,88,0.2)' : '1px solid var(--rt-border)',
+                  }}>
+                    {state.contentType === 'video' ? '▶ Video' : 'Image'}
                   </span>
                 )}
-              </span>
-              {state.contentType && (
-                <span style={{
-                  fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
-                  padding: '2px 7px', borderRadius: 20,
-                  background: state.contentType === 'video'
-                    ? 'rgba(48,209,88,0.12)' : 'rgba(255,255,255,0.07)',
-                  color: state.contentType === 'video'
-                    ? 'var(--rt-accent-green)' : 'var(--rt-text-3)',
-                  border: state.contentType === 'video'
-                    ? '1px solid rgba(48,209,88,0.2)' : '1px solid var(--rt-border)',
-                }}>
-                  {state.contentType === 'video' ? '▶ Video' : 'Image'}
-                </span>
-              )}
+              </div>
             </div>
 
-            {/* Rotato-style segmented mode picker */}
+            {/* Center: Undo / Redo button group */}
             <div style={{
+              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
               display: 'flex', alignItems: 'center',
               background: 'rgba(255,255,255,0.06)',
               borderRadius: 8, padding: '2px',
               border: '1px solid var(--rt-border)',
-              flexShrink: 0,
             }}>
-              {CREATION_MODES.map(mode => {
-                const isActive = state.creationMode === mode.id;
-                return (
-                  <button
-                    key={mode.id}
-                    onClick={() => handleModeChange(mode.id)}
-                    title={mode.desc}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 5,
-                      padding: '4px 11px', borderRadius: 6, cursor: 'pointer',
-                      fontSize: 11, fontWeight: 600,
-                      transition: 'all 0.12s',
-                      background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
-                      border: isActive ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
-                      color: isActive ? 'var(--rt-text)' : 'var(--rt-text-3)',
-                      boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
-                    }}
-                  >
-                    {mode.icon}
-                    {mode.label}
-                  </button>
-                );
-              })}
+              {[
+                { action: undo, enabled: canUndo, icon: <Undo2 size={13} />, title: 'Undo (Ctrl+Z)' },
+                { action: redo, enabled: canRedo, icon: <Redo2 size={13} />, title: 'Redo (Ctrl+Shift+Z)' },
+              ].map(({ action, enabled, icon, title }, i) => (
+                <button
+                  key={i}
+                  onClick={action}
+                  disabled={!enabled}
+                  title={title}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: 28, height: 28, borderRadius: 6, cursor: enabled ? 'pointer' : 'default',
+                    transition: 'all 0.12s',
+                    background: 'transparent',
+                    border: '1px solid transparent',
+                    color: enabled ? 'var(--rt-text-2)' : 'var(--rt-text-3)',
+                    opacity: enabled ? 1 : 0.35,
+                  }}
+                  onMouseEnter={e => { if (enabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                >
+                  {icon}
+                </button>
+              ))}
+            </div>
+
+            {/* Right: segmented mode picker */}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+              <div style={{
+                display: 'flex', alignItems: 'center',
+                background: 'rgba(255,255,255,0.06)',
+                borderRadius: 8, padding: '2px',
+                border: '1px solid var(--rt-border)',
+                flexShrink: 0,
+              }}>
+                {CREATION_MODES.map(mode => {
+                  const isActive = state.creationMode === mode.id;
+                  return (
+                    <button
+                      key={mode.id}
+                      onClick={() => handleModeChange(mode.id)}
+                      title={mode.desc}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        padding: '4px 11px', borderRadius: 6, cursor: 'pointer',
+                        fontSize: 11, fontWeight: 600,
+                        transition: 'all 0.12s',
+                        background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
+                        border: isActive ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
+                        color: isActive ? 'var(--rt-text)' : 'var(--rt-text-3)',
+                        boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
+                      }}
+                    >
+                      {mode.icon}
+                      {mode.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

@@ -1,4 +1,4 @@
-import { useState, createContext, useContext } from "react";
+import { useState, useRef, createContext, useContext } from "react";
 import type { DeviceStoreType } from "./data/devices";
 
 // DeviceType derives from DeviceStoreType in devices.ts — the single source of truth.
@@ -168,22 +168,64 @@ export const defaultState: AppState = {
 
 interface AppContextType {
   state: AppState;
-  updateState: (updates: Partial<AppState>) => void;
+  updateState: (updates: Partial<AppState>, skipHistory?: boolean) => void;
   addText: () => void;
   updateText: (id: string, updates: Partial<TextOverlay>) => void;
   removeText: (id: string) => void;
   addCameraKeyframe: (kf: Omit<CameraKeyframe, 'id'>) => void;
   removeCameraKeyframe: (id: string) => void;
   clearCameraKeyframes: () => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
 
+const MAX_HISTORY = 50;
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(defaultState);
+  const historyRef = useRef<AppState[]>([]);
+  const futureRef = useRef<AppState[]>([]);
+  const [historyLen, setHistoryLen] = useState(0);
+  const [futureLen, setFutureLen] = useState(0);
 
-  const updateState = (updates: Partial<AppState>) => {
-    setState(prev => ({ ...prev, ...updates }));
+  const updateState = (updates: Partial<AppState>, skipHistory = false) => {
+    setState(prev => {
+      if (!skipHistory) {
+        historyRef.current = [...historyRef.current.slice(-MAX_HISTORY + 1), prev];
+        futureRef.current = [];
+        setHistoryLen(historyRef.current.length);
+        setFutureLen(0);
+      }
+      return { ...prev, ...updates };
+    });
+  };
+
+  const undo = () => {
+    if (historyRef.current.length === 0) return;
+    const prev = historyRef.current[historyRef.current.length - 1];
+    historyRef.current = historyRef.current.slice(0, -1);
+    setState(current => {
+      futureRef.current = [current, ...futureRef.current.slice(0, MAX_HISTORY - 1)];
+      setHistoryLen(historyRef.current.length);
+      setFutureLen(futureRef.current.length);
+      return prev;
+    });
+  };
+
+  const redo = () => {
+    if (futureRef.current.length === 0) return;
+    const next = futureRef.current[0];
+    futureRef.current = futureRef.current.slice(1);
+    setState(current => {
+      historyRef.current = [...historyRef.current.slice(-MAX_HISTORY + 1), current];
+      setHistoryLen(historyRef.current.length);
+      setFutureLen(futureRef.current.length);
+      return next;
+    });
   };
 
   const addText = () => {
@@ -235,7 +277,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AppContext.Provider value={{ state, updateState, addText, updateText, removeText, addCameraKeyframe, removeCameraKeyframe, clearCameraKeyframes }}>
+    <AppContext.Provider value={{
+      state, updateState,
+      addText, updateText, removeText,
+      addCameraKeyframe, removeCameraKeyframe, clearCameraKeyframes,
+      undo, redo,
+      canUndo: historyLen > 0,
+      canRedo: futureLen > 0,
+    }}>
       {children}
     </AppContext.Provider>
   );
