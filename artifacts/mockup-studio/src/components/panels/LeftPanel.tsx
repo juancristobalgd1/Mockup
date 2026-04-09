@@ -2107,36 +2107,34 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         <button
           onClick={() => updateState({ canvasRatio: fmt.id })}
           style={{
-            flexShrink: 0, width: 72, height: 86, borderRadius: 13,
-            background: isActive ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.45)',
+            flexShrink: 0, width: 72, height: 86, borderRadius: 11,
+            background: isActive ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
             border: 'none', cursor: 'pointer', padding: 0,
-            outline: isActive ? `2px solid ${fmt.accent}` : '1.5px solid rgba(255,255,255,0.09)',
-            transition: 'all 0.13s',
+            outline: isActive ? '2px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.13)',
+            transition: 'all 0.12s',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            boxShadow: isActive ? `0 0 0 1px ${fmt.accent}33, 0 4px 16px rgba(0,0,0,0.5)` : '0 2px 6px rgba(0,0,0,0.3)',
             position: 'relative',
           }}>
           <div style={{
             width: rw, height: rh, flexShrink: 0, marginBottom: 8,
-            border: `1.5px solid ${isActive ? fmt.accent : 'rgba(255,255,255,0.3)'}`,
+            border: `1.5px solid ${isActive ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.28)'}`,
             borderRadius: 2,
-            background: isActive ? `${fmt.accent}1a` : 'rgba(255,255,255,0.05)',
-            transition: 'all 0.13s',
+            background: isActive ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)',
+            transition: 'all 0.12s',
           }} />
-          <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1,
-            color: isActive ? '#fff' : 'rgba(255,255,255,0.75)' }}>
+          <span style={{
+            fontSize: 12, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1,
+            color: isActive ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.55)',
+          }}>
             {fmt.label}
           </span>
-          <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase',
-            color: isActive ? fmt.accent : 'rgba(255,255,255,0.35)', marginTop: 3, lineHeight: 1 }}>
+          <span style={{
+            fontSize: 7.5, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
+            color: isActive ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.28)',
+            marginTop: 3, lineHeight: 1,
+          }}>
             {fmt.name}
           </span>
-          {isActive && (
-            <div style={{
-              position: 'absolute', top: 6, right: 6, width: 6, height: 6,
-              borderRadius: '50%', background: fmt.accent, boxShadow: `0 0 5px ${fmt.accent}`,
-            }} />
-          )}
         </button>
       );
     };
