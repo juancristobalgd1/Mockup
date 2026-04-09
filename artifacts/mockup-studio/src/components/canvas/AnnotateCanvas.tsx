@@ -19,6 +19,7 @@ interface ShapeStroke {
   tool: 'arrow' | 'rect';
   color: string;
   lineWidth: number;
+  opacity?: number;
   start: Point;
   end: Point;
 }
@@ -28,6 +29,7 @@ interface TextStroke {
   kind: 'text';
   color: string;
   fontSize: number;
+  opacity?: number;
   text: string;
   position: Point;
 }
@@ -212,6 +214,7 @@ function redrawStrokes(ctx: CanvasRenderingContext2D, strokes: AnyStroke[]) {
       }
       ctx.stroke();
     } else if (s.kind === 'shape') {
+      ctx.globalAlpha = s.opacity ?? 1;
       ctx.strokeStyle = s.color;
       ctx.lineWidth = s.lineWidth;
       ctx.lineCap = 'round';
@@ -228,6 +231,7 @@ function redrawStrokes(ctx: CanvasRenderingContext2D, strokes: AnyStroke[]) {
       }
       ctx.stroke();
     } else if (s.kind === 'text') {
+      ctx.globalAlpha = s.opacity ?? 1;
       ctx.fillStyle = s.color;
       ctx.font = `bold ${s.fontSize}px Inter, sans-serif`;
       ctx.fillText(s.text, s.position.x, s.position.y);
@@ -439,7 +443,16 @@ export function AnnotateCanvas() {
     const ctx = canvasRef.current?.getContext('2d');
     if (ctx) redrawStrokes(ctx, strokesRef.current);
     setSelectionFrame(f => f + 1);
-    setShowColorMenu(false);
+  }, [selectedId]);
+
+  const changeSelectedOpacity = useCallback((opacity: number) => {
+    if (!selectedId) return;
+    strokesRef.current = strokesRef.current.map(s =>
+      s.id === selectedId ? { ...s, opacity } as AnyStroke : s
+    );
+    const ctx = canvasRef.current?.getContext('2d');
+    if (ctx) redrawStrokes(ctx, strokesRef.current);
+    setSelectionFrame(f => f + 1);
   }, [selectedId]);
 
   // Close color menu on outside click
@@ -772,53 +785,115 @@ export function AnnotateCanvas() {
               }} />
             </button>
 
-            {/* Color picker popup */}
-            {showColorMenu && (
-              <div
-                ref={colorMenuRef}
-                onPointerDown={e => e.stopPropagation()}
-                style={{
-                  position: 'absolute',
-                  top: '100%', left: '50%',
-                  transform: 'translateX(-50%)',
-                  marginTop: 8,
-                  background: 'rgba(20,20,24,0.97)',
-                  borderRadius: 14,
-                  padding: 10,
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.75)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  backdropFilter: 'blur(16px)',
-                  zIndex: 50,
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(5, 22px)',
-                  gap: 6,
-                }}
-              >
-                {[
-                  '#ffffff','#aaaaaa','#555555','#000000',
-                  '#ef4444','#f97316','#eab308','#84cc16',
-                  '#22c55e','#14b8a6','#06b6d4','#3b82f6',
-                  '#6366f1','#a855f7','#ec4899',
-                ].map(col => {
-                  const current = 'color' in selectedStroke ? selectedStroke.color : '#fff';
-                  const isActive = col === current;
-                  return (
-                    <button
-                      key={col}
-                      onClick={() => changeSelectedColor(col)}
-                      title={col}
-                      style={{
-                        width: 22, height: 22, borderRadius: '50%',
-                        background: col, border: 'none', cursor: 'pointer', padding: 0,
-                        outline: isActive ? '2.5px solid rgba(255,255,255,0.9)' : '1.5px solid rgba(255,255,255,0.2)',
-                        boxShadow: isActive ? '0 0 0 3px rgba(255,255,255,0.15)' : 'none',
-                        transition: 'all 0.12s',
-                      }}
+            {/* Color + Opacity popup */}
+            {showColorMenu && (() => {
+              const currentColor = 'color' in selectedStroke ? selectedStroke.color : '#ffffff';
+              const currentOpacity = ('opacity' in selectedStroke && selectedStroke.opacity != null)
+                ? selectedStroke.opacity : 1;
+              return (
+                <div
+                  ref={colorMenuRef}
+                  onPointerDown={e => e.stopPropagation()}
+                  style={{
+                    position: 'absolute',
+                    top: '100%', left: '50%',
+                    transform: 'translateX(-50%)',
+                    marginTop: 8,
+                    background: 'rgba(20,20,24,0.97)',
+                    borderRadius: 14,
+                    padding: '10px 12px',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.75)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    backdropFilter: 'blur(16px)',
+                    zIndex: 50,
+                    display: 'flex', flexDirection: 'column', gap: 10,
+                    width: 160,
+                  }}
+                >
+                  {/* ── Color section ── */}
+                  <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    Color
+                  </div>
+
+                  {/* Preset grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
+                    {[
+                      '#ffffff','#aaaaaa','#555555','#000000',
+                      '#ef4444','#f97316','#eab308','#84cc16',
+                      '#22c55e','#14b8a6','#06b6d4','#3b82f6',
+                      '#6366f1','#a855f7','#ec4899',
+                    ].map(col => {
+                      const isActive = col === currentColor;
+                      return (
+                        <button
+                          key={col}
+                          onClick={() => changeSelectedColor(col)}
+                          title={col}
+                          style={{
+                            width: 22, height: 22, borderRadius: '50%',
+                            background: col, border: 'none', cursor: 'pointer', padding: 0,
+                            outline: isActive ? '2.5px solid rgba(255,255,255,0.9)' : '1.5px solid rgba(255,255,255,0.2)',
+                            boxShadow: isActive ? '0 0 0 3px rgba(255,255,255,0.15)' : 'none',
+                            transition: 'all 0.12s',
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+
+                  {/* Custom color row */}
+                  <label style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    cursor: 'pointer',
+                    fontSize: 11, color: 'rgba(255,255,255,0.6)',
+                    padding: '4px 6px', borderRadius: 8,
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                  }}>
+                    <div style={{
+                      width: 18, height: 18, borderRadius: 5,
+                      background: currentColor,
+                      border: '1.5px solid rgba(255,255,255,0.3)',
+                      flexShrink: 0,
+                      position: 'relative', overflow: 'hidden',
+                    }}>
+                      <input
+                        type="color"
+                        value={currentColor}
+                        onChange={e => changeSelectedColor(e.target.value)}
+                        style={{
+                          position: 'absolute', inset: 0,
+                          opacity: 0, width: '100%', height: '100%',
+                          cursor: 'pointer', border: 'none', padding: 0,
+                        }}
+                      />
+                    </div>
+                    Personalizado
+                  </label>
+
+                  {/* ── Separator ── */}
+                  <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '0 -4px' }} />
+
+                  {/* ── Opacity section ── */}
+                  <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    Opacidad
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input
+                      type="range"
+                      min={5} max={100} step={1}
+                      value={Math.round(currentOpacity * 100)}
+                      onChange={e => changeSelectedOpacity(Number(e.target.value) / 100)}
+                      style={{ flex: 1, accentColor: '#a78bfa', height: 3, cursor: 'pointer' }}
                     />
-                  );
-                })}
-              </div>
-            )}
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', minWidth: 30, textAlign: 'right' }}>
+                      {Math.round(currentOpacity * 100)}%
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Divider */}
