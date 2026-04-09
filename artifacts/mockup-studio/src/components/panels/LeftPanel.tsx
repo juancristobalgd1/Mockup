@@ -738,7 +738,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     const popupStyle: React.CSSProperties = {
       position: 'fixed',
       left: bgPopupAnchor ? Math.max(8, Math.min(bgPopupAnchor.x - 130, window.innerWidth - 278)) : 0,
-      top: bgPopupAnchor ? bgPopupAnchor.y + 8 : 0,
+      bottom: bgPopupAnchor ? window.innerHeight - bgPopupAnchor.y + 8 : 0,
       width: 262,
       background: 'rgba(18,20,26,0.98)',
       borderRadius: 18, padding: 14, zIndex: 9999,
@@ -910,7 +910,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     updateState({ bgType: id as any });
                     if (popupOpen) { setBgPopup(null); return; }
                     const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-                    setBgPopupAnchor({ x: r.left + r.width / 2, y: r.bottom });
+                    setBgPopupAnchor({ x: r.left + r.width / 2, y: r.top });
                     setBgPopup(id);
                   }}
                   style={{
