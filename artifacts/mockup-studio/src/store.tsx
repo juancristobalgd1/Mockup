@@ -32,6 +32,48 @@ export interface TextOverlay {
 
 export type EnvPreset = 'studio' | 'warehouse' | 'sunset' | 'city' | 'forest' | 'night';
 
+// ── Annotation stroke types ──────────────────────────────────────────
+export type AnnotatePoint = { x: number; y: number };
+
+export interface AnnotateFreeStroke {
+  id: string;
+  kind: 'free';
+  tool: 'pen' | 'marker' | 'eraser';
+  color: string;
+  lineWidth: number;
+  opacity: number;
+  points: AnnotatePoint[];
+}
+
+export type AnnotateShapeTool = 'arrow' | 'rect' | 'circle' | 'ellipse' | 'triangle' | 'diamond' | 'star' | 'hexagon' | 'spiral' | 'wave';
+
+export interface AnnotateShapeStroke {
+  id: string;
+  kind: 'shape';
+  tool: AnnotateShapeTool;
+  color: string;
+  lineWidth: number;
+  opacity?: number;
+  start: AnnotatePoint;
+  end: AnnotatePoint;
+}
+
+export interface AnnotateTextStroke {
+  id: string;
+  kind: 'text';
+  color: string;
+  fontSize: number;
+  opacity?: number;
+  bold?: boolean;
+  italic?: boolean;
+  strikethrough?: boolean;
+  align?: 'left' | 'center' | 'right';
+  text: string;
+  position: AnnotatePoint;
+}
+
+export type AnyAnnotateStroke = AnnotateFreeStroke | AnnotateShapeStroke | AnnotateTextStroke;
+
 export interface AppState {
   deviceModel: string;
   deviceType: DeviceType;
@@ -68,6 +110,7 @@ export interface AppState {
   annotateShape: 'arrow' | 'rect' | 'circle' | 'ellipse' | 'triangle' | 'diamond' | 'star' | 'hexagon' | 'spiral' | 'wave';
   annotateLineWidth: number;
   annotateClearKey: number;
+  annotateStrokes: AnyAnnotateStroke[];
 
   animation: "none" | "float" | "spin" | "pulse" | "slide-in";
   autoRotate: boolean;
@@ -135,6 +178,7 @@ export const defaultState: AppState = {
   annotateShape: 'rect',
   annotateLineWidth: 5,
   annotateClearKey: 0,
+  annotateStrokes: [],
 
   animation: "float",
   autoRotate: false,

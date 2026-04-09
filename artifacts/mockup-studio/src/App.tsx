@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { AppProvider, useApp } from './store';
 import type { CreationMode } from './store';
 import { Canvas } from './components/canvas/Canvas';
@@ -42,6 +42,21 @@ function Editor() {
   const currentModel = getModelById(state.deviceModel);
   const deviceLabel = currentModel.label;
   const activeMode = CREATION_MODES.find(m => m.id === state.creationMode) ?? CREATION_MODES[0];
+
+  // ── Global keyboard shortcuts: Ctrl+Z (undo) / Ctrl+Shift+Z (redo) ──
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      const target = e.target as HTMLElement;
+      const isEditing = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      if (isEditing) return;
+      if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+      else if (e.key === 'z' && e.shiftKey) { e.preventDefault(); redo(); }
+      else if (e.key === 'y') { e.preventDefault(); redo(); }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
 
   const handleModeChange = (mode: CreationMode) => {
     const isMovie = mode === 'movie';
