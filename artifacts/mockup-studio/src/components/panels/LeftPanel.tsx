@@ -663,19 +663,24 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
             } as React.CSSProperties}>
               {DEVICE_GROUPS.map(group => {
                 const active = selectedGroup === group;
+                const repModel = DEVICE_MODELS.find(m => m.group === group);
                 return (
                   <button key={group}
                     onClick={() => setSelectedGroup(group)}
                     style={{
-                      flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4,
-                      padding: '5px 10px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                      flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                      padding: '6px 12px 5px', borderRadius: 11, border: 'none', cursor: 'pointer',
                       background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
                       outline: active ? '2px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.14)',
                       color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.45)',
                       fontSize: 10, fontWeight: 700, transition: 'all 0.12s', whiteSpace: 'nowrap',
                     }}>
-                    <span style={{ fontSize: 12 }}>{GROUP_ICONS[group]}</span>
-                    {group}
+                    {repModel && (
+                      <div style={{ transform: 'scale(0.85)', transformOrigin: 'center', lineHeight: 0 }}>
+                        <DeviceThumbnail modelId={repModel.id} isSelected={active} />
+                      </div>
+                    )}
+                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{group}</span>
                   </button>
                 );
               })}
