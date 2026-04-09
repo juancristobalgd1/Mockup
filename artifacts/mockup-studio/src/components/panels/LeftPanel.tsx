@@ -459,10 +459,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const lightPopupRef                        = useRef<HTMLDivElement>(null);
   const lightBtnRef                          = useRef<HTMLButtonElement>(null);
 
-  const [luzMenuOpen, setLuzMenuOpen]       = useState(false);
-  const [luzMenuAnchor, setLuzMenuAnchor]   = useState<{ x: number; y: number } | null>(null);
-  const luzMenuRef                          = useRef<HTMLDivElement>(null);
-
   const [scenePopup, setScenePopup]         = useState<null | 'canvas' | 'motion' | 'effects' | 'shadow'>(null);
   const [scenePopupAnchor, setScenePopupAnchor] = useState<{ x: number; y: number } | null>(null);
   const scenePopupRef                        = useRef<HTMLDivElement>(null);
@@ -580,18 +576,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, [lightPopupOpen]);
-
-  // Close Luz menu when clicking outside
-  useEffect(() => {
-    if (!luzMenuOpen) return;
-    const onDown = (e: MouseEvent) => {
-      if (luzMenuRef.current && !luzMenuRef.current.contains(e.target as Node)) {
-        setLuzMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [luzMenuOpen]);
 
   const handleBgImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -2068,95 +2052,17 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     );
   };
 
-  // ── Luz floating menu (rendered via fixed positioning, works in all layouts) ──
-  const LuzMenu = luzMenuOpen && luzMenuAnchor ? (() => {
-    const isRail = luzMenuAnchor.x < 80;
-    const posStyle: React.CSSProperties = isRail
-      ? { left: 62, top: Math.max(8, Math.min(luzMenuAnchor.y - 80, window.innerHeight - 420)) }
-      : { bottom: window.innerHeight - luzMenuAnchor.y + 10, left: Math.max(8, Math.min(luzMenuAnchor.x - 145, window.innerWidth - 308)) };
-    return (
-      <div ref={luzMenuRef} style={{
-        position: 'fixed', ...posStyle,
-        width: 294,
-        background: 'rgba(14,16,22,0.98)',
-        borderRadius: 20, padding: '16px 18px 18px', zIndex: 9999,
-        boxShadow: '0 12px 48px rgba(0,0,0,0.85), 0 2px 14px rgba(0,0,0,0.5)',
-        border: '1px solid rgba(255,255,255,0.11)',
-        backdropFilter: 'blur(28px)',
-      }}>
-        {/* Header */}
-        <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.38)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>
-          Iluminación
-        </div>
-
-        {/* ENV preset grid */}
-        <div style={{ display: 'flex', gap: 7, marginBottom: 12 }}>
-          {ENV_PRESETS.map(env => {
-            const active = state.envPreset === env.id && state.envEnabled !== false;
-            return (
-              <button key={env.id} title={env.label}
-                onClick={() => updateState({ envPreset: env.id, envEnabled: true })}
-                style={{
-                  flex: 1, height: 42, padding: 0, borderRadius: 11, border: 'none', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: active ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.06)',
-                  outline: active ? '2px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.10)',
-                  color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.38)',
-                  transition: 'all 0.12s',
-                }}>
-                {ENV_ICON[env.id]}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ENV label row + toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Entorno</span>
-          <button
-            onClick={() => updateState({ envEnabled: !(state.envEnabled !== false) })}
-            title={state.envEnabled !== false ? 'Desactivar entorno' : 'Activar entorno'}
-            style={{
-              width: 34, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer',
-              background: state.envEnabled !== false ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.18)',
-              position: 'relative', transition: 'background 0.2s',
-            }}>
-            <div style={{
-              position: 'absolute', top: 2, left: state.envEnabled !== false ? 15 : 2,
-              width: 16, height: 16, borderRadius: '50%',
-              background: state.envEnabled !== false ? '#111' : 'rgba(255,255,255,0.6)',
-              transition: 'left 0.2s, background 0.2s',
-            }} />
-          </button>
-        </div>
-
-        {/* Divider */}
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', marginBottom: 14 }} />
-
-        {/* Light sliders */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 14, rowGap: 2 }}>
-          <MiniSlider label="Brillo"       value={state.lightBrightness ?? 40}  min={0}   max={100}  step={1}    unit="%" onChange={v => updateState({ lightBrightness: v })} />
-          <MiniSlider label="Ambiental"    value={state.lightAmbient ?? 45}     min={0}   max={100}  step={1}    unit="%" onChange={v => updateState({ lightAmbient: v })} />
-          <MiniSlider label="Calidez"      value={state.lightWarmth ?? 0}       min={-50} max={50}   step={1}             onChange={v => updateState({ lightWarmth: v })} />
-          <MiniSlider label="Reflejos"     value={state.lightIBL ?? 40}         min={0}   max={100}  step={1}    unit="%" onChange={v => updateState({ lightIBL: v })} />
-          <MiniSlider label="Exposición"   value={Math.round((state.lightExposure ?? 1.0) * 100) / 100} min={0.4} max={2.0} step={0.05} onChange={v => updateState({ lightExposure: v })} />
-          <MiniSlider label="Bloom"        value={state.bloomIntensity ?? 22}   min={0}   max={100}  step={1}    unit="%" onChange={v => updateState({ bloomIntensity: v })} />
-        </div>
-      </div>
-    );
-  })() : null;
-
   // ── Mobile content-only mode (rendered by App.tsx inside a floating sheet) ──
   if (mobile && mobileContentOnly !== undefined) {
     return (
       <div className="panel-text-contrast" style={{ padding: '12px 0 16px' }}>
-        {LuzMenu}
         {mobileContentOnly === 'presets'    && <PresetsTab />}
         {mobileContentOnly === 'template'   && <TemplateTab />}
         {mobileContentOnly === 'device'     && <DeviceTab />}
         {mobileContentOnly === 'background' && <BackgroundTab />}
         {mobileContentOnly === 'overlay'    && <OverlayTab />}
         {mobileContentOnly === 'annotate'   && <AnnotateTab />}
+        {mobileContentOnly === 'canvas'     && <SceneTab />}
       </div>
     );
   }
@@ -2174,6 +2080,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           {activeTab === 'background' && <BackgroundTab />}
           {activeTab === 'overlay'    && <OverlayTab />}
           {activeTab === 'annotate'   && <AnnotateTab />}
+          {activeTab === 'canvas'     && <SceneTab />}
         </div>
 
         {/* Pill tab bar — fixed at the bottom of the panel */}
@@ -2184,25 +2091,14 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           scrollbarWidth: 'none',
         } as React.CSSProperties}>
           {TAB_ICONS.map(({ id, icon: Icon, label }) => {
-            const isLuz = id === 'canvas';
-            const active = isLuz ? luzMenuOpen : activeTab === id;
+            const active = activeTab === id;
             return (
-              <button key={id}
-                onClick={(e) => {
-                  if (isLuz) {
-                    if (luzMenuOpen) { setLuzMenuOpen(false); return; }
-                    const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-                    setLuzMenuAnchor({ x: r.left + r.width / 2, y: r.top });
-                    setLuzMenuOpen(true);
-                  } else {
-                    setActiveTab(id);
-                  }
-                }}
+              <button key={id} onClick={() => setActiveTab(id)}
                 style={{
                   flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
                   padding: '9px 16px', borderRadius: 22, fontSize: 12, fontWeight: 600,
                   background: active ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.07)',
-                  border: active && isLuz ? '1px solid rgba(167,139,250,0.6)' : '1px solid transparent',
+                  border: '1px solid transparent',
                   color: active ? '#0d0e0f' : 'rgba(255,255,255,0.48)',
                   cursor: 'pointer', transition: 'all 0.15s',
                   whiteSpace: 'nowrap',
@@ -2213,7 +2109,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
             );
           })}
         </div>
-        {LuzMenu}
       </div>
     );
   }
@@ -2238,36 +2133,22 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           fontStyle: 'italic',
         }}>M</div>
 
-        {TAB_ICONS.map(({ id, icon: Icon, label }) => {
-          const isLuz = id === 'canvas';
-          const active = isLuz ? luzMenuOpen : activeTab === id;
-          return (
-            <button key={id} title={label}
-              onClick={(e) => {
-                if (isLuz) {
-                  if (luzMenuOpen) { setLuzMenuOpen(false); return; }
-                  const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-                  setLuzMenuAnchor({ x: r.left + r.width / 2, y: r.top });
-                  setLuzMenuOpen(true);
-                } else {
-                  setActiveTab(id);
-                }
-              }}
-              style={{
-                width: 44, height: 46, borderRadius: 8, border: 'none',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
-                background: active ? (isLuz ? 'rgba(167,139,250,0.18)' : 'rgba(255,255,255,0.09)') : 'transparent',
-                outline: active && isLuz ? '1px solid rgba(167,139,250,0.5)' : 'none',
-                cursor: 'pointer', transition: 'all 0.12s',
-              }}>
-              <Icon size={15} strokeWidth={active ? 2 : 1.5}
-                style={{ color: active ? (isLuz ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.88)') : 'rgba(255,255,255,0.33)' }} />
-              <span style={{ fontSize: 8, fontWeight: 600, color: active ? (isLuz ? 'rgba(167,139,250,0.8)' : 'rgba(255,255,255,0.65)') : 'rgba(255,255,255,0.22)', letterSpacing: '0.02em' }}>
-                {label}
-              </span>
-            </button>
-          );
-        })}
+        {TAB_ICONS.map(({ id, icon: Icon, label }) => (
+          <button key={id} onClick={() => setActiveTab(id)} title={label}
+            style={{
+              width: 44, height: 46, borderRadius: 8, border: 'none',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+              background: activeTab === id ? 'rgba(255,255,255,0.09)' : 'transparent',
+              outline: 'none',
+              cursor: 'pointer', transition: 'all 0.12s',
+            }}>
+            <Icon size={15} strokeWidth={activeTab === id ? 2 : 1.5}
+              style={{ color: activeTab === id ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.33)' }} />
+            <span style={{ fontSize: 8, fontWeight: 600, color: activeTab === id ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.22)', letterSpacing: '0.02em' }}>
+              {label}
+            </span>
+          </button>
+        ))}
       </div>
 
       {/* Content panel */}
@@ -2291,9 +2172,9 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           {activeTab === 'background' && <BackgroundTab />}
           {activeTab === 'overlay'    && <OverlayTab />}
           {activeTab === 'annotate'   && <AnnotateTab />}
+          {activeTab === 'canvas'     && <SceneTab />}
         </div>
       </div>
-      {LuzMenu}
     </div>
   );
 }
