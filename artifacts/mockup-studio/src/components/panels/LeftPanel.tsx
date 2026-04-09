@@ -1451,10 +1451,10 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           }}>
             <div>
               <div style={{ fontSize: 11, fontWeight: 600, color: state.lightOverlayBgOnly ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)' }}>
-                Solo fondo
+                Background only
               </div>
               <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 1 }}>
-                El overlay no cubre el dispositivo
+                Overlay doesn't cover the device
               </div>
             </div>
             <button
