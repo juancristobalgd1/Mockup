@@ -449,6 +449,10 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const lightPopupRef                        = useRef<HTMLDivElement>(null);
   const lightBtnRef                          = useRef<HTMLButtonElement>(null);
 
+  const [scenePopup, setScenePopup]         = useState<null | 'canvas' | 'motion' | 'effects' | 'shadow'>(null);
+  const [scenePopupAnchor, setScenePopupAnchor] = useState<{ x: number; y: number } | null>(null);
+  const scenePopupRef                        = useRef<HTMLDivElement>(null);
+
   // Close annotate popup when clicking outside
   useEffect(() => {
     if (!annotatePopup) return;
@@ -484,6 +488,18 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, [bgPopup]);
+
+  // Close scene popup when clicking outside
+  useEffect(() => {
+    if (!scenePopup) return;
+    const onDown = (e: MouseEvent) => {
+      if (scenePopupRef.current && !scenePopupRef.current.contains(e.target as Node)) {
+        setScenePopup(null);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [scenePopup]);
 
   // Close light popup when clicking outside
   useEffect(() => {
@@ -1526,75 +1542,184 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   );
 
   // ── Scene tab content ───────────────────────────────────────────
-  const SceneTab = () => (
-    <>
-      {/* Canvas — ratio chips + corner radius */}
-      <Section label="Canvas">
-        <HScroll gap={6}>
-          {CANVAS_RATIOS.map(r => (
-            <Chip key={r.id} active={state.canvasRatio === r.id} onClick={() => updateState({ canvasRatio: r.id })}>{r.label}</Chip>
-          ))}
-        </HScroll>
-        <div style={{ marginTop: 10 }}>
-          <Slider label="Corner Radius" value={state.canvasRadius ?? 0} min={0} max={80} step={2}
-            onChange={v => updateState({ canvasRadius: v })} unit="px" />
-        </div>
-      </Section>
+  const SceneTab = () => {
+    const openScene = (id: 'canvas' | 'motion' | 'effects' | 'shadow', e: React.MouseEvent) => {
+      if (scenePopup === id) { setScenePopup(null); return; }
+      const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+      setScenePopupAnchor({ x: r.left + r.width / 2, y: r.top });
+      setScenePopup(id);
+    };
 
-      {/* Device & Motion — rotate + float */}
-      <Section label="Device & Motion">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <RefreshCw size={11} style={{ color: 'rgba(255,255,255,0.30)' }} />
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Auto Rotate</span>
-            </div>
-            <Toggle enabled={state.autoRotate} onToggle={() => updateState({ autoRotate: !state.autoRotate })} />
-          </div>
-          {state.autoRotate && (
-            <Slider label="Speed" value={Math.round(state.autoRotateSpeed * 10) / 10}
-              min={0.5} max={8} step={0.5} onChange={v => updateState({ autoRotateSpeed: v })} />
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <RotateCcw size={11} style={{ color: 'rgba(255,255,255,0.30)' }} />
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Float</span>
-            </div>
-            <Toggle enabled={state.animation === 'float'}
-              onToggle={() => updateState({ animation: state.animation === 'float' ? 'none' : 'float' })} />
-          </div>
-        </div>
-      </Section>
+    const POPUP_BASE: React.CSSProperties = {
+      position: 'fixed',
+      left: scenePopupAnchor ? Math.max(8, Math.min(scenePopupAnchor.x - 130, window.innerWidth - 278)) : 0,
+      bottom: scenePopupAnchor ? window.innerHeight - scenePopupAnchor.y + 8 : 0,
+      width: 262,
+      background: 'rgba(18,20,26,0.98)',
+      borderRadius: 18, padding: '14px 16px', zIndex: 9999,
+      boxShadow: '0 8px 40px rgba(0,0,0,0.80)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      backdropFilter: 'blur(22px)',
+    };
 
-      {/* Effects — reflection + grain as toggle rows */}
-      <Section label="Effects">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Floor Reflection</span>
-            <Toggle enabled={state.reflection ?? false} onToggle={() => updateState({ reflection: !(state.reflection ?? false) })} />
-          </div>
-          {(state.reflection ?? false) && (
-            <Slider label="Strength" value={state.reflectionOpacity ?? 50} min={0} max={100}
-              onChange={v => updateState({ reflectionOpacity: v })} unit="%" />
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Film Grain</span>
-            <Toggle enabled={state.grain ?? false} onToggle={() => updateState({ grain: !(state.grain ?? false) })} />
-          </div>
-          {(state.grain ?? false) && (
-            <Slider label="Intensity" value={state.grainIntensity ?? 35} min={5} max={100}
-              onChange={v => updateState({ grainIntensity: v })} unit="%" />
-          )}
-        </div>
-      </Section>
+    const POP_LABEL: React.CSSProperties = {
+      fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)',
+      letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12,
+    };
 
-      {/* Camera Shadow */}
-      <Section label="Shadow">
-        <Slider label="Intensity" value={state.contactShadowOpacity} min={0} max={100}
-          onChange={v => updateState({ contactShadowOpacity: v })} unit="%" />
-      </Section>
-    </>
-  );
+    const ROW: React.CSSProperties = {
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '5px 0',
+    };
+
+    const ROW_LABEL: React.CSSProperties = {
+      fontSize: 11, color: 'rgba(255,255,255,0.55)',
+    };
+
+    const DIVIDER: React.CSSProperties = {
+      borderTop: '1px solid rgba(255,255,255,0.07)', margin: '8px 0',
+    };
+
+    // Summary helpers for button sub-labels
+    const canvasSub = state.canvasRatio === 'free' ? 'Free' : state.canvasRatio;
+    const motionOn  = state.autoRotate || state.animation === 'float';
+    const effectsOn = (state.reflection ?? false) || (state.grain ?? false);
+    const shadowPct = state.contactShadowOpacity;
+
+    const SceneBtn = ({ id, icon, label, sub, active }: {
+      id: 'canvas' | 'motion' | 'effects' | 'shadow';
+      icon: React.ReactNode; label: string; sub: string; active?: boolean;
+    }) => (
+      <button
+        onClick={e => openScene(id, e)}
+        style={{
+          flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+          padding: '9px 4px 8px', borderRadius: 13, border: 'none', cursor: 'pointer',
+          background: scenePopup === id ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.5)',
+          outline: scenePopup === id
+            ? '2px solid rgba(167,139,250,0.8)'
+            : active ? '2px solid rgba(255,255,255,0.55)' : '1px solid rgba(255,255,255,0.13)',
+          transition: 'all 0.12s', gap: 4,
+        }}>
+        <div style={{ color: scenePopup === id ? 'rgba(167,139,250,1)' : active ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)' }}>
+          {icon}
+        </div>
+        <span style={{ fontSize: 9, fontWeight: 700, color: scenePopup === id ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)' }}>{label}</span>
+        <span style={{ fontSize: 8, color: active ? 'rgba(167,139,250,0.8)' : 'rgba(255,255,255,0.25)' }}>{sub}</span>
+      </button>
+    );
+
+    return (
+      <>
+        {/* ── Scene popup ─────────────────────────────────────── */}
+        {scenePopup && scenePopupAnchor && (
+          <div ref={scenePopupRef} style={POPUP_BASE}>
+
+            {/* Canvas */}
+            {scenePopup === 'canvas' && (
+              <>
+                <div style={POP_LABEL}>Canvas</div>
+                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 12 }}>
+                  {CANVAS_RATIOS.map(r => (
+                    <Chip key={r.id} active={state.canvasRatio === r.id}
+                      onClick={() => updateState({ canvasRatio: r.id })}>{r.label}</Chip>
+                  ))}
+                </div>
+                <Slider label="Corner Radius" value={state.canvasRadius ?? 0} min={0} max={80} step={2}
+                  onChange={v => updateState({ canvasRadius: v })} unit="px" />
+              </>
+            )}
+
+            {/* Motion */}
+            {scenePopup === 'motion' && (
+              <>
+                <div style={POP_LABEL}>Device & Motion</div>
+                <div style={ROW}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <RefreshCw size={12} style={{ color: 'rgba(255,255,255,0.35)' }} />
+                    <span style={ROW_LABEL}>Auto Rotate</span>
+                  </div>
+                  <Toggle enabled={state.autoRotate} onToggle={() => updateState({ autoRotate: !state.autoRotate })} />
+                </div>
+                {state.autoRotate && (
+                  <div style={{ marginTop: 6 }}>
+                    <Slider label="Speed" value={Math.round(state.autoRotateSpeed * 10) / 10}
+                      min={0.5} max={8} step={0.5} onChange={v => updateState({ autoRotateSpeed: v })} />
+                  </div>
+                )}
+                <div style={DIVIDER} />
+                <div style={ROW}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <RotateCcw size={12} style={{ color: 'rgba(255,255,255,0.35)' }} />
+                    <span style={ROW_LABEL}>Float</span>
+                  </div>
+                  <Toggle enabled={state.animation === 'float'}
+                    onToggle={() => updateState({ animation: state.animation === 'float' ? 'none' : 'float' })} />
+                </div>
+              </>
+            )}
+
+            {/* Effects */}
+            {scenePopup === 'effects' && (
+              <>
+                <div style={POP_LABEL}>Effects</div>
+                <div style={ROW}>
+                  <span style={ROW_LABEL}>Floor Reflection</span>
+                  <Toggle enabled={state.reflection ?? false}
+                    onToggle={() => updateState({ reflection: !(state.reflection ?? false) })} />
+                </div>
+                {(state.reflection ?? false) && (
+                  <div style={{ marginTop: 6 }}>
+                    <Slider label="Strength" value={state.reflectionOpacity ?? 50} min={0} max={100}
+                      onChange={v => updateState({ reflectionOpacity: v })} unit="%" />
+                  </div>
+                )}
+                <div style={DIVIDER} />
+                <div style={ROW}>
+                  <span style={ROW_LABEL}>Film Grain</span>
+                  <Toggle enabled={state.grain ?? false}
+                    onToggle={() => updateState({ grain: !(state.grain ?? false) })} />
+                </div>
+                {(state.grain ?? false) && (
+                  <div style={{ marginTop: 6 }}>
+                    <Slider label="Intensity" value={state.grainIntensity ?? 35} min={5} max={100}
+                      onChange={v => updateState({ grainIntensity: v })} unit="%" />
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Shadow */}
+            {scenePopup === 'shadow' && (
+              <>
+                <div style={POP_LABEL}>Shadow</div>
+                <Slider label="Intensity" value={state.contactShadowOpacity} min={0} max={100}
+                  onChange={v => updateState({ contactShadowOpacity: v })} unit="%" />
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── 4-button row ─────────────────────────────────────── */}
+        <Section label="Scene">
+          <div style={{ display: 'flex', gap: 6 }}>
+            <SceneBtn id="canvas" label="Canvas" sub={canvasSub} active={state.canvasRatio !== 'free' || (state.canvasRadius ?? 0) > 0}
+              icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>}
+            />
+            <SceneBtn id="motion" label="Motion" sub={motionOn ? 'On' : 'Off'} active={motionOn}
+              icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>}
+            />
+            <SceneBtn id="effects" label="Effects" sub={effectsOn ? 'On' : 'Off'} active={effectsOn}
+              icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6l-5 3.6 1.9-5.8L4 8.8h6.1z"/></svg>}
+            />
+            <SceneBtn id="shadow" label="Shadow" sub={`${shadowPct}%`} active={(shadowPct ?? 0) > 0}
+              icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><ellipse cx="12" cy="19" rx="8" ry="2.5"/><path d="M8 12a4 4 0 1 1 8 0"/></svg>}
+            />
+          </div>
+        </Section>
+      </>
+    );
+  };
 
   // ── Lighting tab ────────────────────────────────────────────────
   const LightingTab = () => (
