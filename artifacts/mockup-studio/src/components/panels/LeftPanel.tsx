@@ -444,6 +444,11 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const [bgPopupAnchor, setBgPopupAnchor]   = useState<{ x: number; y: number } | null>(null);
   const bgPopupRef                           = useRef<HTMLDivElement>(null);
 
+  const [lightPopupOpen, setLightPopupOpen] = useState(false);
+  const [lightPopupAnchor, setLightPopupAnchor] = useState<{ x: number; y: number } | null>(null);
+  const lightPopupRef                        = useRef<HTMLDivElement>(null);
+  const lightBtnRef                          = useRef<HTMLButtonElement>(null);
+
   // Close annotate popup when clicking outside
   useEffect(() => {
     if (!annotatePopup) return;
@@ -479,6 +484,19 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, [bgPopup]);
+
+  // Close light popup when clicking outside
+  useEffect(() => {
+    if (!lightPopupOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (lightPopupRef.current && !lightPopupRef.current.contains(e.target as Node)
+          && lightBtnRef.current && !lightBtnRef.current.contains(e.target as Node)) {
+        setLightPopupOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [lightPopupOpen]);
 
   const handleBgImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1581,46 +1599,116 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   // ── Lighting tab ────────────────────────────────────────────────
   const LightingTab = () => (
     <>
-      {/* Compact 2-column lighting grid */}
-      <Section label="Lighting">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 12 }}>
-          <MiniSlider label="Brightness" value={state.lightBrightness ?? 40} min={0} max={100} step={1} unit="%"
-            onChange={v => updateState({ lightBrightness: v })} />
-          <MiniSlider label="Ambient" value={state.lightAmbient ?? 45} min={0} max={100} step={1} unit="%"
-            onChange={v => updateState({ lightAmbient: v })} />
-          <MiniSlider label="Warmth" value={state.lightWarmth ?? 0} min={-50} max={50} step={1}
-            onChange={v => updateState({ lightWarmth: v })} />
-          <MiniSlider label="Reflections" value={state.lightIBL ?? 40} min={0} max={100} step={1} unit="%"
-            onChange={v => updateState({ lightIBL: v })} />
-          <MiniSlider label="Exposure" value={Math.round((state.lightExposure ?? 1.0) * 100) / 100}
-            min={0.4} max={2.0} step={0.05} onChange={v => updateState({ lightExposure: v })} />
-          <MiniSlider label="Bloom" value={state.bloomIntensity ?? 22} min={0} max={100} step={1} unit="%"
-            onChange={v => updateState({ bloomIntensity: v })} />
+      {/* Floating light-controls popup */}
+      {lightPopupOpen && lightPopupAnchor && (
+        <div ref={lightPopupRef} style={{
+          position: 'fixed',
+          left: Math.max(8, Math.min(lightPopupAnchor.x - 130, window.innerWidth - 278)),
+          bottom: window.innerHeight - lightPopupAnchor.y + 8,
+          width: 262,
+          background: 'rgba(18,20,26,0.98)',
+          borderRadius: 18, padding: '14px 16px', zIndex: 9999,
+          boxShadow: '0 8px 40px rgba(0,0,0,0.80), 0 2px 12px rgba(0,0,0,0.5)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          backdropFilter: 'blur(22px)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Light Controls</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 12 }}>
+            <MiniSlider label="Brightness" value={state.lightBrightness ?? 40} min={0} max={100} step={1} unit="%"
+              onChange={v => updateState({ lightBrightness: v })} />
+            <MiniSlider label="Ambient" value={state.lightAmbient ?? 45} min={0} max={100} step={1} unit="%"
+              onChange={v => updateState({ lightAmbient: v })} />
+            <MiniSlider label="Warmth" value={state.lightWarmth ?? 0} min={-50} max={50} step={1}
+              onChange={v => updateState({ lightWarmth: v })} />
+            <MiniSlider label="Reflections" value={state.lightIBL ?? 40} min={0} max={100} step={1} unit="%"
+              onChange={v => updateState({ lightIBL: v })} />
+            <MiniSlider label="Exposure" value={Math.round((state.lightExposure ?? 1.0) * 100) / 100}
+              min={0.4} max={2.0} step={0.05} onChange={v => updateState({ lightExposure: v })} />
+            <MiniSlider label="Bloom" value={state.bloomIntensity ?? 22} min={0} max={100} step={1} unit="%"
+              onChange={v => updateState({ bloomIntensity: v })} />
+          </div>
         </div>
-      </Section>
+      )}
 
-      {/* Environment */}
-      <Section label="Environment" action={
-        <Toggle enabled={state.envEnabled !== false}
-          onToggle={() => updateState({ envEnabled: !(state.envEnabled !== false) })} />
-      }>
-        <HScroll gap={7}>
-          {ENV_PRESETS.map(env => (
-            <button key={env.id} onClick={() => updateState({ envPreset: env.id, envEnabled: true })}
+      {/* Environment presets row + controls button */}
+      <Section label="Lighting">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+
+          {/* Scrollable env presets */}
+          <div style={{
+            flex: 1, display: 'flex', gap: 6, overflowX: 'auto',
+            scrollbarWidth: 'none', msOverflowStyle: 'none',
+            opacity: state.envEnabled !== false ? 1 : 0.35,
+            transition: 'opacity 0.2s',
+          } as React.CSSProperties}>
+            {ENV_PRESETS.map(env => {
+              const active = state.envPreset === env.id && state.envEnabled !== false;
+              return (
+                <button key={env.id}
+                  onClick={() => updateState({ envPreset: env.id, envEnabled: true })}
+                  style={{
+                    flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                    padding: '7px 10px', borderRadius: 11, border: 'none', cursor: 'pointer',
+                    background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
+                    outline: active ? '2px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.14)',
+                    color: active ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.65)',
+                    transition: 'all 0.12s',
+                  }}>
+                  <span style={{ fontSize: 18, lineHeight: 1 }}>{env.icon}</span>
+                  <span style={{ fontSize: 9, fontWeight: 600, whiteSpace: 'nowrap' }}>{env.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Divider */}
+          <div style={{ width: 1, height: 42, background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
+
+          {/* Env toggle + controls button */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flexShrink: 0, alignItems: 'center' }}>
+            {/* Env on/off toggle */}
+            <button
+              onClick={() => updateState({ envEnabled: !(state.envEnabled !== false) })}
+              title={state.envEnabled !== false ? 'Disable environment' : 'Enable environment'}
               style={{
-                flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                padding: '7px 9px', borderRadius: 10,
-                background: state.envPreset === env.id && state.envEnabled !== false ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
-                border: state.envPreset === env.id && state.envEnabled !== false ? '1px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.18)',
-                color: state.envPreset === env.id && state.envEnabled !== false ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.75)',
-                cursor: 'pointer', transition: 'all 0.12s',
-                opacity: state.envEnabled !== false ? 1 : 0.35,
+                width: 32, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer',
+                background: state.envEnabled !== false ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.18)',
+                position: 'relative', transition: 'background 0.2s',
               }}>
-              <span style={{ fontSize: 16, lineHeight: 1 }}>{env.icon}</span>
-              <span style={{ fontSize: 9, fontWeight: 600 }}>{env.label}</span>
+              <div style={{
+                position: 'absolute', top: 2, left: state.envEnabled !== false ? 13 : 2,
+                width: 16, height: 16, borderRadius: '50%',
+                background: state.envEnabled !== false ? '#111' : 'rgba(255,255,255,0.6)',
+                transition: 'left 0.2s, background 0.2s',
+              }} />
             </button>
-          ))}
-        </HScroll>
+            {/* Controls/settings button */}
+            <button
+              ref={lightBtnRef}
+              onClick={() => {
+                if (lightPopupOpen) { setLightPopupOpen(false); return; }
+                const r = lightBtnRef.current?.getBoundingClientRect();
+                if (r) setLightPopupAnchor({ x: r.left + r.width / 2, y: r.top });
+                setLightPopupOpen(true);
+              }}
+              title="Light controls"
+              style={{
+                width: 32, height: 24, borderRadius: 8, border: 'none', cursor: 'pointer',
+                background: lightPopupOpen ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.07)',
+                outline: lightPopupOpen ? '1.5px solid rgba(167,139,250,0.8)' : '1px solid rgba(255,255,255,0.12)',
+                color: lightPopupOpen ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.5)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.14s',
+              }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
       </Section>
     </>
   );
