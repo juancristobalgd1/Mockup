@@ -1013,23 +1013,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           onToggle={() => updateState({ annotateMode: !state.annotateMode })}
         />
       }>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 7,
-          padding: '8px 10px', borderRadius: 9,
-          background: state.annotateMode ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.05)',
-          border: state.annotateMode ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.1)',
-          transition: 'all 0.2s',
-        }}>
-          <div style={{
-            width: 7, height: 7, borderRadius: '50%',
-            background: state.annotateMode ? '#22c55e' : 'rgba(255,255,255,0.25)',
-            boxShadow: state.annotateMode ? '0 0 8px rgba(34,197,94,0.8)' : 'none',
-            flexShrink: 0, transition: 'all 0.2s',
-          }} />
-          <span style={{ fontSize: 11, color: state.annotateMode ? 'rgba(34,197,94,0.9)' : 'rgba(255,255,255,0.45)', lineHeight: 1.4 }}>
-            {state.annotateMode ? 'Drawing active — drag on canvas' : 'Enable to draw on the canvas'}
-          </span>
-        </div>
       </Section>
 
       {/* Tool strip — horizontal slider */}
