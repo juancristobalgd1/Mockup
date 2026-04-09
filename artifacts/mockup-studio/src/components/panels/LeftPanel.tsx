@@ -465,6 +465,10 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const deviceOptRef                          = useRef<HTMLDivElement>(null);
   const deviceOptBtnRef                       = useRef<HTMLButtonElement>(null);
 
+  const [deviceGroupPopup, setDeviceGroupPopup] = useState<DeviceGroup | null>(null);
+  const [deviceGroupAnchor, setDeviceGroupAnchor] = useState<{ x: number; y: number } | null>(null);
+  const deviceGroupPopupRef                     = useRef<HTMLDivElement>(null);
+
   // Close annotate popup when clicking outside
   useEffect(() => {
     if (!annotatePopup) return;
@@ -500,6 +504,18 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, [bgPopup]);
+
+  // Close device group popup when clicking outside
+  useEffect(() => {
+    if (!deviceGroupPopup) return;
+    const onDown = (e: MouseEvent) => {
+      if (deviceGroupPopupRef.current && !deviceGroupPopupRef.current.contains(e.target as Node)) {
+        setDeviceGroupPopup(null);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [deviceGroupPopup]);
 
   // Close device options popup when clicking outside
   useEffect(() => {
@@ -590,7 +606,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
 
   // ── Device tab content ──────────────────────────────────────────
   const DeviceTab = () => {
-    const groupModels = DEVICE_MODELS.filter(m => m.group === selectedGroup);
+    const activeGroup = DEVICE_MODELS.find(m => m.id === state.deviceModel)?.group;
     const hasColors = state.deviceType === 'iphone';
     const hasOrientation = state.deviceType === 'iphone' || state.deviceType === 'android' || state.deviceType === 'ipad';
     const hasBrowserTheme = state.deviceType === 'browser';
@@ -598,6 +614,51 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
 
     return (
       <>
+        {/* ── Group models popup ───────────────────────────── */}
+        {deviceGroupPopup && deviceGroupAnchor && (() => {
+          const popupModels = DEVICE_MODELS.filter(m => m.group === deviceGroupPopup);
+          return (
+            <div ref={deviceGroupPopupRef} style={{
+              position: 'fixed',
+              left: Math.max(8, Math.min(deviceGroupAnchor.x - 140, window.innerWidth - 296)),
+              bottom: window.innerHeight - deviceGroupAnchor.y + 8,
+              width: 280,
+              background: 'rgba(18,20,26,0.98)',
+              borderRadius: 18, padding: '12px 12px 10px', zIndex: 9999,
+              boxShadow: '0 8px 40px rgba(0,0,0,0.80)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              backdropFilter: 'blur(22px)',
+            }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>{deviceGroupPopup}</div>
+              <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                {popupModels.map(model => {
+                  const isSelected = state.deviceModel === model.id;
+                  return (
+                    <button key={model.id}
+                      onClick={() => { updateState({ deviceModel: model.id, deviceType: model.storeType }); setDeviceGroupPopup(null); }}
+                      style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        width: 72, padding: '10px 4px 8px', borderRadius: 14, gap: 0,
+                        background: isSelected ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.45)',
+                        border: isSelected ? '2px solid rgba(255,255,255,0.85)' : '1.5px solid rgba(255,255,255,0.16)',
+                        cursor: 'pointer', transition: 'all 0.12s',
+                      }}>
+                      <div style={{ height: 52, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', transform: 'scale(1.25)', transformOrigin: 'center' }}>
+                        <DeviceThumbnail modelId={model.id} isSelected={isSelected} />
+                      </div>
+                      <span style={{
+                        fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
+                        marginTop: 6, color: isSelected ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.55)',
+                        maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>{model.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ── Options popup ────────────────────────────────── */}
         {deviceOptPopup && deviceOptAnchor && (
           <div ref={deviceOptRef} style={{
@@ -611,7 +672,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
             border: '1px solid rgba(255,255,255,0.12)',
             backdropFilter: 'blur(22px)',
           }}>
-            {/* Frame colors */}
             {hasColors && (
               <>
                 <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Frame Color</div>
@@ -628,7 +688,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                 </div>
               </>
             )}
-            {/* Orientation */}
             {hasOrientation && (
               <>
                 <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Orientation</div>
@@ -638,7 +697,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                 </div>
               </>
             )}
-            {/* Browser theme */}
             {hasBrowserTheme && (
               <>
                 <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Theme</div>
@@ -654,33 +712,44 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           </div>
         )}
 
+        {/* ── Single row: group chips + options button ─────── */}
         <Section label="Device">
-          {/* Row 1: group chips + options button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
             <div style={{
               flex: 1, display: 'flex', gap: 5, overflowX: 'auto',
               scrollbarWidth: 'none', msOverflowStyle: 'none',
             } as React.CSSProperties}>
               {DEVICE_GROUPS.map(group => {
-                const active = selectedGroup === group;
+                const isOpen   = deviceGroupPopup === group;
+                const isActive = activeGroup === group;
                 const repModel = DEVICE_MODELS.find(m => m.group === group);
                 return (
                   <button key={group}
-                    onClick={() => setSelectedGroup(group)}
+                    onClick={e => {
+                      if (isOpen) { setDeviceGroupPopup(null); return; }
+                      const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                      setDeviceGroupAnchor({ x: r.left + r.width / 2, y: r.top });
+                      setDeviceGroupPopup(group);
+                      setDeviceOptPopup(false);
+                    }}
                     style={{
                       flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                       padding: '6px 12px 5px', borderRadius: 11, border: 'none', cursor: 'pointer',
-                      background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
-                      outline: active ? '2px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.14)',
-                      color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.45)',
-                      fontSize: 10, fontWeight: 700, transition: 'all 0.12s', whiteSpace: 'nowrap',
+                      background: isActive || isOpen ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
+                      outline: isOpen
+                        ? '1.5px solid rgba(167,139,250,0.8)'
+                        : isActive
+                          ? '2px solid rgba(255,255,255,0.85)'
+                          : '1px solid rgba(255,255,255,0.14)',
+                      color: isActive || isOpen ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.45)',
+                      transition: 'all 0.12s',
                     }}>
                     {repModel && (
                       <div style={{ transform: 'scale(0.85)', transformOrigin: 'center', lineHeight: 0 }}>
-                        <DeviceThumbnail modelId={repModel.id} isSelected={active} />
+                        <DeviceThumbnail modelId={repModel.id} isSelected={isActive || isOpen} />
                       </div>
                     )}
-                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{group}</span>
+                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{group}</span>
                   </button>
                 );
               })}
@@ -697,6 +766,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                 const r = deviceOptBtnRef.current?.getBoundingClientRect();
                 if (r) setDeviceOptAnchor({ x: r.left + r.width / 2, y: r.top });
                 setDeviceOptPopup(true);
+                setDeviceGroupPopup(null);
               }}
               style={{
                 flexShrink: 0, padding: '5px 9px', borderRadius: 9, border: 'none', cursor: 'pointer',
@@ -711,42 +781,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               </svg>
               Options
             </button>
-          </div>
-
-          {/* Row 2: device cards horizontal scroll */}
-          <div style={{
-            display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 4,
-            scrollbarWidth: 'none', msOverflowStyle: 'none',
-          } as React.CSSProperties}>
-            {groupModels.map(model => {
-              const isSelected = state.deviceModel === model.id;
-              return (
-                <button key={model.id}
-                  onClick={() => { updateState({ deviceModel: model.id, deviceType: model.storeType }); setSelectedGroup(model.group); }}
-                  style={{
-                    flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    width: 72, padding: '10px 4px 8px', borderRadius: 14, gap: 0,
-                    background: isSelected ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.45)',
-                    border: isSelected ? '2px solid rgba(255,255,255,0.85)' : '1.5px solid rgba(255,255,255,0.16)',
-                    cursor: 'pointer', transition: 'all 0.12s',
-                  }}>
-                  <div style={{
-                    height: 52, width: '100%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transform: 'scale(1.25)', transformOrigin: 'center',
-                  }}>
-                    <DeviceThumbnail modelId={model.id} isSelected={isSelected} />
-                  </div>
-                  <span style={{
-                    fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
-                    marginTop: 6, color: isSelected ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.55)',
-                    maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>
-                    {model.label}
-                  </span>
-                </button>
-              );
-            })}
           </div>
         </Section>
       </>
