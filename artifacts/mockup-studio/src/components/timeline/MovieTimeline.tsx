@@ -356,10 +356,11 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
 
       {/* ── Top controls bar ─────────────────────────────────────── */}
       {!collapsed && <div style={{
-        display: 'flex', alignItems: 'center', gap: 8,
-        padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)',
-        flexWrap: 'wrap',
+        display: 'flex', flexDirection: 'column', gap: 0,
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
       }}>
+      {/* Row 1: playback + keyframe controls */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px 6px' }}>
 
         {/* Play / Pause */}
         <button
@@ -516,27 +517,6 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
 
         <div style={{ flex: 1 }} />
 
-        <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
-          {formatTime(currentTime)}
-        </span>
-        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>de</span>
-
-        <select
-          value={movieDuration}
-          onChange={e => {
-            const d = Number(e.target.value);
-            updateState({ movieDuration: d });
-            if (movieTimeRef.current > d) { movieTimeRef.current = d; setCurrentTime(d); }
-          }}
-          style={{
-            background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 5, color: 'rgba(255,255,255,0.6)', fontSize: 11,
-            padding: '2px 6px', cursor: 'pointer',
-          }}
-        >
-          {[3, 5, 8, 10, 15, 20, 30].map(d => <option key={d} value={d}>{d}s</option>)}
-        </select>
-
         {/* Color accent picker */}
         <div style={{ position: 'relative' }}>
           <button
@@ -585,20 +565,6 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
           )}
         </div>
 
-        {/* Collapse button */}
-        <button
-          onClick={() => setCollapsed(true)}
-          title="Minimizar editor"
-          style={{
-            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 5, width: 24, height: 24, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'rgba(255,255,255,0.45)',
-          }}
-        >
-          <ChevronDown size={13} />
-        </button>
-
         <button
           onClick={() => { stopLiveRec(); stopPlayback(); onClose(); }}
           style={{
@@ -609,6 +575,51 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
         >
           <X size={14} />
         </button>
+      </div>
+
+      {/* Row 2: time display + collapse */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        padding: '4px 14px 6px',
+        borderTop: '1px solid rgba(255,255,255,0.05)',
+      }}>
+        <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
+          {formatTime(currentTime)}
+        </span>
+        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>de</span>
+        <select
+          value={movieDuration}
+          onChange={e => {
+            const d = Number(e.target.value);
+            updateState({ movieDuration: d });
+            if (movieTimeRef.current > d) { movieTimeRef.current = d; setCurrentTime(d); }
+          }}
+          style={{
+            background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 5, color: 'rgba(255,255,255,0.6)', fontSize: 11,
+            padding: '2px 6px', cursor: 'pointer',
+          }}
+        >
+          {[3, 5, 8, 10, 15, 20, 30].map(d => <option key={d} value={d}>{d}s</option>)}
+        </select>
+
+        <div style={{ flex: 1 }} />
+
+        {/* Collapse button */}
+        <button
+          onClick={() => setCollapsed(true)}
+          title="Minimizar editor"
+          style={{
+            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 5, height: 22, padding: '0 8px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 4,
+            color: 'rgba(255,255,255,0.45)', fontSize: 10,
+          }}
+        >
+          <ChevronDown size={11} />
+          Minimizar
+        </button>
+      </div>
       </div>}
 
       {/* ── Timeline track ───────────────────────────────────────── */}
