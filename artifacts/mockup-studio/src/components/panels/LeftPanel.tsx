@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, memo } from 'react';
 import {
   Smartphone, Shuffle, Wand2, Image as ImageIcon, Sliders,
   LayoutGrid, X, RefreshCw, Sun, RotateCcw, Search,
+  Lamp, Warehouse, Sunset, Building2, TreePine, Moon,
 } from 'lucide-react';
 import type { Tab } from './tabs';
 import { TAB_ICONS } from './tabs';
@@ -24,14 +25,22 @@ const IPHONE_COLORS: { id: DeviceColor; label: string; bg: string; border: strin
   { id: 'sierra',       label: 'Sierra',      bg: 'linear-gradient(135deg, #6b8ca3, #4a6e8a)', border: '#5a7a90' },
 ];
 
-const ENV_PRESETS: { id: 'studio' | 'warehouse' | 'sunset' | 'city' | 'forest' | 'night'; label: string; icon: string }[] = [
-  { id: 'studio',    label: 'Studio',    icon: '🎬' },
-  { id: 'warehouse', label: 'Warehouse', icon: '🏭' },
-  { id: 'city',      label: 'City',      icon: '🌆' },
-  { id: 'sunset',    label: 'Sunset',    icon: '🌅' },
-  { id: 'forest',    label: 'Forest',    icon: '🌲' },
-  { id: 'night',     label: 'Night',     icon: '🌙' },
+const ENV_PRESETS: { id: 'studio' | 'warehouse' | 'sunset' | 'city' | 'forest' | 'night'; label: string }[] = [
+  { id: 'studio',    label: 'Studio'    },
+  { id: 'warehouse', label: 'Warehouse' },
+  { id: 'city',      label: 'City'      },
+  { id: 'sunset',    label: 'Sunset'    },
+  { id: 'forest',    label: 'Forest'    },
+  { id: 'night',     label: 'Night'     },
 ];
+const ENV_ICON: Record<string, React.ReactNode> = {
+  studio:    <Lamp    size={20} strokeWidth={1.5} />,
+  warehouse: <Warehouse size={20} strokeWidth={1.5} />,
+  city:      <Building2 size={20} strokeWidth={1.5} />,
+  sunset:    <Sunset  size={20} strokeWidth={1.5} />,
+  forest:    <TreePine size={20} strokeWidth={1.5} />,
+  night:     <Moon    size={20} strokeWidth={1.5} />,
+};
 
 const CANVAS_RATIOS = [
   { id: 'free',  label: 'Free'  },
@@ -1862,9 +1871,10 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
                     outline: active ? '2px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.14)',
+                    color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.4)',
                     transition: 'all 0.12s',
                   }}>
-                  <span style={{ fontSize: 20, lineHeight: 1 }}>{env.icon}</span>
+                  {ENV_ICON[env.id]}
                 </button>
               );
             })}
