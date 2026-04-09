@@ -12,11 +12,15 @@ export type CanvasRatio = "free" | "1:1" | "4:5" | "16:9" | "9:16" | "4:3" | "3:
 export type ContentType = "image" | "video" | null;
 export type CreationMode = "mockup" | "movie" | "screenshot";
 
+export type EasingType = 'linear' | 'smooth' | 'ease-in' | 'ease-out' | 'elastic' | 'bounce';
+
 export interface CameraKeyframe {
   id: string;
   time: number;
   position: [number, number, number];
   target: [number, number, number];
+  easing?: EasingType;
+  label?: string;
 }
 
 export interface TextOverlay {
@@ -218,6 +222,7 @@ interface AppContextType {
   removeText: (id: string) => void;
   addCameraKeyframe: (kf: Omit<CameraKeyframe, 'id'>) => void;
   removeCameraKeyframe: (id: string) => void;
+  updateCameraKeyframe: (id: string, updates: Partial<Omit<CameraKeyframe, 'id'>>) => void;
   clearCameraKeyframes: () => void;
   undo: () => void;
   redo: () => void;
@@ -316,6 +321,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
+  const updateCameraKeyframe = (id: string, updates: Partial<Omit<CameraKeyframe, 'id'>>) => {
+    setState(prev => ({
+      ...prev,
+      cameraKeyframes: prev.cameraKeyframes.map(k => k.id === id ? { ...k, ...updates } : k),
+    }));
+  };
+
   const clearCameraKeyframes = () => {
     setState(prev => ({ ...prev, cameraKeyframes: [] }));
   };
@@ -324,7 +336,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider value={{
       state, updateState,
       addText, updateText, removeText,
-      addCameraKeyframe, removeCameraKeyframe, clearCameraKeyframes,
+      addCameraKeyframe, removeCameraKeyframe, updateCameraKeyframe, clearCameraKeyframes,
       undo, redo,
       canUndo: historyLen > 0,
       canRedo: futureLen > 0,

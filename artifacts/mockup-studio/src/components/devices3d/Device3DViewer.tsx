@@ -978,6 +978,29 @@ const CAMERA_PRESETS: Record<string, { phi: number; theta: number }> = {
   dramatic:     { phi: Math.PI / 2 - 0.50, theta:  0.38 },
 };
 
+// ── Easing functions ──────────────────────────────────────────────
+function applyEasing(alpha: number, easing?: string): number {
+  switch (easing) {
+    case 'linear': return alpha;
+    case 'ease-in': return alpha * alpha * alpha;
+    case 'ease-out': return 1 - Math.pow(1 - alpha, 3);
+    case 'elastic': {
+      if (alpha === 0 || alpha === 1) return alpha;
+      return Math.pow(2, -10 * alpha) * Math.sin((alpha * 10 - 0.75) * (2 * Math.PI / 3)) + 1;
+    }
+    case 'bounce': {
+      const n1 = 7.5625, d1 = 2.75;
+      let a = alpha;
+      if (a < 1 / d1) return n1 * a * a;
+      else if (a < 2 / d1) { a -= 1.5 / d1; return n1 * a * a + 0.75; }
+      else if (a < 2.5 / d1) { a -= 2.25 / d1; return n1 * a * a + 0.9375; }
+      else { a -= 2.625 / d1; return n1 * a * a + 0.984375; }
+    }
+    case 'smooth':
+    default: return alpha * alpha * (3 - 2 * alpha); // smoothstep
+  }
+}
+
 // ── Interpolate between camera keyframes ──────────────────────────
 function interpolateKeyframes(
   keyframes: CameraKeyframe[],
@@ -1013,9 +1036,9 @@ function interpolateKeyframes(
   }
   const span = b.time - a.time;
   const alpha = span > 0 ? (t - a.time) / span : 0;
-  const smooth = alpha * alpha * (3 - 2 * alpha); // smoothstep
-  const position = new THREE.Vector3(...a.position).lerp(new THREE.Vector3(...b.position), smooth);
-  const target = new THREE.Vector3(...a.target).lerp(new THREE.Vector3(...b.target), smooth);
+  const easedAlpha = applyEasing(alpha, b.easing);
+  const position = new THREE.Vector3(...a.position).lerp(new THREE.Vector3(...b.position), easedAlpha);
+  const target = new THREE.Vector3(...a.target).lerp(new THREE.Vector3(...b.target), easedAlpha);
   return { position, target };
 }
 
