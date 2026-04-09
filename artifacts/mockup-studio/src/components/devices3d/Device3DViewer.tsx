@@ -333,31 +333,35 @@ function DeviceScene({
     setMenuOpen(false);
   };
 
-  const handleUrlCapture = async () => {
+  const handleUrlCapture = () => {
     if (!menuUrl.trim()) return;
     setCaptureError('');
     setCapturing(true);
-    try {
-      let url = menuUrl.trim();
-      if (!url.startsWith('http')) url = 'https://' + url;
-      const delaySegment = captureDelay > 0 ? `delay/${captureDelay * 1000}/` : '';
-      const thumUrl = `https://image.thum.io/get/width/1400/crop/900/noanimate/${delaySegment}${url}`;
-      // Verify the image loads before setting state
-      await new Promise<void>((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error('Image failed to load'));
-        img.src = thumUrl;
-      });
-      updateState({ screenshotUrl: thumUrl, videoUrl: null, contentType: 'image' });
+
+    let url = menuUrl.trim();
+    if (!url.startsWith('http')) url = 'https://' + url;
+    const delaySegment = captureDelay > 0 ? `delay/${captureDelay * 1000}/` : '';
+    const thumUrl = `https://image.thum.io/get/width/1400/crop/900/noanimate/${delaySegment}${url}`;
+
+    // Close modal after the user's selected wait time
+    const closeDelay = captureDelay * 1000;
+    setTimeout(() => {
       setMenuOpen(false);
       setMenuUrl('');
-    } catch {
-      setCaptureError('Could not capture. Check the URL.');
-    } finally {
       setCapturing(false);
-    }
+    }, closeDelay);
+
+    // Load image in background; apply when ready
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      updateState({ screenshotUrl: thumUrl, videoUrl: null, contentType: 'image' });
+    };
+    img.onerror = () => {
+      setCaptureError('Could not capture. Check the URL.');
+      setCapturing(false);
+    };
+    img.src = thumUrl;
   };
 
   // Icon/plane position — screen center, slightly in front of device face
