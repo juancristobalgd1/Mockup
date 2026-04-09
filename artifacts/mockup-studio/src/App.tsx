@@ -38,6 +38,7 @@ function Editor() {
   const movieTimeRef = useRef<number>(0);
   const [moviePlaying, setMoviePlaying] = useState(false);
   const [mobileTab, setMobileTab] = useState<Tab | 'export' | null>(null);
+  const [timelineCollapsed, setTimelineCollapsed] = useState(false);
 
   const currentModel = getModelById(state.deviceModel);
   const deviceLabel = currentModel.label;
@@ -244,9 +245,9 @@ function Editor() {
             />
             <div style={{
               position: 'absolute',
-              bottom: state.movieMode ? 180 : 58,
+              bottom: state.movieMode ? (timelineCollapsed ? 96 : 180) : 58,
               left: 8, right: 8, zIndex: 30,
-              maxHeight: state.movieMode ? '48vh' : '70vh',
+              maxHeight: state.movieMode ? (timelineCollapsed ? '68vh' : '48vh') : '70vh',
               background: 'transparent',
               backdropFilter: 'none',
               WebkitBackdropFilter: 'none',
@@ -419,7 +420,8 @@ function Editor() {
               movieTimeRef={movieTimeRef}
               canvasRef={canvasRef}
               onPlayingChange={setMoviePlaying}
-              onClose={() => { updateState({ movieMode: false }); setMoviePlaying(false); setMobileTab(null); }}
+              onCollapsedChange={setTimelineCollapsed}
+              onClose={() => { updateState({ movieMode: false }); setMoviePlaying(false); setMobileTab(null); setTimelineCollapsed(false); }}
             />
           )}
         </div>

@@ -9,6 +9,7 @@ interface MovieTimelineProps {
   movieTimeRef: React.MutableRefObject<number>;
   onClose: () => void;
   onPlayingChange?: (playing: boolean) => void;
+  onCollapsedChange?: (collapsed: boolean) => void;
   canvasRef: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -133,7 +134,7 @@ function Diamond({ active, label, onClick, onContextMenu }: {
   );
 }
 
-export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChange, canvasRef }: MovieTimelineProps) {
+export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChange, onCollapsedChange, canvasRef }: MovieTimelineProps) {
   const { state, updateState, addCameraKeyframe, removeCameraKeyframe, updateCameraKeyframe, clearCameraKeyframes } = useApp();
   const { cameraKeyframes, movieDuration } = state;
 
@@ -150,6 +151,7 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
   const [showPresets, setShowPresets] = useState(false);
   const [editingLabel, setEditingLabel] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => { onCollapsedChange?.(collapsed); }, [collapsed, onCollapsedChange]);
   const [accentColor, setAccentColor] = useState('#161819');
   const [showColorPicker, setShowColorPicker] = useState(false);
 
