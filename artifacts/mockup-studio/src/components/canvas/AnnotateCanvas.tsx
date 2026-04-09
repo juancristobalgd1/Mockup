@@ -368,7 +368,7 @@ export function AnnotateCanvas() {
   const resizeHandle = useRef<HandleName | null>(null);
   const resizeBBoxStart = useRef<BBox | null>(null);
 
-  const lw = SIZE_MAP[state.annotateSize] ?? 5;
+  const lw = state.annotateLineWidth ?? SIZE_MAP[state.annotateSize] ?? 5;
   const fontSize = FONT_SIZE_MAP[state.annotateSize] ?? 20;
 
   // ── Canvas-to-screen coordinate helpers ───────────────────────────
