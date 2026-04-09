@@ -866,15 +866,23 @@ export function AnnotateCanvas() {
               name === 'NW' || name === 'SE' ? 'nwse-resize' :
               'nesw-resize';
             return (
-              <circle
-                key={name}
-                cx={hPos.x} cy={hPos.y} r={HANDLE_RADIUS}
-                fill={HANDLE_COLOR} stroke="#fff" strokeWidth={2}
-                style={{ pointerEvents: 'all', cursor }}
-                onPointerDown={e => onHandlePointerDown(e, name)}
-                onPointerMove={onHandlePointerMove}
-                onPointerUp={onHandlePointerUp}
-              />
+              <g key={name}>
+                {/* Larger invisible touch target for mobile */}
+                <circle
+                  cx={hPos.x} cy={hPos.y} r={22}
+                  fill="transparent"
+                  style={{ pointerEvents: 'all', cursor }}
+                  onPointerDown={e => onHandlePointerDown(e, name)}
+                  onPointerMove={onHandlePointerMove}
+                  onPointerUp={onHandlePointerUp}
+                />
+                {/* Visible handle */}
+                <circle
+                  cx={hPos.x} cy={hPos.y} r={HANDLE_RADIUS}
+                  fill={HANDLE_COLOR} stroke="#fff" strokeWidth={2}
+                  style={{ pointerEvents: 'none', cursor }}
+                />
+              </g>
             );
           })}
         </svg>
