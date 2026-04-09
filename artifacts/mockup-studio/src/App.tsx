@@ -258,7 +258,6 @@ function Editor() {
                     boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
                   }}>
                   {mode.icon}
-                  {mode.label}
                 </button>
               );
             })}
@@ -285,7 +284,6 @@ function Editor() {
               pointerEvents: 'auto',
             } as React.CSSProperties}>
             <Download size={14} />
-            Export
           </button>
         </div>
 
