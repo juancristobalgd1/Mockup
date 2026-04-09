@@ -742,9 +742,10 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                       setDeviceGroupPopup(group);
                       setDeviceOptPopup(false);
                     }}
+                    title={group}
                     style={{
-                      flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-                      padding: '6px 12px 5px', borderRadius: 11, border: 'none', cursor: 'pointer',
+                      flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                      padding: '5px', borderRadius: 11, border: 'none', cursor: 'pointer',
                       background: isActive || isOpen ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
                       outline: isOpen
                         ? '1.5px solid rgba(167,139,250,0.8)'
@@ -759,7 +760,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                         <DeviceThumbnail modelId={repModel.id} isSelected={isActive || isOpen} />
                       </div>
                     )}
-                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{group}</span>
                   </button>
                 );
               })}
