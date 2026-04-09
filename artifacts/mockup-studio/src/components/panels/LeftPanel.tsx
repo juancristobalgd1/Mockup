@@ -1100,6 +1100,25 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               );
             })}
           </div>
+
+          {/* Opacity row — shown for all types except none/transparent */}
+          {state.bgType !== 'none' && state.bgType !== 'transparent' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.38)', flexShrink: 0, width: 44 }}>
+                Opacity
+              </span>
+              <input
+                type="range" min={0} max={100} step={1}
+                value={state.bgOpacity ?? 100}
+                onChange={e => updateState({ bgOpacity: Number(e.target.value) })}
+                className="rt-slider"
+                style={{ flex: 1, accentColor: 'rgba(255,255,255,0.7)', height: 3 }}
+              />
+              <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.55)', minWidth: 28, textAlign: 'right' }}>
+                {state.bgOpacity ?? 100}%
+              </span>
+            </div>
+          )}
         </Section>
       </>
     );
