@@ -338,10 +338,18 @@ function DeviceScene({
     setCaptureError('');
     setCapturing(true);
 
+    // Compute screen aspect ratio from the current device model
+    const screenW = def.w - def.insetSide * 2;
+    const screenH = def.h - def.insetTop - def.insetBottom;
+    const physW = isLandscape ? screenH : screenW;
+    const physH = isLandscape ? screenW : screenH;
+    const thumW = 1400;
+    const thumH = Math.max(200, Math.round(thumW * (physH / physW)));
+
     let url = menuUrl.trim();
     if (!url.startsWith('http')) url = 'https://' + url;
     const delaySegment = captureDelay > 0 ? `delay/${captureDelay * 1000}/` : '';
-    const thumUrl = `https://image.thum.io/get/width/1400/crop/900/noanimate/${delaySegment}${url}`;
+    const thumUrl = `https://image.thum.io/get/width/${thumW}/crop/${thumH}/noanimate/${delaySegment}${url}`;
 
     // Close modal after the user's selected wait time
     const closeDelay = captureDelay * 1000;
