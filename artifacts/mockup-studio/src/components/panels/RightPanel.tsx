@@ -6,7 +6,8 @@ import { ANIMATED_BACKGROUNDS } from '../../data/backgrounds';
 import type { AnimatedBackground } from '../../data/backgrounds';
 
 // ── Animated background canvas drawing ───────────────────────────────────────
-// Computes the background-position for each keyframe animation at time t (0–1)
+
+// Horizontal animation position (0–1) matching each CSS keyframe type
 function animPosX(animStr: string, t: number): number {
   if (animStr.includes('bgShift2')) {
     if (t < 0.33) return t / 0.33;
@@ -18,33 +19,96 @@ function animPosX(animStr: string, t: number): number {
     if (t < 0.75) return 1;
     return 1 - (t - 0.75) / 0.25;
   }
-  // bgShift: triangular wave 0→1→0
-  return t < 0.5 ? t * 2 : (1 - t) * 2;
+  // bgShift or any unknown keyframe → smooth cosine oscillation
+  return (1 - Math.cos(t * 2 * Math.PI)) / 2;
 }
 
+// Expand shorthand hex (#abc → #aabbcc)
+function expandHex(hex: string): string {
+  if (hex.length === 4) return '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
+  return hex;
+}
+function hexToRgba(hex: string, alpha: number): string {
+  const h = expandHex(hex).replace('#', '');
+  return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${alpha.toFixed(3)})`;
+}
+
+// Main per-frame draw function — handles ALL AnimatedBackground types
 function drawAnimatedBg(ctx: CanvasRenderingContext2D, bg: AnimatedBackground, elapsedMs: number, W: number, H: number) {
-  const rawBg = bg.type === 'css' ? bg.animStyle?.background : undefined;
+  const ts = elapsedMs / 1000; // seconds
+
+  // ── iframe backgrounds (e.g. 3D Aura) → animated orbiting glows ──────────
+  if (bg.type === 'iframe') {
+    const thumbStr = typeof bg.thumb.background === 'string' ? bg.thumb.background : '';
+    const colors = thumbStr.match(/#[0-9a-fA-F]{3,8}/g)?.map(expandHex) ?? ['#7c3aed', '#3b82f6', '#06b6d4', '#0f172a'];
+    // Base fill (darkest color)
+    ctx.fillStyle = colors[colors.length - 1];
+    ctx.fillRect(0, 0, W, H);
+    // Orbiting glow layers via 'screen' blend — creates beautiful 3D aura effect
+    ctx.globalCompositeOperation = 'screen';
+    const glows = [
+      { x: 0.30 + 0.22 * Math.sin(ts * 0.47),        y: 0.28 + 0.18 * Math.cos(ts * 0.38),        r: 0.65, c: colors[0], a: 0.78 },
+      { x: 0.68 + 0.18 * Math.cos(ts * 0.31),        y: 0.55 + 0.22 * Math.sin(ts * 0.55),        r: 0.58, c: colors[1], a: 0.68 },
+      { x: 0.50 + 0.20 * Math.sin(ts * 0.63 + 1.2), y: 0.70 + 0.16 * Math.cos(ts * 0.42),        r: 0.50, c: colors[2] ?? colors[1], a: 0.58 },
+    ];
+    for (const g of glows) {
+      const rg = ctx.createRadialGradient(g.x * W, g.y * H, 0, g.x * W, g.y * H, g.r * W);
+      rg.addColorStop(0, hexToRgba(g.c, g.a));
+      rg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = rg;
+      ctx.fillRect(0, 0, W, H);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    return;
+  }
+
+  // ── CSS gradient backgrounds ──────────────────────────────────────────────
+  const rawBg = bg.animStyle?.background;
   const bgCss = typeof rawBg === 'string' ? rawBg : (typeof bg.thumb.background === 'string' ? bg.thumb.background : '');
   const animStr = typeof bg.animStyle?.animation === 'string' ? bg.animStyle.animation : 'bgShift 12s';
 
   const periodMatch = animStr.match(/(\d+(?:\.\d+)?)s/);
-  const period = periodMatch ? parseFloat(periodMatch[1]) * 1000 : 12000;
-  const t = (elapsedMs % period) / period;
-  const posX = animPosX(animStr, t);
-  const posY = 0.5;
+  const period = periodMatch ? parseFloat(periodMatch[1]) : 12;
+  const cycleT = (ts % period) / period;
 
-  const colors = bgCss.match(/#[0-9a-fA-F]{3,8}/g) ?? ['#111113', '#1e1b4b'];
+  const posX = animPosX(animStr, cycleT);
+  const posY = 0.5 + 0.07 * Math.sin(ts * 0.71); // gentle Y drift adds depth
+
+  const colors = bgCss.match(/#[0-9a-fA-F]{3,8}/g)?.map(expandHex) ?? ['#111113', '#1e1b4b'];
+
+  // Parse CSS angle (e.g. -45deg); convert to radians measured from canvas +Y axis
+  const angleMatch = bgCss.match(/(-?\d+)deg/);
+  const cssAngleDeg = angleMatch ? parseFloat(angleMatch[1]) : -45;
+  const canvasAngleRad = (cssAngleDeg - 90) * Math.PI / 180;
 
   // Simulate background-size:400% 400% + background-position:X% Y%
   const bgW = W * 4;
   const bgH = H * 4;
-  const xOff = posX * (bgW - W);   // how far into the 4× tile we are
+  const xOff = posX * (bgW - W);
   const yOff = posY * (bgH - H);
 
-  // -45deg gradient: first color at top-right, last at bottom-left (of the 4× tile)
-  const gradient = ctx.createLinearGradient(bgW - xOff, -yOff, -xOff, bgH - yOff);
+  // Gradient axis through the center of the 4× tile (in canvas coords)
+  const cx = bgW / 2 - xOff;
+  const cy = bgH / 2 - yOff;
+  const len = Math.sqrt(bgW * bgW + bgH * bgH) / 2;
+  const gx1 = cx - Math.sin(canvasAngleRad) * len;
+  const gy1 = cy + Math.cos(canvasAngleRad) * len;
+  const gx2 = cx + Math.sin(canvasAngleRad) * len;
+  const gy2 = cy - Math.cos(canvasAngleRad) * len;
+
+  const gradient = ctx.createLinearGradient(gx1, gy1, gx2, gy2);
   colors.forEach((c: string, i: number) => gradient.addColorStop(i / Math.max(colors.length - 1, 1), c));
   ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, W, H);
+
+  // Soft moving radial pulse — adds a "breathing" light source for excitement
+  const pulseA = 0.05 + 0.04 * Math.sin(ts * 2.1);
+  const px = W * (0.45 + 0.10 * Math.sin(ts * 0.33));
+  const py = H * (0.40 + 0.10 * Math.cos(ts * 0.29));
+  const pulse = ctx.createRadialGradient(px, py, 0, px, py, W * 0.72);
+  pulse.addColorStop(0, `rgba(255,255,255,${pulseA.toFixed(3)})`);
+  pulse.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = pulse;
   ctx.fillRect(0, 0, W, H);
 }
 
