@@ -453,6 +453,11 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const [scenePopupAnchor, setScenePopupAnchor] = useState<{ x: number; y: number } | null>(null);
   const scenePopupRef                        = useRef<HTMLDivElement>(null);
 
+  const [presentsPopupOpen, setPresentsPopupOpen] = useState(false);
+  const [presentsPopupAnchor, setPresentsPopupAnchor] = useState<{ x: number; y: number } | null>(null);
+  const presentsPopupRef                      = useRef<HTMLDivElement>(null);
+  const presentsBtnRef                        = useRef<HTMLButtonElement>(null);
+
   // Close annotate popup when clicking outside
   useEffect(() => {
     if (!annotatePopup) return;
@@ -488,6 +493,19 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, [bgPopup]);
+
+  // Close presents popup when clicking outside
+  useEffect(() => {
+    if (!presentsPopupOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (presentsPopupRef.current && !presentsPopupRef.current.contains(e.target as Node)
+        && presentsBtnRef.current && !presentsBtnRef.current.contains(e.target as Node)) {
+        setPresentsPopupOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [presentsPopupOpen]);
 
   // Close scene popup when clicking outside
   useEffect(() => {
@@ -1840,50 +1858,90 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
 
   // ── Presets tab ─────────────────────────────────────────────────
   const PresetsTab = () => {
-    const allBgs = [...GRADIENTS, ...MESH_GRADIENTS, ...WALLPAPERS];
+    const activePose = PRESENT_POSES.find(p => p.id === state.cameraAngle) ?? PRESENT_POSES[0];
+    const scalePct   = state.deviceScale ?? 100;
+
     return (
       <>
-        {/* Present Type — Rotato-style horizontal slider */}
-        <Section label="Present Type">
-          <HScroll gap={6}>
-            {PRESENT_POSES.map(pose => {
-              const active = state.cameraAngle === pose.id;
-              return (
-                <button
-                  key={pose.id}
-                  onClick={() => updateState({ cameraAngle: pose.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}
-                  style={{
-                    flexShrink: 0,
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    padding: '8px 6px 6px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                    background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
-                    outline: active
-                      ? '1.5px solid rgba(255,255,255,0.85)'
-                      : '1px solid rgba(255,255,255,0.18)',
-                    transition: 'all 0.18s ease',
-                    boxShadow: active ? '0 4px 16px rgba(0,0,0,0.4)' : 'none',
-                    transform: active ? 'scale(1.04)' : 'scale(1)',
-                  }}
-                >
-                  <PoseThumbnail ry={pose.ry} rx={pose.rx} rz={pose.rz} active={active} />
-                  <span style={{
-                    fontSize: 9, fontWeight: 700, letterSpacing: '0.04em',
-                    color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.38)',
-                    textTransform: 'uppercase', marginTop: 2,
-                    transition: 'color 0.2s', whiteSpace: 'nowrap',
-                  }}>{pose.label}</span>
-                </button>
-              );
-            })}
-          </HScroll>
-        </Section>
+        {/* ── Scale popup ─────────────────────────────────── */}
+        {presentsPopupOpen && presentsPopupAnchor && (
+          <div ref={presentsPopupRef} style={{
+            position: 'fixed',
+            left: Math.max(8, Math.min(presentsPopupAnchor.x - 130, window.innerWidth - 278)),
+            bottom: window.innerHeight - presentsPopupAnchor.y + 8,
+            width: 262,
+            background: 'rgba(18,20,26,0.98)',
+            borderRadius: 18, padding: '14px 16px', zIndex: 9999,
+            boxShadow: '0 8px 40px rgba(0,0,0,0.80)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            backdropFilter: 'blur(22px)',
+          }}>
+            {/* Active pose preview */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+              <PoseThumbnail ry={activePose.ry} rx={activePose.rx} rz={activePose.rz} active={true} />
+            </div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Scale</div>
+            <Slider label="Scale" value={scalePct} min={40} max={160} step={5}
+              onChange={v => updateState({ deviceScale: v })} unit="%" />
+          </div>
+        )}
 
-        {/* Scale */}
-        <Section label="Scale">
-          <Slider label="Scale" value={state.deviceScale ?? 100} min={40} max={160} step={5}
-            onChange={v => updateState({ deviceScale: v })} unit="%" />
-        </Section>
+        {/* ── Compact row: poses chips + scale button ──────── */}
+        <Section label="Presents">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
 
+            {/* Scrollable pose chips */}
+            <div style={{
+              flex: 1, display: 'flex', gap: 5, overflowX: 'auto',
+              scrollbarWidth: 'none', msOverflowStyle: 'none',
+            } as React.CSSProperties}>
+              {PRESENT_POSES.map(pose => {
+                const active = state.cameraAngle === pose.id;
+                return (
+                  <button key={pose.id}
+                    onClick={() => updateState({ cameraAngle: pose.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}
+                    style={{
+                      flexShrink: 0, padding: '5px 9px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                      background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
+                      outline: active ? '2px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.14)',
+                      color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.45)',
+                      fontSize: 10, fontWeight: 700, letterSpacing: '0.04em',
+                      textTransform: 'uppercase', transition: 'all 0.12s',
+                      whiteSpace: 'nowrap',
+                    }}>
+                    {pose.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Divider */}
+            <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
+
+            {/* Scale indicator button */}
+            <button
+              ref={presentsBtnRef}
+              onClick={() => {
+                if (presentsPopupOpen) { setPresentsPopupOpen(false); return; }
+                const r = presentsBtnRef.current?.getBoundingClientRect();
+                if (r) setPresentsPopupAnchor({ x: r.left + r.width / 2, y: r.top });
+                setPresentsPopupOpen(true);
+              }}
+              style={{
+                flexShrink: 0, padding: '5px 9px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                background: presentsPopupOpen ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.07)',
+                outline: presentsPopupOpen ? '1.5px solid rgba(167,139,250,0.8)' : '1px solid rgba(255,255,255,0.12)',
+                color: presentsPopupOpen ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.55)',
+                fontSize: 10, fontWeight: 700, transition: 'all 0.14s',
+                display: 'flex', alignItems: 'center', gap: 4,
+              }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M21 21l-6-6m6 6v-4m0 4h-4M3 3l6 6M3 3v4m0-4h4"/>
+              </svg>
+              {scalePct}%
+            </button>
+          </div>
+        </Section>
       </>
     );
   };
