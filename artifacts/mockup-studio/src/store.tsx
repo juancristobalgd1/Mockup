@@ -61,7 +61,7 @@ export interface AppState {
   lightOverlayBlend: string;
 
   annotateMode: boolean;
-  annotateTool: 'pen' | 'marker' | 'eraser' | 'arrow' | 'rect' | 'text';
+  annotateTool: 'select' | 'pen' | 'marker' | 'eraser' | 'arrow' | 'rect' | 'text';
   annotateColor: string;
   annotateSize: 'S' | 'M' | 'L' | 'XL';
   annotateClearKey: number;
