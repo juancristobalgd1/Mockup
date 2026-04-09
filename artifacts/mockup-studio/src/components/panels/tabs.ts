@@ -1,4 +1,4 @@
-import { LayoutGrid, Smartphone, Image as ImageIcon, Sliders, Layers, Blend, PenLine } from 'lucide-react';
+import { LayoutGrid, Smartphone, Image as ImageIcon, Lamp, Layers, Blend, PenLine } from 'lucide-react';
 import type { LucideProps } from 'lucide-react';
 
 export type Tab = 'presets' | 'device' | 'background' | 'canvas' | 'template' | 'overlay' | 'annotate';
@@ -10,5 +10,5 @@ export const TAB_ICONS: { id: Tab; icon: React.ComponentType<LucideProps>; label
   { id: 'background', icon: ImageIcon,  label: 'Background' },
   { id: 'overlay',    icon: Blend,      label: 'Overlay'    },
   { id: 'annotate',   icon: PenLine,    label: 'Annotate'   },
-  { id: 'canvas',     icon: Sliders,    label: 'Scene'      },
+  { id: 'canvas',     icon: Lamp,       label: 'Luz'        },
 ];
