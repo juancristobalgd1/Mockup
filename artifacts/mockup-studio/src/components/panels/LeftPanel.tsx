@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import {
-  Smartphone, Shuffle, Wand2, Image as ImageIcon, Sliders, Type,
+  Smartphone, Shuffle, Wand2, Image as ImageIcon, Sliders,
   LayoutGrid, X, RefreshCw, Sun, RotateCcw, Search,
 } from 'lucide-react';
 import type { Tab } from './tabs';
@@ -2069,24 +2069,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     );
   };
 
-  // ── Text tab ────────────────────────────────────────────────────
-  const TextTab = () => (
-    <>
-      <button onClick={addText}
-        style={{
-          width: '100%', padding: '12px 0', borderRadius: 12, fontSize: 12, fontWeight: 700,
-          background: 'rgba(255,255,255,0.9)',
-          border: 'none', color: '#0d0e0f', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-        }}>
-        <Type size={14} /> Add Text Overlay
-      </button>
-      <p style={{ fontSize: 10, textAlign: 'center', color: 'rgba(255,255,255,0.30)', marginTop: 10, lineHeight: 1.6 }}>
-        Drag text overlays on the canvas to reposition.
-      </p>
-    </>
-  );
-
   // ── Mobile content-only mode (rendered by App.tsx inside a floating sheet) ──
   if (mobile && mobileContentOnly !== undefined) {
     return (
@@ -2099,7 +2081,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {mobileContentOnly === 'annotate'   && <AnnotateTab />}
         {mobileContentOnly === 'canvas'     && <SceneTab />}
         {mobileContentOnly === 'lighting'   && <LightingTab />}
-        {mobileContentOnly === 'text'       && <TextTab />}
       </div>
     );
   }
@@ -2119,7 +2100,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           {activeTab === 'annotate'   && <AnnotateTab />}
           {activeTab === 'canvas'     && <SceneTab />}
           {activeTab === 'lighting'   && <LightingTab />}
-          {activeTab === 'text'       && <TextTab />}
         </div>
 
         {/* Pill tab bar — fixed at the bottom of the panel */}
@@ -2213,7 +2193,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           {activeTab === 'annotate'   && <AnnotateTab />}
           {activeTab === 'canvas'     && <SceneTab />}
           {activeTab === 'lighting'   && <LightingTab />}
-          {activeTab === 'text'       && <TextTab />}
         </div>
       </div>
     </div>
