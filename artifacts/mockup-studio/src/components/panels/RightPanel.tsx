@@ -355,32 +355,41 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
           {isMovieMode ? (
             <>
+              {/* PRIMARY: record the live canvas and download as WebM — always available */}
               <button data-testid="export-video"
-                onClick={handleDownloadVideo}
-                disabled={!state.videoUrl}
-                style={{
-                  width: '100%', padding: '10px', borderRadius: 10, fontSize: 12, fontWeight: 700,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                  background: state.videoUrl ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.08)',
-                  color: state.videoUrl ? '#0d0e0f' : 'rgba(255,255,255,0.3)',
-                  border: 'none',
-                  cursor: state.videoUrl ? 'pointer' : 'not-allowed',
-                }}>
-                <Download size={13} />
-                Descargar video
-              </button>
-              <button
                 onClick={handleRecordWebM}
                 disabled={recording}
                 style={{
-                  width: '100%', padding: '8px', borderRadius: 10, fontSize: 11, fontWeight: 600,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)',
-                  color: 'rgba(255,255,255,0.60)', cursor: recording ? 'not-allowed' : 'pointer',
+                  width: '100%', padding: '10px', borderRadius: 10, fontSize: 12, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                  background: recording ? 'rgba(255,100,80,0.18)' : 'rgba(255,255,255,0.9)',
+                  color: recording ? 'rgba(255,160,140,0.9)' : '#0d0e0f',
+                  border: recording ? '1px solid rgba(255,100,80,0.3)' : 'none',
+                  cursor: recording ? 'not-allowed' : 'pointer',
+                  transition: 'background 0.2s, color 0.2s',
                 }}>
-                <Film size={12} />
-                {recording ? 'Recording 4s…' : 'Record Scene (WebM)'}
+                {recording ? <Film size={13} /> : <Download size={13} />}
+                {recording
+                  ? `Grabando ${state.movieDuration ?? 4}s…`
+                  : 'Descargar video (.webm)'}
               </button>
+
+              {/* SECONDARY: download the raw source video if one was loaded */}
+              {state.videoUrl && (
+                <button
+                  onClick={handleDownloadVideo}
+                  style={{
+                    width: '100%', padding: '8px', borderRadius: 10, fontSize: 11, fontWeight: 600,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)',
+                    color: 'rgba(255,255,255,0.60)', cursor: 'pointer',
+                  }}>
+                  <Video size={12} />
+                  Descargar video fuente
+                </button>
+              )}
+
+              {/* TERTIARY: PNG snapshot */}
               <button
                 onClick={handleDownloadPNG}
                 disabled={exporting}
@@ -391,7 +400,7 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
                   color: 'rgba(255,255,255,0.38)', cursor: exporting ? 'not-allowed' : 'pointer',
                 }}>
                 <Image size={12} />
-                {exporting ? 'Capturing…' : 'Snapshot as PNG'}
+                {exporting ? 'Capturando…' : 'Snapshot PNG'}
               </button>
             </>
           ) : (
