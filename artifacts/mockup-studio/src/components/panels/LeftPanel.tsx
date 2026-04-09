@@ -2097,7 +2097,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
       { id: '5:4',  label: '5:4',  name: 'Photo',      platforms: 'Print · Presentation',       value: 5/4,  accent: '#FBBC05' },
     ];
 
-    const MAX_W = 46, MAX_H = 38;
+    const MAX_W = 40, MAX_H = 30;
 
     const RatioTile = ({ fmt }: { fmt: Fmt }) => {
       const isActive = state.canvasRatio === fmt.id;
@@ -2107,64 +2107,49 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         <button
           onClick={() => updateState({ canvasRatio: fmt.id })}
           style={{
-            position: 'relative', width: '100%', height: 90, borderRadius: 13,
+            flexShrink: 0, width: 72, height: 86, borderRadius: 13,
             background: isActive ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.45)',
             border: 'none', cursor: 'pointer', padding: 0,
             outline: isActive ? `2px solid ${fmt.accent}` : '1.5px solid rgba(255,255,255,0.09)',
             transition: 'all 0.13s',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             boxShadow: isActive ? `0 0 0 1px ${fmt.accent}33, 0 4px 16px rgba(0,0,0,0.5)` : '0 2px 6px rgba(0,0,0,0.3)',
+            position: 'relative',
           }}>
           <div style={{
-            width: rw, height: rh, flexShrink: 0, marginBottom: 9,
+            width: rw, height: rh, flexShrink: 0, marginBottom: 8,
             border: `1.5px solid ${isActive ? fmt.accent : 'rgba(255,255,255,0.3)'}`,
-            borderRadius: 3,
+            borderRadius: 2,
             background: isActive ? `${fmt.accent}1a` : 'rgba(255,255,255,0.05)',
             transition: 'all 0.13s',
           }} />
-          <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1,
+          <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1,
             color: isActive ? '#fff' : 'rgba(255,255,255,0.75)' }}>
             {fmt.label}
           </span>
-          <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
+          <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase',
             color: isActive ? fmt.accent : 'rgba(255,255,255,0.35)', marginTop: 3, lineHeight: 1 }}>
             {fmt.name}
           </span>
-          <span style={{
-            position: 'absolute', bottom: 5, fontSize: 7, fontWeight: 500,
-            color: 'rgba(255,255,255,0.24)', letterSpacing: '0.01em',
-            whiteSpace: 'nowrap', overflow: 'hidden', maxWidth: '90%', textOverflow: 'ellipsis',
-          }}>
-            {fmt.platforms}
-          </span>
           {isActive && (
             <div style={{
-              position: 'absolute', top: 7, right: 7, width: 7, height: 7,
-              borderRadius: '50%', background: fmt.accent, boxShadow: `0 0 6px ${fmt.accent}`,
+              position: 'absolute', top: 6, right: 6, width: 6, height: 6,
+              borderRadius: '50%', background: fmt.accent, boxShadow: `0 0 5px ${fmt.accent}`,
             }} />
           )}
         </button>
       );
     };
 
-    const SectionLabel = ({ children }: { children: string }) => (
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
-        color: 'rgba(255,255,255,0.38)', marginBottom: 7, marginTop: 2 }}>
-        {children}
-      </div>
+    const Divider = () => (
+      <div style={{ width: 1, height: 50, background: 'rgba(255,255,255,0.1)', flexShrink: 0, alignSelf: 'center' }} />
     );
 
     return (
-      <div style={{ paddingBottom: 4 }}>
-        <SectionLabel>Social Media</SectionLabel>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginBottom: 16 }}>
-          {SOCIAL.map(fmt => <RatioTile key={fmt.id + fmt.name} fmt={fmt} />)}
-        </div>
-
-        <SectionLabel>Slides</SectionLabel>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
-          {SLIDES.map(fmt => <RatioTile key={fmt.id + fmt.name} fmt={fmt} />)}
-        </div>
+      <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' } as React.CSSProperties}>
+        {SOCIAL.map(fmt => <RatioTile key={fmt.id + fmt.name} fmt={fmt} />)}
+        <Divider />
+        {SLIDES.map(fmt => <RatioTile key={fmt.id + fmt.name} fmt={fmt} />)}
       </div>
     );
   };
