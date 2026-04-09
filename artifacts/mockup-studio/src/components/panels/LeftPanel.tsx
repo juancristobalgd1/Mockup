@@ -22,7 +22,6 @@ const IPHONE_COLORS: { id: DeviceColor; label: string; bg: string; border: strin
   { id: 'naturallight', label: 'Natural',     bg: 'linear-gradient(135deg, #c2b8a3, #a8a090)', border: '#a89c8a' },
   { id: 'desert',       label: 'Desert',      bg: 'linear-gradient(135deg, #9c8878, #7a6858)', border: '#8a7868' },
   { id: 'sierra',       label: 'Sierra',      bg: 'linear-gradient(135deg, #6b8ca3, #4a6e8a)', border: '#5a7a90' },
-  { id: 'clay',         label: 'Clay',        bg: 'linear-gradient(135deg, #e4dfd5, #cec9bf)', border: '#c0bab0' },
 ];
 
 const ENV_PRESETS: { id: 'studio' | 'warehouse' | 'sunset' | 'city' | 'forest' | 'night'; label: string; icon: string }[] = [
