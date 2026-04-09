@@ -113,8 +113,8 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
     <div
       ref={ref}
       data-canvas-root="true"
-      className="relative w-full h-full flex items-center justify-center overflow-hidden"
-      style={{ borderRadius }}
+      className="relative flex items-center justify-center overflow-hidden"
+      style={{ width: '100%', height: '100%', borderRadius }}
       data-testid="canvas-area"
     >
       {/* Background layer — separate div so opacity doesn't affect children */}
