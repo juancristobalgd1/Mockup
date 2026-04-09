@@ -343,21 +343,23 @@ const PRESENT_POSES: {
 ];
 
 // ── Rotato pose thumbnail ──────────────────────────────────────────
-function PoseThumbnail({ ry, rx, rz, active }: {
-  ry: number; rx: number; rz: number; active: boolean;
+function PoseThumbnail({ ry, rx, rz, active, mini }: {
+  ry: number; rx: number; rz: number; active: boolean; mini?: boolean;
 }) {
   const bodyColor   = active ? '#d0d0d0' : '#484848';
   const screenColor = active ? '#ffffff' : '#111111';
   const frameColor  = active ? '#b0b0b0' : '#333333';
 
+  const s = mini ? 0.5 : 1;
+
   return (
     <div style={{
-      width: 52, height: 80,
+      width: 52 * s, height: 80 * s,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      perspective: 180,
+      perspective: 180 * s,
     }}>
       <div style={{
-        width: 22, height: 46,
+        width: 22 * s, height: 46 * s,
         transform: `rotateY(${ry}deg) rotateX(${rx}deg) rotateZ(${rz}deg)`,
         transformStyle: 'preserve-3d',
         transition: 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -367,10 +369,10 @@ function PoseThumbnail({ ry, rx, rz, active }: {
         <div style={{
           width: '100%', height: '100%',
           background: bodyColor,
-          borderRadius: 5,
+          borderRadius: 5 * s,
           boxShadow: active
-            ? '3px 6px 20px rgba(0,0,0,0.8), inset 0 0 0 0.5px rgba(255,255,255,0.3)'
-            : '2px 4px 10px rgba(0,0,0,0.7)',
+            ? `${3*s}px ${6*s}px ${20*s}px rgba(0,0,0,0.8), inset 0 0 0 0.5px rgba(255,255,255,0.3)`
+            : `${2*s}px ${4*s}px ${10*s}px rgba(0,0,0,0.7)`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           position: 'relative', overflow: 'hidden',
           transition: 'background 0.3s, box-shadow 0.3s',
@@ -379,21 +381,21 @@ function PoseThumbnail({ ry, rx, rz, active }: {
           <div style={{
             width: '74%', height: '78%',
             background: screenColor,
-            borderRadius: 2,
+            borderRadius: 2 * s,
             transition: 'background 0.3s',
           }} />
           {/* Dynamic island notch */}
           <div style={{
-            position: 'absolute', top: 2, left: '50%', transform: 'translateX(-50%)',
-            width: 8, height: 2, borderRadius: 1,
+            position: 'absolute', top: 2 * s, left: '50%', transform: 'translateX(-50%)',
+            width: 8 * s, height: 2 * s, borderRadius: 1 * s,
             background: frameColor,
             transition: 'background 0.3s',
           }} />
         </div>
         {/* Side button */}
         <div style={{
-          position: 'absolute', right: -1, top: '28%',
-          width: 1.5, height: 8, borderRadius: 1,
+          position: 'absolute', right: -1 * s, top: '28%',
+          width: 1.5 * s, height: 8 * s, borderRadius: 1 * s,
           background: frameColor,
           transition: 'background 0.3s',
         }} />
@@ -1901,15 +1903,17 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   <button key={pose.id}
                     onClick={() => updateState({ cameraAngle: pose.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}
                     style={{
-                      flexShrink: 0, padding: '5px 9px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                      flexShrink: 0, padding: '5px 8px 4px', borderRadius: 11, border: 'none', cursor: 'pointer',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
                       background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
                       outline: active ? '2px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.14)',
                       color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.45)',
-                      fontSize: 10, fontWeight: 700, letterSpacing: '0.04em',
-                      textTransform: 'uppercase', transition: 'all 0.12s',
-                      whiteSpace: 'nowrap',
+                      transition: 'all 0.12s',
                     }}>
-                    {pose.label}
+                    <PoseThumbnail ry={pose.ry} rx={pose.rx} rz={pose.rz} active={active} mini />
+                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                      {pose.label}
+                    </span>
                   </button>
                 );
               })}
