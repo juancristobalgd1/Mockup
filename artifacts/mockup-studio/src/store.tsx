@@ -137,6 +137,10 @@ export interface AppState {
   grainIntensity: number;
   bloomIntensity: number;
 
+  bgBlur: number;
+  bgVignette: boolean;
+  bgVignetteIntensity: number;
+
   texts: TextOverlay[];
 
   movieMode: boolean;
@@ -204,6 +208,10 @@ export const defaultState: AppState = {
   grain: false,
   grainIntensity: 35,
   bloomIntensity: 22,
+
+  bgBlur: 0,
+  bgVignette: false,
+  bgVignetteIntensity: 50,
 
   texts: [],
 

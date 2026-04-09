@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, memo } from 'react';
 import {
   Smartphone, Shuffle, Wand2, Image as ImageIcon, Sliders,
   LayoutGrid, X, RefreshCw, Sun, RotateCcw, Search,
-  Lamp, Warehouse, Sunset, Building2, TreePine, Moon,
+  Lamp, Warehouse, Sunset, Building2, TreePine, Moon, Sparkles,
 } from 'lucide-react';
 import type { Tab } from './tabs';
 import { TAB_ICONS } from './tabs';
@@ -1085,6 +1085,64 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                 <input ref={bgFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { handleBgImage(e); setBgPopup(null); }} />
               </>
             )}
+
+            {/* Effects */}
+            {bgPopup === 'effects' && (() => {
+              const EffectRow = ({ label, active, onToggle, children }: { label: string; active: boolean; onToggle: () => void; children?: React.ReactNode }) => (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: active ? 10 : 0 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.5)' }}>{label}</span>
+                    <button onClick={onToggle} style={{
+                      width: 36, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer',
+                      background: active ? 'rgba(167,139,250,0.85)' : 'rgba(255,255,255,0.12)',
+                      position: 'relative', transition: 'all 0.18s', flexShrink: 0,
+                    }}>
+                      <div style={{
+                        position: 'absolute', top: 2, left: active ? 18 : 2, width: 16, height: 16,
+                        borderRadius: '50%', background: '#fff', transition: 'left 0.18s',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                      }} />
+                    </button>
+                  </div>
+                  {active && children}
+                </div>
+              );
+
+              const SliderRow = ({ value, min, max, step, onChange, unit }: { value: number; min: number; max: number; step: number; onChange: (v: number) => void; unit?: string }) => (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <input type="range" min={min} max={max} step={step} value={value}
+                    onChange={e => onChange(Number(e.target.value))}
+                    className="rt-slider" style={{ flex: 1, accentColor: 'rgba(167,139,250,0.9)' }} />
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.7)', minWidth: 32, textAlign: 'right' }}>
+                    {value}{unit ?? ''}
+                  </span>
+                </div>
+              );
+
+              return (
+                <>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 14, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Efectos</div>
+
+                  {/* Blur */}
+                  <EffectRow label="Desenfoque" active={state.bgBlur > 0} onToggle={() => updateState({ bgBlur: state.bgBlur > 0 ? 0 : 8 })}>
+                    <SliderRow value={state.bgBlur} min={1} max={24} step={1} unit="px"
+                      onChange={v => updateState({ bgBlur: v })} />
+                  </EffectRow>
+
+                  {/* Noise / Grain */}
+                  <EffectRow label="Ruido" active={state.grain} onToggle={() => updateState({ grain: !state.grain })}>
+                    <SliderRow value={state.grainIntensity} min={5} max={100} step={1} unit="%"
+                      onChange={v => updateState({ grainIntensity: v })} />
+                  </EffectRow>
+
+                  {/* Vignette */}
+                  <EffectRow label="Viñeta" active={state.bgVignette} onToggle={() => updateState({ bgVignette: !state.bgVignette })}>
+                    <SliderRow value={state.bgVignetteIntensity} min={10} max={100} step={1} unit="%"
+                      onChange={v => updateState({ bgVignetteIntensity: v })} />
+                  </EffectRow>
+                </>
+              );
+            })()}
           </div>
         )}
 
@@ -1163,6 +1221,33 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: '0.01em', lineHeight: 1 }}>
                     {state.bgOpacity ?? 100}%
                   </span>
+                </button>
+              );
+            })()}
+
+            {/* Effects button */}
+            {state.bgType !== 'none' && state.bgType !== 'transparent' && (() => {
+              const effectsOpen = bgPopup === 'effects';
+              const hasEffect = state.bgBlur > 0 || state.grain || state.bgVignette;
+              return (
+                <button
+                  title="Efectos"
+                  onClick={e => {
+                    if (effectsOpen) { setBgPopup(null); return; }
+                    const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                    setBgPopupAnchor({ x: r.left + r.width / 2, y: r.top });
+                    setBgPopup('effects');
+                  }}
+                  style={{
+                    flexShrink: 0, width: 46, height: 46, padding: 0, borderRadius: 11, border: 'none',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+                    background: effectsOpen ? 'rgba(167,139,250,0.18)' : hasEffect ? 'rgba(167,139,250,0.18)' : 'rgba(0,0,0,0.5)',
+                    outline: effectsOpen ? '2px solid rgba(167,139,250,0.8)' : hasEffect ? '2px solid rgba(167,139,250,0.6)' : '1.5px solid rgba(255,255,255,0.14)',
+                    cursor: 'pointer', transition: 'all 0.12s',
+                    color: effectsOpen ? 'rgba(167,139,250,1)' : hasEffect ? 'rgba(167,139,250,0.9)' : 'rgba(255,255,255,0.4)',
+                  }}>
+                  <Sparkles size={14} />
+                  <span style={{ fontSize: 7, fontWeight: 800, letterSpacing: '0.01em', lineHeight: 1 }}>FX</span>
                 </button>
               );
             })()}

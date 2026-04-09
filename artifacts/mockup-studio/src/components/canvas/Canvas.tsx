@@ -118,7 +118,19 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
       data-testid="canvas-area"
     >
       {/* Background layer — separate div so opacity doesn't affect children */}
-      <div style={{ position: 'absolute', inset: 0, zIndex: 0, borderRadius, opacity: bgOpacity, ...getBackground() }} />
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0, borderRadius, opacity: bgOpacity,
+        ...getBackground(),
+        ...(state.bgBlur > 0 ? { filter: `blur(${state.bgBlur}px)`, transform: 'scale(1.05)' } : {}),
+      }} />
+
+      {/* Vignette overlay */}
+      {state.bgVignette && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', borderRadius,
+          background: `radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,${(state.bgVignetteIntensity ?? 50) / 100}) 100%)`,
+        }} />
+      )}
 
       {/* Color overlay */}
       {state.overlayEnabled && (
