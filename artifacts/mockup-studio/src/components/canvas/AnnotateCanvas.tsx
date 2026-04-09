@@ -279,7 +279,7 @@ interface TextInputState {
 }
 
 export function AnnotateCanvas() {
-  const { state } = useApp();
+  const { state, updateState } = useApp();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const strokesRef = useRef<AnyStroke[]>([]);
   const activeRef = useRef<AnyStroke | null>(null);
@@ -550,6 +550,10 @@ export function AnnotateCanvas() {
         };
         strokesRef.current.push(stroke);
         redrawStrokes(ctx, strokesRef.current);
+        // Auto-select the new text stroke
+        setSelectedId(stroke.id);
+        updateState({ annotateTool: 'select' });
+        setSelectionFrame(f => f + 1);
       }
     }
     setTextInput(null);
@@ -664,8 +668,16 @@ export function AnnotateCanvas() {
     }
     if (!isDrawing.current || !activeRef.current) return;
     isDrawing.current = false;
-    strokesRef.current.push(activeRef.current);
+    const finished = activeRef.current;
+    strokesRef.current.push(finished);
     activeRef.current = null;
+
+    // Auto-select shapes (arrow/rect) after drawing
+    if (finished.kind === 'shape') {
+      setSelectedId(finished.id);
+      updateState({ annotateTool: 'select' });
+      setSelectionFrame(f => f + 1);
+    }
   };
 
   // ── Pointer handlers on the SVG overlay (handles) ─────────────────
