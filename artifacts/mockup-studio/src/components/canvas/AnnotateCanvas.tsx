@@ -743,8 +743,58 @@ export function AnnotateCanvas() {
   };
 
   // ── Pointer handlers on the SVG overlay (handles) ─────────────────
+  // Document-level handlers for resize – ensures move/up fire even when
+  // the finger slides far from the small visible handle on mobile.
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (dragMode.current !== 'resize' || !resizeHandle.current || !resizeBBoxStart.current || !selectedId) return;
+      e.preventDefault();
+      const canvas = canvasRef.current!;
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const cx = (e.clientX - rect.left) * scaleX;
+      const cy = (e.clientY - rect.top) * scaleY;
+
+      const delta = { x: cx - dragStart.current.x, y: cy - dragStart.current.y };
+      if (delta.x !== 0 || delta.y !== 0) resizeMoved.current = true;
+      const oldBB = resizeBBoxStart.current;
+      const newBB = applyHandle(resizeHandle.current, oldBB, delta);
+
+      strokesRef.current = strokesRef.current.map(s =>
+        s.id === selectedId ? resizeStroke(s, oldBB, newBB) : s
+      );
+
+      const ctx = canvas.getContext('2d');
+      if (ctx) redrawStrokes(ctx, strokesRef.current);
+
+      resizeBBoxStart.current = newBB;
+      dragStart.current = { x: cx, y: cy };
+
+      setSelectionFrame(f => f + 1);
+    };
+
+    const onUp = () => {
+      if (dragMode.current !== 'resize') return;
+      dragMode.current = null;
+      resizeHandle.current = null;
+      resizeBBoxStart.current = null;
+      if (resizeMoved.current) {
+        updateState({ annotateStrokes: [...strokesRef.current] });
+      }
+    };
+
+    document.addEventListener('pointermove', onMove, { passive: false });
+    document.addEventListener('pointerup', onUp);
+    return () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    };
+  }, [selectedId, updateState]);
+
   const onHandlePointerDown = (e: React.PointerEvent<SVGCircleElement>, handle: HandleName) => {
     e.stopPropagation();
+    e.preventDefault();
     if (!selectedId) return;
     const sel = strokesRef.current.find(s => s.id === selectedId);
     if (!sel) return;
@@ -753,54 +803,14 @@ export function AnnotateCanvas() {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    // Convert screen pointer to canvas coords
     const cx = (e.clientX - rect.left) * scaleX;
     const cy = (e.clientY - rect.top) * scaleY;
 
-    e.currentTarget.setPointerCapture(e.pointerId);
     dragMode.current = 'resize';
     dragStart.current = { x: cx, y: cy };
     resizeHandle.current = handle;
     resizeBBoxStart.current = { ...bb };
     resizeMoved.current = false;
-  };
-
-  const onHandlePointerMove = (e: React.PointerEvent<SVGCircleElement>) => {
-    if (dragMode.current !== 'resize' || !resizeHandle.current || !resizeBBoxStart.current || !selectedId) return;
-
-    const canvas = canvasRef.current!;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const cx = (e.clientX - rect.left) * scaleX;
-    const cy = (e.clientY - rect.top) * scaleY;
-
-    const delta = { x: cx - dragStart.current.x, y: cy - dragStart.current.y };
-    if (delta.x !== 0 || delta.y !== 0) resizeMoved.current = true;
-    const oldBB = resizeBBoxStart.current;
-    const newBB = applyHandle(resizeHandle.current, oldBB, delta);
-
-    strokesRef.current = strokesRef.current.map(s =>
-      s.id === selectedId ? resizeStroke(s, oldBB, newBB) : s
-    );
-
-    const ctx = canvas.getContext('2d');
-    if (ctx) redrawStrokes(ctx, strokesRef.current);
-
-    // Update base for next frame
-    resizeBBoxStart.current = newBB;
-    dragStart.current = { x: cx, y: cy };
-
-    setSelectionFrame(f => f + 1);
-  };
-
-  const onHandlePointerUp = () => {
-    dragMode.current = null;
-    resizeHandle.current = null;
-    resizeBBoxStart.current = null;
-    if (resizeMoved.current) {
-      updateState({ annotateStrokes: [...strokesRef.current] });
-    }
   };
 
   const cursor = () => {
@@ -829,12 +839,12 @@ export function AnnotateCanvas() {
   const TOOLBAR_MARGIN = 10;
 
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 25, pointerEvents: state.annotateMode ? 'all' : 'none' }}>
+    <div style={{ position: 'absolute', inset: 0, zIndex: 25, pointerEvents: state.annotateMode ? 'all' : 'none', touchAction: 'none' }}>
 
       {/* Canvas */}
       <canvas
         ref={canvasRef}
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', cursor: cursor() }}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', cursor: cursor(), touchAction: 'none' }}
         onPointerDown={onCanvasPointerDown}
         onPointerMove={onCanvasPointerMove}
         onPointerUp={onCanvasPointerUp}
@@ -847,7 +857,7 @@ export function AnnotateCanvas() {
           style={{
             position: 'absolute', inset: 0, width: '100%', height: '100%',
             overflow: 'visible', zIndex: 30,
-            pointerEvents: 'none',
+            pointerEvents: 'none', touchAction: 'none',
           }}
         >
           {/* Dashed bounding box outline */}
@@ -871,10 +881,8 @@ export function AnnotateCanvas() {
                 <circle
                   cx={hPos.x} cy={hPos.y} r={22}
                   fill="transparent"
-                  style={{ pointerEvents: 'all', cursor }}
+                  style={{ pointerEvents: 'all', cursor, touchAction: 'none' }}
                   onPointerDown={e => onHandlePointerDown(e, name)}
-                  onPointerMove={onHandlePointerMove}
-                  onPointerUp={onHandlePointerUp}
                 />
                 {/* Visible handle */}
                 <circle
