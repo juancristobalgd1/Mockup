@@ -214,7 +214,9 @@ function drawShapeTool(ctx: CanvasRenderingContext2D, tool: ShapeTool, start: Po
   const rx = w / 2, ry = h / 2;
 
   if (tool === 'arrow') {
+    ctx.beginPath();
     drawArrow(ctx, start, end);
+    ctx.stroke();
     return;
   }
   ctx.beginPath();
