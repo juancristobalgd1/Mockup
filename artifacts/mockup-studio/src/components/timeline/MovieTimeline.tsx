@@ -517,67 +517,38 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
 
         <div style={{ flex: 1 }} />
 
-        {/* Color accent picker */}
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={e => { e.stopPropagation(); setShowColorPicker(v => !v); }}
-            title="Color de la barra"
-            style={{
-              background: showColorPicker ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 5, width: 24, height: 24, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'rgba(255,255,255,0.45)',
-            }}
-          >
-            <Palette size={12} />
-          </button>
-          {showColorPicker && (
-            <div
-              onClick={e => e.stopPropagation()}
-              style={{
-                position: 'absolute', bottom: '100%', right: 0, marginBottom: 6,
-                background: '#1e2022', border: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: 8, padding: 8, zIndex: 100,
-                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                display: 'flex', flexDirection: 'column', gap: 4, minWidth: 160,
-              }}
-            >
-              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginBottom: 2 }}>
-                Color de barra
-              </span>
-              {BAR_COLORS.map(c => (
-                <button
-                  key={c.value}
-                  onClick={() => { setAccentColor(c.value); setShowColorPicker(false); }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    background: accentColor === c.value ? 'rgba(255,255,255,0.1)' : 'none',
-                    border: `1px solid ${accentColor === c.value ? 'rgba(255,255,255,0.2)' : 'transparent'}`,
-                    borderRadius: 5, padding: '4px 8px', cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ width: 14, height: 14, borderRadius: 3, background: c.value, border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>{c.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Minimize button */}
+        <button
+          onClick={() => setCollapsed(true)}
+          title="Minimizar editor"
+          aria-label="Minimizar editor de video"
+          style={{
+            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 5, width: 26, height: 26, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'rgba(255,255,255,0.5)',
+          }}
+        >
+          <ChevronDown size={13} />
+        </button>
+
+        <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
 
         <button
           onClick={() => { stopLiveRec(); stopPlayback(); onClose(); }}
+          title="Cerrar editor de video"
+          aria-label="Cerrar editor de video"
           style={{
             background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 24, height: 24, borderRadius: 4,
+            width: 26, height: 26, borderRadius: 4,
           }}
         >
           <X size={14} />
         </button>
       </div>
 
-      {/* Row 2: time display + collapse */}
+      {/* Row 2: time display */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 6,
         padding: '4px 14px 6px',
@@ -602,23 +573,6 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
         >
           {[3, 5, 8, 10, 15, 20, 30].map(d => <option key={d} value={d}>{d}s</option>)}
         </select>
-
-        <div style={{ flex: 1 }} />
-
-        {/* Collapse button */}
-        <button
-          onClick={() => setCollapsed(true)}
-          title="Minimizar editor"
-          style={{
-            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 5, height: 22, padding: '0 8px', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: 4,
-            color: 'rgba(255,255,255,0.45)', fontSize: 10,
-          }}
-        >
-          <ChevronDown size={11} />
-          Minimizar
-        </button>
       </div>
       </div>}
 
