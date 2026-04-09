@@ -1032,9 +1032,9 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         </div>
       </Section>
 
-      {/* Tool grid — 3 × 2 */}
+      {/* Tool strip — horizontal scroll */}
       <Section label="Tool">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7 }}>
+        <HScroll gap={7}>
           {ANNOTATE_TOOLS.map(t => {
             const active = state.annotateTool === t.id;
             return (
@@ -1079,7 +1079,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               </button>
             );
           })}
-        </div>
+        </HScroll>
       </Section>
 
       {/* Color picker */}
