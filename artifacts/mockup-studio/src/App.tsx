@@ -258,67 +258,109 @@ function Editor() {
           </>
         )}
 
-        {/* ── Floating top bar — mode group + export ── */}
+        {/* ── Floating top bar — mode group + undo/redo + export ── */}
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, zIndex: 40,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          display: 'grid', gridTemplateColumns: '1fr auto 1fr',
+          alignItems: 'center',
           padding: '10px 14px',
           pointerEvents: 'none',
         }}>
-          {/* Image / Movie group button */}
+          {/* Left: Image / Movie group button */}
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center',
+              background: 'rgba(22,24,26,0.82)',
+              backdropFilter: 'blur(14px)',
+              WebkitBackdropFilter: 'blur(14px)',
+              borderRadius: 14, padding: 3,
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+              pointerEvents: 'auto',
+            } as React.CSSProperties}>
+              {CREATION_MODES.map(mode => {
+                const isActive = state.creationMode === mode.id;
+                const isMovie = mode.id === 'movie';
+                return (
+                  <button key={mode.id} onClick={() => handleModeChange(mode.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '7px 14px', borderRadius: 11, cursor: 'pointer',
+                      fontSize: 12, fontWeight: 600,
+                      transition: 'all 0.13s',
+                      background: isActive ? (isMovie ? '#161819' : 'rgba(255,255,255,0.14)') : 'transparent',
+                      border: isActive ? `1px solid ${isMovie ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.14)'}` : '1px solid transparent',
+                      color: isActive ? '#fff' : 'rgba(255,255,255,0.52)',
+                      boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
+                    }}>
+                    {mode.icon}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Center: Undo / Redo group */}
           <div style={{
-            display: 'flex', alignItems: 'center',
+            display: 'flex', alignItems: 'center', gap: 1,
             background: 'rgba(22,24,26,0.82)',
             backdropFilter: 'blur(14px)',
             WebkitBackdropFilter: 'blur(14px)',
             borderRadius: 14, padding: 3,
-            border: '1px solid rgba(255,255,255,0.08)',
+            border: '1px solid rgba(255,255,255,0.12)',
             boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
             pointerEvents: 'auto',
           } as React.CSSProperties}>
-            {CREATION_MODES.map(mode => {
-              const isActive = state.creationMode === mode.id;
-              const isMovie = mode.id === 'movie';
-              return (
-                <button key={mode.id} onClick={() => handleModeChange(mode.id)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '7px 14px', borderRadius: 11, cursor: 'pointer',
-                    fontSize: 12, fontWeight: 600,
-                    transition: 'all 0.13s',
-                    background: isActive ? (isMovie ? '#161819' : 'rgba(255,255,255,0.14)') : 'transparent',
-                    border: isActive ? `1px solid ${isMovie ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.14)'}` : '1px solid transparent',
-                    color: isActive ? '#fff' : 'rgba(255,255,255,0.52)',
-                    boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
-                  }}>
-                  {mode.icon}
-                </button>
-              );
-            })}
+            {([
+              { action: undo, enabled: canUndo, icon: <Undo2 size={15} strokeWidth={2} />, title: 'Deshacer' },
+              { action: redo, enabled: canRedo, icon: <Redo2 size={15} strokeWidth={2} />, title: 'Rehacer' },
+            ] as const).map(({ action, enabled, icon, title }, i) => (
+              <button
+                key={i}
+                onClick={action}
+                disabled={!enabled}
+                title={title}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 36, height: 32, borderRadius: 11,
+                  cursor: enabled ? 'pointer' : 'not-allowed',
+                  background: 'transparent', border: 'none',
+                  color: '#fff',
+                  opacity: enabled ? 1 : 0.3,
+                  transition: 'background 0.12s, opacity 0.12s',
+                }}
+                onMouseEnter={e => { if (enabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.14)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+              >
+                {icon}
+              </button>
+            ))}
           </div>
 
-          {/* Export button */}
-          <button
-            onClick={() => setMobileTab(mobileTab === 'export' ? null : 'export')}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 7,
-              padding: '9px 16px', borderRadius: 14,
-              fontSize: 13, fontWeight: 700,
-              background: mobileTab === 'export'
-                ? 'rgba(255,255,255,0.20)'
-                : 'rgba(22,24,26,0.82)',
-              backdropFilter: 'blur(14px)',
-              WebkitBackdropFilter: 'blur(14px)',
-              border: mobileTab === 'export'
-                ? '1px solid rgba(255,255,255,0.25)'
-                : '1px solid rgba(255,255,255,0.08)',
-              color: '#fff',
-              cursor: 'pointer', transition: 'all 0.13s',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
-              pointerEvents: 'auto',
-            } as React.CSSProperties}>
-            <Download size={14} />
-          </button>
+          {/* Right: Export button */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => setMobileTab(mobileTab === 'export' ? null : 'export')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                padding: '9px 16px', borderRadius: 14,
+                fontSize: 13, fontWeight: 700,
+                background: mobileTab === 'export'
+                  ? 'rgba(255,255,255,0.20)'
+                  : 'rgba(22,24,26,0.82)',
+                backdropFilter: 'blur(14px)',
+                WebkitBackdropFilter: 'blur(14px)',
+                border: mobileTab === 'export'
+                  ? '1px solid rgba(255,255,255,0.25)'
+                  : '1px solid rgba(255,255,255,0.08)',
+                color: '#fff',
+                cursor: 'pointer', transition: 'all 0.13s',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+                pointerEvents: 'auto',
+              } as React.CSSProperties}>
+              <Download size={14} />
+            </button>
+          </div>
         </div>
 
         {/* ── Bottom: tab bar (+ timeline in movie mode) ── */}
