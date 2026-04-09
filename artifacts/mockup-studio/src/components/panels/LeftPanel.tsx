@@ -1671,26 +1671,24 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     const effectsOn = (state.reflection ?? false) || (state.grain ?? false);
     const shadowPct = state.contactShadowOpacity;
 
-    const SceneBtn = ({ id, icon, label, sub, active }: {
+    const SceneBtn = ({ id, icon, label, active }: {
       id: 'canvas' | 'motion' | 'effects' | 'shadow';
-      icon: React.ReactNode; label: string; sub: string; active?: boolean;
+      icon: React.ReactNode; label: string; sub?: string; active?: boolean;
     }) => (
       <button
+        title={label}
         onClick={e => openScene(id, e)}
         style={{
-          flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-          padding: '9px 4px 8px', borderRadius: 13, border: 'none', cursor: 'pointer',
+          flexShrink: 0, width: 46, height: 46, padding: 0, borderRadius: 11, border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: scenePopup === id ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.5)',
           outline: scenePopup === id
             ? '2px solid rgba(167,139,250,0.8)'
             : active ? '2px solid rgba(255,255,255,0.55)' : '1px solid rgba(255,255,255,0.13)',
-          transition: 'all 0.12s', gap: 4,
+          color: scenePopup === id ? 'rgba(167,139,250,1)' : active ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
+          transition: 'all 0.12s',
         }}>
-        <div style={{ color: scenePopup === id ? 'rgba(167,139,250,1)' : active ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)' }}>
-          {icon}
-        </div>
-        <span style={{ fontSize: 9, fontWeight: 700, color: scenePopup === id ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)' }}>{label}</span>
-        <span style={{ fontSize: 8, color: active ? 'rgba(167,139,250,0.8)' : 'rgba(255,255,255,0.25)' }}>{sub}</span>
+        {icon}
       </button>
     );
 
@@ -1788,16 +1786,16 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {/* ── 4-button row ─────────────────────────────────────── */}
         <Section label="Scene">
           <div style={{ display: 'flex', gap: 6 }}>
-            <SceneBtn id="canvas" label="Canvas" sub={canvasSub} active={state.canvasRatio !== 'free' || (state.canvasRadius ?? 0) > 0}
+            <SceneBtn id="canvas" label="Canvas" active={state.canvasRatio !== 'free' || (state.canvasRadius ?? 0) > 0}
               icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>}
             />
-            <SceneBtn id="motion" label="Motion" sub={motionOn ? 'On' : 'Off'} active={motionOn}
+            <SceneBtn id="motion" label="Motion" active={motionOn}
               icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>}
             />
-            <SceneBtn id="effects" label="Effects" sub={effectsOn ? 'On' : 'Off'} active={effectsOn}
+            <SceneBtn id="effects" label="Effects" active={effectsOn}
               icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6l-5 3.6 1.9-5.8L4 8.8h6.1z"/></svg>}
             />
-            <SceneBtn id="shadow" label="Shadow" sub={`${shadowPct}%`} active={(shadowPct ?? 0) > 0}
+            <SceneBtn id="shadow" label="Shadow" active={(shadowPct ?? 0) > 0}
               icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><ellipse cx="12" cy="19" rx="8" ry="2.5"/><path d="M8 12a4 4 0 1 1 8 0"/></svg>}
             />
           </div>
@@ -1857,17 +1855,16 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               const active = state.envPreset === env.id && state.envEnabled !== false;
               return (
                 <button key={env.id}
+                  title={env.label}
                   onClick={() => updateState({ envPreset: env.id, envEnabled: true })}
                   style={{
-                    flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                    padding: '7px 10px', borderRadius: 11, border: 'none', cursor: 'pointer',
+                    flexShrink: 0, width: 46, height: 46, padding: 0, borderRadius: 11, border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
                     outline: active ? '2px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.14)',
-                    color: active ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.65)',
                     transition: 'all 0.12s',
                   }}>
-                  <span style={{ fontSize: 18, lineHeight: 1 }}>{env.icon}</span>
-                  <span style={{ fontSize: 9, fontWeight: 600, whiteSpace: 'nowrap' }}>{env.label}</span>
+                  <span style={{ fontSize: 20, lineHeight: 1 }}>{env.icon}</span>
                 </button>
               );
             })}
