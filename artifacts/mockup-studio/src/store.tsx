@@ -65,7 +65,7 @@ export interface AppState {
   annotateColor: string;
   annotateSize: 'S' | 'M' | 'L' | 'XL';
   annotateOpacity: number;
-  annotateShape: 'rect' | 'circle' | 'ellipse' | 'triangle' | 'diamond' | 'star' | 'hexagon' | 'spiral' | 'wave';
+  annotateShape: 'arrow' | 'rect' | 'circle' | 'ellipse' | 'triangle' | 'diamond' | 'star' | 'hexagon' | 'spiral' | 'wave';
   annotateLineWidth: number;
   annotateClearKey: number;
 
