@@ -1539,14 +1539,16 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         <div style={{
           position: 'fixed',
           left: annotatePopupAnchor.x,
-          top: annotatePopupAnchor.y - 210,
+          top: annotatePopupAnchor.y - 290,
           transform: 'translateX(-50%)',
           background: 'rgba(22,24,28,0.98)', borderRadius: 18,
           padding: 14, zIndex: 9999,
           boxShadow: '0 8px 40px rgba(0,0,0,0.75), 0 2px 12px rgba(0,0,0,0.5)',
           border: '1px solid rgba(255,255,255,0.12)',
           backdropFilter: 'blur(20px)',
+          display: 'flex', flexDirection: 'column', gap: 12,
         }}>
+          {/* Color grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
             {ANNOTATE_COLOR_GRID.map(col => {
               if (col === '__custom__') {
@@ -1586,6 +1588,28 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                 />
               );
             })}
+          </div>
+
+          {/* Separator */}
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.09)', margin: '0 -2px' }} />
+
+          {/* Opacity slider */}
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.38)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 8 }}>
+              Opacidad
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="range"
+                min={5} max={100} step={1}
+                value={Math.round((state.annotateOpacity ?? 1) * 100)}
+                onChange={e => updateState({ annotateOpacity: Number(e.target.value) / 100 })}
+                style={{ flex: 1, accentColor: '#a78bfa', cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.65)', minWidth: 34, textAlign: 'right' }}>
+                {Math.round((state.annotateOpacity ?? 1) * 100)}%
+              </span>
+            </div>
           </div>
         </div>
       )}

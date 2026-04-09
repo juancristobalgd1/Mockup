@@ -64,6 +64,7 @@ export interface AppState {
   annotateTool: 'select' | 'pen' | 'marker' | 'eraser' | 'arrow' | 'rect' | 'text';
   annotateColor: string;
   annotateSize: 'S' | 'M' | 'L' | 'XL';
+  annotateOpacity: number;
   annotateClearKey: number;
 
   animation: "none" | "float" | "spin" | "pulse" | "slide-in";
@@ -128,6 +129,7 @@ export const defaultState: AppState = {
   annotateTool: 'pen',
   annotateColor: '#ef4444',
   annotateSize: 'M',
+  annotateOpacity: 1,
   annotateClearKey: 0,
 
   animation: "float",
