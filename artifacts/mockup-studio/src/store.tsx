@@ -6,7 +6,7 @@ import type { DeviceStoreType } from "./data/devices";
 export type DeviceType = DeviceStoreType;
 export type DeviceColor = "titanium" | "black" | "white" | "blue" | "naturallight" | "desert" | "sierra" | "clay";
 export type BrowserMode = "dark" | "light";
-export type BackgroundType = "solid" | "gradient" | "mesh" | "pattern" | "image" | "wallpaper";
+export type BackgroundType = "none" | "solid" | "gradient" | "mesh" | "pattern" | "image" | "wallpaper" | "transparent";
 export type ShadowStyle = "none" | "spread" | "hug";
 export type CanvasRatio = "free" | "1:1" | "4:5" | "16:9" | "9:16";
 export type ContentType = "image" | "video" | null;
