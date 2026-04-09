@@ -60,22 +60,20 @@ function Editor() {
 
           {/* ── Rotato-style Title Bar ──────────────────────────── */}
           <div style={{
-            display: 'flex', alignItems: 'center',
+            display: 'grid',
+            gridTemplateColumns: '1fr auto 1fr',
+            alignItems: 'center',
             padding: '0 14px', height: 42, flexShrink: 0,
             background: 'var(--rt-panel)',
             borderBottom: '1px solid var(--rt-border)',
-            position: 'relative',
           }}>
             {/* Left: traffic lights + title */}
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
-              {/* macOS traffic lights */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
               <div className="rt-traffic" style={{ flexShrink: 0 }}>
                 <span className="tl-red" />
                 <span className="tl-yellow" />
                 <span className="tl-green" />
               </div>
-
-              {/* Document / device title */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                 <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--rt-text-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {deviceLabel}
@@ -89,12 +87,9 @@ function Editor() {
                   <span style={{
                     fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
                     padding: '2px 7px', borderRadius: 20, flexShrink: 0,
-                    background: state.contentType === 'video'
-                      ? 'rgba(48,209,88,0.12)' : 'rgba(255,255,255,0.07)',
-                    color: state.contentType === 'video'
-                      ? 'var(--rt-accent-green)' : 'var(--rt-text-3)',
-                    border: state.contentType === 'video'
-                      ? '1px solid rgba(48,209,88,0.2)' : '1px solid var(--rt-border)',
+                    background: state.contentType === 'video' ? 'rgba(48,209,88,0.12)' : 'rgba(255,255,255,0.07)',
+                    color: state.contentType === 'video' ? 'var(--rt-accent-green)' : 'var(--rt-text-3)',
+                    border: state.contentType === 'video' ? '1px solid rgba(48,209,88,0.2)' : '1px solid var(--rt-border)',
                   }}>
                     {state.contentType === 'video' ? '▶ Video' : 'Image'}
                   </span>
@@ -102,18 +97,17 @@ function Editor() {
               </div>
             </div>
 
-            {/* Center: Undo / Redo button group */}
+            {/* Center: Undo / Redo group — always in the exact middle */}
             <div style={{
-              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-              display: 'flex', alignItems: 'center',
-              background: 'rgba(255,255,255,0.06)',
-              borderRadius: 8, padding: '2px',
-              border: '1px solid var(--rt-border)',
+              display: 'flex', alignItems: 'center', gap: 1,
+              background: 'rgba(255,255,255,0.07)',
+              borderRadius: 9, padding: '3px',
+              border: '1px solid rgba(255,255,255,0.12)',
             }}>
-              {[
-                { action: undo, enabled: canUndo, icon: <Undo2 size={13} />, title: 'Undo (Ctrl+Z)' },
-                { action: redo, enabled: canRedo, icon: <Redo2 size={13} />, title: 'Redo (Ctrl+Shift+Z)' },
-              ].map(({ action, enabled, icon, title }, i) => (
+              {([
+                { action: undo, enabled: canUndo, icon: <Undo2 size={14} strokeWidth={2} />, title: 'Deshacer (Ctrl+Z)' },
+                { action: redo, enabled: canRedo, icon: <Redo2 size={14} strokeWidth={2} />, title: 'Rehacer (Ctrl+Shift+Z)' },
+              ] as const).map(({ action, enabled, icon, title }, i) => (
                 <button
                   key={i}
                   onClick={action}
@@ -121,14 +115,15 @@ function Editor() {
                   title={title}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    width: 28, height: 28, borderRadius: 6, cursor: enabled ? 'pointer' : 'default',
-                    transition: 'all 0.12s',
+                    width: 30, height: 26, borderRadius: 6,
+                    cursor: enabled ? 'pointer' : 'not-allowed',
+                    transition: 'background 0.12s, opacity 0.12s',
                     background: 'transparent',
-                    border: '1px solid transparent',
-                    color: enabled ? 'var(--rt-text-2)' : 'var(--rt-text-3)',
-                    opacity: enabled ? 1 : 0.35,
+                    border: 'none',
+                    color: 'var(--rt-text-2)',
+                    opacity: enabled ? 1 : 0.3,
                   }}
-                  onMouseEnter={e => { if (enabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)'; }}
+                  onMouseEnter={e => { if (enabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.14)'; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                 >
                   {icon}
@@ -137,7 +132,7 @@ function Editor() {
             </div>
 
             {/* Right: segmented mode picker */}
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
               <div style={{
                 display: 'flex', alignItems: 'center',
                 background: 'rgba(255,255,255,0.06)',
