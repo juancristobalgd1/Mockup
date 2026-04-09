@@ -429,7 +429,10 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const bgFileRef                            = useRef<HTMLInputElement>(null);
   const [extracting, setExtracting]         = useState(false);
   const [annotatePopup, setAnnotatePopup]   = useState<null | 'color' | 'size'>(null);
+  const [annotatePopupAnchor, setAnnotatePopupAnchor] = useState<{ x: number; y: number } | null>(null);
   const annotatePopupRef                     = useRef<HTMLDivElement>(null);
+  const colorBtnRef                          = useRef<HTMLButtonElement>(null);
+  const sizeBtnRef                           = useRef<HTMLButtonElement>(null);
 
   // Close annotate popup when clicking outside
   useEffect(() => {
@@ -1034,15 +1037,17 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     <div ref={annotatePopupRef} style={{ position: 'relative' }}>
 
       {/* ── Floating color popup ───────────────────────────────── */}
-      {annotatePopup === 'color' && (
+      {annotatePopup === 'color' && annotatePopupAnchor && (
         <div style={{
-          position: 'absolute', bottom: 'calc(100% + 10px)', left: '50%',
+          position: 'fixed',
+          left: annotatePopupAnchor.x,
+          top: annotatePopupAnchor.y - 210,
           transform: 'translateX(-50%)',
-          background: 'rgba(28,30,34,0.97)', borderRadius: 18,
-          padding: 14, zIndex: 200,
-          boxShadow: '0 8px 40px rgba(0,0,0,0.7), 0 2px 12px rgba(0,0,0,0.5)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          backdropFilter: 'blur(16px)',
+          background: 'rgba(22,24,28,0.98)', borderRadius: 18,
+          padding: 14, zIndex: 9999,
+          boxShadow: '0 8px 40px rgba(0,0,0,0.75), 0 2px 12px rgba(0,0,0,0.5)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          backdropFilter: 'blur(20px)',
         }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
             {ANNOTATE_COLOR_GRID.map(col => {
@@ -1088,15 +1093,17 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
       )}
 
       {/* ── Floating size popup ───────────────────────────────── */}
-      {annotatePopup === 'size' && (
+      {annotatePopup === 'size' && annotatePopupAnchor && (
         <div style={{
-          position: 'absolute', bottom: 'calc(100% + 10px)', left: '50%',
+          position: 'fixed',
+          left: annotatePopupAnchor.x,
+          top: annotatePopupAnchor.y - 90,
           transform: 'translateX(-50%)',
-          background: 'rgba(28,30,34,0.97)', borderRadius: 16,
-          padding: '12px 16px', zIndex: 200,
-          boxShadow: '0 8px 40px rgba(0,0,0,0.7)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          backdropFilter: 'blur(16px)',
+          background: 'rgba(22,24,28,0.98)', borderRadius: 16,
+          padding: '12px 16px', zIndex: 9999,
+          boxShadow: '0 8px 40px rgba(0,0,0,0.75)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          backdropFilter: 'blur(20px)',
           display: 'flex', gap: 10, alignItems: 'center',
         }}>
           {ANNOTATE_SIZES.map(sz => {
@@ -1161,7 +1168,13 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
 
         {/* Color button */}
         <button
-          onClick={() => setAnnotatePopup(annotatePopup === 'color' ? null : 'color')}
+          ref={colorBtnRef}
+          onClick={() => {
+            if (annotatePopup === 'color') { setAnnotatePopup(null); return; }
+            const r = colorBtnRef.current?.getBoundingClientRect();
+            if (r) setAnnotatePopupAnchor({ x: r.left + r.width / 2, y: r.top });
+            setAnnotatePopup('color');
+          }}
           style={{
             width: 34, height: 34, borderRadius: '50%', border: 'none', cursor: 'pointer', flexShrink: 0,
             background: state.annotateColor,
@@ -1174,7 +1187,13 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
 
         {/* Size button */}
         <button
-          onClick={() => setAnnotatePopup(annotatePopup === 'size' ? null : 'size')}
+          ref={sizeBtnRef}
+          onClick={() => {
+            if (annotatePopup === 'size') { setAnnotatePopup(null); return; }
+            const r = sizeBtnRef.current?.getBoundingClientRect();
+            if (r) setAnnotatePopupAnchor({ x: r.left + r.width / 2, y: r.top });
+            setAnnotatePopup('size');
+          }}
           style={{
             width: 34, height: 34, borderRadius: 10, border: 'none', cursor: 'pointer', flexShrink: 0,
             background: annotatePopup === 'size' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)',
