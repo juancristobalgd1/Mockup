@@ -460,10 +460,11 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const presentsPopupRef                      = useRef<HTMLDivElement>(null);
   const presentsBtnRef                        = useRef<HTMLButtonElement>(null);
 
-  const [deviceOptPopup, setDeviceOptPopup]   = useState(false);
+  const [deviceOptPopup, setDeviceOptPopup]   = useState<null | 'color' | 'orient'>(null);
   const [deviceOptAnchor, setDeviceOptAnchor] = useState<{ x: number; y: number } | null>(null);
   const deviceOptRef                          = useRef<HTMLDivElement>(null);
-  const deviceOptBtnRef                       = useRef<HTMLButtonElement>(null);
+  const deviceColorBtnRef                     = useRef<HTMLButtonElement>(null);
+  const deviceOrientBtnRef                    = useRef<HTMLButtonElement>(null);
 
   const [deviceGroupPopup, setDeviceGroupPopup] = useState<DeviceGroup | null>(null);
   const [deviceGroupAnchor, setDeviceGroupAnchor] = useState<{ x: number; y: number } | null>(null);
@@ -521,10 +522,10 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   useEffect(() => {
     if (!deviceOptPopup) return;
     const onDown = (e: MouseEvent) => {
-      if (deviceOptRef.current && !deviceOptRef.current.contains(e.target as Node)
-        && deviceOptBtnRef.current && !deviceOptBtnRef.current.contains(e.target as Node)) {
-        setDeviceOptPopup(false);
-      }
+      const insidePopup = deviceOptRef.current?.contains(e.target as Node);
+      const insideColor = deviceColorBtnRef.current?.contains(e.target as Node);
+      const insideOrient = deviceOrientBtnRef.current?.contains(e.target as Node);
+      if (!insidePopup && !insideColor && !insideOrient) setDeviceOptPopup(null);
     };
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
@@ -660,39 +661,51 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           );
         })()}
 
-        {/* ── Options popup ────────────────────────────────── */}
-        {deviceOptPopup && deviceOptAnchor && (
+        {/* ── Color popup ──────────────────────────────────── */}
+        {deviceOptPopup === 'color' && deviceOptAnchor && (
           <div ref={deviceOptRef} style={{
             position: 'fixed',
-            left: Math.max(8, Math.min(deviceOptAnchor.x - 130, window.innerWidth - 278)),
+            left: Math.max(8, Math.min(deviceOptAnchor.x - 120, window.innerWidth - 256)),
             bottom: window.innerHeight - deviceOptAnchor.y + 8,
-            width: 262,
+            width: 240,
             background: 'rgba(18,20,26,0.98)',
             borderRadius: 18, padding: '14px 16px', zIndex: 9999,
             boxShadow: '0 8px 40px rgba(0,0,0,0.80)',
             border: '1px solid rgba(255,255,255,0.12)',
             backdropFilter: 'blur(22px)',
           }}>
-            {hasColors && (
-              <>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Frame Color</div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-                  {IPHONE_COLORS.map(c => (
-                    <button key={c.id} title={c.label} onClick={() => updateState({ deviceColor: c.id })}
-                      style={{
-                        width: 26, height: 26, borderRadius: '50%', background: c.bg,
-                        border: state.deviceColor === c.id ? '2.5px solid rgba(255,255,255,0.80)' : `2px solid ${c.border}`,
-                        boxShadow: state.deviceColor === c.id ? '0 0 0 2.5px rgba(255,255,255,0.13)' : 'none',
-                        cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
-                      }} />
-                  ))}
-                </div>
-              </>
-            )}
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>Frame Color</div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {IPHONE_COLORS.map(c => (
+                <button key={c.id} title={c.label} onClick={() => updateState({ deviceColor: c.id })}
+                  style={{
+                    width: 26, height: 26, borderRadius: '50%', background: c.bg,
+                    border: state.deviceColor === c.id ? '2.5px solid rgba(255,255,255,0.80)' : `2px solid ${c.border}`,
+                    boxShadow: state.deviceColor === c.id ? '0 0 0 2.5px rgba(255,255,255,0.13)' : 'none',
+                    cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
+                  }} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Orient / Theme popup ─────────────────────────── */}
+        {deviceOptPopup === 'orient' && deviceOptAnchor && (
+          <div ref={deviceOptRef} style={{
+            position: 'fixed',
+            left: Math.max(8, Math.min(deviceOptAnchor.x - 100, window.innerWidth - 220)),
+            bottom: window.innerHeight - deviceOptAnchor.y + 8,
+            width: 200,
+            background: 'rgba(18,20,26,0.98)',
+            borderRadius: 18, padding: '14px 16px', zIndex: 9999,
+            boxShadow: '0 8px 40px rgba(0,0,0,0.80)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            backdropFilter: 'blur(22px)',
+          }}>
             {hasOrientation && (
               <>
                 <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Orientation</div>
-                <div style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
+                <div style={{ display: 'flex', gap: 6 }}>
                   <Chip active={!state.deviceLandscape} onClick={() => updateState({ deviceLandscape: false })}>Portrait</Chip>
                   <Chip active={state.deviceLandscape}  onClick={() => updateState({ deviceLandscape: true })}>Landscape</Chip>
                 </div>
@@ -706,9 +719,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   <Chip active={state.browserMode === 'light'} onClick={() => updateState({ browserMode: 'light' })}>Light</Chip>
                 </div>
               </>
-            )}
-            {!hasOptions && (
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '8px 0' }}>No options for this device</div>
             )}
           </div>
         )}
@@ -757,31 +767,68 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
             </div>
 
             {/* Divider */}
-            <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
+            {(hasColors || hasOrientation || hasBrowserTheme) && (
+              <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
+            )}
 
-            {/* Options button */}
-            <button
-              ref={deviceOptBtnRef}
-              onClick={() => {
-                if (deviceOptPopup) { setDeviceOptPopup(false); return; }
-                const r = deviceOptBtnRef.current?.getBoundingClientRect();
-                if (r) setDeviceOptAnchor({ x: r.left + r.width / 2, y: r.top });
-                setDeviceOptPopup(true);
-                setDeviceGroupPopup(null);
-              }}
-              style={{
-                flexShrink: 0, padding: '5px 9px', borderRadius: 9, border: 'none', cursor: 'pointer',
-                background: deviceOptPopup ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.07)',
-                outline: deviceOptPopup ? '1.5px solid rgba(167,139,250,0.8)' : '1px solid rgba(255,255,255,0.12)',
-                color: deviceOptPopup ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.55)',
-                fontSize: 10, fontWeight: 700, transition: 'all 0.14s',
-                display: 'flex', alignItems: 'center', gap: 4,
-              }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-              </svg>
-              Options
-            </button>
+            {/* Color button */}
+            {hasColors && (
+              <button
+                ref={deviceColorBtnRef}
+                onClick={() => {
+                  const next = deviceOptPopup === 'color' ? null : 'color';
+                  const r = deviceColorBtnRef.current?.getBoundingClientRect();
+                  if (r) setDeviceOptAnchor({ x: r.left + r.width / 2, y: r.top });
+                  setDeviceOptPopup(next);
+                  setDeviceGroupPopup(null);
+                }}
+                style={{
+                  flexShrink: 0, padding: '5px 9px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                  background: deviceOptPopup === 'color' ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.07)',
+                  outline: deviceOptPopup === 'color' ? '1.5px solid rgba(167,139,250,0.8)' : '1px solid rgba(255,255,255,0.12)',
+                  color: deviceOptPopup === 'color' ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.55)',
+                  fontSize: 10, fontWeight: 700, transition: 'all 0.14s',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                }}>
+                <div style={{
+                  width: 14, height: 14, borderRadius: '50%',
+                  background: IPHONE_COLORS.find(c => c.id === state.deviceColor)?.bg ?? IPHONE_COLORS[0].bg,
+                  border: '1.5px solid rgba(255,255,255,0.3)',
+                }} />
+                <span style={{ fontSize: 8, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Color</span>
+              </button>
+            )}
+
+            {/* Orient / Theme button */}
+            {(hasOrientation || hasBrowserTheme) && (
+              <button
+                ref={deviceOrientBtnRef}
+                onClick={() => {
+                  const next = deviceOptPopup === 'orient' ? null : 'orient';
+                  const r = deviceOrientBtnRef.current?.getBoundingClientRect();
+                  if (r) setDeviceOptAnchor({ x: r.left + r.width / 2, y: r.top });
+                  setDeviceOptPopup(next);
+                  setDeviceGroupPopup(null);
+                }}
+                style={{
+                  flexShrink: 0, padding: '5px 9px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                  background: deviceOptPopup === 'orient' ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.07)',
+                  outline: deviceOptPopup === 'orient' ? '1.5px solid rgba(167,139,250,0.8)' : '1px solid rgba(255,255,255,0.12)',
+                  color: deviceOptPopup === 'orient' ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.55)',
+                  fontSize: 10, fontWeight: 700, transition: 'all 0.14s',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  {hasBrowserTheme
+                    ? <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></>
+                    : <><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 014 0v2"/></>
+                  }
+                </svg>
+                <span style={{ fontSize: 8, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                  {hasBrowserTheme ? 'Theme' : (state.deviceLandscape ? 'Land.' : 'Port.')}
+                </span>
+              </button>
+            )}
           </div>
         </Section>
       </>
