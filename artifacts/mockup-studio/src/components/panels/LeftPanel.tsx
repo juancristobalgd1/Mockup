@@ -1903,7 +1903,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   <button key={pose.id}
                     onClick={() => updateState({ cameraAngle: pose.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}
                     style={{
-                      flexShrink: 0, padding: '5px 8px 4px', borderRadius: 11, border: 'none', cursor: 'pointer',
+                      flexShrink: 0, padding: '5px 14px 4px', borderRadius: 11, border: 'none', cursor: 'pointer',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
                       background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
                       outline: active ? '2px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.14)',
