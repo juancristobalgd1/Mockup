@@ -53,6 +53,8 @@ const HScroll = ({ children, gap = 8 }: { children: React.ReactNode; gap?: numbe
 );
 
 // ── Compact section row ───────────────────────────────────────────
+const LABEL_SHADOW = '0 1px 5px rgba(0,0,0,0.95), 0 0 14px rgba(0,0,0,0.7)';
+
 const Section = ({ label, children, action }: {
   label: string;
   children: React.ReactNode;
@@ -60,7 +62,11 @@ const Section = ({ label, children, action }: {
 }) => (
   <div style={{ marginBottom: 16 }}>
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
-      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>
+      <span style={{
+        fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
+        color: 'rgba(255,255,255,0.62)',
+        textShadow: LABEL_SHADOW,
+      }}>
         {label}
       </span>
       {action}
@@ -1395,7 +1401,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   // ── Mobile content-only mode (rendered by App.tsx inside a floating sheet) ──
   if (mobile && mobileContentOnly !== undefined) {
     return (
-      <div style={{ padding: '12px 0 16px' }}>
+      <div className="panel-text-contrast" style={{ padding: '12px 0 16px' }}>
         {mobileContentOnly === 'presets'    && <PresetsTab />}
         {mobileContentOnly === 'template'   && <TemplateTab />}
         {mobileContentOnly === 'device'     && <DeviceTab />}
@@ -1415,7 +1421,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
 
         {/* Active tab content — scrollable, fills space above the pill bar */}
-        <div className="styled-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '10px 14px 8px' }}>
+        <div className="styled-scroll panel-text-contrast" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '10px 14px 8px' }}>
           {activeTab === 'presets'    && <PresetsTab />}
           {activeTab === 'template'   && <TemplateTab />}
           {activeTab === 'device'     && <DeviceTab />}
@@ -1509,7 +1515,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         </div>
 
         {/* Scrollable content */}
-        <div className="styled-scroll" style={{ flex: 1, overflowY: 'auto', padding: '12px 14px 20px' }}>
+        <div className="styled-scroll panel-text-contrast" style={{ flex: 1, overflowY: 'auto', padding: '12px 14px 20px' }}>
           {activeTab === 'presets'    && <PresetsTab />}
           {activeTab === 'template'   && <TemplateTab />}
           {activeTab === 'device'     && <DeviceTab />}

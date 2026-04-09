@@ -309,6 +309,17 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
   margin-bottom: 8px;
 }
 
+/* ─── Panel text-shadow — legible on any background color ───── */
+/* Applied to the left panel scroll area so every text label     */
+/* gets a dark halo that makes it readable over bright canvases  */
+.panel-text-contrast,
+.panel-text-contrast span,
+.panel-text-contrast button,
+.panel-text-contrast label,
+.panel-text-contrast p {
+  text-shadow: 0 1px 5px rgba(0,0,0,0.95), 0 0 14px rgba(0,0,0,0.65);
+}
+
 /* ─── Rotato-style input fields ─────────────────────────────── */
 .rt-input {
   background: rgba(255,255,255,0.06);
