@@ -547,6 +547,16 @@ export function AnnotateCanvas() {
     setSelectionFrame(f => f + 1);
   }, [selectedId]);
 
+  const changeSelectedLineWidth = useCallback((lineWidth: number) => {
+    if (!selectedId) return;
+    strokesRef.current = strokesRef.current.map(s =>
+      s.id === selectedId ? { ...s, lineWidth } as AnyStroke : s
+    );
+    const ctx = canvasRef.current?.getContext('2d');
+    if (ctx) redrawStrokes(ctx, strokesRef.current);
+    setSelectionFrame(f => f + 1);
+  }, [selectedId]);
+
   const changeTextFontSize = useCallback((delta: number) => {
     if (!selectedId) return;
     strokesRef.current = strokesRef.current.map(s => {
@@ -1111,6 +1121,27 @@ export function AnnotateCanvas() {
                     />
                     <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', minWidth: 30, textAlign: 'right' }}>
                       {Math.round(currentOpacity * 100)}%
+                    </span>
+                  </div>
+
+                  {/* ── Separator ── */}
+                  <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '0 -4px' }} />
+
+                  {/* ── Line width section ── */}
+                  <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    Grosor
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input
+                      type="range"
+                      min={1} max={40} step={1}
+                      value={Math.round('lineWidth' in selectedStroke ? selectedStroke.lineWidth : 2)}
+                      onChange={e => changeSelectedLineWidth(Number(e.target.value))}
+                      style={{ flex: 1, accentColor: '#a78bfa', height: 3, cursor: 'pointer' }}
+                    />
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', minWidth: 30, textAlign: 'right' }}>
+                      {Math.round('lineWidth' in selectedStroke ? selectedStroke.lineWidth : 2)}px
                     </span>
                   </div>
                 </div>
