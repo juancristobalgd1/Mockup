@@ -459,6 +459,11 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const lightPopupRef                        = useRef<HTMLDivElement>(null);
   const lightBtnRef                          = useRef<HTMLButtonElement>(null);
 
+  const [envPopupOpen, setEnvPopupOpen]     = useState(false);
+  const [envPopupAnchor, setEnvPopupAnchor] = useState<{ x: number; y: number } | null>(null);
+  const envPopupRef                         = useRef<HTMLDivElement>(null);
+  const envBtnRef                           = useRef<HTMLButtonElement>(null);
+
   const [scenePopup, setScenePopup]         = useState<null | 'canvas' | 'motion' | 'effects' | 'shadow'>(null);
   const [scenePopupAnchor, setScenePopupAnchor] = useState<{ x: number; y: number } | null>(null);
   const scenePopupRef                        = useRef<HTMLDivElement>(null);
@@ -576,6 +581,19 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, [lightPopupOpen]);
+
+  // Close env popup when clicking outside
+  useEffect(() => {
+    if (!envPopupOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (envPopupRef.current && !envPopupRef.current.contains(e.target as Node)
+          && envBtnRef.current && !envBtnRef.current.contains(e.target as Node)) {
+        setEnvPopupOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [envPopupOpen]);
 
   const handleBgImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1815,76 +1833,66 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
             {/* Divider */}
             <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
 
-            {/* Lighting ENV presets (scrollable) */}
-            <div style={{
-              flex: 1, display: 'flex', gap: 6, overflowX: 'auto',
-              scrollbarWidth: 'none', msOverflowStyle: 'none',
-              opacity: state.envEnabled !== false ? 1 : 0.35,
-              transition: 'opacity 0.2s',
-            } as React.CSSProperties}>
-              {ENV_PRESETS.map(env => {
-                const active = state.envPreset === env.id && state.envEnabled !== false;
-                return (
-                  <button key={env.id}
-                    title={env.label}
-                    onClick={() => updateState({ envPreset: env.id, envEnabled: true })}
-                    style={{
-                      flexShrink: 0, width: 46, height: 46, padding: 0, borderRadius: 11, border: 'none', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
-                      outline: active ? '2px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.14)',
-                      color: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.4)',
-                      transition: 'all 0.12s',
-                    }}>
-                    {ENV_ICON[env.id]}
-                  </button>
-                );
-              })}
-            </div>
+            {/* ENV preset thumbnail — single button, opens popup */}
+            {(() => {
+              const activeEnv = ENV_PRESETS.find(e => e.id === state.envPreset) ?? ENV_PRESETS[0];
+              const envOn = state.envEnabled !== false;
+              return (
+                <button
+                  ref={envBtnRef}
+                  title={`Entorno: ${activeEnv.label}`}
+                  onClick={() => {
+                    if (envPopupOpen) { setEnvPopupOpen(false); return; }
+                    const r = envBtnRef.current?.getBoundingClientRect();
+                    if (r) setEnvPopupAnchor({ x: r.left + r.width / 2, y: r.top });
+                    setEnvPopupOpen(true);
+                  }}
+                  style={{
+                    flexShrink: 0, width: 46, height: 46, padding: 0, borderRadius: 11, border: 'none', cursor: 'pointer',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+                    background: envPopupOpen ? 'rgba(255,255,255,0.18)' : envOn ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.3)',
+                    outline: envPopupOpen
+                      ? '2px solid rgba(167,139,250,0.85)'
+                      : envOn ? '2px solid rgba(255,255,255,0.55)' : '1px solid rgba(255,255,255,0.14)',
+                    color: envPopupOpen ? 'rgba(167,139,250,1)' : envOn ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.3)',
+                    opacity: envOn ? 1 : 0.5,
+                    transition: 'all 0.12s',
+                  }}>
+                  {ENV_ICON[activeEnv.id]}
+                  <span style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.04em', lineHeight: 1, color: 'inherit' }}>
+                    {activeEnv.label.toUpperCase()}
+                  </span>
+                </button>
+              );
+            })()}
 
             {/* Divider */}
             <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
 
-            {/* Env toggle + light controls button (fixed) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flexShrink: 0, alignItems: 'center' }}>
-              <button
-                onClick={() => updateState({ envEnabled: !(state.envEnabled !== false) })}
-                title={state.envEnabled !== false ? 'Disable environment' : 'Enable environment'}
-                style={{
-                  width: 32, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer',
-                  background: state.envEnabled !== false ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.18)',
-                  position: 'relative', transition: 'background 0.2s',
-                }}>
-                <div style={{
-                  position: 'absolute', top: 2, left: state.envEnabled !== false ? 13 : 2,
-                  width: 16, height: 16, borderRadius: '50%',
-                  background: state.envEnabled !== false ? '#111' : 'rgba(255,255,255,0.6)',
-                  transition: 'left 0.2s, background 0.2s',
-                }} />
-              </button>
-              <button
-                ref={lightBtnRef}
-                onClick={() => {
-                  if (lightPopupOpen) { setLightPopupOpen(false); return; }
-                  const r = lightBtnRef.current?.getBoundingClientRect();
-                  if (r) setLightPopupAnchor({ x: r.left + r.width / 2, y: r.top });
-                  setLightPopupOpen(true);
-                }}
-                title="Light controls"
-                style={{
-                  width: 32, height: 24, borderRadius: 8, border: 'none', cursor: 'pointer',
-                  background: lightPopupOpen ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.07)',
-                  outline: lightPopupOpen ? '1.5px solid rgba(167,139,250,0.8)' : '1px solid rgba(255,255,255,0.12)',
-                  color: lightPopupOpen ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.5)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 0.14s',
-                }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                  <circle cx="12" cy="12" r="3"/>
-                  <path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
-                </svg>
-              </button>
-            </div>
+            {/* Light controls button */}
+            <button
+              ref={lightBtnRef}
+              onClick={() => {
+                if (lightPopupOpen) { setLightPopupOpen(false); return; }
+                const r = lightBtnRef.current?.getBoundingClientRect();
+                if (r) setLightPopupAnchor({ x: r.left + r.width / 2, y: r.top });
+                setLightPopupOpen(true);
+              }}
+              title="Light controls"
+              style={{
+                flexShrink: 0, width: 46, height: 46, padding: 0, borderRadius: 11, border: 'none', cursor: 'pointer',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+                background: lightPopupOpen ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
+                outline: lightPopupOpen ? '2px solid rgba(167,139,250,0.85)' : '1px solid rgba(255,255,255,0.14)',
+                color: lightPopupOpen ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.45)',
+                transition: 'all 0.14s',
+              }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+              </svg>
+              <span style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.04em', lineHeight: 1, color: 'inherit' }}>LIGHT</span>
+            </button>
 
           </div>
         </Section>
@@ -1910,6 +1918,66 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               <MiniSlider label="Reflections" value={state.lightIBL ?? 40}       min={0} max={100} step={1} unit="%" onChange={v => updateState({ lightIBL: v })} />
               <MiniSlider label="Exposure"   value={Math.round((state.lightExposure ?? 1.0) * 100) / 100} min={0.4} max={2.0} step={0.05} onChange={v => updateState({ lightExposure: v })} />
               <MiniSlider label="Bloom"      value={state.bloomIntensity ?? 22}  min={0} max={100} step={1} unit="%" onChange={v => updateState({ bloomIntensity: v })} />
+            </div>
+          </div>
+        )}
+
+        {/* ENV preset picker popup */}
+        {envPopupOpen && envPopupAnchor && (
+          <div ref={envPopupRef} style={{
+            position: 'fixed',
+            left: Math.max(8, Math.min(envPopupAnchor.x - 110, window.innerWidth - 244)),
+            bottom: window.innerHeight - envPopupAnchor.y + 8,
+            width: 228,
+            background: 'rgba(18,20,26,0.98)',
+            borderRadius: 18, padding: '14px 14px 16px', zIndex: 9999,
+            boxShadow: '0 8px 40px rgba(0,0,0,0.80), 0 2px 12px rgba(0,0,0,0.5)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            backdropFilter: 'blur(22px)',
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.38)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 12 }}>
+              Entorno
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+              {ENV_PRESETS.map(env => {
+                const active = state.envPreset === env.id && state.envEnabled !== false;
+                return (
+                  <button key={env.id}
+                    onClick={() => { updateState({ envPreset: env.id, envEnabled: true }); setEnvPopupOpen(false); }}
+                    style={{
+                      padding: '10px 4px 8px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                      background: active ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.05)',
+                      outline: active ? '2px solid rgba(255,255,255,0.75)' : '1px solid rgba(255,255,255,0.09)',
+                      color: active ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.45)',
+                      transition: 'all 0.12s',
+                    }}>
+                    {ENV_ICON[env.id]}
+                    <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.03em', lineHeight: 1 }}>
+                      {env.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Env on/off toggle row */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>Entorno activo</span>
+              <button
+                onClick={() => updateState({ envEnabled: !(state.envEnabled !== false) })}
+                style={{
+                  width: 32, height: 18, borderRadius: 9, border: 'none', cursor: 'pointer',
+                  background: state.envEnabled !== false ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.18)',
+                  position: 'relative', transition: 'background 0.2s',
+                }}>
+                <div style={{
+                  position: 'absolute', top: 1, left: state.envEnabled !== false ? 13 : 1,
+                  width: 16, height: 16, borderRadius: '50%',
+                  background: state.envEnabled !== false ? '#111' : 'rgba(255,255,255,0.6)',
+                  transition: 'left 0.2s',
+                }} />
+              </button>
             </div>
           </div>
         )}
