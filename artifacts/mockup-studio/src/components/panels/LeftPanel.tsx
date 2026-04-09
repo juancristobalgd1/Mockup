@@ -2080,16 +2080,66 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   // ── Template tab ─────────────────────────────────────────────────
   const TemplateTab = () => {
     const allBgs = [...GRADIENTS, ...MESH_GRADIENTS, ...WALLPAPERS];
+    const [lastApplied, setLastApplied] = useState<string | null>(null);
+
+    const DeviceShape = ({ type }: { type: string }) => {
+      if (type === 'iphone') return (
+        <svg width="22" height="40" viewBox="0 0 22 40" fill="none" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.6))' }}>
+          <rect x="1" y="1" width="20" height="38" rx="5" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" fill="rgba(0,0,0,0.35)"/>
+          <rect x="4.5" y="5" width="13" height="26" rx="2" fill="rgba(255,255,255,0.1)"/>
+          <rect x="7.5" y="2.5" width="7" height="1.5" rx="0.75" fill="rgba(255,255,255,0.4)"/>
+        </svg>
+      );
+      if (type === 'macbook') return (
+        <svg width="46" height="30" viewBox="0 0 46 30" fill="none" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.6))' }}>
+          <rect x="3" y="1" width="40" height="24" rx="3.5" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" fill="rgba(0,0,0,0.35)"/>
+          <rect x="6.5" y="4.5" width="33" height="17" rx="2" fill="rgba(255,255,255,0.1)"/>
+          <path d="M0 26h46" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" strokeLinecap="round"/>
+          <path d="M16 26 Q23 30 30 26" stroke="rgba(255,255,255,0.3)" strokeWidth="1.2" strokeLinecap="round"/>
+        </svg>
+      );
+      if (type === 'browser') return (
+        <svg width="46" height="32" viewBox="0 0 46 32" fill="none" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.6))' }}>
+          <rect x="1" y="1" width="44" height="30" rx="5" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" fill="rgba(0,0,0,0.35)"/>
+          <path d="M1 10h44" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>
+          <rect x="1" y="1" width="44" height="9" rx="5" fill="rgba(255,255,255,0.07)"/>
+          <circle cx="7" cy="5.5" r="1.8" fill="rgba(255,255,255,0.45)"/>
+          <circle cx="13" cy="5.5" r="1.8" fill="rgba(255,255,255,0.45)"/>
+          <circle cx="19" cy="5.5" r="1.8" fill="rgba(255,255,255,0.45)"/>
+          <rect x="24" y="3" width="15" height="5" rx="2.5" fill="rgba(255,255,255,0.1)"/>
+        </svg>
+      );
+      if (type === 'ipad' || type === 'ipad-mini') return (
+        <svg width="30" height="40" viewBox="0 0 30 40" fill="none" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.6))' }}>
+          <rect x="1" y="1" width="28" height="38" rx="5" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" fill="rgba(0,0,0,0.35)"/>
+          <rect x="4" y="4.5" width="22" height="31" rx="2" fill="rgba(255,255,255,0.1)"/>
+          <circle cx="15" cy="37" r="1.5" fill="rgba(255,255,255,0.3)"/>
+        </svg>
+      );
+      return (
+        <svg width="22" height="40" viewBox="0 0 22 40" fill="none" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.6))' }}>
+          <rect x="1" y="1" width="20" height="38" rx="5" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" fill="rgba(0,0,0,0.35)"/>
+        </svg>
+      );
+    };
+
+    const DEVICE_LABELS: Record<string, string> = {
+      iphone: 'Phone', macbook: 'Laptop', browser: 'Browser',
+      ipad: 'iPad', 'ipad-mini': 'iPad mini',
+    };
+
     return (
-      <>
-        <HScroll gap={8}>
+      <div style={{ paddingBottom: 4 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {PRESETS.map(preset => {
             const bg = allBgs.find(g => g.id === preset.thumb);
-            const bgCss = bg ? ('css' in bg ? bg.css : '') : '';
+            const bgCss = bg ? ('css' in bg ? bg.css : '') : '#1a1a2e';
+            const isActive = lastApplied === preset.id;
+            const s = preset.state;
+
             return (
               <button key={preset.id}
                 onClick={() => {
-                  const s = preset.state;
                   const defaultModel = DEVICE_MODELS.find(m => m.storeType === s.deviceType);
                   updateState({
                     deviceType: s.deviceType,
@@ -2101,22 +2151,82 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                     envPreset: (s.envPreset ?? 'studio') as EnvPreset,
                     contactShadowOpacity: s.contactShadowOpacity ?? 65,
                   });
+                  setLastApplied(preset.id);
                 }}
                 style={{
-                  flexShrink: 0, width: 88, height: 88, borderRadius: 16, overflow: 'hidden', position: 'relative',
-                  background: bgCss || '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer',
-                  transition: 'all 0.15s',
+                  position: 'relative', width: '100%', height: 116, borderRadius: 16,
+                  overflow: 'hidden', background: bgCss || '#1a1a2e',
+                  border: 'none', cursor: 'pointer', padding: 0,
+                  outline: isActive ? '2px solid rgba(255,255,255,0.9)' : '1.5px solid rgba(255,255,255,0.1)',
+                  transition: 'outline 0.15s, box-shadow 0.15s',
+                  boxShadow: isActive
+                    ? '0 0 0 1px rgba(255,255,255,0.2), 0 4px 22px rgba(0,0,0,0.55)'
+                    : '0 2px 10px rgba(0,0,0,0.4)',
                 }}>
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-end', padding: 8 }}>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.9)', textAlign: 'left', lineHeight: 1.2, textShadow: '0 1px 8px rgba(0,0,0,0.9)', whiteSpace: 'nowrap' }}>
+
+                {/* Device silhouette */}
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  paddingBottom: 20,
+                }}>
+                  <DeviceShape type={s.deviceType} />
+                </div>
+
+                {/* Bottom gradient + info bar */}
+                <div style={{
+                  position: 'absolute', bottom: 0, left: 0, right: 0,
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.45) 55%, transparent 100%)',
+                  padding: '22px 8px 7px',
+                  display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+                }}>
+                  <span style={{
+                    fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,0.95)',
+                    letterSpacing: '0.02em', lineHeight: 1.2,
+                  }}>
                     {preset.label}
                   </span>
+                  <span style={{
+                    fontSize: 8, fontWeight: 600, color: 'rgba(255,255,255,0.48)',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {DEVICE_LABELS[s.deviceType] ?? s.deviceType}
+                  </span>
                 </div>
+
+                {/* Active checkmark */}
+                {isActive && (
+                  <div style={{
+                    position: 'absolute', top: 7, right: 7,
+                    width: 18, height: 18, borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.95)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="3.2" strokeLinecap="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
+                )}
+
+                {/* Animation badge */}
+                {s.animation && s.animation !== 'none' && (
+                  <div style={{
+                    position: 'absolute', top: 7, left: 7,
+                    background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
+                    borderRadius: 5, padding: '2.5px 5px',
+                    display: 'flex', alignItems: 'center', gap: 3,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                  }}>
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="2.5" strokeLinecap="round">
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                    </svg>
+                  </div>
+                )}
               </button>
             );
           })}
-        </HScroll>
-      </>
+        </div>
+      </div>
     );
   };
 
