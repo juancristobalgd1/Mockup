@@ -25,6 +25,7 @@ const RATIO_VALUES: Record<string, number> = {
   '3:2':  3 / 2,
   '2:3':  2 / 3,
   '3:1':  3,
+  '5:4':  5 / 4,
 };
 
 export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, onUpdateText, viewerRef, moviePlaying, movieTimeRef }, ref) => {

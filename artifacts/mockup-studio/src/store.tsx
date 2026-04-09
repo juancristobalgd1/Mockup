@@ -8,7 +8,7 @@ export type DeviceColor = "titanium" | "black" | "white" | "blue" | "naturalligh
 export type BrowserMode = "dark" | "light";
 export type BackgroundType = "none" | "solid" | "gradient" | "mesh" | "pattern" | "image" | "wallpaper" | "transparent";
 export type ShadowStyle = "none" | "spread" | "hug";
-export type CanvasRatio = "free" | "1:1" | "4:5" | "16:9" | "9:16" | "4:3" | "3:2" | "2:3" | "3:1";
+export type CanvasRatio = "free" | "1:1" | "4:5" | "16:9" | "9:16" | "4:3" | "3:2" | "2:3" | "3:1" | "5:4";
 export type ContentType = "image" | "video" | null;
 export type CreationMode = "mockup" | "movie" | "screenshot";
 
