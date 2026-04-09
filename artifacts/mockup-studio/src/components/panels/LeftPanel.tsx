@@ -440,6 +440,10 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const overlayColorBtnRef                   = useRef<HTMLButtonElement>(null);
   const overlayOpacityBtnRef                 = useRef<HTMLButtonElement>(null);
 
+  const [bgPopup, setBgPopup]               = useState<null | string>(null);
+  const [bgPopupAnchor, setBgPopupAnchor]   = useState<{ x: number; y: number } | null>(null);
+  const bgPopupRef                           = useRef<HTMLDivElement>(null);
+
   // Close annotate popup when clicking outside
   useEffect(() => {
     if (!annotatePopup) return;
@@ -463,6 +467,18 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, [overlayPopup]);
+
+  // Close background popup when clicking outside
+  useEffect(() => {
+    if (!bgPopup) return;
+    const onDown = (e: MouseEvent) => {
+      if (bgPopupRef.current && !bgPopupRef.current.contains(e.target as Node)) {
+        setBgPopup(null);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [bgPopup]);
 
   const handleBgImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -692,19 +708,189 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
 
   // ── Background tab content ──────────────────────────────────────
   const BackgroundTab = () => {
+    const THUMB: React.CSSProperties = {
+      width: 44, height: 44, borderRadius: 10, marginBottom: 5,
+      border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    };
+    const SWATCH_BTN = (active: boolean): React.CSSProperties => ({
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      padding: '8px 7px 7px', borderRadius: 12, border: 'none', cursor: 'pointer',
+      background: active ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.05)',
+      outline: active ? '2px solid rgba(255,255,255,0.85)' : '1px solid rgba(255,255,255,0.10)',
+      transition: 'all 0.12s', flexShrink: 0,
+    });
+    const SWATCH_LABEL = (active: boolean): React.CSSProperties => ({
+      fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
+      color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.45)',
+      whiteSpace: 'nowrap',
+    });
+
     const bgTypeCards = [
-      { id: 'solid',    label: 'Solid',    preview: { background: state.bgType === 'solid' ? state.bgColor : '#374151' } },
-      { id: 'gradient', label: 'Gradient', preview: { background: 'linear-gradient(135deg, #3b82f6 0%, #ec4899 100%)' } },
-      { id: 'mesh',     label: 'Mesh',     preview: { background: 'radial-gradient(at 30% 20%, #0ea5e9 0px, transparent 55%), radial-gradient(at 80% 70%, #ec4899 0px, transparent 55%), #03111e' } },
-      { id: 'wallpaper',label: 'Wallpaper',preview: { background: 'radial-gradient(ellipse at 50% 0%, #bfdbfe 0%, #60a5fa 60%, #dbeafe 100%)' } },
-      { id: 'pattern',  label: 'Pattern',  preview: { backgroundColor: '#1a1c2e', backgroundImage: 'radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1px)', backgroundSize: '10px 10px' } },
+      { id: 'solid',    label: 'Solid',    preview: { background: state.bgType === 'solid' ? state.bgColor : '#374151' } as React.CSSProperties },
+      { id: 'gradient', label: 'Gradient', preview: { background: 'linear-gradient(135deg, #3b82f6 0%, #ec4899 100%)' } as React.CSSProperties },
+      { id: 'mesh',     label: 'Mesh',     preview: { background: 'radial-gradient(at 30% 20%, #0ea5e9 0px, transparent 55%), radial-gradient(at 80% 70%, #ec4899 0px, transparent 55%), #03111e' } as React.CSSProperties },
+      { id: 'wallpaper',label: 'Wallpaper',preview: { background: 'radial-gradient(ellipse at 50% 0%, #bfdbfe 0%, #60a5fa 60%, #dbeafe 100%)' } as React.CSSProperties },
+      { id: 'pattern',  label: 'Pattern',  preview: { backgroundColor: '#1a1c2e', backgroundImage: 'radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1px)', backgroundSize: '10px 10px' } as React.CSSProperties },
       { id: 'image',    label: 'Image',    preview: null },
-    ] as const;
+    ];
+
+    const popupStyle: React.CSSProperties = {
+      position: 'fixed',
+      left: bgPopupAnchor ? Math.max(8, Math.min(bgPopupAnchor.x - 130, window.innerWidth - 278)) : 0,
+      top: bgPopupAnchor ? bgPopupAnchor.y + 8 : 0,
+      width: 262,
+      background: 'rgba(18,20,26,0.98)',
+      borderRadius: 18, padding: 14, zIndex: 9999,
+      boxShadow: '0 8px 40px rgba(0,0,0,0.80), 0 2px 12px rgba(0,0,0,0.5)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      backdropFilter: 'blur(22px)',
+      maxHeight: 'calc(100vh - 80px)',
+      overflowY: 'auto',
+    };
+
+    const GRID4: React.CSSProperties = {
+      display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6,
+    };
 
     return (
       <>
-        {/* Type grid */}
-        <Section label="Type" action={
+        {/* ── Background type popup ───────────────────────────── */}
+        {bgPopup && bgPopupAnchor && (
+          <div ref={bgPopupRef} style={popupStyle}>
+
+            {/* Solid color */}
+            {bgPopup === 'solid' && (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Color</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <div style={{ width: 38, height: 38, borderRadius: 10, background: state.bgColor, border: '1px solid rgba(255,255,255,0.12)' }} />
+                    <input type="color" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
+                      style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
+                  </div>
+                  <input type="text" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
+                    className="rt-input" style={{ fontFamily: 'monospace', flex: 1 }} />
+                </div>
+              </>
+            )}
+
+            {/* Gradients */}
+            {bgPopup === 'gradient' && (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Gradients</div>
+                <div style={GRID4}>
+                  {GRADIENTS.map(g => {
+                    const active = state.bgColor === g.id;
+                    return (
+                      <button key={g.id} onClick={() => updateState({ bgColor: g.id })} style={SWATCH_BTN(active)}>
+                        <div style={{ ...THUMB, background: g.css }} />
+                        <span style={SWATCH_LABEL(active)}>{g.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* Mesh gradients */}
+            {bgPopup === 'mesh' && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Mesh Gradients</span>
+                  {state.screenshotUrl && (
+                    <button onClick={() => { handleAutoBackground(); setBgPopup(null); }} disabled={extracting}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 7,
+                        fontSize: 10, fontWeight: 600, background: 'rgba(255,255,255,0.08)',
+                        border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.65)', cursor: 'pointer',
+                      }}>
+                      <Wand2 size={10} />{extracting ? 'Extracting…' : 'Auto'}
+                    </button>
+                  )}
+                </div>
+                <div style={GRID4}>
+                  {MESH_GRADIENTS.filter(m => m.id !== '__auto__').map(m => {
+                    const active = state.bgColor === m.id;
+                    return (
+                      <button key={m.id} onClick={() => updateState({ bgColor: m.id })} style={SWATCH_BTN(active)}>
+                        <div style={{ ...THUMB, background: m.css }} />
+                        <span style={SWATCH_LABEL(active)}>{m.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* Wallpapers */}
+            {bgPopup === 'wallpaper' && (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Wallpapers</div>
+                <div style={GRID4}>
+                  {WALLPAPERS.map(w => {
+                    const active = state.bgColor === w.id;
+                    return (
+                      <button key={w.id} onClick={() => updateState({ bgColor: w.id })} style={SWATCH_BTN(active)}>
+                        <div style={{ ...THUMB, background: w.css }} />
+                        <span style={SWATCH_LABEL(active)}>{w.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* Patterns */}
+            {bgPopup === 'pattern' && (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Pattern</div>
+                <div style={GRID4}>
+                  {PATTERNS.map(p => {
+                    const active = state.bgPattern === p.id;
+                    return (
+                      <button key={p.id} onClick={() => updateState({ bgPattern: p.id })} style={SWATCH_BTN(active)}>
+                        <div style={{ ...THUMB, ...p.bgStyle('#1a1c2e') }} />
+                        <span style={SWATCH_LABEL(active)}>{p.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div style={{ marginTop: 12, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 12 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Pattern Color</div>
+                  <div style={{ position: 'relative', width: '100%', height: 36, borderRadius: 10, background: state.bgColor, border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <input type="color" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
+                      style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Image upload */}
+            {bgPopup === 'image' && (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Background Image</div>
+                {state.bgImage && (
+                  <div style={{ width: '100%', height: 80, borderRadius: 10, overflow: 'hidden', marginBottom: 10, border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <img src={state.bgImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="bg" />
+                  </div>
+                )}
+                <button onClick={() => bgFileRef.current?.click()}
+                  style={{
+                    width: '100%', padding: '10px 0', borderRadius: 10, fontSize: 11, fontWeight: 600,
+                    background: 'rgba(0,0,0,0.5)', border: '1px dashed rgba(255,255,255,0.28)',
+                    color: 'rgba(255,255,255,0.45)', cursor: 'pointer',
+                  }}>
+                  {state.bgImage ? 'Change Image' : '+ Upload Image'}
+                </button>
+                <input ref={bgFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { handleBgImage(e); setBgPopup(null); }} />
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Type selector row + Shuffle */}
+        <Section label="Background" action={
           <button onClick={handleShuffle} style={{
             display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8,
             fontSize: 10, fontWeight: 700, background: 'rgba(255,255,255,0.08)',
@@ -714,216 +900,43 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
             <Shuffle size={10} /> Shuffle
           </button>
         }>
-          <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' } as React.CSSProperties}>
+          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' } as React.CSSProperties}>
             {bgTypeCards.map(({ id, label, preview }) => {
               const active = state.bgType === id;
+              const popupOpen = bgPopup === id;
               return (
-                <button key={id} onClick={() => updateState({ bgType: id })}
+                <button key={id}
+                  onClick={e => {
+                    updateState({ bgType: id as any });
+                    if (popupOpen) { setBgPopup(null); return; }
+                    const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                    setBgPopupAnchor({ x: r.left + r.width / 2, y: r.bottom });
+                    setBgPopup(id);
+                  }}
                   style={{
                     flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    padding: '10px 8px 8px', borderRadius: 14, gap: 0, border: 'none',
+                    padding: '8px 7px 7px', borderRadius: 13, gap: 0, border: 'none',
                     background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
-                    outline: active ? '2px solid rgba(255,255,255,0.85)' : '1.5px solid rgba(255,255,255,0.16)',
+                    outline: popupOpen ? '2px solid rgba(167,139,250,0.8)' : active ? '2px solid rgba(255,255,255,0.85)' : '1.5px solid rgba(255,255,255,0.14)',
                     cursor: 'pointer', transition: 'all 0.12s',
                   }}>
                   <div style={{
-                    width: 40, height: 40, borderRadius: 10, marginBottom: 6, overflow: 'hidden',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: 40, height: 40, borderRadius: 10, marginBottom: 5,
                     border: '1px solid rgba(255,255,255,0.08)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    overflow: 'hidden',
                     ...(preview ?? { background: '#1a1c2e' }),
                   }}>
                     {!preview && <ImageIcon size={16} color="rgba(255,255,255,0.40)" />}
                   </div>
                   <span style={{
-                    fontSize: 10, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
-                    color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.55)',
+                    fontSize: 9, fontWeight: 700, color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.50)',
                   }}>{label}</span>
                 </button>
               );
             })}
           </div>
         </Section>
-
-        {/* Solid color */}
-        {state.bgType === 'solid' && (
-          <Section label="Color">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: state.bgColor, border: '1px solid rgba(255,255,255,0.1)' }} />
-                <input type="color" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
-                  style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
-              </div>
-              <input type="text" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
-                className="rt-input" style={{ fontFamily: 'monospace' }} />
-            </div>
-          </Section>
-        )}
-
-        {/* Gradients */}
-        {state.bgType === 'gradient' && (
-          <Section label="Gradients">
-            <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' } as React.CSSProperties}>
-              {GRADIENTS.map(g => {
-                const active = state.bgColor === g.id;
-                return (
-                  <button key={g.id} onClick={() => updateState({ bgColor: g.id })}
-                    style={{
-                      flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                      padding: '10px 8px 8px', borderRadius: 14, gap: 0, border: 'none',
-                      background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
-                      outline: active ? '2px solid rgba(255,255,255,0.85)' : '1.5px solid rgba(255,255,255,0.16)',
-                      cursor: 'pointer', transition: 'all 0.12s',
-                    }}>
-                    <div style={{
-                      width: 40, height: 40, borderRadius: 10, marginBottom: 6,
-                      background: g.css, border: '1px solid rgba(255,255,255,0.08)',
-                    }} />
-                    <span style={{
-                      fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
-                      color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.50)',
-                      whiteSpace: 'nowrap',
-                    }}>{g.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </Section>
-        )}
-
-        {/* Mesh gradients */}
-        {state.bgType === 'mesh' && (
-          <Section label="Mesh Gradients" action={
-            state.screenshotUrl ? (
-              <button onClick={handleAutoBackground} disabled={extracting}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 7,
-                  fontSize: 10, fontWeight: 600, background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.65)', cursor: 'pointer',
-                }}>
-                <Wand2 size={10} />
-                {extracting ? 'Extracting…' : 'Auto'}
-              </button>
-            ) : undefined
-          }>
-            <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' } as React.CSSProperties}>
-              {MESH_GRADIENTS.filter(m => m.id !== '__auto__').map(m => {
-                const active = state.bgColor === m.id;
-                return (
-                  <button key={m.id} onClick={() => updateState({ bgColor: m.id })}
-                    style={{
-                      flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                      padding: '10px 8px 8px', borderRadius: 14, gap: 0, border: 'none',
-                      background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
-                      outline: active ? '2px solid rgba(255,255,255,0.85)' : '1.5px solid rgba(255,255,255,0.16)',
-                      cursor: 'pointer', transition: 'all 0.12s',
-                    }}>
-                    <div style={{
-                      width: 40, height: 40, borderRadius: 10, marginBottom: 6,
-                      background: m.css, border: '1px solid rgba(255,255,255,0.08)',
-                    }} />
-                    <span style={{
-                      fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
-                      color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.50)',
-                      whiteSpace: 'nowrap',
-                    }}>{m.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </Section>
-        )}
-
-        {/* Wallpapers */}
-        {state.bgType === 'wallpaper' && (
-          <Section label="Wallpapers">
-            <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' } as React.CSSProperties}>
-              {WALLPAPERS.map(w => {
-                const active = state.bgColor === w.id;
-                return (
-                  <button key={w.id} onClick={() => updateState({ bgColor: w.id })}
-                    style={{
-                      flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                      padding: '10px 8px 8px', borderRadius: 14, gap: 0, border: 'none',
-                      background: active ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
-                      outline: active ? '2px solid rgba(255,255,255,0.85)' : '1.5px solid rgba(255,255,255,0.16)',
-                      cursor: 'pointer', transition: 'all 0.12s',
-                    }}>
-                    <div style={{
-                      width: 40, height: 40, borderRadius: 10, marginBottom: 6,
-                      background: w.css, border: '1px solid rgba(255,255,255,0.08)',
-                    }} />
-                    <span style={{
-                      fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
-                      color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.50)',
-                      whiteSpace: 'nowrap',
-                    }}>{w.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </Section>
-        )}
-
-        {/* Patterns */}
-        {state.bgType === 'pattern' && (
-          <>
-            <Section label="Pattern">
-              <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' } as React.CSSProperties}>
-                {PATTERNS.map(p => {
-                  const active = state.bgPattern === p.id;
-                  return (
-                    <button key={p.id} onClick={() => updateState({ bgPattern: p.id })}
-                      style={{
-                        flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        padding: '10px 8px 8px', borderRadius: 14, gap: 0, border: 'none',
-                        background: active ? 'rgba(255,255,255,0.24)' : 'rgba(255,255,255,0.13)',
-                        outline: active ? '2px solid rgba(255,255,255,0.42)' : '1.5px solid rgba(255,255,255,0.16)',
-                        cursor: 'pointer', transition: 'all 0.12s',
-                      }}>
-                      <div style={{
-                        width: 40, height: 40, borderRadius: 10, marginBottom: 6,
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        ...p.bgStyle('#1a1c2e'),
-                      }} />
-                      <span style={{
-                        fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: 1.2,
-                        color: active ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.50)',
-                        whiteSpace: 'nowrap',
-                      }}>{p.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </Section>
-            <Section label="Pattern Color">
-              <div style={{ position: 'relative', width: '100%', height: 36, borderRadius: 10, background: state.bgColor, border: '1px solid rgba(255,255,255,0.1)' }}>
-                <input type="color" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
-                  style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
-              </div>
-            </Section>
-          </>
-        )}
-
-        {/* Image */}
-        {state.bgType === 'image' && (
-          <Section label="Background Image">
-            {state.bgImage && (
-              <div style={{ width: '100%', height: 72, borderRadius: 10, overflow: 'hidden', marginBottom: 8, border: '1px solid rgba(255,255,255,0.1)' }}>
-                <img src={state.bgImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="bg" />
-              </div>
-            )}
-            <button onClick={() => bgFileRef.current?.click()}
-              style={{
-                width: '100%', padding: '10px 0', borderRadius: 10, fontSize: 11, fontWeight: 600,
-                background: 'rgba(0,0,0,0.5)', border: '1px dashed rgba(255,255,255,0.28)',
-                color: 'rgba(255,255,255,0.45)', cursor: 'pointer',
-              }}>
-              {state.bgImage ? 'Change Image' : '+ Upload Image'}
-            </button>
-            <input ref={bgFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleBgImage} />
-          </Section>
-        )}
-
       </>
     );
   };
