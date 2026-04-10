@@ -700,12 +700,34 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
     const getCam = () => viewerRef.current?.getCameraState() ?? null;
     const keyframes = buildPresetKeyframes(presetId, getCam, movieDuration);
     if (keyframes.length === 0) return;
-    clearCameraKeyframes();
-    keyframes.forEach(kf => addCameraKeyframe(kf));
-    movieTimeRef.current = 0;
-    setCurrentTime(0);
+
+    if (cameraKeyframes.length === 0) {
+      clearCameraKeyframes();
+      keyframes.forEach(kf => addCameraKeyframe(kf));
+      movieTimeRef.current = 0;
+      setCurrentTime(0);
+      setActiveKfId(null);
+      return;
+    }
+
+    const APPEND_GAP = 0.15;
+    const lastTime = cameraKeyframes[cameraKeyframes.length - 1]?.time ?? 0;
+    const appendedKeyframes = keyframes.map(kf => ({
+      ...kf,
+      time: kf.time + lastTime + APPEND_GAP,
+    }));
+    const appendedEnd = appendedKeyframes[appendedKeyframes.length - 1]?.time ?? lastTime;
+    const nextDuration = Math.max(movieDuration, Math.ceil(appendedEnd * 2) / 2);
+
+    if (nextDuration !== movieDuration) {
+      updateState({ movieDuration: nextDuration });
+    }
+
+    appendedKeyframes.forEach(kf => addCameraKeyframe(kf));
+    movieTimeRef.current = appendedKeyframes[0]?.time ?? lastTime;
+    setCurrentTime(movieTimeRef.current);
     setActiveKfId(null);
-  }, [addCameraKeyframe, clearCameraKeyframes, movieDuration, movieTimeRef, viewerRef]);
+  }, [addCameraKeyframe, cameraKeyframes, clearCameraKeyframes, movieDuration, movieTimeRef, updateState, viewerRef]);
 
   // Only show integer ticks that fall within the active area (≤ displayDuration)
   const RULERS = Array.from({ length: Math.ceil(displayDuration) + 1 }, (_, i) => i).filter(s => s <= displayDuration);
