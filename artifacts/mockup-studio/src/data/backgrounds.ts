@@ -6,10 +6,12 @@ import type { DeviceType } from '../store';
 export interface AnimatedBackground {
   id: string;
   label: string;
-  type: 'iframe' | 'css';
+  type: 'iframe' | 'css' | 'canvas';
   src?: string;
   animStyle?: React.CSSProperties;
   thumb: React.CSSProperties;
+  /** For type='canvas': per-frame draw function. t = elapsed seconds. */
+  render?: (ctx: CanvasRenderingContext2D, t: number, W: number, H: number) => void;
 }
 
 export const ANIMATED_BG_KEYFRAMES = `
@@ -124,6 +126,198 @@ export const ANIMATED_BACKGROUNDS: AnimatedBackground[] = [
       animation: 'bgShift 11s ease infinite',
     },
     thumb: { background: 'linear-gradient(135deg, #ecfdf5, #6ee7b7, #a5f3fc, #bfdbfe)' },
+  },
+
+  // ── Canvas-rendered backgrounds (record-perfect) ────────────────────────────
+
+  {
+    id: 'liquid-blobs',
+    label: 'Liquid Blobs',
+    type: 'canvas',
+    thumb: { background: 'radial-gradient(ellipse at 25% 35%, #a855f7 0%, #ec4899 40%, #f97316 70%, #0a0412 100%)' },
+    render: (ctx, t, W, H) => {
+      ctx.fillStyle = '#07030f';
+      ctx.fillRect(0, 0, W, H);
+      const S = Math.min(W, H);
+      const blobs = [
+        { bx: 0.28, by: 0.33, ox: 0.17, oy: 0.13, spx: 0.21, spy: 0.17, r: 0.58, h: 270, ds: 6 },
+        { bx: 0.72, by: 0.28, ox: 0.14, oy: 0.18, spx: 0.18, spy: 0.26, r: 0.52, h: 330, ds: 7 },
+        { bx: 0.50, by: 0.72, ox: 0.17, oy: 0.11, spx: 0.30, spy: 0.22, r: 0.50, h: 22,  ds: 5 },
+        { bx: 0.18, by: 0.64, ox: 0.11, oy: 0.14, spx: 0.36, spy: 0.28, r: 0.43, h: 210, ds: 8 },
+        { bx: 0.80, by: 0.67, ox: 0.10, oy: 0.12, spx: 0.41, spy: 0.33, r: 0.45, h: 190, ds: 6 },
+      ];
+      ctx.globalCompositeOperation = 'screen';
+      for (const b of blobs) {
+        const x = W * (b.bx + b.ox * Math.sin(t * b.spx));
+        const y = H * (b.by + b.oy * Math.cos(t * b.spy));
+        const r = S * b.r;
+        const hue = (b.h + t * b.ds) % 360;
+        const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+        g.addColorStop(0,    `hsla(${hue},95%,68%,0.92)`);
+        g.addColorStop(0.38, `hsla(${hue},90%,58%,0.48)`);
+        g.addColorStop(0.72, `hsla(${hue},85%,48%,0.18)`);
+        g.addColorStop(1,    `hsla(${hue},80%,40%,0)`);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      const vig = ctx.createRadialGradient(W/2, H/2, S*0.25, W/2, H/2, S*0.85);
+      vig.addColorStop(0, 'rgba(0,0,0,0)');
+      vig.addColorStop(1, 'rgba(0,0,0,0.5)');
+      ctx.fillStyle = vig;
+      ctx.fillRect(0, 0, W, H);
+    },
+  },
+
+  {
+    id: 'aurora-borealis',
+    label: 'Aurora Boreal',
+    type: 'canvas',
+    thumb: { background: 'linear-gradient(180deg, #020c14 0%, #0a2e1a 40%, #0e3830 70%, #091a28 100%)' },
+    render: (ctx, t, W, H) => {
+      const sky = ctx.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, '#020c14');
+      sky.addColorStop(0.55, '#071820');
+      sky.addColorStop(1, '#0a2218');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, W, H);
+      const fr = (n: number) => { const x = Math.sin(n + 1) * 43758.5453; return x - Math.floor(x); };
+      for (let i = 0; i < 130; i++) {
+        const sx = fr(i * 5.3) * W;
+        const sy = fr(i * 9.7) * H * 0.48;
+        const tw = 0.35 + 0.65 * Math.abs(Math.sin(t * (0.8 + fr(i) * 1.8) + i));
+        ctx.globalAlpha = tw * 0.85;
+        ctx.fillStyle = '#eef4ff';
+        ctx.beginPath();
+        ctx.arc(sx, sy, 0.6 + fr(i * 3.1) * 1.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      const bands = [
+        { cy: 0.50, amp: 0.07, freq: 2.2, sp: 0.35, hBase: 152, hVar: 22, alpha: 0.72, thick: 0.14 },
+        { cy: 0.60, amp: 0.06, freq: 3.1, sp: 0.28, hBase: 175, hVar: 18, alpha: 0.60, thick: 0.11 },
+        { cy: 0.68, amp: 0.05, freq: 3.8, sp: 0.44, hBase: 230, hVar: 30, alpha: 0.48, thick: 0.09 },
+        { cy: 0.44, amp: 0.04, freq: 2.6, sp: 0.20, hBase: 140, hVar: 15, alpha: 0.38, thick: 0.07 },
+      ];
+      for (const b of bands) {
+        ctx.beginPath();
+        for (let xi = 0; xi <= W; xi += 3) {
+          const xn = xi / W;
+          const yn = H * (b.cy + b.amp * Math.sin(xn * b.freq * Math.PI * 2 + t * b.sp)
+            + b.amp * 0.4 * Math.sin(xn * b.freq * 1.7 * Math.PI * 2 - t * b.sp * 0.7));
+          xi === 0 ? ctx.moveTo(xi, H) : undefined;
+          ctx.lineTo(xi, yn);
+        }
+        ctx.lineTo(W, H);
+        ctx.lineTo(0, H);
+        ctx.closePath();
+        const hue = b.hBase + b.hVar * Math.sin(t * 0.25);
+        const yc = H * b.cy;
+        const ht = H * b.thick;
+        const bg = ctx.createLinearGradient(0, yc - ht, 0, yc + ht * 0.8);
+        bg.addColorStop(0,   `hsla(${hue},100%,68%,0)`);
+        bg.addColorStop(0.3, `hsla(${hue},100%,68%,${b.alpha})`);
+        bg.addColorStop(0.6, `hsla(${hue + 15},90%,55%,${b.alpha * 0.7})`);
+        bg.addColorStop(1,   `hsla(${hue + 30},80%,45%,0)`);
+        ctx.fillStyle = bg;
+        ctx.fill();
+      }
+    },
+  },
+
+  {
+    id: 'deep-space',
+    label: 'Deep Space',
+    type: 'canvas',
+    thumb: { background: 'radial-gradient(ellipse at 35% 40%, #2a0e5e 0%, #0a0030 50%, #000008 100%)' },
+    render: (ctx, t, W, H) => {
+      ctx.fillStyle = '#000008';
+      ctx.fillRect(0, 0, W, H);
+      const fr = (n: number) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+      const nebulas = [
+        { nx: 0.30, ny: 0.38, r: 0.42, ox: 0.06, oy: 0.04, sp: 0.08, h: 270, a: 0.14 },
+        { nx: 0.68, ny: 0.32, r: 0.36, ox: 0.05, oy: 0.06, sp: 0.11, h: 200, a: 0.11 },
+        { nx: 0.52, ny: 0.72, r: 0.30, ox: 0.07, oy: 0.05, sp: 0.09, h: 330, a: 0.09 },
+        { nx: 0.20, ny: 0.65, r: 0.28, ox: 0.04, oy: 0.06, sp: 0.12, h: 180, a: 0.08 },
+      ];
+      for (const n of nebulas) {
+        const nx = W * (n.nx + n.ox * Math.sin(t * n.sp));
+        const ny = H * (n.ny + n.oy * Math.cos(t * n.sp * 0.8));
+        const rn = n.r * W;
+        const gn = ctx.createRadialGradient(nx, ny, 0, nx, ny, rn);
+        gn.addColorStop(0,   `hsla(${n.h},85%,65%,${n.a})`);
+        gn.addColorStop(0.5, `hsla(${n.h},75%,50%,${n.a * 0.5})`);
+        gn.addColorStop(1,   'rgba(0,0,0,0)');
+        ctx.fillStyle = gn;
+        ctx.fillRect(0, 0, W, H);
+      }
+      for (let i = 0; i < 220; i++) {
+        const sx = fr(i) * W;
+        const sy = fr(i + 500) * H;
+        const sz = fr(i + 1000);
+        const tw = 0.25 + 0.75 * Math.abs(Math.sin(t * (0.4 + sz * 2.2) + i * 1.7));
+        ctx.globalAlpha = tw * (0.5 + sz * 0.5);
+        const r = 0.4 + sz * 2.2;
+        if (sz > 0.82) {
+          const gs = ctx.createRadialGradient(sx, sy, 0, sx, sy, r * 3.5);
+          gs.addColorStop(0, 'rgba(200,220,255,0.35)');
+          gs.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = gs;
+          ctx.fillRect(sx - r * 3.5, sy - r * 3.5, r * 7, r * 7);
+        }
+        const hstar = sz > 0.7 ? 220 : (sz > 0.5 ? 0 : 40);
+        ctx.fillStyle = sz > 0.7 ? '#c8dcff' : (sz > 0.5 ? '#ffe8cc' : '#fffff0');
+        ctx.beginPath();
+        ctx.arc(sx, sy, r, 0, Math.PI * 2);
+        ctx.fill();
+        void hstar;
+      }
+      ctx.globalAlpha = 1;
+    },
+  },
+
+  {
+    id: 'neon-pulse',
+    label: 'Neon Pulse',
+    type: 'canvas',
+    thumb: { background: 'radial-gradient(ellipse at 50% 50%, #ff00ff 0%, #00ffff 35%, #050008 70%)' },
+    render: (ctx, t, W, H) => {
+      ctx.fillStyle = '#050008';
+      ctx.fillRect(0, 0, W, H);
+      const cx = W / 2;
+      const cy = H / 2;
+      const S = Math.min(W, H);
+      const maxR = S * 0.62;
+      const numRings = 9;
+      ctx.save();
+      for (let i = 0; i < numRings; i++) {
+        const phase = ((i / numRings) + t * 0.13) % 1;
+        const r = phase * maxR;
+        const fade = 1 - phase;
+        const hue = (i * 42 + t * 28) % 360;
+        const col = `hsla(${hue},100%,65%,${fade * 0.75})`;
+        ctx.beginPath();
+        ctx.arc(cx, cy, Math.max(r, 1), 0, Math.PI * 2);
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 1.5 + fade * 5;
+        ctx.shadowColor = `hsl(${hue},100%,65%)`;
+        ctx.shadowBlur = 18 * fade;
+        ctx.stroke();
+      }
+      ctx.restore();
+      const hc = (t * 55) % 360;
+      const gc = ctx.createRadialGradient(cx, cy, 0, cx, cy, S * 0.13);
+      gc.addColorStop(0, `hsla(${hc},100%,85%,0.9)`);
+      gc.addColorStop(0.5, `hsla(${hc},100%,65%,0.5)`);
+      gc.addColorStop(1,   `hsla(${hc},100%,50%,0)`);
+      ctx.fillStyle = gc;
+      ctx.fillRect(0, 0, W, H);
+      const vig = ctx.createRadialGradient(cx, cy, S * 0.2, cx, cy, S * 0.75);
+      vig.addColorStop(0, 'rgba(0,0,0,0)');
+      vig.addColorStop(1, 'rgba(0,0,0,0.65)');
+      ctx.fillStyle = vig;
+      ctx.fillRect(0, 0, W, H);
+    },
   },
 ];
 
