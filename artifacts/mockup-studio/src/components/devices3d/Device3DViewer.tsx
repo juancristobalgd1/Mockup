@@ -28,6 +28,8 @@ DEVICE_MODELS.forEach(m => { if (m.glbUrl) useGLTF.preload(m.glbUrl); });
 export interface Device3DViewerHandle {
   getGLElement: () => HTMLCanvasElement | null;
   getCameraState: () => { position: [number, number, number]; target: [number, number, number] } | null;
+  /** Synchronously drive camera to keyframe position at `time` seconds and re-render to glEl. */
+  renderAt: (time: number) => void;
 }
 
 // ── Loading indicator ─────────────────────────────────────────────
@@ -72,10 +74,12 @@ function RotatoHint({ visible }: { visible: boolean }) {
   );
 }
 
-// ── GL capture helper ─────────────────────────────────────────────
-function SceneCapturer({ onGlReady }: { onGlReady: (gl: THREE.WebGLRenderer) => void }) {
-  const { gl } = useThree();
-  onGlReady(gl);
+// ── GL / scene capture helper ─────────────────────────────────────
+function SceneCapturer({ onReady }: {
+  onReady: (gl: THREE.WebGLRenderer, camera: THREE.Camera, scene: THREE.Scene) => void;
+}) {
+  const { gl, camera, scene } = useThree();
+  onReady(gl, camera, scene);
   return null;
 }
 
@@ -1045,7 +1049,7 @@ function interpolateKeyframes(
 // ── OrbitControls ────────────────────────────────────────────────
 function HeroOrbitControls({
   deviceType, autoRotate, autoRotateSpeed, cameraAngle, cameraResetKey,
-  moviePlaying, movieTimeRef, movieKeyframes, cameraStateRef,
+  moviePlaying, movieTimeRef, movieKeyframes, cameraStateRef, liftedControlsRef,
 }: {
   deviceType: string;
   autoRotate: boolean;
@@ -1056,6 +1060,7 @@ function HeroOrbitControls({
   movieTimeRef: React.MutableRefObject<number>;
   movieKeyframes: CameraKeyframe[];
   cameraStateRef: React.MutableRefObject<{ position: [number, number, number]; target: [number, number, number] } | null>;
+  liftedControlsRef?: React.MutableRefObject<any>;
 }) {
   const isLaptop = deviceType === 'macbook';
   const controlsRef = useRef<any>(null);
@@ -1101,12 +1106,15 @@ function HeroOrbitControls({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceType]);
 
-  // Every frame: export camera state and (if playing) drive camera via keyframes.
-  // Priority 1 ensures this runs AFTER OrbitControls' own useFrame (priority 0),
-  // so our position wins and doesn't get overwritten by OrbitControls.update().
+  // Every frame: export camera state, sync liftedControlsRef, and (if playing)
+  // drive camera via keyframes.
+  // Priority -2 ensures this runs AFTER OrbitControls' own useFrame (priority -1).
   useFrame(() => {
     const controls = controlsRef.current;
     if (!controls) return;
+
+    // Expose controls to the parent via liftedControlsRef so renderAt() can use them
+    if (liftedControlsRef) liftedControlsRef.current = controls;
 
     // Drive camera during movie playback — runs after OrbitControls, so we win
     if (moviePlaying && movieKeyframes.length >= 2) {
@@ -1124,7 +1132,7 @@ function HeroOrbitControls({
       position: [camera.position.x, camera.position.y, camera.position.z],
       target: [controls.target.x, controls.target.y, controls.target.z],
     };
-  }, 1);
+  }, -2);
 
   return (
     <OrbitControls
@@ -1159,9 +1167,15 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
   function Device3DViewer({ style, className, moviePlaying = false, movieTimeRef: externalMovieTimeRef }, ref) {
     const { state, updateState } = useApp();
     const glRef = useRef<THREE.WebGLRenderer | null>(null);
+    const cameraRef = useRef<THREE.Camera | null>(null);
+    const sceneRef = useRef<THREE.Scene | null>(null);
+    const liftedControlsRef = useRef<any>(null);
     const cameraStateRef = useRef<{ position: [number, number, number]; target: [number, number, number] } | null>(null);
     const internalMovieTimeRef = useRef(0);
     const movieTimeRef = externalMovieTimeRef ?? internalMovieTimeRef;
+    // Refs kept in sync with props/state for use inside renderAt (avoids stale closures)
+    const moviePlayingRef = useRef(moviePlaying);
+    const cameraKeyframesRef = useRef(state.cameraKeyframes);
     const [hintVisible, setHintVisible] = useState(true);
     const [dragOver, setDragOver] = useState(false);
     const [pencilVisible, setPencilVisible] = useState(false);
@@ -1172,13 +1186,42 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
       state.screenshotUrl, state.videoUrl, state.contentType,
     );
 
-    const handleGlReady = useCallback((gl: THREE.WebGLRenderer) => {
+    // Keep refs in sync with latest reactive values so renderAt() always sees fresh data
+    useEffect(() => { moviePlayingRef.current = moviePlaying; }, [moviePlaying]);
+    useEffect(() => { cameraKeyframesRef.current = state.cameraKeyframes; }, [state.cameraKeyframes]);
+
+    const handleThreeReady = useCallback((gl: THREE.WebGLRenderer, cam: THREE.Camera, scene: THREE.Scene) => {
       glRef.current = gl;
+      cameraRef.current = cam;
+      sceneRef.current = scene;
     }, []);
 
     useImperativeHandle(ref, () => ({
       getGLElement: () => glRef.current?.domElement ?? null,
       getCameraState: () => cameraStateRef.current,
+      renderAt: (time: number) => {
+        const gl = glRef.current;
+        const scene = sceneRef.current;
+        const camera = cameraRef.current;
+        if (!gl || !scene || !camera) return;
+
+        const keyframes = cameraKeyframesRef.current;
+        if (moviePlayingRef.current && keyframes.length >= 2) {
+          const result = interpolateKeyframes(keyframes, time);
+          if (result) {
+            camera.position.copy(result.position);
+            // Point camera at the keyframe target so the view matrix is correct
+            camera.lookAt(result.target);
+            // Also update controls so OrbitControls stays consistent
+            const controls = liftedControlsRef.current;
+            if (controls) {
+              controls.target.copy(result.target);
+            }
+          }
+        }
+        // Explicitly render so glEl contains exactly this frame before capture
+        gl.render(scene, camera);
+      },
     }));
 
     const handleDrop = useCallback((e: React.DragEvent) => {
@@ -1232,7 +1275,7 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
           dpr={[1, 2]}
           onPointerMissed={() => setPencilVisible(false)}
         >
-          <SceneCapturer onGlReady={handleGlReady} />
+          <SceneCapturer onReady={handleThreeReady} />
 
           {/* Reactively update renderer exposure from store */}
           <ExposureControl exposure={state.lightExposure} />
@@ -1300,6 +1343,7 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
             movieTimeRef={movieTimeRef}
             movieKeyframes={state.cameraKeyframes}
             cameraStateRef={cameraStateRef}
+            liftedControlsRef={liftedControlsRef}
           />
         </R3FCanvas>
 
