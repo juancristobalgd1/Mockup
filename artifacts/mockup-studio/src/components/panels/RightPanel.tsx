@@ -494,10 +494,13 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, movieTimeRe
       const drawLoop = (ts: number) => {
         const elapsed = ts - startTs;
 
-        // Drive camera animation time directly from recording elapsed time.
-        // The timeline tick loop reads this ref before R3F renders each frame,
-        // so the camera position always matches the recording timestamp exactly.
+        // Sync the movie clock so live-preview HeroOrbitControls uses the same time
         if (movieTimeRef) movieTimeRef.current = elapsed / 1000;
+
+        // Drive camera to the exact recording timestamp and re-render the WebGL
+        // canvas synchronously — this guarantees every captured glEl frame shows
+        // the device at exactly the right keyframe position regardless of rAF order.
+        viewerRef?.current?.renderAt?.(elapsed / 1000);
 
         ctx.clearRect(0, 0, W, H);
 
