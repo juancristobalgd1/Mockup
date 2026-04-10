@@ -172,6 +172,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const TRACK_PADDING = 24;
+  const PX_PER_SEC = 80; // fixed pixels per second at 1× zoom
 
   // Duration drag handle
   const durationDragRef = useRef<{ startX: number; startDuration: number; pps: number } | null>(null);
@@ -179,21 +180,27 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
 
   const activeKf = cameraKeyframes.find(k => k.id === activeKfId) ?? null;
 
+  // Pixel-based scale (responds to zoom, NOT to duration)
+  const effectivePxPerSec = PX_PER_SEC * timelineZoom;
+  // Active region width in px (ruler + camera bar span only this width)
+  const activeAreaPx = movieDuration * effectivePxPerSec;
+  // Total track element width: at least fill the container (minWidth:'100%' handles that)
+  const trackWidthPx = TRACK_PADDING * 2 + activeAreaPx;
+
   // (zoom is intentionally NOT reset when duration changes — user keeps their zoom level)
 
   // Auto-scroll to keep playhead visible when playing or seeking
   useEffect(() => {
     const container = scrollContainerRef.current;
-    if (!container || movieDuration <= 0) return;
+    if (!container) return;
     const scrollWidth = container.scrollWidth;
     const clientWidth = container.clientWidth;
     if (scrollWidth <= clientWidth) return;
-    // Mirror the playhead render formula: usable width = scrollWidth - 2*TRACK_PADDING
-    const usableWidth = scrollWidth - TRACK_PADDING * 2;
-    const playheadPos = TRACK_PADDING + usableWidth * (currentTime / movieDuration);
-    const scrollLeft = playheadPos - clientWidth / 2;
-    container.scrollLeft = Math.max(0, Math.min(scrollLeft, scrollWidth - clientWidth));
-  }, [currentTime, movieDuration, timelineZoom]);
+    // Playhead absolute pixel position within the track
+    const playheadPx = TRACK_PADDING + currentTime * effectivePxPerSec;
+    const scrollTarget = playheadPx - clientWidth / 2;
+    container.scrollLeft = Math.max(0, Math.min(scrollTarget, scrollWidth - clientWidth));
+  }, [currentTime, movieDuration, timelineZoom, effectivePxPerSec]);
 
   useEffect(() => {
     return () => {
@@ -300,31 +307,27 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
     isDragging.current = true;
     e.currentTarget.setPointerCapture(e.pointerId);
     const rect = trackRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left - TRACK_PADDING;
-    const t = Math.max(0, Math.min(1, x / (rect.width - TRACK_PADDING * 2))) * movieDuration;
+    const px = e.clientX - rect.left;
+    const t = Math.max(0, Math.min(movieDuration, (px - TRACK_PADDING) / effectivePxPerSec));
     movieTimeRef.current = t; setCurrentTime(t);
-  }, [movieDuration, movieTimeRef]);
+  }, [movieDuration, movieTimeRef, effectivePxPerSec]);
 
   const handleTrackPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDragging.current || !trackRef.current) return;
     const rect = trackRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left - TRACK_PADDING;
-    const t = Math.max(0, Math.min(1, x / (rect.width - TRACK_PADDING * 2))) * movieDuration;
+    const px = e.clientX - rect.left;
+    const t = Math.max(0, Math.min(movieDuration, (px - TRACK_PADDING) / effectivePxPerSec));
     movieTimeRef.current = t; setCurrentTime(t);
-  }, [movieDuration, movieTimeRef]);
+  }, [movieDuration, movieTimeRef, effectivePxPerSec]);
 
   const handleTrackPointerUp = useCallback(() => { isDragging.current = false; }, []);
 
   const handleDurationPointerDown = useCallback((e: React.PointerEvent) => {
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
-    const rect = trackRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const usableWidth = rect.width - TRACK_PADDING * 2;
-    const pps = movieDuration > 0 ? usableWidth / movieDuration : 50;
-    durationDragRef.current = { startX: e.clientX, startDuration: movieDuration, pps };
+    durationDragRef.current = { startX: e.clientX, startDuration: movieDuration, pps: PX_PER_SEC * timelineZoom };
     setIsDraggingDuration(true);
-  }, [movieDuration]);
+  }, [movieDuration, timelineZoom]);
 
   const handleDurationPointerMove = useCallback((e: React.PointerEvent) => {
     if (!durationDragRef.current) return;
@@ -368,7 +371,6 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
     setActiveKfId(null);
   }, [addCameraKeyframe, clearCameraKeyframes, movieDuration, movieTimeRef, viewerRef]);
 
-  const playheadPct = movieDuration > 0 ? (currentTime / movieDuration) * 100 : 0;
   const RULERS = Array.from({ length: Math.ceil(movieDuration) + 1 }, (_, i) => i);
 
   return (
@@ -714,7 +716,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
         ref={scrollContainerRef}
         style={{ overflowX: 'auto', overflowY: 'hidden' }}
       >
-      {/* Inner track — width scaled by zoom */}
+      {/* Inner track — width = fixed px/s × duration (minWidth fills container) */}
       <div
         ref={trackRef}
         onPointerDown={handleTrackPointerDown}
@@ -724,16 +726,16 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           position: 'relative',
           padding: `12px ${TRACK_PADDING}px 12px`,
           cursor: 'crosshair',
-          width: `${100 * timelineZoom}%`,
-          minWidth: timelineZoom >= 1 ? '100%' : undefined,
+          width: trackWidthPx,
+          minWidth: '100%',
           boxSizing: 'border-box',
         }}
       >
-        {/* Ruler */}
-        <div style={{ position: 'relative', height: 18, marginBottom: 4 }}>
+        {/* Ruler — fixed to the active area width only */}
+        <div style={{ position: 'relative', height: 18, marginBottom: 4, width: activeAreaPx }}>
           {RULERS.map(s => (
             <div key={s} style={{
-              position: 'absolute', left: `${(s / movieDuration) * 100}%`,
+              position: 'absolute', left: s * effectivePxPerSec,
               top: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
               transform: 'translateX(-50%)', pointerEvents: 'none',
             }}>
@@ -743,7 +745,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           ))}
           {Array.from({ length: Math.ceil(movieDuration * 2) - 1 }, (_, i) => (i + 1) * 0.5).map(s => (
             <div key={s} style={{
-              position: 'absolute', left: `${(s / movieDuration) * 100}%`,
+              position: 'absolute', left: s * effectivePxPerSec,
               top: 0, transform: 'translateX(-50%)', pointerEvents: 'none',
             }}>
               <div style={{ width: 1, height: 3, background: 'rgba(255,255,255,0.09)' }} />
@@ -751,8 +753,8 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           ))}
         </div>
 
-        {/* Camera track row */}
-        <div style={{ height: 36, position: 'relative' }}>
+        {/* Camera track row — fixed to the active area width only */}
+        <div style={{ height: 36, position: 'relative', width: activeAreaPx }}>
           <div style={{
             position: 'absolute', inset: 0,
             background: 'rgba(255,255,255,0.04)',
@@ -791,10 +793,10 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           </div>
         </div>
 
-        {/* Playhead */}
+        {/* Playhead — absolute pixel position within active area */}
         <div style={{
           position: 'absolute',
-          left: `calc(${TRACK_PADDING}px + (100% - ${TRACK_PADDING * 2}px) * ${playheadPct / 100})`,
+          left: TRACK_PADDING + currentTime * effectivePxPerSec,
           top: 0, bottom: 0, width: 1,
           background: '#f97316', pointerEvents: 'none', zIndex: 10,
         }}>
@@ -805,7 +807,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           }} />
         </div>
 
-        {/* ── Duration end-cap drag handle ────────────────────────── */}
+        {/* ── Duration end-cap drag handle — moves with duration ── */}
         <div
           className="dur-end-cap"
           onPointerDown={handleDurationPointerDown}
@@ -814,7 +816,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           title={`Duración: ${movieDuration % 1 === 0 ? movieDuration : movieDuration.toFixed(1)}s — Arrastra para cambiar`}
           style={{
             position: 'absolute',
-            right: TRACK_PADDING - 5,
+            left: TRACK_PADDING + activeAreaPx - 7,
             top: 0, bottom: 0,
             width: 14,
             cursor: 'ew-resize',
