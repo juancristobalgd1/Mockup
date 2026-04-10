@@ -376,38 +376,52 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px 6px' }}>
 
         {/* Play / Pause */}
-        <button
-          onClick={togglePlayback}
-          disabled={liveRecording}
-          title={isPlaying ? 'Pausar' : 'Reproducir animación'}
-          style={{
-            background: isPlaying ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)',
-            border: `1px solid ${isPlaying ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'}`,
-            borderRadius: 6, width: 28, height: 28, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: isPlaying ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)',
-            opacity: liveRecording ? 0.35 : 1,
-          }}
-        >
-          {isPlaying ? <Pause size={12} /> : <Play size={12} />}
-        </button>
+        {(() => {
+          const noScene = cameraKeyframes.length < 2;
+          const dis = liveRecording || noScene;
+          return (
+            <button
+              onClick={togglePlayback}
+              disabled={dis}
+              title={noScene ? 'Añade al menos 2 keyframes para reproducir' : isPlaying ? 'Pausar' : 'Reproducir animación'}
+              style={{
+                background: isPlaying ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)',
+                border: `1px solid ${isPlaying ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'}`,
+                borderRadius: 6, width: 28, height: 28,
+                cursor: dis ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: isPlaying ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)',
+                opacity: dis ? 0.3 : 1,
+              }}
+            >
+              {isPlaying ? <Pause size={12} /> : <Play size={12} />}
+            </button>
+          );
+        })()}
 
         {/* Stop — resets playhead to 0 */}
-        <button
-          onClick={() => { stopPlayback(); movieTimeRef.current = 0; setCurrentTime(0); }}
-          disabled={liveRecording}
-          title="Detener y volver al inicio"
-          style={{
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 6, width: 28, height: 28, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'rgba(255,255,255,0.4)',
-            opacity: liveRecording ? 0.35 : 1,
-          }}
-        >
-          <Square size={10} />
-        </button>
+        {(() => {
+          const noScene = cameraKeyframes.length < 2;
+          const dis = liveRecording || noScene;
+          return (
+            <button
+              onClick={() => { stopPlayback(); movieTimeRef.current = 0; setCurrentTime(0); }}
+              disabled={dis}
+              title={noScene ? 'Añade al menos 2 keyframes para usar stop' : 'Detener y volver al inicio'}
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 6, width: 28, height: 28,
+                cursor: dis ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'rgba(255,255,255,0.4)',
+                opacity: dis ? 0.3 : 1,
+              }}
+            >
+              <Square size={10} />
+            </button>
+          );
+        })()}
 
         {/* REC / STOP button */}
         {!liveRecording ? (
