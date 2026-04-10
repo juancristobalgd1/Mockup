@@ -7,6 +7,7 @@ import { TAB_ICONS } from './components/panels/tabs';
 import type { Tab } from './components/panels/tabs';
 import { RightPanel } from './components/panels/RightPanel';
 import { MovieTimeline } from './components/timeline/MovieTimeline';
+import type { MovieTimelineHandle } from './components/timeline/MovieTimeline';
 import { Download, X, Film, Smartphone, Undo2, Redo2 } from 'lucide-react';
 import { getModelById } from './data/devices';
 import type { Device3DViewerHandle } from './components/devices3d/Device3DViewer';
@@ -36,6 +37,7 @@ function Editor() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Device3DViewerHandle>(null);
   const movieTimeRef = useRef<number>(0);
+  const movieTimelineRef = useRef<MovieTimelineHandle>(null);
   const [moviePlaying, setMoviePlaying] = useState(false);
   const [mobileTab, setMobileTab] = useState<Tab | 'export' | null>(null);
   const [timelineCollapsed, setTimelineCollapsed] = useState(false);
@@ -199,6 +201,7 @@ function Editor() {
           {/* Movie Timeline */}
           {state.movieMode && (
             <MovieTimeline
+              ref={movieTimelineRef}
               viewerRef={viewerRef}
               movieTimeRef={movieTimeRef}
               canvasRef={canvasRef}
@@ -211,6 +214,7 @@ function Editor() {
         <RightPanel
           canvasRef={canvasRef}
           viewerRef={viewerRef}
+          movieTimelineRef={movieTimelineRef}
           textOverlays={state.texts}
           onUpdateText={updateText}
           onRemoveText={removeText}
@@ -416,6 +420,7 @@ function Editor() {
           {/* Timeline — sits below the tab bar when movie mode is active */}
           {state.movieMode && (
             <MovieTimeline
+              ref={movieTimelineRef}
               viewerRef={viewerRef}
               movieTimeRef={movieTimeRef}
               canvasRef={canvasRef}

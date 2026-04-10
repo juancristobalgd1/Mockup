@@ -1,8 +1,14 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Play, Pause, Plus, Trash2, Circle, X, Square, Sparkles, Copy, ChevronDown, ChevronUp, Palette } from 'lucide-react';
 import { useApp } from '../../store';
 import type { CameraKeyframe, EasingType } from '../../store';
 import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
+
+export interface MovieTimelineHandle {
+  startPlayback: () => void;
+  stopPlayback: () => void;
+  resetTime: () => void;
+}
 
 interface MovieTimelineProps {
   viewerRef: React.RefObject<Device3DViewerHandle | null>;
@@ -134,7 +140,7 @@ function Diamond({ active, label, onClick, onContextMenu }: {
   );
 }
 
-export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChange, onCollapsedChange, canvasRef }: MovieTimelineProps) {
+export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>(function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChange, onCollapsedChange, canvasRef }, ref) {
   const { state, updateState, addCameraKeyframe, removeCameraKeyframe, updateCameraKeyframe, clearCameraKeyframes } = useApp();
   const { cameraKeyframes, movieDuration } = state;
 
@@ -253,6 +259,13 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
     };
     kfRafRef.current = requestAnimationFrame(tick);
   }, [movieDuration, movieTimeRef, onPlayingChange]);
+
+  // Expose imperative handle so RightPanel can drive playback during export
+  useImperativeHandle(ref, () => ({
+    startPlayback,
+    stopPlayback,
+    resetTime: () => { movieTimeRef.current = 0; setCurrentTime(0); },
+  }), [startPlayback, stopPlayback, movieTimeRef]);
 
   const togglePlayback = () => { isPlaying ? stopPlayback() : startPlayback(); };
 
@@ -765,4 +778,4 @@ export function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChang
       `}</style>
     </div>
   );
-}
+});
