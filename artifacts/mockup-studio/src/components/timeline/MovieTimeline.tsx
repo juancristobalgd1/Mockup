@@ -371,7 +371,8 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
     setActiveKfId(null);
   }, [addCameraKeyframe, clearCameraKeyframes, movieDuration, movieTimeRef, viewerRef]);
 
-  const RULERS = Array.from({ length: Math.ceil(movieDuration) + 1 }, (_, i) => i);
+  // Only show integer ticks that fall within the active area (≤ movieDuration)
+  const RULERS = Array.from({ length: Math.ceil(movieDuration) + 1 }, (_, i) => i).filter(s => s <= movieDuration);
 
   return (
     <div style={{
@@ -731,8 +732,8 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           boxSizing: 'border-box',
         }}
       >
-        {/* Ruler — fixed to the active area width only */}
-        <div style={{ position: 'relative', height: 18, marginBottom: 4, width: activeAreaPx }}>
+        {/* Ruler — clipped strictly to active area */}
+        <div style={{ position: 'relative', height: 18, marginBottom: 4, width: activeAreaPx, overflow: 'hidden' }}>
           {RULERS.map(s => (
             <div key={s} style={{
               position: 'absolute', left: s * effectivePxPerSec,
@@ -743,14 +744,25 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
               <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', marginTop: 1, fontFamily: 'monospace' }}>{s}s</span>
             </div>
           ))}
-          {Array.from({ length: Math.ceil(movieDuration * 2) - 1 }, (_, i) => (i + 1) * 0.5).map(s => (
+          {/* 0.5s sub-ticks, filtered to within active area */}
+          {Array.from({ length: Math.ceil(movieDuration * 2) - 1 }, (_, i) => (i + 1) * 0.5)
+            .filter(s => s <= movieDuration && s % 1 !== 0)
+            .map(s => (
             <div key={s} style={{
               position: 'absolute', left: s * effectivePxPerSec,
               top: 0, transform: 'translateX(-50%)', pointerEvents: 'none',
             }}>
-              <div style={{ width: 1, height: 3, background: 'rgba(255,255,255,0.09)' }} />
+              <div style={{ width: 1, height: 3, background: 'rgba(255,255,255,0.12)' }} />
             </div>
           ))}
+          {/* End-of-duration mark (always visible, orange) */}
+          <div style={{
+            position: 'absolute', left: movieDuration * effectivePxPerSec,
+            top: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
+            transform: 'translateX(-50%)', pointerEvents: 'none',
+          }}>
+            <div style={{ width: 1, height: 8, background: 'rgba(249,115,22,0.6)' }} />
+          </div>
         </div>
 
         {/* Camera track row — fixed to the active area width only */}
