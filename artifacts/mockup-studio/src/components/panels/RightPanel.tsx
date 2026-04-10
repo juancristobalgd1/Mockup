@@ -348,6 +348,10 @@ function SectionHeader({ label, open, onToggle }: { label: string; open: boolean
 
 export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, movieTimeRef, textOverlays, onUpdateText, onRemoveText }: RightPanelProps) {
   const { state } = useApp();
+  // Ref that always holds the latest movieDuration — avoids stale-closure bugs
+  // in async functions like handleRecordWebM that run across multiple renders.
+  const movieDurationRef = useRef(state.movieDuration);
+  movieDurationRef.current = state.movieDuration;
   const [exporting, setExporting] = useState(false);
   const [copying, setCopying] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -380,7 +384,8 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, movieTimeRe
 
   const handleRecordWebM = async () => {
     if (!canvasRef.current) return;
-    const totalSecs = state.movieDuration ?? 4;
+    // Read from ref — always the current duration even if state hasn't flushed yet
+    const totalSecs = movieDurationRef.current ?? 4;
     const DURATION_MS = totalSecs * 1000;
 
     setRecording(true);

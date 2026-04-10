@@ -168,6 +168,9 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
 
   const kfRafRef = useRef<number | null>(null);
   const kfLastTsRef = useRef<number | null>(null);
+  // Always-current ref so the rAF tick never reads a stale movieDuration closure
+  const movieDurationRef = useRef(movieDuration);
+  movieDurationRef.current = movieDuration;
   const trackRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -291,15 +294,18 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
       if (kfLastTsRef.current === null) kfLastTsRef.current = ts;
       const delta = (ts - kfLastTsRef.current) / 1000;
       kfLastTsRef.current = ts;
-      movieTimeRef.current = Math.min(movieTimeRef.current + delta, movieDuration);
+      // Read through the ref so changes to movieDuration are always respected,
+      // even if they happen while this rAF loop is already running.
+      const dur = movieDurationRef.current;
+      movieTimeRef.current = Math.min(movieTimeRef.current + delta, dur);
       setCurrentTime(movieTimeRef.current);
-      if (movieTimeRef.current >= movieDuration) {
+      if (movieTimeRef.current >= dur) {
         movieTimeRef.current = 0; setCurrentTime(0); kfLastTsRef.current = null;
       }
       kfRafRef.current = requestAnimationFrame(tick);
     };
     kfRafRef.current = requestAnimationFrame(tick);
-  }, [movieDuration, movieTimeRef, onPlayingChange]);
+  }, [movieDurationRef, movieTimeRef, onPlayingChange]);
 
   // Expose imperative handle so RightPanel can drive playback during export
   useImperativeHandle(ref, () => ({
