@@ -175,15 +175,23 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
   const PX_PER_SEC = 80; // fixed pixels per second at 1× zoom
 
   // Duration drag handle
-  const durationDragRef = useRef<{ startX: number; startDuration: number; pps: number } | null>(null);
+  // visualDuration: local state used ONLY during drag for instant visual feedback.
+  // We avoid calling updateState (store) on every pixel move because that triggers
+  // a full re-render cascade that recreates the memoized handlers and breaks the drag.
+  // We commit the final value to the store only once, on pointerUp.
+  const durationDragRef = useRef<{ startX: number; startDuration: number; pps: number; currentDuration: number } | null>(null);
   const [isDraggingDuration, setIsDraggingDuration] = useState(false);
+  const [visualDuration, setVisualDuration] = useState<number | null>(null);
+
+  // displayDuration: what we render. Uses local visual state during drag, store value otherwise.
+  const displayDuration = visualDuration ?? movieDuration;
 
   const activeKf = cameraKeyframes.find(k => k.id === activeKfId) ?? null;
 
   // Pixel-based scale (responds to zoom, NOT to duration)
   const effectivePxPerSec = PX_PER_SEC * timelineZoom;
   // Active region width in px (ruler + camera bar span only this width)
-  const activeAreaPx = movieDuration * effectivePxPerSec;
+  const activeAreaPx = displayDuration * effectivePxPerSec;
   // Total track element width: at least fill the container (minWidth:'100%' handles that)
   const trackWidthPx = TRACK_PADDING * 2 + activeAreaPx;
 
@@ -325,7 +333,13 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
   const handleDurationPointerDown = useCallback((e: React.PointerEvent) => {
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
-    durationDragRef.current = { startX: e.clientX, startDuration: movieDuration, pps: PX_PER_SEC * timelineZoom };
+    durationDragRef.current = {
+      startX: e.clientX,
+      startDuration: movieDuration,
+      pps: PX_PER_SEC * timelineZoom,
+      currentDuration: movieDuration,
+    };
+    setVisualDuration(movieDuration);
     setIsDraggingDuration(true);
   }, [movieDuration, timelineZoom]);
 
@@ -336,17 +350,23 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
     const raw = startDuration + delta / pps;
     const snapped = Math.round(raw * 2) / 2;
     const newDuration = Math.max(1, Math.min(120, snapped));
-    updateState({ movieDuration: newDuration });
+    // Only update local visual state — no store update on every pixel
+    durationDragRef.current.currentDuration = newDuration;
+    setVisualDuration(newDuration);
     if (movieTimeRef.current > newDuration) {
       movieTimeRef.current = newDuration;
       setCurrentTime(newDuration);
     }
-  }, [movieTimeRef, updateState]);
+  }, [movieTimeRef]);
 
   const handleDurationPointerUp = useCallback(() => {
+    const final = durationDragRef.current?.currentDuration ?? movieDuration;
     durationDragRef.current = null;
+    setVisualDuration(null);
     setIsDraggingDuration(false);
-  }, []);
+    // Commit final value to store (single history entry for the whole drag)
+    updateState({ movieDuration: final });
+  }, [movieDuration, updateState]);
 
   const handleAddKeyframe = useCallback(() => {
     const cam = viewerRef.current?.getCameraState();
@@ -371,8 +391,8 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
     setActiveKfId(null);
   }, [addCameraKeyframe, clearCameraKeyframes, movieDuration, movieTimeRef, viewerRef]);
 
-  // Only show integer ticks that fall within the active area (≤ movieDuration)
-  const RULERS = Array.from({ length: Math.ceil(movieDuration) + 1 }, (_, i) => i).filter(s => s <= movieDuration);
+  // Only show integer ticks that fall within the active area (≤ displayDuration)
+  const RULERS = Array.from({ length: Math.ceil(displayDuration) + 1 }, (_, i) => i).filter(s => s <= displayDuration);
 
   return (
     <div style={{
@@ -403,7 +423,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
             {isPlaying ? <Pause size={10} /> : <Play size={10} />}
           </button>
           <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>
-            {formatTime(currentTime)} / {movieDuration}s
+            {formatTime(currentTime)} / {displayDuration}s
           </span>
           {cameraKeyframes.length > 0 && (
             <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>
@@ -669,7 +689,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
             fontWeight: 600, transition: 'color 0.15s', userSelect: 'none',
           }}
         >
-          {movieDuration % 1 === 0 ? `${movieDuration}s` : `${movieDuration.toFixed(1)}s`}
+          {displayDuration % 1 === 0 ? `${displayDuration}s` : `${displayDuration.toFixed(1)}s`}
         </span>
 
         <div style={{ flex: 1 }} />
@@ -745,8 +765,8 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
             </div>
           ))}
           {/* 0.5s sub-ticks, filtered to within active area */}
-          {Array.from({ length: Math.ceil(movieDuration * 2) - 1 }, (_, i) => (i + 1) * 0.5)
-            .filter(s => s <= movieDuration && s % 1 !== 0)
+          {Array.from({ length: Math.ceil(displayDuration * 2) - 1 }, (_, i) => (i + 1) * 0.5)
+            .filter(s => s <= displayDuration && s % 1 !== 0)
             .map(s => (
             <div key={s} style={{
               position: 'absolute', left: s * effectivePxPerSec,
@@ -757,7 +777,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           ))}
           {/* End-of-duration mark (always visible, orange) */}
           <div style={{
-            position: 'absolute', left: movieDuration * effectivePxPerSec,
+            position: 'absolute', left: displayDuration * effectivePxPerSec,
             top: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
             transform: 'translateX(-50%)', pointerEvents: 'none',
           }}>
@@ -781,8 +801,8 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
             {cameraKeyframes.length >= 2 && (
               <div style={{
                 position: 'absolute',
-                left: `${(cameraKeyframes[0].time / movieDuration) * 100}%`,
-                right: `${100 - (cameraKeyframes[cameraKeyframes.length - 1].time / movieDuration) * 100}%`,
+                left: `${(cameraKeyframes[0].time / displayDuration) * 100}%`,
+                right: `${100 - (cameraKeyframes[cameraKeyframes.length - 1].time / displayDuration) * 100}%`,
                 top: '50%', height: 1,
                 background: 'rgba(255,255,255,0.12)', transform: 'translateY(-50%)',
                 pointerEvents: 'none',
@@ -793,7 +813,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
               <div
                 key={kf.id}
                 style={{
-                  position: 'absolute', left: `${(kf.time / movieDuration) * 100}%`,
+                  position: 'absolute', left: `${(kf.time / displayDuration) * 100}%`,
                   top: '50%', transform: 'translate(-50%,-50%)', zIndex: 2,
                 }}
                 onClick={e => { e.stopPropagation(); setActiveKfId(kf.id === activeKfId ? null : kf.id); setEditingLabel(null); }}
@@ -825,7 +845,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           onPointerDown={handleDurationPointerDown}
           onPointerMove={handleDurationPointerMove}
           onPointerUp={handleDurationPointerUp}
-          title={`Duración: ${movieDuration % 1 === 0 ? movieDuration : movieDuration.toFixed(1)}s — Arrastra para cambiar`}
+          title={`Duración: ${displayDuration % 1 === 0 ? displayDuration : displayDuration.toFixed(1)}s — Arrastra para cambiar`}
           style={{
             position: 'absolute',
             left: TRACK_PADDING + activeAreaPx - 7,
@@ -868,7 +888,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
               whiteSpace: 'nowrap', pointerEvents: 'none',
               boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
             }}>
-              {movieDuration % 1 === 0 ? `${movieDuration}s` : `${movieDuration.toFixed(1)}s`}
+              {displayDuration % 1 === 0 ? `${displayDuration}s` : `${displayDuration.toFixed(1)}s`}
             </div>
           )}
         </div>
