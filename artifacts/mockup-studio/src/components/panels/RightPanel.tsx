@@ -4,6 +4,7 @@ import { useApp } from '../../store';
 import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
 import { ANIMATED_BACKGROUNDS, GRADIENTS, MESH_GRADIENTS, WALLPAPERS, PATTERNS } from '../../data/backgrounds';
 import type { AnimatedBackground } from '../../data/backgrounds';
+import { LIGHT_OVERLAYS } from '../../data/lightOverlays';
 import type { AppState } from '../../store';
 import type { MovieTimelineHandle } from '../timeline/MovieTimeline';
 
@@ -385,62 +386,83 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, textOverlay
     setRecordProgress(0);
     setRecordSecsLeft(totalSecs);
 
-    // Tick every 100ms to update progress bar and countdown
     const recStart = performance.now();
     recordIntervalRef.current = setInterval(() => {
       const elapsed = performance.now() - recStart;
-      const pct = Math.min(100, (elapsed / DURATION_MS) * 100);
-      const secsLeft = Math.max(0, Math.ceil((DURATION_MS - elapsed) / 1000));
-      setRecordProgress(pct);
-      setRecordSecsLeft(secsLeft);
+      setRecordProgress(Math.min(100, (elapsed / DURATION_MS) * 100));
+      setRecordSecsLeft(Math.max(0, Math.ceil((DURATION_MS - elapsed) / 1000)));
     }, 100);
 
     const stopInterval = () => {
-      if (recordIntervalRef.current) {
-        clearInterval(recordIntervalRef.current);
-        recordIntervalRef.current = null;
-      }
+      if (recordIntervalRef.current) { clearInterval(recordIntervalRef.current); recordIntervalRef.current = null; }
     };
 
     try {
       const el = canvasRef.current;
       const glEl = viewerRef?.current?.getGLElement() ?? null;
       const timeline = movieTimelineRef?.current;
-
-      // 1. Determine output dimensions
       const W = el.offsetWidth || 800;
       const H = el.offsetHeight || 600;
 
-      // 2. Reset timeline to t=0 BEFORE playback
+      // ── Timeline ──────────────────────────────────────────────────
       if (timeline) {
         timeline.resetTime();
         await waitFrames(2);
-        // Start playback — triggers setMoviePlaying(true) in App.tsx via onPlayingChange
         timeline.startPlayback();
-        // Wait several frames for React to re-render with moviePlaying=true
-        // so Three.js useFrame starts interpolating camera keyframes before we capture
         await waitFrames(6);
       }
 
-      // 3. Animated background: draw per-frame; static: capture once via temp-div
+      // ── Pre-capture static layers (done once before the draw loop) ─
       const isAnimatedBg = state.bgType === 'animated';
       const animatedBg = isAnimatedBg
         ? (ANIMATED_BACKGROUNDS.find(b => b.id === state.bgAnimated) ?? ANIMATED_BACKGROUNDS[0])
         : null;
 
+      // 1. Static background (captured once; animated backgrounds are drawn per-frame)
       let bgCanvas: HTMLCanvasElement | null = null;
       if (!isAnimatedBg) {
-        // Capture background by rendering a clean temp div with only the bg CSS.
-        // This is far more reliable than html2canvas on the full canvas div
-        // (which includes the WebGL canvas, iframes, and other elements).
-        const bgStyle = computeBgStyle(state);
-        bgCanvas = await captureStyleToCanvas(bgStyle, W, H);
+        bgCanvas = await captureStyleToCanvas(computeBgStyle(state), W, H);
       }
 
-      // 3. Offscreen canvas → MediaRecorder stream
+      // 2. Light overlay captured to canvas so we can drawImage it per-frame with blend mode
+      let lightCanvas: HTMLCanvasElement | null = null;
+      if (state.lightOverlay) {
+        const preset = LIGHT_OVERLAYS.find(p => p.id === state.lightOverlay);
+        if (preset) {
+          lightCanvas = await captureStyleToCanvas({
+            background: preset.background,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            ...(preset.filter ? { filter: preset.filter } : {}),
+          } as CSSProperties, W, H);
+        }
+      }
+
+      // 3. Annotation canvas (drawings on top of scene)
+      const annotateEl = el.querySelector('canvas[data-annotate]') as HTMLCanvasElement | null;
+
+      // ── Offscreen canvas + MediaRecorder ─────────────────────────
       const offscreen = document.createElement('canvas');
       offscreen.width = W; offscreen.height = H;
       const ctx = offscreen.getContext('2d')!;
+
+      // 4. Film-grain noise pattern (SVG → offscreen canvas → tiled CanvasPattern)
+      let grainPat: CanvasPattern | null = null;
+      if (state.grain) {
+        const svgStr = `<svg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(#n)'/></svg>`;
+        const grainImg = await new Promise<HTMLImageElement | null>(resolve => {
+          const img = document.createElement('img') as HTMLImageElement;
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null);
+          img.src = `data:image/svg+xml,${encodeURIComponent(svgStr)}`;
+        });
+        if (grainImg) {
+          const gc = document.createElement('canvas');
+          gc.width = 256; gc.height = 256;
+          gc.getContext('2d')!.drawImage(grainImg, 0, 0, 256, 256);
+          grainPat = ctx.createPattern(gc, 'repeat');
+        }
+      }
 
       const mimeType = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
         .find(m => MediaRecorder.isTypeSupported(m)) ?? '';
@@ -452,20 +474,106 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, textOverlay
       recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
       recorder.start(100);
 
-      // 4. Draw loop: composite animated bg + live GL frame each rAF
+      // CSS mix-blend-mode → canvas globalCompositeOperation
+      const toBlend = (m: string): GlobalCompositeOperation =>
+        (m === 'normal' ? 'source-over' : m) as GlobalCompositeOperation;
+
+      // ── Per-frame draw loop ───────────────────────────────────────
       const startTs = performance.now();
       const drawLoop = (ts: number) => {
         const elapsed = ts - startTs;
         ctx.clearRect(0, 0, W, H);
 
+        // Layer 1 — Background (animated per-frame or static snapshot)
         if (isAnimatedBg && animatedBg) {
           drawAnimatedBg(ctx, animatedBg, elapsed, W, H);
         } else if (bgCanvas) {
           ctx.drawImage(bgCanvas, 0, 0, W, H);
         }
 
+        // Layer 2 — Vignette (radial dark edge, drawn directly)
+        if (state.bgVignette) {
+          const vi = (state.bgVignetteIntensity ?? 50) / 100;
+          const vig = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.sqrt(W * W + H * H) / 2);
+          vig.addColorStop(0.35, 'rgba(0,0,0,0)');
+          vig.addColorStop(1, `rgba(0,0,0,${vi.toFixed(3)})`);
+          ctx.fillStyle = vig;
+          ctx.fillRect(0, 0, W, H);
+        }
+
+        // Layer 3 — Color overlay (always behind device, zIndex 1)
+        if (state.overlayEnabled) {
+          ctx.save();
+          ctx.globalAlpha = state.overlayOpacity / 100;
+          ctx.fillStyle = state.overlayColor;
+          ctx.fillRect(0, 0, W, H);
+          ctx.restore();
+        }
+
+        // Layer 4 — Light overlay behind device (bgOnly mode)
+        if (lightCanvas && state.lightOverlayBgOnly) {
+          ctx.save();
+          ctx.globalAlpha = state.lightOverlayOpacity / 100;
+          ctx.globalCompositeOperation = 'multiply';
+          ctx.drawImage(lightCanvas, 0, 0, W, H);
+          ctx.restore();
+        }
+
+        // Layer 5 — Grain behind device (grainBgOnly mode)
+        if (grainPat && state.grainBgOnly) {
+          ctx.save();
+          ctx.globalAlpha = state.grainIntensity / 100;
+          ctx.globalCompositeOperation = 'overlay';
+          ctx.fillStyle = grainPat;
+          ctx.fillRect(0, 0, W, H);
+          ctx.restore();
+        }
+
+        // Layer 6 — 3D Device (live WebGL frame)
         if (glEl && glEl.width > 0 && glEl.height > 0) {
           ctx.drawImage(glEl, 0, 0, W, H);
+        }
+
+        // Layer 7 — Light overlay above device (non-bgOnly, with blend mode)
+        if (lightCanvas && !state.lightOverlayBgOnly) {
+          ctx.save();
+          ctx.globalAlpha = state.lightOverlayOpacity / 100;
+          ctx.globalCompositeOperation = toBlend(state.lightOverlayBlend);
+          ctx.drawImage(lightCanvas, 0, 0, W, H);
+          ctx.restore();
+        }
+
+        // Layer 8 — Grain above device (non-grainBgOnly, overlay blend)
+        if (grainPat && !state.grainBgOnly) {
+          ctx.save();
+          ctx.globalAlpha = state.grainIntensity / 100;
+          ctx.globalCompositeOperation = 'overlay';
+          ctx.fillStyle = grainPat;
+          ctx.fillRect(0, 0, W, H);
+          ctx.restore();
+        }
+
+        // Layer 9 — Annotation drawings (canvas strokes)
+        if (annotateEl && annotateEl.width > 0 && annotateEl.height > 0) {
+          ctx.drawImage(annotateEl, 0, 0, W, H);
+        }
+
+        // Layer 10 — Text overlays (drawn directly with canvas API)
+        if (textOverlays.length > 0) {
+          ctx.save();
+          ctx.textBaseline = 'middle';
+          ctx.textAlign = 'center';
+          for (const ov of textOverlays) {
+            const weight = ov.isBold ? '700' : '400';
+            const style = ov.isItalic ? 'italic ' : '';
+            ctx.font = `${style}${weight} ${ov.fontSize}px Inter, sans-serif`;
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetY = 1;
+            ctx.fillStyle = ov.color;
+            ctx.fillText(ov.text, W * ov.x / 100, H * ov.y / 100);
+          }
+          ctx.restore();
         }
 
         if (elapsed < DURATION_MS) {
