@@ -405,8 +405,11 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, movieTimeRe
       const W = el.offsetWidth || 800;
       const H = el.offsetHeight || 600;
 
-      // ── Timeline: activate moviePlaying early so React propagates it ─
+      // ── Timeline: stop any current playback, then start from t=0 ────
+      // This handles the case where the user is mid-play or paused when
+      // they click download — we always record from the beginning.
       if (timeline) {
+        timeline.stopPlayback();
         timeline.resetTime();
         await waitFrames(2);
         timeline.startPlayback();
