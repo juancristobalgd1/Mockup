@@ -17,6 +17,7 @@ interface MovieTimelineProps {
   onPlayingChange?: (playing: boolean) => void;
   onCollapsedChange?: (collapsed: boolean) => void;
   canvasRef: React.RefObject<HTMLDivElement | null>;
+  hideManualKeyframeButton?: boolean;
 }
 
 function formatTimer(s: number) {
@@ -51,6 +52,19 @@ function buildPresetKeyframes(preset: string, getCam: () => { position: [number,
   const nx = dist > 0 ? px / dist : 0;
   const ny = dist > 0 ? py / dist : 1;
   const nz = dist > 0 ? pz / dist : 0;
+  const dirX = tx - px;
+  const dirY = ty - py;
+  const dirZ = tz - pz;
+  const dirLen = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ) || 1;
+  const fx = dirX / dirLen;
+  const fy = dirY / dirLen;
+  const fz = dirZ / dirLen;
+  const rawRightX = fz;
+  const rawRightZ = -fx;
+  const rawRightLen = Math.sqrt(rawRightX * rawRightX + rawRightZ * rawRightZ) || 1;
+  const rx = rawRightX / rawRightLen;
+  const ry = 0;
+  const rz = rawRightZ / rawRightLen;
 
   switch (preset) {
     case 'zoom-in': return [
@@ -94,6 +108,40 @@ function buildPresetKeyframes(preset: string, getCam: () => { position: [number,
       { time: duration * 0.5, position: [px, py, pz] as [number,number,number], target: [tx, ty, tz], easing: 'smooth' },
       { time: duration, position: [Math.abs(dist), py, pz * 0.3] as [number,number,number], target: [tx, ty, tz], easing: 'smooth' },
     ];
+    case 'hero-arc': return [
+      { time: 0, position: [px - rx * dist * 0.95, py + dist * 0.42, pz - rz * dist * 0.95] as [number,number,number], target: [tx, ty, tz], easing: 'smooth' },
+      { time: duration * 0.55, position: [px - rx * dist * 0.18, py + dist * 0.12, pz - rz * dist * 0.18] as [number,number,number], target: [tx, ty, tz], easing: 'smooth' },
+      { time: duration, position: [px * 0.9, py * 0.96, pz * 0.9] as [number,number,number], target: [tx, ty, tz], easing: 'ease-out' },
+    ];
+    case 'spiral-in': {
+      const steps = 4;
+      return Array.from({ length: steps + 1 }, (_, i) => {
+        const t = i / steps;
+        const angle = Math.PI * 1.35 * (1 - t);
+        const radius = dist * (1.9 - t * 1.05);
+        const y = py + (0.55 - t * 0.42) * dist;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const spiralX = px * cos - pz * sin;
+        const spiralZ = px * sin + pz * cos;
+        return {
+          time: t * duration,
+          position: [spiralX * (radius / Math.max(dist, 0.001)), y, spiralZ * (radius / Math.max(dist, 0.001))] as [number, number, number],
+          target: [tx, ty, tz],
+          easing: 'smooth' as EasingType,
+        };
+      });
+    }
+    case 'whip-pan': return [
+      { time: 0, position: [px - rx * dist * 1.3, py + dist * 0.08, pz - rz * dist * 1.3] as [number,number,number], target: [tx, ty, tz], easing: 'ease-in' },
+      { time: duration * 0.45, position: [px + rx * dist * 0.75, py - dist * 0.04, pz + rz * dist * 0.75] as [number,number,number], target: [tx, ty, tz], easing: 'ease-out' },
+      { time: duration, position: [px + rx * dist * 0.18, py, pz + rz * dist * 0.18] as [number,number,number], target: [tx, ty, tz], easing: 'smooth' },
+    ];
+    case 'float-rise': return [
+      { time: 0, position: [px - rx * dist * 0.22, py + dist * 0.3, pz - rz * dist * 0.22] as [number,number,number], target: [tx, ty, tz], easing: 'smooth' },
+      { time: duration * 0.6, position: [px + rx * dist * 0.15, py - dist * 0.08, pz + rz * dist * 0.15] as [number,number,number], target: [tx, ty, tz], easing: 'smooth' },
+      { time: duration, position: [px * 0.92, py * 0.92, pz * 0.92] as [number,number,number], target: [tx, ty, tz], easing: 'ease-out' },
+    ];
     default: return [];
   }
 }
@@ -106,7 +154,183 @@ const ANIMATION_PRESETS = [
   { id: 'overhead',       label: 'Vista aérea',       desc: 'Desde arriba hacia frente' },
   { id: 'cinematic-push', label: 'Dolly Push',        desc: 'Empuje cinematográfico' },
   { id: 'side-sweep',     label: 'Barrido lateral',   desc: 'Izquierda → centro → derecha' },
+  { id: 'hero-arc',       label: 'Hero Arc',          desc: 'Arco diagonal con llegada hero' },
+  { id: 'spiral-in',      label: 'Espiral In',        desc: 'Entrada en espiral hacia el producto' },
+  { id: 'whip-pan',       label: 'Whip Pan',          desc: 'Barrido veloz con overshoot' },
+  { id: 'float-rise',     label: 'Float Rise',        desc: 'Flota y asciende con suavidad' },
 ];
+const MIN_SEGMENT_DURATION = 0.25;
+
+function sortKeyframesByTime<T extends { time: number }>(keyframes: T[]) {
+  return [...keyframes].sort((a, b) => a.time - b.time);
+}
+
+function snapTimelineTime(time: number) {
+  return Math.round(time * 20) / 20;
+}
+
+const PRESET_PREVIEW_KEYFRAMES = `
+@keyframes preset-preview-zoom-in {
+  0% { transform: translate(-24px, 14px) rotate(-22deg) scale(0.68); }
+  100% { transform: translate(4px, 4px) rotate(-8deg) scale(1.06); }
+}
+@keyframes preset-preview-zoom-out {
+  0% { transform: translate(2px, 2px) rotate(-8deg) scale(1.05); }
+  100% { transform: translate(-30px, 18px) rotate(-24deg) scale(0.6); }
+}
+@keyframes preset-preview-orbit {
+  0% { transform: translate(-28px, 8px) rotate(-24deg) scale(0.82); }
+  25% { transform: translate(6px, -6px) rotate(-8deg) scale(0.98); }
+  50% { transform: translate(26px, 6px) rotate(8deg) scale(0.82); }
+  75% { transform: translate(2px, 16px) rotate(16deg) scale(0.72); }
+  100% { transform: translate(-28px, 8px) rotate(-24deg) scale(0.82); }
+}
+@keyframes preset-preview-reveal-below {
+  0% { transform: translate(-8px, 68px) rotate(-8deg) scale(0.78); opacity: 0.25; }
+  55% { transform: translate(-2px, 8px) rotate(-6deg) scale(0.94); opacity: 1; }
+  100% { transform: translate(6px, 2px) rotate(-4deg) scale(1.04); opacity: 1; }
+}
+@keyframes preset-preview-overhead {
+  0% { transform: translate(0px, -34px) rotate(-2deg) scale(0.55); }
+  55% { transform: translate(0px, -6px) rotate(-3deg) scale(0.82); }
+  100% { transform: translate(0px, 6px) rotate(-4deg) scale(1.02); }
+}
+@keyframes preset-preview-cinematic-push {
+  0% { transform: translate(-18px, 12px) rotate(-16deg) scale(0.74); }
+  100% { transform: translate(18px, -2px) rotate(-6deg) scale(1.08); }
+}
+@keyframes preset-preview-side-sweep {
+  0% { transform: translate(-58px, 8px) rotate(-18deg) scale(0.88); }
+  50% { transform: translate(0px, 0px) rotate(-10deg) scale(1); }
+  100% { transform: translate(58px, 8px) rotate(-2deg) scale(0.88); }
+}
+@keyframes preset-preview-hero-arc {
+  0% { transform: translate(-44px, -18px) rotate(-24deg) scale(0.72); }
+  55% { transform: translate(-10px, 2px) rotate(-11deg) scale(0.92); }
+  100% { transform: translate(10px, 10px) rotate(-3deg) scale(1.04); }
+}
+@keyframes preset-preview-spiral-in {
+  0% { transform: translate(34px, -18px) rotate(18deg) scale(0.58); }
+  25% { transform: translate(-24px, -14px) rotate(-18deg) scale(0.72); }
+  50% { transform: translate(16px, 8px) rotate(10deg) scale(0.84); }
+  75% { transform: translate(-10px, 4px) rotate(-8deg) scale(0.95); }
+  100% { transform: translate(2px, 3px) rotate(-4deg) scale(1.04); }
+}
+@keyframes preset-preview-whip-pan {
+  0% { transform: translate(-66px, 6px) rotate(-24deg) scale(0.94); }
+  55% { transform: translate(38px, 2px) rotate(4deg) scale(0.92); }
+  100% { transform: translate(10px, 4px) rotate(-6deg) scale(1.02); }
+}
+@keyframes preset-preview-float-rise {
+  0% { transform: translate(-18px, 22px) rotate(-14deg) scale(0.84); }
+  50% { transform: translate(8px, -2px) rotate(-7deg) scale(0.96); }
+  100% { transform: translate(-4px, -14px) rotate(-2deg) scale(1.03); }
+}
+@keyframes preset-preview-dot {
+  0%, 100% { opacity: 0.3; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+`;
+
+function PresetPreview({ presetId }: { presetId: string }) {
+  const animationName = `preset-preview-${presetId}`;
+  const showPath = presetId === 'side-sweep' || presetId === 'orbit' || presetId === 'cinematic-push' || presetId === 'whip-pan' || presetId === 'hero-arc' || presetId === 'spiral-in';
+  const showVerticalGuide = presetId === 'reveal-below' || presetId === 'overhead' || presetId === 'float-rise';
+
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        width: 128,
+        height: 72,
+        borderRadius: 16,
+        position: 'relative',
+        overflow: 'hidden',
+        flexShrink: 0,
+        background: 'linear-gradient(135deg, #b7b7b7 0%, #a9a9a9 100%)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18)',
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(90deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 42%, rgba(0,0,0,0.14) 43%, rgba(0,0,0,0.14) 100%)',
+        }}
+      />
+      {showPath && (
+        <div
+          style={{
+            position: 'absolute',
+            left: 14,
+            right: 14,
+            top: presetId === 'orbit' ? 16 : presetId === 'hero-arc' ? 22 : presetId === 'spiral-in' ? 18 : 36,
+            height: presetId === 'orbit' ? 24 : presetId === 'hero-arc' ? 18 : presetId === 'spiral-in' ? 28 : 1,
+            border: presetId === 'orbit' || presetId === 'hero-arc' || presetId === 'spiral-in' ? '1px dashed rgba(255,255,255,0.22)' : 'none',
+            borderTop: presetId !== 'orbit' && presetId !== 'hero-arc' && presetId !== 'spiral-in' ? '1px dashed rgba(255,255,255,0.22)' : undefined,
+            borderRadius: presetId === 'orbit' || presetId === 'hero-arc' || presetId === 'spiral-in' ? 999 : 0,
+          }}
+        />
+      )}
+      {showVerticalGuide && (
+        <div
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: 10,
+            bottom: 10,
+            width: 1,
+            transform: 'translateX(-50%)',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0.08))',
+          }}
+        />
+      )}
+      <div
+        style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          width: 56,
+          height: 108,
+          marginLeft: -28,
+          marginTop: -54,
+          borderRadius: 14,
+          border: '4px solid #171717',
+          background: '#f6f6f6',
+          boxShadow: '0 7px 16px rgba(0,0,0,0.3)',
+          transformOrigin: '50% 50%',
+          animation: `${animationName} 2.6s cubic-bezier(0.45, 0.05, 0.2, 1) infinite alternate`,
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            top: 7,
+            left: '50%',
+            width: 18,
+            height: 4,
+            borderRadius: 999,
+            transform: 'translateX(-50%)',
+            background: 'rgba(0,0,0,0.16)',
+          }}
+        />
+      </div>
+      <div
+        style={{
+          position: 'absolute',
+          right: 12,
+          top: 12,
+          width: 7,
+          height: 7,
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.85)',
+          boxShadow: '0 0 10px rgba(255,255,255,0.25)',
+          animation: 'preset-preview-dot 1.8s ease-in-out infinite',
+        }}
+      />
+    </div>
+  );
+}
 
 function Diamond({ active, label, onClick, onContextMenu }: {
   active?: boolean;
@@ -140,7 +364,7 @@ function Diamond({ active, label, onClick, onContextMenu }: {
   );
 }
 
-export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>(function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChange, onCollapsedChange, canvasRef }, ref) {
+export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>(function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChange, onCollapsedChange, canvasRef, hideManualKeyframeButton = false }, ref) {
   const { state, updateState, addCameraKeyframe, removeCameraKeyframe, updateCameraKeyframe, clearCameraKeyframes } = useApp();
   const { cameraKeyframes, movieDuration } = state;
 
@@ -185,11 +409,29 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
   const durationDragRef = useRef<{ startX: number; startDuration: number; pps: number; currentDuration: number } | null>(null);
   const [isDraggingDuration, setIsDraggingDuration] = useState(false);
   const [visualDuration, setVisualDuration] = useState<number | null>(null);
+  const [dragPreviewKeyframes, setDragPreviewKeyframes] = useState<CameraKeyframe[] | null>(null);
+  const segmentDragRef = useRef<{
+    mode: 'move' | 'resize-start' | 'resize-end';
+    segmentIndex: number;
+    startX: number;
+    keyframes: CameraKeyframe[];
+  } | null>(null);
 
   // displayDuration: what we render. Uses local visual state during drag, store value otherwise.
   const displayDuration = visualDuration ?? movieDuration;
 
-  const activeKf = cameraKeyframes.find(k => k.id === activeKfId) ?? null;
+  const timelineKeyframes = sortKeyframesByTime(dragPreviewKeyframes ?? cameraKeyframes);
+
+  const activeKf = timelineKeyframes.find(k => k.id === activeKfId) ?? null;
+  const cameraSegments = timelineKeyframes.slice(0, -1).map((start, index) => {
+    const end = timelineKeyframes[index + 1];
+    return {
+      index,
+      start,
+      end,
+      label: start.label || end.label || `Animación ${index + 1}`,
+    };
+  });
 
   // Pixel-based scale (responds to zoom, NOT to duration)
   const effectivePxPerSec = PX_PER_SEC * timelineZoom;
@@ -336,6 +578,74 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
 
   const handleTrackPointerUp = useCallback(() => { isDragging.current = false; }, []);
 
+  const startSegmentDrag = useCallback((e: React.PointerEvent<HTMLDivElement>, segmentIndex: number, mode: 'move' | 'resize-start' | 'resize-end') => {
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    segmentDragRef.current = {
+      mode,
+      segmentIndex,
+      startX: e.clientX,
+      keyframes: sortKeyframesByTime(cameraKeyframes),
+    };
+    setDragPreviewKeyframes(sortKeyframesByTime(cameraKeyframes));
+  }, [cameraKeyframes]);
+
+  const handleSegmentPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!segmentDragRef.current) return;
+    e.stopPropagation();
+
+    const drag = segmentDragRef.current;
+    const nextKeyframes = drag.keyframes.map(kf => ({ ...kf }));
+    const deltaSeconds = (e.clientX - drag.startX) / effectivePxPerSec;
+    const startIndex = drag.segmentIndex;
+    const endIndex = drag.segmentIndex + 1;
+    const round = (value: number) => snapTimelineTime(value);
+
+    if (drag.mode === 'move') {
+      const segmentStart = drag.keyframes[startIndex].time;
+      const segmentEnd = drag.keyframes[endIndex].time;
+      const prevBound = startIndex > 0 ? drag.keyframes[startIndex - 1].time + MIN_SEGMENT_DURATION : 0;
+      const nextBound = endIndex < drag.keyframes.length - 1 ? drag.keyframes[endIndex + 1].time - MIN_SEGMENT_DURATION : movieDuration;
+      const minDelta = prevBound - segmentStart;
+      const maxDelta = nextBound - segmentEnd;
+      const appliedDelta = Math.max(minDelta, Math.min(maxDelta, deltaSeconds));
+      nextKeyframes[startIndex].time = round(segmentStart + appliedDelta);
+      nextKeyframes[endIndex].time = round(segmentEnd + appliedDelta);
+      movieTimeRef.current = nextKeyframes[startIndex].time;
+      setCurrentTime(nextKeyframes[startIndex].time);
+    }
+
+    if (drag.mode === 'resize-start') {
+      const original = drag.keyframes[startIndex].time;
+      const prevBound = startIndex > 0 ? drag.keyframes[startIndex - 1].time + MIN_SEGMENT_DURATION : 0;
+      const nextBound = drag.keyframes[endIndex].time - MIN_SEGMENT_DURATION;
+      nextKeyframes[startIndex].time = round(Math.max(prevBound, Math.min(nextBound, original + deltaSeconds)));
+      movieTimeRef.current = nextKeyframes[startIndex].time;
+      setCurrentTime(nextKeyframes[startIndex].time);
+      setActiveKfId(nextKeyframes[startIndex].id);
+    }
+
+    if (drag.mode === 'resize-end') {
+      const original = drag.keyframes[endIndex].time;
+      const prevBound = drag.keyframes[startIndex].time + MIN_SEGMENT_DURATION;
+      const nextBound = endIndex < drag.keyframes.length - 1 ? drag.keyframes[endIndex + 1].time - MIN_SEGMENT_DURATION : movieDuration;
+      nextKeyframes[endIndex].time = round(Math.max(prevBound, Math.min(nextBound, original + deltaSeconds)));
+      movieTimeRef.current = nextKeyframes[endIndex].time;
+      setCurrentTime(nextKeyframes[endIndex].time);
+      setActiveKfId(nextKeyframes[endIndex].id);
+    }
+
+    setDragPreviewKeyframes(sortKeyframesByTime(nextKeyframes));
+  }, [effectivePxPerSec, movieDuration, movieTimeRef]);
+
+  const finishSegmentDrag = useCallback(() => {
+    if (!segmentDragRef.current) return;
+    const next = sortKeyframesByTime(dragPreviewKeyframes ?? segmentDragRef.current.keyframes);
+    segmentDragRef.current = null;
+    setDragPreviewKeyframes(null);
+    updateState({ cameraKeyframes: next });
+  }, [dragPreviewKeyframes, updateState]);
+
   const handleDurationPointerDown = useCallback((e: React.PointerEvent) => {
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -407,6 +717,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
       flexShrink: 0, userSelect: 'none',
       transition: 'background 0.3s',
     }}>
+      <style>{PRESET_PREVIEW_KEYFRAMES}</style>
 
       {/* ── Collapsed strip ───────────────────────────────────────── */}
       {collapsed && (
@@ -553,7 +864,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
         )}
 
         {/* Add keyframe manually */}
-        {!liveRecording && (
+        {!liveRecording && !hideManualKeyframeButton && (
           <button
             onClick={handleAddKeyframe}
             title="Añadir keyframe manual en la posición actual del playhead"
@@ -598,7 +909,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
                   background: '#1e2022', border: '1px solid rgba(255,255,255,0.12)',
                   borderRadius: 8, overflow: 'hidden', zIndex: 100,
                   boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                  minWidth: 220,
+                  width: 'min(360px, calc(100vw - 32px))',
                 }}
               >
                 <div style={{ padding: '6px 10px 4px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
@@ -611,16 +922,37 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
                     key={preset.id}
                     onClick={() => handleApplyPreset(preset.id)}
                     style={{
-                      width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-                      padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer',
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '10px 12px', background: 'none', border: 'none', cursor: 'pointer',
                       borderBottom: '1px solid rgba(255,255,255,0.04)',
-                      transition: 'background 0.12s',
+                      transition: 'background 0.12s', textAlign: 'left',
                     }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'rgba(139,92,246,0.15)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                   >
-                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>{preset.label}</span>
-                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>{preset.desc}</span>
+                    <PresetPreview presetId={preset.id} />
+                    <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.88)', fontWeight: 700, lineHeight: 1.2 }}>{preset.label}</span>
+                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', lineHeight: 1.35 }}>{preset.desc}</span>
+                      <span style={{ fontSize: 9, color: 'rgba(167,139,250,0.9)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginTop: 3 }}>
+                        Vista previa
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        width: 34,
+                        height: 34,
+                        borderRadius: '50%',
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'rgba(255,255,255,0.14)',
+                        color: 'rgba(255,255,255,0.7)',
+                      }}
+                    >
+                      <Plus size={18} />
+                    </div>
                   </button>
                 ))}
               </div>
@@ -804,30 +1136,152 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
               textTransform: 'uppercase', letterSpacing: '0.08em', pointerEvents: 'none',
             }}>Camera</span>
 
-            {cameraKeyframes.length >= 2 && (
-              <div style={{
-                position: 'absolute',
-                left: `${(cameraKeyframes[0].time / displayDuration) * 100}%`,
-                right: `${100 - (cameraKeyframes[cameraKeyframes.length - 1].time / displayDuration) * 100}%`,
-                top: '50%', height: 1,
-                background: 'rgba(255,255,255,0.12)', transform: 'translateY(-50%)',
-                pointerEvents: 'none',
-              }} />
-            )}
+            {cameraSegments.map(segment => {
+              const leftPx = segment.start.time * effectivePxPerSec;
+              const widthPx = Math.max((segment.end.time - segment.start.time) * effectivePxPerSec, 18);
+              const isActive = activeKfId === segment.start.id || activeKfId === segment.end.id;
 
-            {cameraKeyframes.map(kf => (
+              return (
+                <div
+                  key={`${segment.start.id}-${segment.end.id}`}
+                  style={{
+                    position: 'absolute',
+                    left: leftPx,
+                    top: '50%',
+                    width: widthPx,
+                    height: 24,
+                    transform: 'translateY(-50%)',
+                    zIndex: isActive ? 3 : 2,
+                  }}
+                >
+                  <div
+                    onPointerDown={e => startSegmentDrag(e, segment.index, 'move')}
+                    onPointerMove={handleSegmentPointerMove}
+                    onPointerUp={finishSegmentDrag}
+                    onPointerCancel={finishSegmentDrag}
+                    onClick={e => {
+                      e.stopPropagation();
+                      setActiveKfId(segment.end.id);
+                      setEditingLabel(null);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      left: 9,
+                      right: 9,
+                      top: 0,
+                      bottom: 0,
+                      borderRadius: 8,
+                      background: isActive ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.1)',
+                      border: `1px solid ${isActive ? 'rgba(59,130,246,0.65)' : 'rgba(255,255,255,0.08)'}`,
+                      boxShadow: isActive ? '0 0 0 1px rgba(59,130,246,0.18)' : 'none',
+                      cursor: 'grab',
+                    }}
+                  >
+                    <span style={{
+                      position: 'absolute',
+                      left: 10,
+                      right: 10,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      fontSize: 9,
+                      lineHeight: 1,
+                      color: 'rgba(255,255,255,0.34)',
+                      fontWeight: 700,
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      pointerEvents: 'none',
+                    }}>{segment.label}</span>
+                  </div>
+
+                  <div
+                    onPointerDown={e => {
+                      setActiveKfId(segment.start.id);
+                      setEditingLabel(null);
+                      startSegmentDrag(e, segment.index, 'resize-start');
+                    }}
+                    onPointerMove={handleSegmentPointerMove}
+                    onPointerUp={finishSegmentDrag}
+                    onPointerCancel={finishSegmentDrag}
+                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); removeCameraKeyframe(segment.start.id); if (activeKfId === segment.start.id) setActiveKfId(null); }}
+                    style={{
+                      position: 'absolute',
+                      left: 0,
+                      top: '50%',
+                      width: 18,
+                      height: 18,
+                      transform: 'translate(-50%, -50%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'ew-resize',
+                      touchAction: 'none',
+                    }}
+                  >
+                    <div style={{
+                      width: 12,
+                      height: 12,
+                      transform: 'rotate(45deg)',
+                      borderRadius: 2,
+                      background: activeKfId === segment.start.id ? '#3b82f6' : '#d1d5db',
+                      boxShadow: activeKfId === segment.start.id ? '0 0 0 3px rgba(59,130,246,0.18)' : '0 0 0 1px rgba(0,0,0,0.15)',
+                    }} />
+                  </div>
+
+                  <div
+                    onPointerDown={e => {
+                      setActiveKfId(segment.end.id);
+                      setEditingLabel(null);
+                      startSegmentDrag(e, segment.index, 'resize-end');
+                    }}
+                    onPointerMove={handleSegmentPointerMove}
+                    onPointerUp={finishSegmentDrag}
+                    onPointerCancel={finishSegmentDrag}
+                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); removeCameraKeyframe(segment.end.id); if (activeKfId === segment.end.id) setActiveKfId(null); }}
+                    style={{
+                      position: 'absolute',
+                      right: 0,
+                      top: '50%',
+                      width: 18,
+                      height: 18,
+                      transform: 'translate(50%, -50%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'ew-resize',
+                      touchAction: 'none',
+                    }}
+                  >
+                    <div style={{
+                      width: 12,
+                      height: 12,
+                      transform: 'rotate(45deg)',
+                      borderRadius: 2,
+                      background: activeKfId === segment.end.id ? '#3b82f6' : '#d1d5db',
+                      boxShadow: activeKfId === segment.end.id ? '0 0 0 3px rgba(59,130,246,0.18)' : '0 0 0 1px rgba(0,0,0,0.15)',
+                    }} />
+                  </div>
+                </div>
+              );
+            })}
+
+            {timelineKeyframes.length === 1 && (
               <div
-                key={kf.id}
                 style={{
-                  position: 'absolute', left: `${(kf.time / displayDuration) * 100}%`,
-                  top: '50%', transform: 'translate(-50%,-50%)', zIndex: 2,
+                  position: 'absolute',
+                  left: timelineKeyframes[0].time * effectivePxPerSec,
+                  top: '50%',
+                  transform: 'translate(-50%,-50%)',
+                  zIndex: 2,
                 }}
-                onClick={e => { e.stopPropagation(); setActiveKfId(kf.id === activeKfId ? null : kf.id); setEditingLabel(null); }}
-                onContextMenu={e => { e.preventDefault(); e.stopPropagation(); removeCameraKeyframe(kf.id); if (activeKfId === kf.id) setActiveKfId(null); }}
+                onClick={e => { e.stopPropagation(); setActiveKfId(timelineKeyframes[0].id === activeKfId ? null : timelineKeyframes[0].id); setEditingLabel(null); }}
+                onContextMenu={e => { e.preventDefault(); e.stopPropagation(); removeCameraKeyframe(timelineKeyframes[0].id); if (activeKfId === timelineKeyframes[0].id) setActiveKfId(null); }}
               >
-                <Diamond active={kf.id === activeKfId} label={kf.label} />
+                <Diamond active={timelineKeyframes[0].id === activeKfId} label={timelineKeyframes[0].label} />
               </div>
-            ))}
+            )}
           </div>
         </div>
 

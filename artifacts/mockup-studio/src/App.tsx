@@ -425,6 +425,7 @@ function Editor() {
               viewerRef={viewerRef}
               movieTimeRef={movieTimeRef}
               canvasRef={canvasRef}
+              hideManualKeyframeButton
               onPlayingChange={setMoviePlaying}
               onCollapsedChange={setTimelineCollapsed}
               onClose={() => { updateState({ movieMode: false }); setMoviePlaying(false); setMobileTab(null); setTimelineCollapsed(false); }}

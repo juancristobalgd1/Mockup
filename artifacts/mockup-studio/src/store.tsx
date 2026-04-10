@@ -338,7 +338,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateCameraKeyframe = (id: string, updates: Partial<Omit<CameraKeyframe, 'id'>>) => {
     setState(prev => ({
       ...prev,
-      cameraKeyframes: prev.cameraKeyframes.map(k => k.id === id ? { ...k, ...updates } : k),
+      cameraKeyframes: prev.cameraKeyframes
+        .map(k => k.id === id ? { ...k, ...updates } : k)
+        .sort((a, b) => a.time - b.time),
     }));
   };
 
