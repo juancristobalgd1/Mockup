@@ -113,28 +113,82 @@ function hexToRgba(hex: string, alpha: number): string {
 function drawAnimatedBg(ctx: CanvasRenderingContext2D, bg: AnimatedBackground, elapsedMs: number, W: number, H: number) {
   const ts = elapsedMs / 1000; // seconds
 
-  // ── iframe backgrounds (e.g. 3D Aura) → animated orbiting glows ──────────
+  // ── iframe backgrounds (e.g. 3D Aura) → high-quality canvas approximation ──
+  // Cross-origin iframes cannot be captured directly; we render a close visual
+  // match using layered radial gradients with slow organic movement.
   if (bg.type === 'iframe') {
+    // Parse accent colors from thumb; fall back to Aura palette
     const thumbStr = typeof bg.thumb.background === 'string' ? bg.thumb.background : '';
-    const colors = thumbStr.match(/#[0-9a-fA-F]{3,8}/g)?.map(expandHex) ?? ['#7c3aed', '#3b82f6', '#06b6d4', '#0f172a'];
-    // Base fill (darkest color)
-    ctx.fillStyle = colors[colors.length - 1];
+    const hexes = thumbStr.match(/#[0-9a-fA-F]{3,8}/g)?.map(expandHex) ?? [];
+    const c0 = hexes[0] ?? '#7c3aed'; // purple
+    const c1 = hexes[1] ?? '#3b82f6'; // blue
+    const c2 = hexes[2] ?? '#06b6d4'; // cyan
+    const base = hexes[hexes.length - 1] ?? '#0a0d1a';
+
+    // Very dark base
+    ctx.fillStyle = base;
     ctx.fillRect(0, 0, W, H);
-    // Orbiting glow layers via 'screen' blend — creates beautiful 3D aura effect
-    ctx.globalCompositeOperation = 'screen';
-    const glows = [
-      { x: 0.30 + 0.22 * Math.sin(ts * 0.47),        y: 0.28 + 0.18 * Math.cos(ts * 0.38),        r: 0.65, c: colors[0], a: 0.78 },
-      { x: 0.68 + 0.18 * Math.cos(ts * 0.31),        y: 0.55 + 0.22 * Math.sin(ts * 0.55),        r: 0.58, c: colors[1], a: 0.68 },
-      { x: 0.50 + 0.20 * Math.sin(ts * 0.63 + 1.2), y: 0.70 + 0.16 * Math.cos(ts * 0.42),        r: 0.50, c: colors[2] ?? colors[1], a: 0.58 },
-    ];
-    for (const g of glows) {
-      const rg = ctx.createRadialGradient(g.x * W, g.y * H, 0, g.x * W, g.y * H, g.r * W);
-      rg.addColorStop(0, hexToRgba(g.c, g.a));
-      rg.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = rg;
+
+    // Helper: draw one soft glow blob at (cx,cy) with radius r (in pixels)
+    const drawBlob = (cx: number, cy: number, r: number, color: string, alpha: number) => {
+      // Inner concentrated core
+      const gCore = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 0.35);
+      gCore.addColorStop(0, hexToRgba(color, alpha));
+      gCore.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = gCore;
       ctx.fillRect(0, 0, W, H);
-    }
+      // Outer soft halo doubles the perceived size
+      const gHalo = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      gHalo.addColorStop(0, hexToRgba(color, alpha * 0.45));
+      gHalo.addColorStop(0.55, hexToRgba(color, alpha * 0.15));
+      gHalo.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = gHalo;
+      ctx.fillRect(0, 0, W, H);
+    };
+
+    // All glow layers composite via 'screen' — bright where blobs overlap
+    ctx.globalCompositeOperation = 'screen';
+    const S = Math.min(W, H);
+
+    // Layer 1 – large purple blob, drifts slowly upper-left ↔ centre
+    drawBlob(
+      W * (0.28 + 0.14 * Math.sin(ts * 0.19)),
+      H * (0.30 + 0.13 * Math.cos(ts * 0.15)),
+      S * 0.72, c0, 0.82,
+    );
+    // Layer 2 – blue blob, upper-right, slight counter-drift
+    drawBlob(
+      W * (0.72 + 0.12 * Math.cos(ts * 0.23)),
+      H * (0.22 + 0.14 * Math.sin(ts * 0.18)),
+      S * 0.65, c1, 0.75,
+    );
+    // Layer 3 – cyan blob, lower-centre, slower drift
+    drawBlob(
+      W * (0.55 + 0.16 * Math.sin(ts * 0.27 + 1.1)),
+      H * (0.74 + 0.10 * Math.cos(ts * 0.21)),
+      S * 0.58, c2, 0.68,
+    );
+    // Layer 4 – secondary purple accent, centre, breathing scale
+    drawBlob(
+      W * (0.45 + 0.09 * Math.cos(ts * 0.34)),
+      H * (0.48 + 0.09 * Math.sin(ts * 0.29)),
+      S * (0.40 + 0.06 * Math.sin(ts * 0.41)), c0, 0.45,
+    );
+    // Layer 5 – tiny bright specular highlight — the "3D" glint
+    drawBlob(
+      W * (0.38 + 0.06 * Math.sin(ts * 0.53)),
+      H * (0.28 + 0.06 * Math.cos(ts * 0.47)),
+      S * 0.18, '#ffffff', 0.12,
+    );
+
     ctx.globalCompositeOperation = 'source-over';
+
+    // Subtle vignette darkens the very edges for depth
+    const vignette = ctx.createRadialGradient(W / 2, H / 2, S * 0.28, W / 2, H / 2, S * 0.82);
+    vignette.addColorStop(0, 'rgba(0,0,0,0)');
+    vignette.addColorStop(1, 'rgba(0,0,0,0.55)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, W, H);
     return;
   }
 
