@@ -1,10 +1,85 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type CSSProperties } from 'react';
 import { Download, Copy, Image, Check, Video, Film, ChevronDown } from 'lucide-react';
 import { useApp } from '../../store';
 import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
-import { ANIMATED_BACKGROUNDS } from '../../data/backgrounds';
+import { ANIMATED_BACKGROUNDS, GRADIENTS, MESH_GRADIENTS, WALLPAPERS, PATTERNS } from '../../data/backgrounds';
 import type { AnimatedBackground } from '../../data/backgrounds';
+import type { AppState } from '../../store';
 import type { MovieTimelineHandle } from '../timeline/MovieTimeline';
+
+// ── Background helpers ────────────────────────────────────────────────────────
+
+/** Wait N animation frames — used to allow React state propagation before recording. */
+function waitFrames(n: number): Promise<void> {
+  return new Promise(resolve => {
+    let count = 0;
+    const tick = () => { if (++count >= n) resolve(); else requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  });
+}
+
+/** Compute background CSS properties from store state (mirrors Canvas.tsx getBackground). */
+function computeBgStyle(state: AppState): CSSProperties {
+  const { bgType, bgColor, bgPattern, bgImage } = state;
+  if (bgType === 'none') return { background: '#111113' };
+  if (bgType === 'transparent') return {
+    backgroundImage: 'linear-gradient(45deg, #2a2a2a 25%, transparent 25%), linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #2a2a2a 75%), linear-gradient(-45deg, transparent 75%, #2a2a2a 75%)',
+    backgroundSize: '16px 16px',
+    backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px',
+    backgroundColor: '#1a1a1a',
+  };
+  if (bgType === 'solid') return { background: bgColor };
+  if (bgType === 'gradient') {
+    const g = GRADIENTS.find(g => g.id === bgColor);
+    return { background: g ? g.css : GRADIENTS[0].css };
+  }
+  if (bgType === 'mesh') {
+    const m = MESH_GRADIENTS.find(m => m.id === bgColor);
+    return { background: m ? m.css : MESH_GRADIENTS[0].css };
+  }
+  if (bgType === 'pattern') {
+    const p = PATTERNS.find(p => p.id === bgPattern);
+    if (p) return p.bgStyle(bgColor);
+    return { background: bgColor };
+  }
+  if (bgType === 'wallpaper') {
+    const w = WALLPAPERS.find(w => w.id === bgColor);
+    return { background: w ? w.css : GRADIENTS[0].css };
+  }
+  if (bgType === 'image' && bgImage) {
+    return { backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' };
+  }
+  return { background: GRADIENTS[0].css };
+}
+
+/**
+ * Render a CSS background style onto an off-screen div and capture it
+ * with html2canvas. Returns a canvas or null on failure.
+ */
+async function captureStyleToCanvas(style: CSSProperties, W: number, H: number): Promise<HTMLCanvasElement | null> {
+  const div = document.createElement('div');
+  div.style.width = `${W}px`;
+  div.style.height = `${H}px`;
+  div.style.position = 'fixed';
+  div.style.left = '-99999px';
+  div.style.top = '0';
+  div.style.pointerEvents = 'none';
+  div.style.zIndex = '-1';
+  Object.assign(div.style, style);
+  document.body.appendChild(div);
+  try {
+    const h2c = (await import('html2canvas')).default;
+    const snap = await h2c(div, {
+      useCORS: true, allowTaint: true, scale: 1,
+      backgroundColor: null, width: W, height: H,
+    });
+    return snap.width > 0 && snap.height > 0 ? snap : null;
+  } catch {
+    return null;
+  } finally {
+    div.remove();
+  }
+}
 
 // ── Animated background canvas drawing ───────────────────────────────────────
 
@@ -276,15 +351,18 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, textOverlay
       const W = el.offsetWidth || 800;
       const H = el.offsetHeight || 600;
 
-      // 2. Reset timeline to t=0 and start playback so keyframe animation plays while recording
+      // 2. Reset timeline to t=0 BEFORE playback
       if (timeline) {
         timeline.resetTime();
-        // Small delay to let the reset propagate to the 3D scene before we start capturing
-        await new Promise<void>(r => setTimeout(r, 80));
+        await waitFrames(2);
+        // Start playback — triggers setMoviePlaying(true) in App.tsx via onPlayingChange
         timeline.startPlayback();
+        // Wait several frames for React to re-render with moviePlaying=true
+        // so Three.js useFrame starts interpolating camera keyframes before we capture
+        await waitFrames(6);
       }
 
-      // 3. Animated background: draw per-frame; static: capture once
+      // 3. Animated background: draw per-frame; static: capture once via temp-div
       const isAnimatedBg = state.bgType === 'animated';
       const animatedBg = isAnimatedBg
         ? (ANIMATED_BACKGROUNDS.find(b => b.id === state.bgAnimated) ?? ANIMATED_BACKGROUNDS[0])
@@ -292,15 +370,11 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, textOverlay
 
       let bgCanvas: HTMLCanvasElement | null = null;
       if (!isAnimatedBg) {
-        try {
-          const html2canvas = (await import('html2canvas')).default;
-          const snap = await html2canvas(el, {
-            useCORS: true, allowTaint: true, scale: 1, backgroundColor: null,
-            width: W, height: H,
-            ignoreElements: (element) => element.tagName === 'CANVAS',
-          });
-          if (snap.width > 0 && snap.height > 0) bgCanvas = snap;
-        } catch { /* GL-only capture */ }
+        // Capture background by rendering a clean temp div with only the bg CSS.
+        // This is far more reliable than html2canvas on the full canvas div
+        // (which includes the WebGL canvas, iframes, and other elements).
+        const bgStyle = computeBgStyle(state);
+        bgCanvas = await captureStyleToCanvas(bgStyle, W, H);
       }
 
       // 3. Offscreen canvas → MediaRecorder stream
