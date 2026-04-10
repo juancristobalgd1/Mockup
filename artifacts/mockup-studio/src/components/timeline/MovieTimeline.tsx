@@ -173,10 +173,13 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
   const isDragging = useRef(false);
   const TRACK_PADDING = 24;
 
+  // Duration drag handle
+  const durationDragRef = useRef<{ startX: number; startDuration: number; pps: number } | null>(null);
+  const [isDraggingDuration, setIsDraggingDuration] = useState(false);
+
   const activeKf = cameraKeyframes.find(k => k.id === activeKfId) ?? null;
 
-  // Reset zoom when duration changes
-  useEffect(() => { setTimelineZoom(1); }, [movieDuration]);
+  // (zoom is intentionally NOT reset when duration changes — user keeps their zoom level)
 
   // Auto-scroll to keep playhead visible when playing or seeking
   useEffect(() => {
@@ -311,6 +314,36 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
   }, [movieDuration, movieTimeRef]);
 
   const handleTrackPointerUp = useCallback(() => { isDragging.current = false; }, []);
+
+  const handleDurationPointerDown = useCallback((e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const rect = trackRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const usableWidth = rect.width - TRACK_PADDING * 2;
+    const pps = movieDuration > 0 ? usableWidth / movieDuration : 50;
+    durationDragRef.current = { startX: e.clientX, startDuration: movieDuration, pps };
+    setIsDraggingDuration(true);
+  }, [movieDuration]);
+
+  const handleDurationPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!durationDragRef.current) return;
+    const { startX, startDuration, pps } = durationDragRef.current;
+    const delta = e.clientX - startX;
+    const raw = startDuration + delta / pps;
+    const snapped = Math.round(raw * 2) / 2;
+    const newDuration = Math.max(1, Math.min(120, snapped));
+    updateState({ movieDuration: newDuration });
+    if (movieTimeRef.current > newDuration) {
+      movieTimeRef.current = newDuration;
+      setCurrentTime(newDuration);
+    }
+  }, [movieTimeRef, updateState]);
+
+  const handleDurationPointerUp = useCallback(() => {
+    durationDragRef.current = null;
+    setIsDraggingDuration(false);
+  }, []);
 
   const handleAddKeyframe = useCallback(() => {
     const cam = viewerRef.current?.getCameraState();
@@ -624,22 +657,17 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
         <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
           {formatTime(currentTime)}
         </span>
-        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>de</span>
-        <select
-          value={movieDuration}
-          onChange={e => {
-            const d = Number(e.target.value);
-            updateState({ movieDuration: d });
-            if (movieTimeRef.current > d) { movieTimeRef.current = d; setCurrentTime(d); }
-          }}
+        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>/</span>
+        <span
+          title="Arrastra el borde derecho del timeline para cambiar la duración"
           style={{
-            background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 5, color: 'rgba(255,255,255,0.6)', fontSize: 11,
-            padding: '2px 6px', cursor: 'pointer',
+            fontFamily: 'monospace', fontSize: 11,
+            color: isDraggingDuration ? '#f97316' : 'rgba(255,255,255,0.45)',
+            fontWeight: 600, transition: 'color 0.15s', userSelect: 'none',
           }}
         >
-          {[3, 5, 8, 10, 15, 20, 30].map(d => <option key={d} value={d}>{d}s</option>)}
-        </select>
+          {movieDuration % 1 === 0 ? `${movieDuration}s` : `${movieDuration.toFixed(1)}s`}
+        </span>
 
         <div style={{ flex: 1 }} />
 
@@ -776,6 +804,60 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
             clipPath: 'polygon(50% 100%, 0 0, 100% 0)',
           }} />
         </div>
+
+        {/* ── Duration end-cap drag handle ────────────────────────── */}
+        <div
+          className="dur-end-cap"
+          onPointerDown={handleDurationPointerDown}
+          onPointerMove={handleDurationPointerMove}
+          onPointerUp={handleDurationPointerUp}
+          title={`Duración: ${movieDuration % 1 === 0 ? movieDuration : movieDuration.toFixed(1)}s — Arrastra para cambiar`}
+          style={{
+            position: 'absolute',
+            right: TRACK_PADDING - 5,
+            top: 0, bottom: 0,
+            width: 14,
+            cursor: 'ew-resize',
+            zIndex: 13,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            touchAction: 'none',
+          }}
+        >
+          {/* Vertical bar with grip dots */}
+          <div
+            className="dur-end-bar"
+            style={{
+              width: 4,
+              height: 38,
+              background: isDraggingDuration ? '#f97316' : 'rgba(249,115,22,0.4)',
+              borderRadius: 3,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+              transition: isDraggingDuration ? 'none' : 'background 0.15s',
+              boxShadow: isDraggingDuration ? '0 0 8px rgba(249,115,22,0.6)' : 'none',
+            }}
+          >
+            <div style={{ width: 1.5, height: 2, borderRadius: 1, background: 'rgba(255,255,255,0.75)' }} />
+            <div style={{ width: 1.5, height: 2, borderRadius: 1, background: 'rgba(255,255,255,0.75)' }} />
+            <div style={{ width: 1.5, height: 2, borderRadius: 1, background: 'rgba(255,255,255,0.75)' }} />
+          </div>
+
+          {/* Tooltip shown while dragging */}
+          {isDraggingDuration && (
+            <div style={{
+              position: 'absolute',
+              bottom: 'calc(100% + 6px)',
+              left: '50%', transform: 'translateX(-50%)',
+              background: '#1a1d1f',
+              border: '1px solid rgba(249,115,22,0.4)',
+              borderRadius: 5, padding: '3px 8px',
+              fontSize: 11, fontFamily: 'monospace', color: '#f97316', fontWeight: 700,
+              whiteSpace: 'nowrap', pointerEvents: 'none',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+            }}>
+              {movieDuration % 1 === 0 ? `${movieDuration}s` : `${movieDuration.toFixed(1)}s`}
+            </div>
+          )}
+        </div>
       </div>
       </div>
 
@@ -879,6 +961,8 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
 
       <style>{`
         @keyframes recBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+        .dur-end-cap:hover .dur-end-bar { background: rgba(249,115,22,0.75) !important; }
+        .dur-end-cap:active .dur-end-bar { background: #f97316 !important; box-shadow: 0 0 10px rgba(249,115,22,0.7) !important; }
       `}</style>
     </div>
   );
