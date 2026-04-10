@@ -4,6 +4,7 @@ import { useApp } from '../../store';
 import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
 import { ANIMATED_BACKGROUNDS } from '../../data/backgrounds';
 import type { AnimatedBackground } from '../../data/backgrounds';
+import type { MovieTimelineHandle } from '../timeline/MovieTimeline';
 
 // ── Animated background canvas drawing ───────────────────────────────────────
 
@@ -115,6 +116,7 @@ function drawAnimatedBg(ctx: CanvasRenderingContext2D, bg: AnimatedBackground, e
 interface RightPanelProps {
   canvasRef: React.RefObject<HTMLDivElement | null>;
   viewerRef?: React.RefObject<Device3DViewerHandle | null>;
+  movieTimelineRef?: React.RefObject<MovieTimelineHandle | null>;
   textOverlays: import('../../store').TextOverlay[];
   onUpdateText: (id: string, updates: Partial<import('../../store').TextOverlay>) => void;
   onRemoveText: (id: string) => void;
@@ -207,7 +209,7 @@ function SectionHeader({ label, open, onToggle }: { label: string; open: boolean
   );
 }
 
-export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, onRemoveText }: RightPanelProps) {
+export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, textOverlays, onUpdateText, onRemoveText }: RightPanelProps) {
   const { state } = useApp();
   const [exporting, setExporting] = useState(false);
   const [copying, setCopying] = useState(false);
@@ -268,12 +270,21 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
     try {
       const el = canvasRef.current;
       const glEl = viewerRef?.current?.getGLElement() ?? null;
+      const timeline = movieTimelineRef?.current;
 
       // 1. Determine output dimensions
       const W = el.offsetWidth || 800;
       const H = el.offsetHeight || 600;
 
-      // 2. Animated background: draw per-frame; static: capture once
+      // 2. Reset timeline to t=0 and start playback so keyframe animation plays while recording
+      if (timeline) {
+        timeline.resetTime();
+        // Small delay to let the reset propagate to the 3D scene before we start capturing
+        await new Promise<void>(r => setTimeout(r, 80));
+        timeline.startPlayback();
+      }
+
+      // 3. Animated background: draw per-frame; static: capture once
       const isAnimatedBg = state.bgType === 'animated';
       const animatedBg = isAnimatedBg
         ? (ANIMATED_BACKGROUNDS.find(b => b.id === state.bgAnimated) ?? ANIMATED_BACKGROUNDS[0])
@@ -333,6 +344,7 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
 
       await new Promise<void>(resolve => { recorder.onstop = () => resolve(); });
       stopInterval();
+      timeline?.stopPlayback();
       setRecordProgress(100);
 
       const blob = new Blob(chunks, { type: 'video/webm' });
@@ -340,6 +352,7 @@ export function RightPanel({ canvasRef, viewerRef, textOverlays, onUpdateText, o
     } catch (err) {
       console.error('Record failed', err);
       stopInterval();
+      movieTimelineRef?.current?.stopPlayback();
     } finally {
       setRecording(false);
       setRecordProgress(0);
