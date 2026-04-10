@@ -392,6 +392,23 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           {isPlaying ? <Pause size={12} /> : <Play size={12} />}
         </button>
 
+        {/* Stop — resets playhead to 0 */}
+        <button
+          onClick={() => { stopPlayback(); movieTimeRef.current = 0; setCurrentTime(0); }}
+          disabled={liveRecording}
+          title="Detener y volver al inicio"
+          style={{
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 6, width: 28, height: 28, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'rgba(255,255,255,0.4)',
+            opacity: liveRecording ? 0.35 : 1,
+          }}
+        >
+          <Square size={10} />
+        </button>
+
         {/* REC / STOP button */}
         {!liveRecording ? (
           <button
@@ -449,7 +466,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
             }}
           >
             <Plus size={11} />
-            Añadir
+            Keyframe
             {cameraKeyframes.length > 0 && (
               <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10 }}>({cameraKeyframes.length})</span>
             )}
