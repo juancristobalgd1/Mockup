@@ -215,6 +215,7 @@ function Editor() {
           canvasRef={canvasRef}
           viewerRef={viewerRef}
           movieTimelineRef={movieTimelineRef}
+          movieTimeRef={movieTimeRef}
           textOverlays={state.texts}
           onUpdateText={updateText}
           onRemoveText={removeText}

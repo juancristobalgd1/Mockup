@@ -253,6 +253,7 @@ interface RightPanelProps {
   canvasRef: React.RefObject<HTMLDivElement | null>;
   viewerRef?: React.RefObject<Device3DViewerHandle | null>;
   movieTimelineRef?: React.RefObject<MovieTimelineHandle | null>;
+  movieTimeRef?: React.MutableRefObject<number>;
   textOverlays: import('../../store').TextOverlay[];
   onUpdateText: (id: string, updates: Partial<import('../../store').TextOverlay>) => void;
   onRemoveText: (id: string) => void;
@@ -345,7 +346,7 @@ function SectionHeader({ label, open, onToggle }: { label: string; open: boolean
   );
 }
 
-export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, textOverlays, onUpdateText, onRemoveText }: RightPanelProps) {
+export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, movieTimeRef, textOverlays, onUpdateText, onRemoveText }: RightPanelProps) {
   const { state } = useApp();
   const [exporting, setExporting] = useState(false);
   const [copying, setCopying] = useState(false);
@@ -404,12 +405,12 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, textOverlay
       const W = el.offsetWidth || 800;
       const H = el.offsetHeight || 600;
 
-      // ── Timeline ──────────────────────────────────────────────────
+      // ── Timeline: activate moviePlaying early so React propagates it ─
       if (timeline) {
         timeline.resetTime();
         await waitFrames(2);
         timeline.startPlayback();
-        await waitFrames(6);
+        await waitFrames(8);
       }
 
       // ── Pre-capture static layers (done once before the draw loop) ─
@@ -464,6 +465,13 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, textOverlay
         }
       }
 
+      // ── Sync animation clock exactly to recording start ───────────
+      // All async prep above may take 200-500 ms. Reset the movie clock
+      // now so that camera keyframe animation begins at t=0 when the
+      // draw loop fires for the first time.
+      if (timeline) timeline.resetTime();
+      if (movieTimeRef) movieTimeRef.current = 0;
+
       const mimeType = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
         .find(m => MediaRecorder.isTypeSupported(m)) ?? '';
       const recorder = new MediaRecorder(
@@ -482,6 +490,12 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, textOverlay
       const startTs = performance.now();
       const drawLoop = (ts: number) => {
         const elapsed = ts - startTs;
+
+        // Drive camera animation time directly from recording elapsed time.
+        // The timeline tick loop reads this ref before R3F renders each frame,
+        // so the camera position always matches the recording timestamp exactly.
+        if (movieTimeRef) movieTimeRef.current = elapsed / 1000;
+
         ctx.clearRect(0, 0, W, H);
 
         // Layer 1 — Background (animated per-frame or static snapshot)
