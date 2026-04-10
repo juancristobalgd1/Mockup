@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Play, Pause, Plus, Trash2, Circle, X, Square, Sparkles, Copy, ChevronDown, ChevronUp, Palette } from 'lucide-react';
+import { Play, Pause, Plus, Trash2, Circle, X, Square, Sparkles, Copy, ChevronDown, ChevronUp, Palette, ZoomIn, ZoomOut } from 'lucide-react';
 import { useApp } from '../../store';
 import type { CameraKeyframe, EasingType } from '../../store';
 import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
@@ -161,13 +161,36 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
   const [accentColor, setAccentColor] = useState('#161819');
   const [showColorPicker, setShowColorPicker] = useState(false);
 
+  const [timelineZoom, setTimelineZoom] = useState(1);
+  const MIN_ZOOM = 0.5;
+  const MAX_ZOOM = 4;
+  const ZOOM_STEP = 0.5;
+
   const kfRafRef = useRef<number | null>(null);
   const kfLastTsRef = useRef<number | null>(null);
   const trackRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const TRACK_PADDING = 24;
 
   const activeKf = cameraKeyframes.find(k => k.id === activeKfId) ?? null;
+
+  // Reset zoom when duration changes
+  useEffect(() => { setTimelineZoom(1); }, [movieDuration]);
+
+  // Auto-scroll to keep playhead visible when playing or seeking
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container || movieDuration <= 0) return;
+    const scrollWidth = container.scrollWidth;
+    const clientWidth = container.clientWidth;
+    if (scrollWidth <= clientWidth) return;
+    // Mirror the playhead render formula: usable width = scrollWidth - 2*TRACK_PADDING
+    const usableWidth = scrollWidth - TRACK_PADDING * 2;
+    const playheadPos = TRACK_PADDING + usableWidth * (currentTime / movieDuration);
+    const scrollLeft = playheadPos - clientWidth / 2;
+    container.scrollLeft = Math.max(0, Math.min(scrollLeft, scrollWidth - clientWidth));
+  }, [currentTime, movieDuration, timelineZoom]);
 
   useEffect(() => {
     return () => {
@@ -592,7 +615,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
         </button>
       </div>
 
-      {/* Row 2: time display */}
+      {/* Row 2: time display + zoom controls */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 6,
         padding: '4px 14px 6px',
@@ -617,17 +640,66 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
         >
           {[3, 5, 8, 10, 15, 20, 30].map(d => <option key={d} value={d}>{d}s</option>)}
         </select>
+
+        <div style={{ flex: 1 }} />
+
+        {/* Zoom Out */}
+        <button
+          onClick={() => setTimelineZoom(z => Math.max(MIN_ZOOM, z - ZOOM_STEP))}
+          disabled={timelineZoom <= MIN_ZOOM}
+          title="Zoom out de la línea de tiempo"
+          style={{
+            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 5, width: 22, height: 22, cursor: timelineZoom <= MIN_ZOOM ? 'not-allowed' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'rgba(255,255,255,0.5)', opacity: timelineZoom <= MIN_ZOOM ? 0.35 : 1,
+          }}
+        >
+          <ZoomOut size={11} />
+        </button>
+
+        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace', minWidth: 26, textAlign: 'center' }}>
+          {timelineZoom}×
+        </span>
+
+        {/* Zoom In */}
+        <button
+          onClick={() => setTimelineZoom(z => Math.min(MAX_ZOOM, z + ZOOM_STEP))}
+          disabled={timelineZoom >= MAX_ZOOM}
+          title="Zoom in de la línea de tiempo"
+          style={{
+            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 5, width: 22, height: 22, cursor: timelineZoom >= MAX_ZOOM ? 'not-allowed' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'rgba(255,255,255,0.5)', opacity: timelineZoom >= MAX_ZOOM ? 0.35 : 1,
+          }}
+        >
+          <ZoomIn size={11} />
+        </button>
       </div>
       </div>}
 
       {/* ── Timeline track ───────────────────────────────────────── */}
       {!collapsed && <>
+      {/* Scrollable container */}
+      <div
+        ref={scrollContainerRef}
+        style={{ overflowX: 'auto', overflowY: 'hidden' }}
+      >
+      {/* Inner track — width scaled by zoom */}
       <div
         ref={trackRef}
         onPointerDown={handleTrackPointerDown}
         onPointerMove={handleTrackPointerMove}
         onPointerUp={handleTrackPointerUp}
-        style={{ position: 'relative', padding: `12px ${TRACK_PADDING}px 12px`, cursor: 'crosshair' }}
+        style={{
+          position: 'relative',
+          padding: `12px ${TRACK_PADDING}px 12px`,
+          cursor: 'crosshair',
+          width: `${100 * timelineZoom}%`,
+          minWidth: timelineZoom >= 1 ? '100%' : undefined,
+          boxSizing: 'border-box',
+        }}
       >
         {/* Ruler */}
         <div style={{ position: 'relative', height: 18, marginBottom: 4 }}>
@@ -704,6 +776,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
             clipPath: 'polygon(50% 100%, 0 0, 100% 0)',
           }} />
         </div>
+      </div>
       </div>
 
       {/* ── Keyframe Inspector ─────────────────────────────────────── */}
