@@ -1,7 +1,8 @@
-import { forwardRef, useState, useEffect } from 'react';
+import { forwardRef, useState, useEffect, useRef } from 'react';
 import { useApp } from '../../store';
 import type { TextOverlay } from '../../store';
 import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS, ANIMATED_BACKGROUNDS, ANIMATED_BG_KEYFRAMES } from '../../data/backgrounds';
+import type { AnimatedBackground } from '../../data/backgrounds';
 import { LIGHT_OVERLAYS } from '../../data/lightOverlays';
 import { AnnotateCanvas } from './AnnotateCanvas';
 import { Device3DViewer } from '../devices3d/Device3DViewer';
@@ -27,6 +28,46 @@ const RATIO_VALUES: Record<string, number> = {
   '3:1':  3,
   '5:4':  5 / 4,
 };
+
+/** Renders a type='canvas' AnimatedBackground using a live requestAnimationFrame loop. */
+function CanvasBgRenderer({ bg, opacity, borderRadius }: { bg: AnimatedBackground; opacity: number; borderRadius?: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const startRef  = useRef<number>(0);
+  const rafRef    = useRef<number>(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !bg.render) return;
+    const ctx = canvas.getContext('2d')!;
+    startRef.current = performance.now();
+
+    const setSize = () => {
+      const { width, height } = canvas.getBoundingClientRect();
+      canvas.width  = Math.round(width)  || 800;
+      canvas.height = Math.round(height) || 600;
+    };
+    const ro = new ResizeObserver(setSize);
+    ro.observe(canvas);
+    setSize();
+
+    const draw = (ts: number) => {
+      const t = (ts - startRef.current) / 1000;
+      if (canvas.width > 0 && canvas.height > 0 && bg.render) {
+        bg.render(ctx, t, canvas.width, canvas.height);
+      }
+      rafRef.current = requestAnimationFrame(draw);
+    };
+    rafRef.current = requestAnimationFrame(draw);
+    return () => { cancelAnimationFrame(rafRef.current); ro.disconnect(); };
+  }, [bg.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0, borderRadius, opacity }}
+    />
+  );
+}
 
 export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, onUpdateText, viewerRef, moviePlaying, movieTimeRef }, ref) => {
   const { state } = useApp();
@@ -134,6 +175,9 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
               sandbox="allow-scripts allow-same-origin"
             />
           );
+        }
+        if (bg.type === 'canvas' && bg.render) {
+          return <CanvasBgRenderer key={bg.id} bg={bg} opacity={bgOpacity} borderRadius={borderRadius} />;
         }
         return (
           <div style={{

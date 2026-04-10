@@ -113,6 +113,12 @@ function hexToRgba(hex: string, alpha: number): string {
 function drawAnimatedBg(ctx: CanvasRenderingContext2D, bg: AnimatedBackground, elapsedMs: number, W: number, H: number) {
   const ts = elapsedMs / 1000; // seconds
 
+  // ── canvas backgrounds → call their own render function directly ─────────
+  if (bg.type === 'canvas' && bg.render) {
+    bg.render(ctx, ts, W, H);
+    return;
+  }
+
   // ── iframe backgrounds (e.g. 3D Aura) → high-quality canvas approximation ──
   // Cross-origin iframes cannot be captured directly; we render a close visual
   // match using layered radial gradients with slow organic movement.
