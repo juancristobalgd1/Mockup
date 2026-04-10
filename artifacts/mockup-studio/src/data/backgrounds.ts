@@ -319,6 +319,216 @@ export const ANIMATED_BACKGROUNDS: AnimatedBackground[] = [
       ctx.fillRect(0, 0, W, H);
     },
   },
+
+  {
+    id: 'smoke',
+    label: 'Humo',
+    type: 'canvas',
+    thumb: { background: 'radial-gradient(ellipse at 50% 90%, #2a2a35 0%, #12121a 50%, #080810 100%)' },
+    render: (ctx, t, W, H) => {
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#05050d');
+      bg.addColorStop(1, '#0e0e1a');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+      const fr = (n: number) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+      const NUM = 22;
+      const CYCLE = 11;
+      for (let i = 0; i < NUM; i++) {
+        const baseX  = fr(i * 7.3) * 0.76 + 0.12;
+        const offset = fr(i * 3.9) * CYCLE;
+        const lT     = ((t + offset) % CYCLE) / CYCLE;
+        const x = W * (baseX
+          + 0.07 * Math.sin(t * 0.28 + i * 2.71)
+          + 0.04 * Math.sin(t * 0.61 + i * 1.37));
+        const y = H * (1.05 - lT * 1.15);
+        const r = (0.04 + lT * 0.22) * Math.min(W, H);
+        const fadeIn  = lT < 0.12 ? lT / 0.12 : 1;
+        const fadeOut = lT > 0.65 ? (1 - lT) / 0.35 : 1;
+        const alpha   = fadeIn * fadeOut * (0.18 + fr(i * 11.3) * 0.14);
+        const hue     = 220 + fr(i * 5.1) * 30;
+        const grd = ctx.createRadialGradient(x, y, 0, x, y, r);
+        grd.addColorStop(0,    `hsla(${hue},18%,85%,${alpha})`);
+        grd.addColorStop(0.45, `hsla(${hue},14%,72%,${alpha * 0.55})`);
+        grd.addColorStop(0.80, `hsla(${hue},10%,60%,${alpha * 0.18})`);
+        grd.addColorStop(1,    'rgba(0,0,0,0)');
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, W, H);
+      }
+      const glow = ctx.createRadialGradient(W * 0.5, H, 0, W * 0.5, H, W * 0.55);
+      glow.addColorStop(0, 'rgba(80,70,120,0.28)');
+      glow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, W, H);
+    },
+  },
+
+  {
+    id: 'particle-rain',
+    label: 'Lluvia de Partículas',
+    type: 'canvas',
+    thumb: { background: 'linear-gradient(180deg, #020010 0%, #0a0025 50%, #080020 100%)' },
+    render: (ctx, t, W, H) => {
+      ctx.fillStyle = '#020010';
+      ctx.fillRect(0, 0, W, H);
+      const fr = (n: number) => { const x = Math.sin(n * 91.7 + 213.5) * 43758.5; return x - Math.floor(x); };
+      const NUM = 120;
+      const hues = [180, 280, 320, 60, 140];
+      for (let i = 0; i < NUM; i++) {
+        const px   = fr(i * 5.3) * W;
+        const spd  = 0.12 + fr(i * 2.9) * 0.28;
+        const size = 1.2 + fr(i * 7.1) * 3.5;
+        const hue  = hues[i % hues.length];
+        const pha  = fr(i * 3.7) * H;
+        const py   = (t * spd * H + pha) % (H * 1.2) - H * 0.1;
+        const fade = py < 0 ? Math.max(0, 1 + py / (H * 0.1)) : (py > H * 0.85 ? Math.max(0, (1 - (py - H * 0.85) / (H * 0.15))) : 1);
+        ctx.globalAlpha = fade * (0.55 + 0.45 * Math.abs(Math.sin(t * 1.8 + i)));
+        const gs = ctx.createRadialGradient(px, py, 0, px, py, size * 2.5);
+        gs.addColorStop(0, `hsl(${hue},100%,80%)`);
+        gs.addColorStop(0.4, `hsla(${hue},100%,65%,0.6)`);
+        gs.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = gs;
+        ctx.fillRect(px - size * 3, py - size * 3, size * 6, size * 6);
+        if (size > 3) {
+          const trailLen = size * 12 * spd * 3;
+          const tr = ctx.createLinearGradient(px, py, px, py - trailLen);
+          tr.addColorStop(0, `hsla(${hue},100%,70%,0.35)`);
+          tr.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = tr;
+          ctx.fillRect(px - 1, py - trailLen, 2, trailLen);
+        }
+      }
+      ctx.globalAlpha = 1;
+    },
+  },
+
+  {
+    id: 'electric-plasma',
+    label: 'Plasma Eléctrico',
+    type: 'canvas',
+    thumb: { background: 'radial-gradient(ellipse at 50% 50%, #001a2e 0%, #000c18 60%, #000408 100%)' },
+    render: (ctx, t, W, H) => {
+      ctx.fillStyle = '#000408';
+      ctx.fillRect(0, 0, W, H);
+      const fr = (n: number) => { const x = Math.sin(n * 73.1 + 191.9) * 43758.5453; return x - Math.floor(x); };
+      const drawBolt = (x1: number, y1: number, x2: number, y2: number, segs: number, seed: number, alpha: number, hue: number) => {
+        const pts: [number, number][] = [[x1, y1]];
+        for (let s = 1; s < segs; s++) {
+          const f = s / segs;
+          const mx = x1 + (x2 - x1) * f;
+          const my = y1 + (y2 - y1) * f;
+          const jit = (fr(seed + s * 7.3) - 0.5) * W * 0.18 * (1 - f * 0.6);
+          pts.push([mx + jit, my]);
+        }
+        pts.push([x2, y2]);
+        ctx.save();
+        ctx.shadowColor = `hsl(${hue},100%,70%)`;
+        ctx.shadowBlur = 22;
+        ctx.beginPath();
+        pts.forEach(([px, py], i) => (i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)));
+        ctx.strokeStyle = `hsla(${hue},100%,92%,${alpha})`;
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        pts.forEach(([px, py], i) => (i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)));
+        ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.7})`;
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+        ctx.restore();
+        if (fr(seed * 3.1) > 0.5 && segs > 4) {
+          const branchAt = Math.floor(segs * 0.4);
+          const [bx, by] = pts[branchAt];
+          const endX = bx + (fr(seed * 5.7) - 0.5) * W * 0.22;
+          const endY = by + fr(seed * 8.1) * H * 0.35;
+          drawBolt(bx, by, endX, endY, Math.floor(segs * 0.5), seed + 99, alpha * 0.55, hue);
+        }
+      };
+      const BOLTS = 4;
+      for (let b = 0; b < BOLTS; b++) {
+        const flashSpeed = 1.5 + fr(b * 11.3) * 2.5;
+        const flash = Math.abs(Math.sin(t * flashSpeed + b * 1.91));
+        if (flash < 0.18) continue;
+        const alpha = (flash - 0.18) / 0.82;
+        const x1 = W * (0.15 + fr(b * 7.3 + Math.floor(t * 0.8 + b) * 1000) * 0.7);
+        const hue = [185, 200, 270, 300][b % 4];
+        drawBolt(x1, 0, x1 + (fr(b * 3.7) - 0.5) * W * 0.3, H, 14, b * 137 + Math.floor(t * 1.5 + b) * 50, alpha * 0.9, hue);
+      }
+      const aura = ctx.createRadialGradient(W/2, H*0.1, 0, W/2, H*0.5, W*0.6);
+      aura.addColorStop(0, `hsla(195,100%,60%,${0.06 + 0.04 * Math.sin(t * 2.3)})`);
+      aura.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = aura;
+      ctx.fillRect(0, 0, W, H);
+    },
+  },
+
+  {
+    id: 'ink-water',
+    label: 'Tinta en Agua',
+    type: 'canvas',
+    thumb: { background: 'radial-gradient(ellipse at 40% 35%, #0a1628 0%, #0d2233 50%, #071520 100%)' },
+    render: (ctx, t, W, H) => {
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#071420');
+      bg.addColorStop(0.5, '#0b1e30');
+      bg.addColorStop(1, '#091828');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+      const fr = (n: number) => { const x = Math.sin(n * 83.7 + 157.3) * 43758.5453; return x - Math.floor(x); };
+      for (let i = 0; i < 6; i++) {
+        const cx = W * (fr(i * 5.3) * 0.8 + 0.1);
+        const cy = H * (fr(i * 7.9) * 0.7 + 0.15);
+        const spd = 0.08 + fr(i * 3.1) * 0.12;
+        const phase = t * spd + fr(i * 11.7) * Math.PI * 2;
+        const r = Math.min(W, H) * (0.12 + 0.06 * Math.abs(Math.sin(phase * 0.4)));
+        const bx = cx + W * 0.03 * Math.sin(t * 0.18 + i * 1.8);
+        const by = cy + H * 0.02 * Math.cos(t * 0.22 + i * 2.3);
+        const gi = ctx.createRadialGradient(bx, by, 0, bx, by, r);
+        gi.addColorStop(0,    `rgba(6,4,18,0.82)`);
+        gi.addColorStop(0.55, `rgba(10,6,28,0.45)`);
+        gi.addColorStop(0.85, `rgba(14,10,38,0.15)`);
+        gi.addColorStop(1,    'rgba(0,0,0,0)');
+        ctx.fillStyle = gi;
+        ctx.fillRect(0, 0, W, H);
+        const numT = 4 + Math.floor(fr(i * 13.7) * 3);
+        for (let j = 0; j < numT; j++) {
+          const ta = fr(i * 7.3 + j * 3.1) * Math.PI * 2;
+          const tSpd = 0.06 + fr(i * 2.7 + j * 5.3) * 0.10;
+          const tLen = r * (0.9 + 0.5 * Math.sin(t * tSpd + j * 1.4));
+          const tx2 = bx + Math.cos(ta + t * 0.05 * (j % 2 === 0 ? 1 : -1)) * tLen;
+          const ty2 = by + Math.sin(ta + t * 0.05 * (j % 2 === 0 ? 1 : -1)) * tLen * 0.75;
+          const tr = ctx.createLinearGradient(bx, by, tx2, ty2);
+          tr.addColorStop(0, 'rgba(6,4,18,0.55)');
+          tr.addColorStop(0.7, 'rgba(8,5,22,0.18)');
+          tr.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.save();
+          ctx.beginPath();
+          const midX = (bx + tx2) / 2 + Math.sin(t * 0.3 + i + j) * r * 0.18;
+          const midY = (by + ty2) / 2 + Math.cos(t * 0.25 + i + j) * r * 0.12;
+          ctx.moveTo(bx, by);
+          ctx.quadraticCurveTo(midX, midY, tx2, ty2);
+          ctx.strokeStyle = tr as CanvasGradient;
+          ctx.lineWidth = 3 + fr(i * 9.1 + j) * 6;
+          ctx.lineCap = 'round';
+          ctx.globalAlpha = 0.85;
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+      ctx.globalAlpha = 1;
+      for (let k = 0; k < 8; k++) {
+        const kx = W * (fr(k * 17.3) * 0.9 + 0.05);
+        const ky = H * (fr(k * 23.7) * 0.3);
+        const kw = W * (0.05 + fr(k * 5.1) * 0.12);
+        const kspd = 0.3 + fr(k * 7.9) * 0.5;
+        const kph = ((t * kspd + fr(k * 3.3) * 10) % (H * 0.15));
+        ctx.fillStyle = `rgba(140,190,230,${0.02 + 0.015 * Math.sin(t * kspd + k)})`;
+        ctx.beginPath();
+        ctx.ellipse(kx, ky + kph, kw, kw * 0.12, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    },
+  },
 ];
 
 export interface BackgroundGradient {
