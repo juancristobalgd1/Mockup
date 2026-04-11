@@ -633,7 +633,7 @@ function Diamond({ active, label, onClick, onContextMenu }: {
   );
 }
 
-export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>(function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChange, onCollapsedChange, canvasRef, hideManualKeyframeButton = false }, ref) {
+export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>(function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChange, onCollapsedChange, canvasRef, hideManualKeyframeButton = false, forceCollapsed }, ref) {
   const { state, updateState, addCameraKeyframe, removeCameraKeyframe, updateCameraKeyframe, clearCameraKeyframes } = useApp();
   const { cameraKeyframes, movieDuration } = state;
 
@@ -651,6 +651,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
   const [editingLabel, setEditingLabel] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   useEffect(() => { onCollapsedChange?.(collapsed); }, [collapsed, onCollapsedChange]);
+  useEffect(() => { if (forceCollapsed) setCollapsed(true); }, [forceCollapsed]);
   const [accentColor, setAccentColor] = useState('#161819');
   const [showColorPicker, setShowColorPicker] = useState(false);
 
