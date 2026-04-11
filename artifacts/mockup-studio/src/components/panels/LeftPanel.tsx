@@ -2154,12 +2154,16 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   );
 
   const LabelsTab = () => {
-    const [lTab, setLTab] = useState<'positions' | 'behavior' | 'style'>('positions');
+    const { state, updateState } = useApp();
+    const lTab = state.labelTabActive;
+    const setLTab = (tab: 'positions' | 'behavior' | 'style') => updateState({ labelTabActive: tab });
     const TABS = [
       { id: 'positions' as const, label: 'Positions' },
       { id: 'behavior'  as const, label: 'Behavior'  },
       { id: 'style'     as const, label: 'Style'     },
     ];
+    // Helper para mantener la pestaña Style activa al editar
+    const ensureStyleTab = () => { if (lTab !== 'style') setLTab('style'); };
     return (
       <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 14, padding: '10px 10px' }}>
         {/* Pill tabs */}
@@ -2210,21 +2214,38 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {lTab === 'style' && (
           <>
             <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>Size</div>
+              <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>Size</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 10px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <input type="number" min={8} max={48} value={state.labelDraftSize} onChange={e => { ensureStyleTab(); updateState({ labelDraftSize: Number(e.target.value) || 13 }); }} style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', color: 'rgba(255,255,255,0.9)', fontSize: 14, fontWeight: 700 }} />
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>pt</span>
+                  </div>
+                </div>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Color</span>
+                  <div style={{ position: 'relative', width: 44 }}>
+                    <div style={{ width: 44, height: 36, borderRadius: 9, background: state.labelDraftColor, border: '1px solid rgba(255,255,255,0.18)' }} />
+                    <input type="color" value={state.labelDraftColor} onChange={e => { ensureStyleTab(); updateState({ labelDraftColor: e.target.value }); }} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+                  </div>
+                </label>
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>Font</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 10px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <input type="number" min={8} max={48} value={state.labelDraftSize} onChange={e => updateState({ labelDraftSize: Number(e.target.value) || 13 })} style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', color: 'rgba(255,255,255,0.9)', fontSize: 14, fontWeight: 700 }} />
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>pt</span>
+                <select value={state.labelDraftFont} onChange={e => { ensureStyleTab(); updateState({ labelDraftFont: e.target.value }); }}
+                  style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 700, fontFamily: state.labelDraftFont }}>
+                  <option value="Inter" style={{ fontFamily: 'Inter' }}>Inter</option>
+                  <option value="Roboto" style={{ fontFamily: 'Roboto' }}>Roboto</option>
+                  <option value="Arial" style={{ fontFamily: 'Arial' }}>Arial</option>
+                  <option value="Georgia" style={{ fontFamily: 'Georgia' }}>Georgia</option>
+                  <option value="Comic Sans MS" style={{ fontFamily: 'Comic Sans MS' }}>Comic Sans MS</option>
+                  <option value="Courier New" style={{ fontFamily: 'Courier New' }}>Courier New</option>
+                  <option value="Times New Roman" style={{ fontFamily: 'Times New Roman' }}>Times New Roman</option>
+                </select>
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Color</span>
-                <div style={{ position: 'relative', width: 44 }}>
-                  <div style={{ width: 44, height: 36, borderRadius: 9, background: state.labelDraftColor, border: '1px solid rgba(255,255,255,0.18)' }} />
-                  <input type="color" value={state.labelDraftColor} onChange={e => updateState({ labelDraftColor: e.target.value })} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
-                </div>
-              </label>
-              <button onClick={() => updateState({ labelDraftMode: 'follow', labelDraftSize: 13, labelDraftLevitation: 16, labelDraftColor: '#ffffff' })}
+              <button onClick={() => { ensureStyleTab(); updateState({ labelDraftMode: 'follow', labelDraftSize: 13, labelDraftLevitation: 16, labelDraftColor: '#ffffff' }); }}
                 style={{ height: 36, padding: '0 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.52)', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
                 Reset
               </button>

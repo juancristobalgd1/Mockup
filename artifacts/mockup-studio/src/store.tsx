@@ -161,6 +161,7 @@ export interface AppState {
   labelDraftSize: number;
   labelDraftLevitation: number;
   labelDraftColor: string;
+  labelDraftFont: string;
 
   movieMode: boolean;
   movieDuration: number;
@@ -257,6 +258,7 @@ export const defaultState: AppState = {
   labelDraftSize: 13,
   labelDraftLevitation: 16,
   labelDraftColor: '#ffffff',
+  labelDraftFont: 'Inter',
 
   movieMode: false,
   movieDuration: 5,
