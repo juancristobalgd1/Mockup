@@ -426,6 +426,15 @@ function getDefaultTab(mode: string): Tab {
   return 'device';
 }
 
+// ── Responsive popup helpers ──────────────────────────────────────
+/** Return a clamped width that never exceeds viewport minus padding */
+const safeW = (w: number) => `min(${w}px, calc(100vw - 16px))` as const;
+/** Clamp left so the popup of given width stays inside the viewport */
+const clampL = (anchorX: number, w: number, offsetX = 0) =>
+  Math.max(8, Math.min(anchorX + offsetX, (typeof window !== 'undefined' ? window.innerWidth : 999) - w - 8));
+/** Clamp top so the popup doesn't go above the viewport */
+const clampT = (v: number) => Math.max(8, v);
+
 // ── Main component ────────────────────────────────────────────────
 export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: boolean; mobileContentOnly?: Tab }) {
   const { state, updateState, addText } = useApp();
@@ -696,9 +705,11 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           return (
             <div ref={deviceGroupPopupRef} style={{
               position: 'fixed',
-              left: Math.max(8, Math.min(deviceGroupAnchor.x - 140, window.innerWidth - 296)),
+              left: clampL(deviceGroupAnchor.x, 280, -140),
               top: Math.min(deviceGroupAnchor.y + 52, window.innerHeight - 300),
-              width: 280,
+              width: safeW(280),
+              maxHeight: 'min(400px, calc(100vh - 80px))',
+              overflowY: 'auto',
               background: 'rgba(18,20,26,0.98)',
               borderRadius: 18, padding: '12px 12px 10px', zIndex: 9999,
               boxShadow: '0 8px 40px rgba(0,0,0,0.80)',
@@ -739,9 +750,9 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {deviceOptPopup === 'color' && deviceOptAnchor && (
           <div ref={deviceOptRef} style={{
             position: 'fixed',
-            left: Math.max(8, Math.min(deviceOptAnchor.x - 120, window.innerWidth - 256)),
+            left: clampL(deviceOptAnchor.x, 240, -120),
             top: Math.min(deviceOptAnchor.y + 52, window.innerHeight - 160),
-            width: 240,
+            width: safeW(240),
             background: 'rgba(18,20,26,0.98)',
             borderRadius: 18, padding: '14px 16px', zIndex: 9999,
             boxShadow: '0 8px 40px rgba(0,0,0,0.80)',
@@ -767,9 +778,9 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {deviceOptPopup === 'orient' && deviceOptAnchor && (
           <div ref={deviceOptRef} style={{
             position: 'fixed',
-            left: Math.max(8, Math.min(deviceOptAnchor.x - 100, window.innerWidth - 220)),
+            left: clampL(deviceOptAnchor.x, 200, -100),
             top: Math.min(deviceOptAnchor.y + 52, window.innerHeight - 160),
-            width: 200,
+            width: safeW(200),
             background: 'rgba(18,20,26,0.98)',
             borderRadius: 18, padding: '14px 16px', zIndex: 9999,
             boxShadow: '0 8px 40px rgba(0,0,0,0.80)',
@@ -961,15 +972,15 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
 
     const popupStyle: React.CSSProperties = {
       position: 'fixed',
-      left: bgPopupAnchor ? Math.max(8, Math.min(bgPopupAnchor.x - 130, window.innerWidth - 278)) : 0,
+      left: bgPopupAnchor ? clampL(bgPopupAnchor.x, 262, -130) : 0,
       bottom: bgPopupAnchor ? window.innerHeight - bgPopupAnchor.y + 8 : 0,
-      width: 262,
+      width: safeW(262),
       background: 'rgba(18,20,26,0.98)',
       borderRadius: 18, padding: 14, zIndex: 9999,
       boxShadow: '0 8px 40px rgba(0,0,0,0.80), 0 2px 12px rgba(0,0,0,0.5)',
       border: '1px solid rgba(255,255,255,0.12)',
       backdropFilter: 'blur(22px)',
-      maxHeight: 'calc(100vh - 80px)',
+      maxHeight: 'min(calc(100vh - 80px), 80vh)',
       overflowY: 'auto',
     };
 
@@ -1411,14 +1422,16 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
       {overlayPopup === 'color' && overlayPopupAnchor && (
         <div style={{
           position: 'fixed',
-          left: overlayPopupAnchor.x,
-          top: overlayPopupAnchor.y - 215,
-          transform: 'translateX(-50%)',
+          left: clampL(overlayPopupAnchor.x, 220, -110),
+          top: clampT(overlayPopupAnchor.y - 215),
           background: 'rgba(22,24,28,0.98)', borderRadius: 18,
           padding: 14, zIndex: 9999,
           boxShadow: '0 8px 40px rgba(0,0,0,0.75), 0 2px 12px rgba(0,0,0,0.5)',
           border: '1px solid rgba(255,255,255,0.12)',
           backdropFilter: 'blur(20px)',
+          width: safeW(220),
+          maxHeight: 'min(400px, calc(100vh - 16px))',
+          overflowY: 'auto',
         }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
             {OVERLAY_COLOR_GRID.map(col => {
@@ -1467,15 +1480,14 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
       {overlayPopup === 'opacity' && overlayPopupAnchor && (
         <div style={{
           position: 'fixed',
-          left: overlayPopupAnchor.x,
-          top: overlayPopupAnchor.y - 180,
-          transform: 'translateX(-50%)',
+          left: clampL(overlayPopupAnchor.x, 220, -110),
+          top: clampT(overlayPopupAnchor.y - 180),
           background: 'rgba(22,24,28,0.98)', borderRadius: 16,
           padding: '14px 16px', zIndex: 9999,
           boxShadow: '0 8px 40px rgba(0,0,0,0.75)',
           border: '1px solid rgba(255,255,255,0.12)',
           backdropFilter: 'blur(20px)',
-          minWidth: 200,
+          width: safeW(220),
         }}>
           <div style={{ marginBottom: 10 }}>
             <input type="range" min={0} max={90} value={state.overlayOpacity}
@@ -1513,15 +1525,14 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
       {overlayPopup === 'light' && overlayPopupAnchor && (
         <div style={{
           position: 'fixed',
-          left: Math.min(overlayPopupAnchor.x, window.innerWidth - 220),
-          top: overlayPopupAnchor.y - 190,
-          transform: overlayPopupAnchor.x > window.innerWidth - 220 ? 'none' : 'translateX(-30%)',
+          left: clampL(overlayPopupAnchor.x, 220, -110),
+          top: clampT(overlayPopupAnchor.y - 190),
           background: 'rgba(22,24,28,0.98)', borderRadius: 16,
           padding: '14px 16px', zIndex: 9999,
           boxShadow: '0 8px 40px rgba(0,0,0,0.75)',
           border: '1px solid rgba(255,255,255,0.12)',
           backdropFilter: 'blur(20px)',
-          minWidth: 210,
+          width: safeW(220),
         }}>
           {/* Preset name */}
           <div style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1809,15 +1820,17 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
       {annotatePopup === 'color' && annotatePopupAnchor && (
         <div style={{
           position: 'fixed',
-          left: annotatePopupAnchor.x,
-          top: annotatePopupAnchor.y - 290,
-          transform: 'translateX(-50%)',
+          left: clampL(annotatePopupAnchor.x, 220, -110),
+          top: clampT(annotatePopupAnchor.y - 290),
           background: 'rgba(22,24,28,0.98)', borderRadius: 18,
           padding: 14, zIndex: 9999,
           boxShadow: '0 8px 40px rgba(0,0,0,0.75), 0 2px 12px rgba(0,0,0,0.5)',
           border: '1px solid rgba(255,255,255,0.12)',
           backdropFilter: 'blur(20px)',
           display: 'flex', flexDirection: 'column', gap: 12,
+          width: safeW(220),
+          maxHeight: 'min(400px, calc(100vh - 16px))',
+          overflowY: 'auto',
         }}>
           {/* Color grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
@@ -1911,15 +1924,15 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
       {annotatePopup === 'size' && annotatePopupAnchor && (
         <div style={{
           position: 'fixed',
-          left: annotatePopupAnchor.x,
-          top: annotatePopupAnchor.y - 90,
-          transform: 'translateX(-50%)',
+          left: clampL(annotatePopupAnchor.x, 260, -130),
+          top: clampT(annotatePopupAnchor.y - 90),
           background: 'rgba(22,24,28,0.98)', borderRadius: 16,
           padding: '12px 16px', zIndex: 9999,
           boxShadow: '0 8px 40px rgba(0,0,0,0.75)',
           border: '1px solid rgba(255,255,255,0.12)',
           backdropFilter: 'blur(20px)',
-          display: 'flex', gap: 10, alignItems: 'center',
+          display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap',
+          width: safeW(260),
         }}>
           {ANNOTATE_SIZES.map(sz => {
             const sel = state.annotateSize === sz;
@@ -1955,15 +1968,17 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
       {annotatePopup === 'shapes' && annotatePopupAnchor && (
         <div style={{
           position: 'fixed',
-          left: annotatePopupAnchor.x,
-          top: annotatePopupAnchor.y - 230,
-          transform: 'translateX(-50%)',
+          left: clampL(annotatePopupAnchor.x, 230, -115),
+          top: clampT(annotatePopupAnchor.y - 230),
           background: 'rgba(22,24,28,0.98)', borderRadius: 18,
           padding: 14, zIndex: 9999,
           boxShadow: '0 8px 40px rgba(0,0,0,0.75), 0 2px 12px rgba(0,0,0,0.5)',
           border: '1px solid rgba(255,255,255,0.12)',
           backdropFilter: 'blur(20px)',
           display: 'flex', flexDirection: 'column', gap: 8,
+          width: safeW(230),
+          maxHeight: 'min(350px, calc(100vh - 16px))',
+          overflowY: 'auto',
         }}>
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', textAlign: 'center', marginBottom: 2 }}>Forma</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
@@ -2118,9 +2133,11 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
 
     const POPUP_BASE: React.CSSProperties = {
       position: 'fixed',
-      left: scenePopupAnchor ? Math.max(8, Math.min(scenePopupAnchor.x - 130, window.innerWidth - 278)) : 0,
+      left: scenePopupAnchor ? clampL(scenePopupAnchor.x, 262, -130) : 0,
       bottom: scenePopupAnchor ? window.innerHeight - scenePopupAnchor.y + 8 : 0,
-      width: 262,
+      width: safeW(262),
+      maxHeight: 'min(500px, calc(100vh - 80px))',
+      overflowY: 'auto',
       background: 'rgba(18,20,26,0.98)',
       borderRadius: 18, padding: '14px 16px', zIndex: 9999,
       boxShadow: '0 8px 40px rgba(0,0,0,0.80)',
@@ -2355,9 +2372,11 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {lightPopupOpen && lightPopupAnchor && (
           <div ref={lightPopupRef} style={{
             position: 'fixed',
-            left: Math.max(8, Math.min(lightPopupAnchor.x - 130, window.innerWidth - 278)),
+            left: clampL(lightPopupAnchor.x, 262, -130),
             bottom: window.innerHeight - lightPopupAnchor.y + 8,
-            width: 262,
+            width: safeW(262),
+            maxHeight: 'min(500px, calc(100vh - 80px))',
+            overflowY: 'auto',
             background: 'rgba(18,20,26,0.98)',
             borderRadius: 18, padding: '14px 16px', zIndex: 9999,
             boxShadow: '0 8px 40px rgba(0,0,0,0.80), 0 2px 12px rgba(0,0,0,0.5)',
@@ -2373,6 +2392,58 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               <MiniSlider label="Exposure"   value={Math.round((state.lightExposure ?? 1.0) * 100) / 100} min={0.4} max={2.0} step={0.05} onChange={v => updateState({ lightExposure: v })} />
               <MiniSlider label="Bloom"      value={state.bloomIntensity ?? 22}  min={0} max={100} step={1} unit="%" onChange={v => updateState({ bloomIntensity: v })} />
             </div>
+
+            {/* DSLR Camera Lens Controls */}
+            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>DSLR Lens</span>
+                <button
+                  onClick={() => updateState({ dofEnabled: !(state.dofEnabled ?? false) })}
+                  style={{
+                    fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                    background: (state.dofEnabled ?? false) ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.06)',
+                    color: (state.dofEnabled ?? false) ? '#60a5fa' : 'rgba(255,255,255,0.35)',
+                  }}
+                >{(state.dofEnabled ?? false) ? 'ON' : 'OFF'}</button>
+              </div>
+              {(state.dofEnabled ?? false) && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 12 }}>
+                  <MiniSlider label="Focus" value={Math.round((state.dofFocusDistance ?? 0.02) * 100)} min={0} max={30} step={1} unit="%" onChange={v => updateState({ dofFocusDistance: v / 100 })} />
+                  <MiniSlider label="Aperture" value={Math.round((state.dofFocalLength ?? 0.05) * 100)} min={1} max={20} step={1} onChange={v => updateState({ dofFocalLength: v / 100 })} />
+                  <MiniSlider label="Bokeh" value={state.dofBokehScale ?? 6} min={0} max={20} step={1} onChange={v => updateState({ dofBokehScale: v })} />
+                </div>
+              )}
+            </div>
+
+            {/* Clay Mode Controls */}
+            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Clay Mode</span>
+                <button
+                  onClick={() => updateState({ clayMode: !(state.clayMode ?? false) })}
+                  style={{
+                    fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                    background: (state.clayMode ?? false) ? 'rgba(232,221,211,0.25)' : 'rgba(255,255,255,0.06)',
+                    color: (state.clayMode ?? false) ? '#e8ddd3' : 'rgba(255,255,255,0.35)',
+                  }}
+                >{(state.clayMode ?? false) ? 'ON' : 'OFF'}</button>
+              </div>
+              {(state.clayMode ?? false) && (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {['#e8ddd3', '#ffffff', '#2d2d2d', '#d4a574', '#c1b8ae', '#8b7355', '#f5e6d3', '#1a1a2e'].map(c => (
+                    <button key={c}
+                      onClick={() => updateState({ clayColor: c })}
+                      style={{
+                        width: 22, height: 22, borderRadius: 6, border: 'none', cursor: 'pointer',
+                        background: c,
+                        outline: (state.clayColor ?? '#e8ddd3') === c ? '2px solid rgba(255,255,255,0.8)' : '1px solid rgba(255,255,255,0.15)',
+                        outlineOffset: 1,
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -2380,9 +2451,11 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {envPopupOpen && envPopupAnchor && (
           <div ref={envPopupRef} style={{
             position: 'fixed',
-            left: Math.max(8, Math.min(envPopupAnchor.x - 110, window.innerWidth - 244)),
+            left: clampL(envPopupAnchor.x, 228, -110),
             bottom: window.innerHeight - envPopupAnchor.y + 8,
-            width: 228,
+            width: safeW(228),
+            maxHeight: 'min(400px, calc(100vh - 80px))',
+            overflowY: 'auto',
             background: 'rgba(18,20,26,0.98)',
             borderRadius: 18, padding: '14px 14px 16px', zIndex: 9999,
             boxShadow: '0 8px 40px rgba(0,0,0,0.80), 0 2px 12px rgba(0,0,0,0.5)',
@@ -2450,9 +2523,11 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {presentsPopupOpen && presentsPopupAnchor && (
           <div ref={presentsPopupRef} style={{
             position: 'fixed',
-            left: Math.max(8, Math.min(presentsPopupAnchor.x - 130, window.innerWidth - 278)),
+            left: clampL(presentsPopupAnchor.x, 262, -130),
             bottom: window.innerHeight - presentsPopupAnchor.y + 8,
-            width: 262,
+            width: safeW(262),
+            maxHeight: 'min(400px, calc(100vh - 80px))',
+            overflowY: 'auto',
             background: 'rgba(18,20,26,0.98)',
             borderRadius: 18, padding: '14px 16px', zIndex: 9999,
             boxShadow: '0 8px 40px rgba(0,0,0,0.80)',

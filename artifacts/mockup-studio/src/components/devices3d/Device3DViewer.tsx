@@ -7,7 +7,7 @@ import {
   OrbitControls, Environment, ContactShadows, Float,
   useProgress, Html, useGLTF, RoundedBox, MeshReflectorMaterial,
 } from '@react-three/drei';
-import { EffectComposer, Bloom, SMAA } from '@react-three/postprocessing';
+import { EffectComposer, Bloom, SMAA, DepthOfField } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { useApp } from '../../store';
 import type { CameraKeyframe } from '../../store';
@@ -229,8 +229,11 @@ function StudioLights({
   );
 }
 
-// ── Post-processing (bloom for screen) ───────────────────────────
-function PostFX({ hasContent, bloomIntensity }: { hasContent: boolean; bloomIntensity: number }) {
+// ── Post-processing (bloom + DoF for screen) ────────────────────
+function PostFX({ hasContent, bloomIntensity, dofEnabled, dofFocusDistance, dofFocalLength, dofBokehScale }: {
+  hasContent: boolean; bloomIntensity: number;
+  dofEnabled: boolean; dofFocusDistance: number; dofFocalLength: number; dofBokehScale: number;
+}) {
   const base = hasContent ? 0.22 : 0.08;
   const scaled = base * (bloomIntensity / 22);
   return (
@@ -242,6 +245,13 @@ function PostFX({ hasContent, bloomIntensity }: { hasContent: boolean; bloomInte
         intensity={scaled}
         mipmapBlur
       />
+      {dofEnabled && (
+        <DepthOfField
+          focusDistance={dofFocusDistance}
+          focalLength={dofFocalLength}
+          bokehScale={dofBokehScale}
+        />
+      )}
     </EffectComposer>
   );
 }
@@ -269,6 +279,55 @@ function FloorReflector({ isLaptop }: { isLaptop: boolean }) {
       />
     </mesh>
   );
+}
+
+// ── Clay mode — replace all device materials with single matte color ─
+function ClayOverride({ enabled, color }: { enabled: boolean; color: string }) {
+  const { scene } = useThree();
+  const clayMatRef = useRef<THREE.MeshStandardMaterial | null>(null);
+  const originalMaterialsRef = useRef<Map<THREE.Mesh, THREE.Material | THREE.Material[]>>(new Map());
+
+  useEffect(() => {
+    if (!clayMatRef.current) {
+      clayMatRef.current = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(color),
+        roughness: 1,
+        metalness: 0,
+      });
+    } else {
+      clayMatRef.current.color.set(color);
+    }
+  }, [color]);
+
+  useFrame(() => {
+    if (!clayMatRef.current) return;
+    const stored = originalMaterialsRef.current;
+
+    if (enabled) {
+      scene.traverse((obj) => {
+        if ((obj as THREE.Mesh).isMesh) {
+          const mesh = obj as THREE.Mesh;
+          // Skip floor reflector and screen planes (keep screen content visible)
+          if (mesh.geometry?.type === 'PlaneGeometry') return;
+          if (!stored.has(mesh)) {
+            stored.set(mesh, mesh.material);
+          }
+          if (mesh.material !== clayMatRef.current) {
+            mesh.material = clayMatRef.current!;
+          }
+        }
+      });
+    } else if (stored.size > 0) {
+      stored.forEach((origMat, mesh) => {
+        if (mesh.material === clayMatRef.current) {
+          mesh.material = origMat;
+        }
+      });
+      stored.clear();
+    }
+  });
+
+  return null;
 }
 
 // ── Drop-zone content for the device screen face ─────────────────
@@ -1448,8 +1507,18 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
           {/* Floor reflection plane */}
           <FloorReflector isLaptop={isLaptop} />
 
-          {/* Post-processing: bloom + SMAA */}
-          <PostFX hasContent={hasContent} bloomIntensity={state.bloomIntensity ?? 22} />
+          {/* Clay mode — override all mesh materials to matte */}
+          <ClayOverride enabled={state.clayMode ?? false} color={state.clayColor ?? '#e8ddd3'} />
+
+          {/* Post-processing: bloom + DoF + SMAA */}
+          <PostFX
+            hasContent={hasContent}
+            bloomIntensity={state.bloomIntensity ?? 22}
+            dofEnabled={state.dofEnabled ?? false}
+            dofFocusDistance={state.dofFocusDistance ?? 0.02}
+            dofFocalLength={state.dofFocalLength ?? 0.05}
+            dofBokehScale={state.dofBokehScale ?? 6}
+          />
 
           {/* Controls with Rotato hero angle */}
           <HeroOrbitControls

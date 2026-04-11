@@ -363,6 +363,11 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, movieTimeRe
   const [showSize, setShowSize] = useState(true);
   const [showLayers, setShowLayers] = useState(true);
 
+  // Export quality settings
+  const [exportScale, setExportScale] = useState<1|2|3>(2);    // 1×=native, 2×=2K, 3×=4K
+  const [exportFps, setExportFps] = useState<30|60>(30);
+  const [exportTransparent, setExportTransparent] = useState(false);
+
   const isVideo = state.contentType === 'video';
   const isMovieMode = state.creationMode === 'movie';
 
@@ -407,8 +412,8 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, movieTimeRe
       const el = canvasRef.current;
       const glEl = viewerRef?.current?.getGLElement() ?? null;
       const timeline = movieTimelineRef?.current;
-      const W = el.offsetWidth || 800;
-      const H = el.offsetHeight || 600;
+      const W = (el.offsetWidth || 800) * exportScale;
+      const H = (el.offsetHeight || 600) * exportScale;
 
       // ── Timeline: stop any current playback, then start from t=0 ────
       // This handles the case where the user is mid-play or paused when
@@ -483,7 +488,7 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, movieTimeRe
       const mimeType = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
         .find(m => MediaRecorder.isTypeSupported(m)) ?? '';
       const recorder = new MediaRecorder(
-        offscreen.captureStream(30),
+        offscreen.captureStream(exportFps),
         mimeType ? { mimeType } : undefined,
       );
       const chunks: BlobPart[] = [];
@@ -509,11 +514,13 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, movieTimeRe
 
         ctx.clearRect(0, 0, W, H);
 
-        // Layer 1 — Background (animated per-frame or static snapshot)
-        if (isAnimatedBg && animatedBg) {
-          drawAnimatedBg(ctx, animatedBg, elapsed, W, H);
-        } else if (bgCanvas) {
-          ctx.drawImage(bgCanvas, 0, 0, W, H);
+        // Layer 1 — Background (skip when exporting transparent)
+        if (!exportTransparent) {
+          if (isAnimatedBg && animatedBg) {
+            drawAnimatedBg(ctx, animatedBg, elapsed, W, H);
+          } else if (bgCanvas) {
+            ctx.drawImage(bgCanvas, 0, 0, W, H);
+          }
         }
 
         // Layer 2 — Vignette (radial dark edge, drawn directly)
@@ -669,6 +676,65 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, movieTimeRe
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
           {isMovieMode ? (
             <>
+              {/* Export quality controls */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                {/* Resolution */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 600, width: 52, flexShrink: 0 }}>Resolución</span>
+                  <div style={{ display: 'flex', gap: 3, flex: 1 }}>
+                    {([1, 2, 3] as const).map(s => (
+                      <button key={s} onClick={() => setExportScale(s)} style={{
+                        flex: 1, padding: '4px 0', borderRadius: 6, fontSize: 10, fontWeight: 700,
+                        border: 'none', cursor: 'pointer',
+                        background: exportScale === s ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.04)',
+                        color: exportScale === s ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.35)',
+                      }}>
+                        {s === 1 ? '1×' : s === 2 ? '2× HD' : '3× 4K'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* FPS */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 600, width: 52, flexShrink: 0 }}>FPS</span>
+                  <div style={{ display: 'flex', gap: 3, flex: 1 }}>
+                    {([30, 60] as const).map(f => (
+                      <button key={f} onClick={() => setExportFps(f)} style={{
+                        flex: 1, padding: '4px 0', borderRadius: 6, fontSize: 10, fontWeight: 700,
+                        border: 'none', cursor: 'pointer',
+                        background: exportFps === f ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.04)',
+                        color: exportFps === f ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.35)',
+                      }}>
+                        {f} fps
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Transparent */}
+                <button
+                  onClick={() => setExportTransparent(v => !v)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px',
+                    borderRadius: 6, border: 'none', cursor: 'pointer', width: '100%',
+                    background: exportTransparent ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.04)',
+                    color: exportTransparent ? '#60a5fa' : 'rgba(255,255,255,0.4)',
+                    fontSize: 10, fontWeight: 600,
+                  }}
+                >
+                  <div style={{
+                    width: 14, height: 14, borderRadius: 3,
+                    border: `1.5px solid ${exportTransparent ? '#60a5fa' : 'rgba(255,255,255,0.2)'}`,
+                    background: exportTransparent
+                      ? '#60a5fa'
+                      : 'transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {exportTransparent && <span style={{ color: '#fff', fontSize: 9, lineHeight: 1 }}>✓</span>}
+                  </div>
+                  Fondo transparente (alpha)
+                </button>
+              </div>
+
               {/* PRIMARY: record the live canvas and download as WebM — always available */}
               <div style={{ position: 'relative', width: '100%' }}>
                 <button data-testid="export-video"
@@ -699,7 +765,7 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, movieTimeRe
                     {recording ? <Film size={13} /> : <Download size={13} />}
                     {recording
                       ? `Renderizando… ${recordSecsLeft}s`
-                      : 'Descargar video (.webm)'}
+                      : `Descargar video ${exportScale > 1 ? (exportScale === 3 ? '4K' : 'HD') : ''} ${exportFps}fps`}
                   </span>
                 </button>
               </div>

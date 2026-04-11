@@ -154,6 +154,20 @@ export interface AppState {
   movieCurveTension: number;
   cameraKeyframes: CameraKeyframe[];
 
+  // DSLR camera lens simulation
+  dofEnabled: boolean;
+  dofFocusDistance: number;   // 0-1 normalised
+  dofFocalLength: number;     // 0-1 normalised
+  dofBokehScale: number;      // 0-20
+
+  // Clay mode
+  clayMode: boolean;
+  clayColor: string;
+
+  // Audio
+  audioUrl: string | null;
+  audioVolume: number;        // 0-100
+
   creationMode: CreationMode;
 }
 
@@ -229,6 +243,17 @@ export const defaultState: AppState = {
   movieDuration: 5,
   movieCurveTension: 0.45,
   cameraKeyframes: [],
+
+  dofEnabled: false,
+  dofFocusDistance: 0.02,
+  dofFocalLength: 0.05,
+  dofBokehScale: 6,
+
+  clayMode: false,
+  clayColor: '#e8ddd3',
+
+  audioUrl: null,
+  audioVolume: 80,
 
   creationMode: 'mockup',
 };

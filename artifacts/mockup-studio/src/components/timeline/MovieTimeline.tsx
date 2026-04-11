@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Play, Pause, Plus, Trash2, Circle, X, Square, Sparkles, Copy, ChevronDown, ChevronUp, Palette, ZoomIn, ZoomOut } from 'lucide-react';
+import { Play, Pause, Plus, Trash2, Circle, X, Square, Sparkles, Copy, ChevronDown, ChevronUp, Palette, ZoomIn, ZoomOut, Volume2, VolumeX, Music } from 'lucide-react';
 import { useApp } from '../../store';
 import type { CameraKeyframe, EasingType } from '../../store';
 import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
@@ -159,6 +159,88 @@ const ANIMATION_PRESETS = [
   { id: 'whip-pan',       label: 'Whip Pan',          desc: 'Barrido veloz con overshoot' },
   { id: 'float-rise',     label: 'Float Rise',        desc: 'Flota y asciende con suavidad' },
 ];
+
+// ── Complete animation templates (multi-scene) ────────────────────
+const ANIMATION_TEMPLATES = [
+  { id: 'product-showcase', label: 'Product Showcase', desc: 'Reveal + spin + zoom hero', icon: '🎬', duration: 8 },
+  { id: 'app-store-preview', label: 'App Store Preview', desc: 'Perfecto para App Store videos', icon: '📱', duration: 6 },
+  { id: 'social-spin',     label: 'Social Spin',       desc: 'Giro rápido ideal para reels', icon: '🔄', duration: 4 },
+  { id: 'hero-landing',    label: 'Hero Landing',      desc: 'Caída dramática desde arriba', icon: '🦸', duration: 5 },
+  { id: 'presentation',    label: 'Presentation',      desc: 'Elegante para slides y decks', icon: '📊', duration: 7 },
+];
+
+function buildTemplateKeyframes(
+  templateId: string,
+  getCam: () => { position: [number, number, number]; target: [number, number, number] } | null,
+): { keyframes: Omit<CameraKeyframe, 'id'>[]; duration: number } {
+  const cam = getCam();
+  if (!cam) return { keyframes: [], duration: 5 };
+  const [px, py, pz] = cam.position;
+  const [tx, ty, tz] = cam.target;
+  const dist = Math.sqrt(px * px + py * py + pz * pz);
+
+  const template = ANIMATION_TEMPLATES.find(t => t.id === templateId);
+  const dur = template?.duration ?? 5;
+
+  switch (templateId) {
+    case 'product-showcase': return {
+      duration: dur,
+      keyframes: [
+        { time: 0,       position: [px * 2.2, py + dist * 0.8, pz * 2.2], target: [tx, ty, tz], easing: 'ease-out' },
+        { time: dur*0.25, position: [px, py, pz],                          target: [tx, ty, tz], easing: 'smooth' },
+        { time: dur*0.5,  position: [-pz * 1.1, py * 0.95, px * 1.1],     target: [tx, ty, tz], easing: 'smooth' },
+        { time: dur*0.75, position: [pz * 1.1, py * 0.95, -px * 1.1],     target: [tx, ty, tz], easing: 'smooth' },
+        { time: dur,      position: [px * 0.85, py * 0.9, pz * 0.85],     target: [tx, ty, tz], easing: 'ease-out' },
+      ],
+    };
+    case 'app-store-preview': return {
+      duration: dur,
+      keyframes: [
+        { time: 0,       position: [px * 0.6, py * 0.6, pz * 0.6],       target: [tx, ty, tz], easing: 'ease-out' },
+        { time: dur*0.3, position: [px * 1.1, py * 1.1, pz * 1.1],       target: [tx, ty, tz], easing: 'smooth' },
+        { time: dur*0.5, position: [-pz * 0.9, py, px * 0.9],            target: [tx, ty, tz], easing: 'smooth' },
+        { time: dur*0.7, position: [px, py, pz],                          target: [tx, ty, tz], easing: 'smooth' },
+        { time: dur,     position: [px * 0.8, py * 0.8, pz * 0.8],       target: [tx, ty, tz], easing: 'ease-out' },
+      ],
+    };
+    case 'social-spin': {
+      const steps = 8;
+      return {
+        duration: dur,
+        keyframes: Array.from({ length: steps + 1 }, (_, i) => {
+          const t = i / steps;
+          const angle = t * Math.PI * 2;
+          const rpx = px * Math.cos(angle) - pz * Math.sin(angle);
+          const rpz = px * Math.sin(angle) + pz * Math.cos(angle);
+          const rd = 1 - 0.15 * Math.sin(t * Math.PI);
+          return { time: t * dur, position: [rpx * rd, py * (1 - 0.08 * Math.sin(t * Math.PI)), rpz * rd] as [number, number, number], target: [tx, ty, tz], easing: 'linear' as EasingType };
+        }),
+      };
+    }
+    case 'hero-landing': return {
+      duration: dur,
+      keyframes: [
+        { time: 0,        position: [0, dist * 2.5, 0.1],                  target: [tx, ty, tz], easing: 'ease-out' },
+        { time: dur*0.4,  position: [px * 0.5, py + dist * 0.3, pz * 0.5], target: [tx, ty, tz], easing: 'smooth' },
+        { time: dur*0.7,  position: [px * 1.05, py * 1.05, pz * 1.05],    target: [tx, ty, tz], easing: 'smooth' },
+        { time: dur,      position: [px * 0.9, py * 0.9, pz * 0.9],       target: [tx, ty, tz], easing: 'ease-out' },
+      ],
+    };
+    case 'presentation': return {
+      duration: dur,
+      keyframes: [
+        { time: 0,       position: [px * 1.3, py * 1.3, pz * 1.3],       target: [tx, ty, tz], easing: 'smooth' },
+        { time: dur*0.2, position: [px, py, pz],                          target: [tx, ty, tz], easing: 'smooth' },
+        { time: dur*0.4, position: [px, py, pz],                          target: [tx, ty, tz], easing: 'smooth' },
+        { time: dur*0.55, position: [-pz * 0.95, py, px * 0.95],          target: [tx, ty, tz], easing: 'smooth' },
+        { time: dur*0.75, position: [-pz * 0.95, py, px * 0.95],          target: [tx, ty, tz], easing: 'smooth' },
+        { time: dur*0.9, position: [px * 0.85, py * 0.85, pz * 0.85],    target: [tx, ty, tz], easing: 'smooth' },
+        { time: dur,     position: [px * 0.85, py * 0.85, pz * 0.85],    target: [tx, ty, tz], easing: 'ease-out' },
+      ],
+    };
+    default: return { keyframes: [], duration: dur };
+  }
+}
 const MIN_SEGMENT_DURATION = 0.25;
 
 type TimelineScene = {
@@ -299,6 +381,42 @@ const PRESET_PREVIEW_KEYFRAMES = `
   0%, 100% { opacity: 0.3; transform: scale(0.9); }
   50% { opacity: 1; transform: scale(1.15); }
 }
+@keyframes tpl-product-showcase {
+  0%   { transform: translate(-22px, 20px) rotate(-20deg) scale(0.55); }
+  25%  { transform: translate(0px, 0px) rotate(-8deg) scale(1); }
+  50%  { transform: translate(22px, -4px) rotate(6deg) scale(0.92); }
+  75%  { transform: translate(-18px, -2px) rotate(-14deg) scale(0.9); }
+  100% { transform: translate(4px, 4px) rotate(-6deg) scale(0.96); }
+}
+@keyframes tpl-app-store-preview {
+  0%   { transform: translate(0px, 4px) rotate(-6deg) scale(0.58); }
+  30%  { transform: translate(2px, 0px) rotate(-8deg) scale(1.08); }
+  55%  { transform: translate(24px, 2px) rotate(6deg) scale(0.88); }
+  75%  { transform: translate(-4px, -2px) rotate(-6deg) scale(1); }
+  100% { transform: translate(0px, 2px) rotate(-4deg) scale(0.82); }
+}
+@keyframes tpl-social-spin {
+  0%   { transform: translate(-26px, 4px) rotate(-22deg) scale(0.82); }
+  25%  { transform: translate(4px, -6px) rotate(-6deg) scale(0.98); }
+  50%  { transform: translate(26px, 4px) rotate(10deg) scale(0.82); }
+  75%  { transform: translate(2px, 12px) rotate(18deg) scale(0.72); }
+  100% { transform: translate(-26px, 4px) rotate(-22deg) scale(0.82); }
+}
+@keyframes tpl-hero-landing {
+  0%   { transform: translate(0px, -48px) rotate(-2deg) scale(0.45); opacity: 0.3; }
+  40%  { transform: translate(-6px, 2px) rotate(-6deg) scale(0.9); opacity: 1; }
+  70%  { transform: translate(4px, 4px) rotate(-4deg) scale(1.06); opacity: 1; }
+  100% { transform: translate(2px, 6px) rotate(-4deg) scale(0.94); opacity: 1; }
+}
+@keyframes tpl-presentation {
+  0%   { transform: translate(-2px, 2px) rotate(-10deg) scale(1.14); }
+  20%  { transform: translate(0px, 0px) rotate(-6deg) scale(1); }
+  45%  { transform: translate(0px, 0px) rotate(-6deg) scale(1); }
+  60%  { transform: translate(24px, 2px) rotate(5deg) scale(0.92); }
+  80%  { transform: translate(24px, 2px) rotate(5deg) scale(0.92); }
+  95%  { transform: translate(4px, 2px) rotate(-4deg) scale(0.88); }
+  100% { transform: translate(4px, 2px) rotate(-4deg) scale(0.88); }
+}
 `;
 
 function PresetPreview({ presetId }: { presetId: string }) {
@@ -401,6 +519,88 @@ function PresetPreview({ presetId }: { presetId: string }) {
   );
 }
 
+const TPL_COLORS: Record<string, { bg: string; accent: string }> = {
+  'product-showcase':  { bg: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', accent: 'rgba(139,92,246,0.35)' },
+  'app-store-preview': { bg: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)', accent: 'rgba(59,130,246,0.35)' },
+  'social-spin':       { bg: 'linear-gradient(135deg, #f43f5e 0%, #ec4899 100%)', accent: 'rgba(244,63,94,0.35)' },
+  'hero-landing':      { bg: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)', accent: 'rgba(245,158,11,0.35)' },
+  'presentation':      { bg: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', accent: 'rgba(16,185,129,0.35)' },
+};
+
+function TemplatePreview({ templateId }: { templateId: string }) {
+  const colors = TPL_COLORS[templateId] ?? { bg: 'linear-gradient(135deg,#6366f1,#8b5cf6)', accent: 'rgba(139,92,246,0.35)' };
+  const isSpin = templateId === 'social-spin';
+  const isLanding = templateId === 'hero-landing';
+  const isPresentation = templateId === 'presentation';
+
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        width: 128,
+        height: 72,
+        borderRadius: 16,
+        position: 'relative',
+        overflow: 'hidden',
+        flexShrink: 0,
+        background: colors.bg,
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22)',
+      }}
+    >
+      {/* Subtle gradient overlay */}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 40%, rgba(0,0,0,0.18) 100%)' }} />
+      {/* Guide path */}
+      {isSpin && (
+        <div style={{
+          position: 'absolute', left: 14, right: 14, top: 16, height: 24,
+          border: '1px dashed rgba(255,255,255,0.25)', borderRadius: 999,
+        }} />
+      )}
+      {isLanding && (
+        <div style={{
+          position: 'absolute', left: '50%', top: 6, bottom: 10, width: 1,
+          transform: 'translateX(-50%)',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0.08))',
+        }} />
+      )}
+      {isPresentation && (
+        <div style={{
+          position: 'absolute', left: 14, right: 14, top: 36, height: 1,
+          borderTop: '1px dashed rgba(255,255,255,0.2)',
+        }} />
+      )}
+      {/* Animated phone */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '50%', top: '50%',
+          width: 56, height: 108,
+          marginLeft: -28, marginTop: -54,
+          borderRadius: 14,
+          border: '4px solid #171717',
+          background: '#f6f6f6',
+          boxShadow: '0 7px 16px rgba(0,0,0,0.3)',
+          transformOrigin: '50% 50%',
+          animation: `tpl-${templateId} ${isSpin ? '2.2s' : '3s'} cubic-bezier(0.45, 0.05, 0.2, 1) infinite ${isSpin ? 'linear' : 'alternate'}`,
+        }}
+      >
+        <div style={{
+          position: 'absolute', top: 7, left: '50%', width: 18, height: 4,
+          borderRadius: 999, transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.16)',
+        }} />
+      </div>
+      {/* Pulsing dot */}
+      <div style={{
+        position: 'absolute', right: 12, top: 12, width: 7, height: 7,
+        borderRadius: '50%', background: 'rgba(255,255,255,0.85)',
+        boxShadow: '0 0 10px rgba(255,255,255,0.25)',
+        animation: 'preset-preview-dot 1.8s ease-in-out infinite',
+      }} />
+      {/* Duration badge */}
+    </div>
+  );
+}
+
 function Diamond({ active, label, onClick, onContextMenu }: {
   active?: boolean;
   label?: string;
@@ -453,6 +653,30 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
   useEffect(() => { onCollapsedChange?.(collapsed); }, [collapsed, onCollapsedChange]);
   const [accentColor, setAccentColor] = useState('#161819');
   const [showColorPicker, setShowColorPicker] = useState(false);
+
+  // Audio playback
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioFileRef = useRef<HTMLInputElement>(null);
+
+  // Sync audio play/pause with timeline playback
+  useEffect(() => {
+    if (!audioRef.current || !state.audioUrl) return;
+    audioRef.current.volume = (state.audioVolume ?? 80) / 100;
+    if (isPlaying) {
+      audioRef.current.currentTime = movieTimeRef.current;
+      audioRef.current.play().catch(() => {});
+    } else {
+      audioRef.current.pause();
+    }
+  }, [isPlaying, state.audioUrl, state.audioVolume, movieTimeRef]);
+
+  const handleAudioFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    updateState({ audioUrl: url });
+    e.target.value = '';
+  }, [updateState]);
 
   const [timelineZoom, setTimelineZoom] = useState(1);
   const MIN_ZOOM = 0.5;
@@ -824,6 +1048,32 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
     setActiveKfId(null);
   }, [addCameraKeyframe, cameraKeyframes, clearCameraKeyframes, movieDuration, movieTimeRef, updateState, viewerRef]);
 
+  const handleApplyTemplate = useCallback((templateId: string) => {
+    setShowPresets(false);
+    const getCam = () => viewerRef.current?.getCameraState() ?? null;
+    const { keyframes, duration } = buildTemplateKeyframes(templateId, getCam);
+    if (keyframes.length === 0) return;
+    const sceneId = Math.random().toString(36).substr(2, 9);
+    const template = ANIMATION_TEMPLATES.find(t => t.id === templateId);
+    const sceneLabel = template?.label ?? 'Template';
+    const nextDuration = Math.max(movieDuration, Math.ceil(duration));
+    const nextKeyframes = keyframes.map((kf, i) => ({
+      ...kf,
+      sceneId,
+      sceneLabel,
+      sceneSource: 'preset' as const,
+      label: i === 0 ? sceneLabel : undefined,
+      id: Math.random().toString(36).substr(2, 9),
+    }));
+    updateState({
+      movieDuration: nextDuration,
+      cameraKeyframes: nextKeyframes,
+    });
+    movieTimeRef.current = 0;
+    setCurrentTime(0);
+    setActiveKfId(null);
+  }, [movieDuration, movieTimeRef, updateState, viewerRef]);
+
   // Only show integer ticks that fall within the active area (≤ displayDuration)
   const RULERS = Array.from({ length: Math.ceil(displayDuration) + 1 }, (_, i) => i).filter(s => s <= displayDuration);
 
@@ -886,7 +1136,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
         borderBottom: '1px solid rgba(255,255,255,0.07)',
       }}>
       {/* Row 1: playback + keyframe controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px 6px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px 6px', flexWrap: 'wrap' }}>
 
         {/* Play / Pause */}
         {(() => {
@@ -1027,6 +1277,8 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
                   borderRadius: 8, overflow: 'hidden', zIndex: 100,
                   boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                   width: 'min(360px, calc(100vw - 32px))',
+                  maxHeight: 'min(420px, 60vh)',
+                  overflowY: 'auto',
                 }}
               >
                 <div style={{ padding: '6px 10px 4px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
@@ -1072,6 +1324,51 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
                     </div>
                   </button>
                 ))}
+
+                {/* Templates section */}
+                <div style={{ padding: '6px 10px 4px', borderTop: '1px solid rgba(255,255,255,0.07)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                  <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
+                    Templates completos
+                  </span>
+                </div>
+                {ANIMATION_TEMPLATES.map(tpl => (
+                  <button
+                    key={tpl.id}
+                    onClick={() => handleApplyTemplate(tpl.id)}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '10px 12px', background: 'none', border: 'none', cursor: 'pointer',
+                      borderBottom: '1px solid rgba(255,255,255,0.04)',
+                      transition: 'background 0.12s', textAlign: 'left',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.15)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                  >
+                    <TemplatePreview templateId={tpl.id} />
+                    <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.88)', fontWeight: 700, lineHeight: 1.2 }}>{tpl.label}</span>
+                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', lineHeight: 1.35 }}>{tpl.desc}</span>
+                      <span style={{ fontSize: 9, color: 'rgba(59,130,246,0.9)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginTop: 3 }}>
+                        {tpl.duration}s · Template
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        width: 34,
+                        height: 34,
+                        borderRadius: '50%',
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'rgba(255,255,255,0.14)',
+                        color: 'rgba(255,255,255,0.7)',
+                      }}
+                    >
+                      <Plus size={18} />
+                    </div>
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -1091,6 +1388,52 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           >
             <Trash2 size={12} />
           </button>
+        )}
+
+        {/* Audio controls */}
+        {!liveRecording && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <input ref={audioFileRef} type="file" accept="audio/*" style={{ display: 'none' }} onChange={handleAudioFile} />
+            {state.audioUrl ? (
+              <>
+                <button
+                  onClick={() => updateState({ audioUrl: null })}
+                  title="Quitar audio"
+                  style={{
+                    background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)',
+                    borderRadius: 6, height: 28, padding: '0 8px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 4,
+                    color: '#4ade80', fontSize: 11, fontWeight: 600,
+                  }}
+                >
+                  <Music size={11} />
+                  <VolumeX size={10} />
+                </button>
+                <input
+                  type="range" min={0} max={100} step={5}
+                  value={state.audioVolume ?? 80}
+                  onChange={e => updateState({ audioVolume: Number(e.target.value) })}
+                  title={`Volumen: ${state.audioVolume ?? 80}%`}
+                  style={{ width: 48, height: 3, accentColor: '#4ade80', cursor: 'pointer' }}
+                />
+              </>
+            ) : (
+              <button
+                onClick={() => audioFileRef.current?.click()}
+                title="Añadir audio/soundtrack"
+                style={{
+                  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 6, height: 28, padding: '0 8px', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 600,
+                }}
+              >
+                <Music size={11} />
+                Audio
+              </button>
+            )}
+            {state.audioUrl && <audio ref={audioRef} src={state.audioUrl} preload="auto" />}
+          </div>
         )}
 
         <div style={{ flex: 1 }} />
@@ -1259,12 +1602,14 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           </div>
         </div>
 
-        {/* Camera track row — fixed to the active area width only */}
-        <div style={{ height: 36, position: 'relative', width: activeAreaPx }}>
+        {/* Camera track row — full width of the timeline */}
+        <div style={{ height: 44, position: 'relative', width: '100%' }}>
           <div style={{
-            position: 'absolute', inset: 0,
+            position: 'absolute', top: 0, bottom: 0, left: 0,
+            width: activeAreaPx,
             background: 'rgba(255,255,255,0.04)',
             border: '1px solid rgba(255,255,255,0.09)', borderRadius: 4,
+            transition: isDraggingDuration ? 'none' : 'width 0.15s ease',
           }}>
             <span style={{
               position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)',
@@ -1466,7 +1811,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           style={{
             position: 'absolute',
             left: TRACK_PADDING + activeAreaPx - 7,
-            top: 0, bottom: 0,
+            top: 34, height: 44,
             width: 14,
             cursor: 'ew-resize',
             zIndex: 13,
@@ -1479,12 +1824,12 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
             className="dur-end-bar"
             style={{
               width: 4,
-              height: 38,
-              background: isDraggingDuration ? '#f97316' : 'rgba(249,115,22,0.4)',
+              height: '100%',
+              background: isDraggingDuration ? '#06b6d4' : 'rgba(6,182,212,0.45)',
               borderRadius: 3,
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
               transition: isDraggingDuration ? 'none' : 'background 0.15s',
-              boxShadow: isDraggingDuration ? '0 0 8px rgba(249,115,22,0.6)' : 'none',
+              boxShadow: isDraggingDuration ? '0 0 8px rgba(6,182,212,0.6)' : 'none',
             }}
           >
             <div style={{ width: 1.5, height: 2, borderRadius: 1, background: 'rgba(255,255,255,0.75)' }} />
@@ -1499,9 +1844,9 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
               bottom: 'calc(100% + 6px)',
               left: '50%', transform: 'translateX(-50%)',
               background: '#1a1d1f',
-              border: '1px solid rgba(249,115,22,0.4)',
+              border: '1px solid rgba(6,182,212,0.4)',
               borderRadius: 5, padding: '3px 8px',
-              fontSize: 11, fontFamily: 'monospace', color: '#f97316', fontWeight: 700,
+              fontSize: 11, fontFamily: 'monospace', color: '#06b6d4', fontWeight: 700,
               whiteSpace: 'nowrap', pointerEvents: 'none',
               boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
             }}>
@@ -1612,8 +1957,8 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
 
       <style>{`
         @keyframes recBlink { 0%,100%{opacity:1} 50%{opacity:0} }
-        .dur-end-cap:hover .dur-end-bar { background: rgba(249,115,22,0.75) !important; }
-        .dur-end-cap:active .dur-end-bar { background: #f97316 !important; box-shadow: 0 0 10px rgba(249,115,22,0.7) !important; }
+        .dur-end-cap:hover .dur-end-bar { background: rgba(6,182,212,0.75) !important; }
+        .dur-end-cap:active .dur-end-bar { background: #06b6d4 !important; box-shadow: 0 0 10px rgba(6,182,212,0.7) !important; }
       `}</style>
     </div>
   );
