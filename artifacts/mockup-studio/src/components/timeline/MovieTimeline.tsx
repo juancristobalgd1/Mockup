@@ -1678,6 +1678,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
 
                     {scene.keyframes.length > 2 && scene.keyframes.slice(1, -1).map(innerKf => {
                       const progress = (innerKf.time - scene.start.time) / Math.max(scene.end.time - scene.start.time, MIN_SEGMENT_DURATION);
+                      const passed = currentTime >= innerKf.time;
                       return (
                         <div
                           key={innerKf.id}
@@ -1689,9 +1690,11 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
                             height: 6,
                             transform: 'translate(-50%, -50%) rotate(45deg)',
                             borderRadius: 1,
-                            background: activeKfId === innerKf.id ? '#93c5fd' : 'rgba(255,255,255,0.48)',
-                            boxShadow: activeKfId === innerKf.id ? '0 0 0 2px rgba(59,130,246,0.16)' : 'none',
+                            background: activeKfId === innerKf.id ? '#93c5fd' : passed ? '#fbbf24' : 'rgba(255,255,255,0.48)',
+                            boxShadow: activeKfId === innerKf.id ? '0 0 0 2px rgba(59,130,246,0.16)' : passed ? '0 0 6px rgba(251,191,36,0.5)' : 'none',
                             pointerEvents: 'none',
+                            transition: 'background 0.2s, box-shadow 0.2s',
+                            animation: passed && isPlaying ? 'kf-pulse 0.35s ease-out' : 'none',
                           }}
                         />
                       );
@@ -1727,8 +1730,10 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
                       height: 12,
                       transform: 'rotate(45deg)',
                       borderRadius: 2,
-                      background: activeKfId === scene.start.id ? '#3b82f6' : '#d1d5db',
-                      boxShadow: activeKfId === scene.start.id ? '0 0 0 3px rgba(59,130,246,0.18)' : '0 0 0 1px rgba(0,0,0,0.15)',
+                      background: activeKfId === scene.start.id ? '#3b82f6' : currentTime >= scene.start.time ? '#fbbf24' : '#d1d5db',
+                      boxShadow: activeKfId === scene.start.id ? '0 0 0 3px rgba(59,130,246,0.18)' : currentTime >= scene.start.time ? '0 0 6px rgba(251,191,36,0.5)' : '0 0 0 1px rgba(0,0,0,0.15)',
+                      transition: 'background 0.2s, box-shadow 0.2s, transform 0.2s',
+                      animation: currentTime >= scene.start.time && isPlaying ? 'kf-pulse-plain 0.35s ease-out' : 'none',
                     }} />
                   </div>
 
@@ -1761,8 +1766,10 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
                       height: 12,
                       transform: 'rotate(45deg)',
                       borderRadius: 2,
-                      background: activeKfId === scene.end.id ? '#3b82f6' : '#d1d5db',
-                      boxShadow: activeKfId === scene.end.id ? '0 0 0 3px rgba(59,130,246,0.18)' : '0 0 0 1px rgba(0,0,0,0.15)',
+                      background: activeKfId === scene.end.id ? '#3b82f6' : currentTime >= scene.end.time ? '#fbbf24' : '#d1d5db',
+                      boxShadow: activeKfId === scene.end.id ? '0 0 0 3px rgba(59,130,246,0.18)' : currentTime >= scene.end.time ? '0 0 6px rgba(251,191,36,0.5)' : '0 0 0 1px rgba(0,0,0,0.15)',
+                      transition: 'background 0.2s, box-shadow 0.2s, transform 0.2s',
+                      animation: currentTime >= scene.end.time && isPlaying ? 'kf-pulse-plain 0.35s ease-out' : 'none',
                     }} />
                   </div>
                 </div>
@@ -1959,6 +1966,8 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
         @keyframes recBlink { 0%,100%{opacity:1} 50%{opacity:0} }
         .dur-end-cap:hover .dur-end-bar { background: rgba(6,182,212,0.75) !important; }
         .dur-end-cap:active .dur-end-bar { background: #06b6d4 !important; box-shadow: 0 0 10px rgba(6,182,212,0.7) !important; }
+        @keyframes kf-pulse { 0% { transform: translate(-50%,-50%) rotate(45deg) scale(1); } 40% { transform: translate(-50%,-50%) rotate(45deg) scale(1.6); } 100% { transform: translate(-50%,-50%) rotate(45deg) scale(1); } }
+        @keyframes kf-pulse-plain { 0% { transform: rotate(45deg) scale(1); } 40% { transform: rotate(45deg) scale(1.5); } 100% { transform: rotate(45deg) scale(1); } }
       `}</style>
     </div>
   );
