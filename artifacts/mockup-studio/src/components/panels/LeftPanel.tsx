@@ -4,9 +4,8 @@ import {
   LayoutGrid, X, RefreshCw, Sun, RotateCcw, Search,
   Lamp, Warehouse, Sunset, Building2, TreePine, Moon, Sparkles, Video,
 } from 'lucide-react';
-import type { Tab } from './tabs';
-import { TAB_ICONS } from './tabs';
 import { useApp } from '../../store';
+import { TAB_ICONS, type Tab } from './tabs';
 import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS, PRESETS, ANIMATED_BACKGROUNDS, ANIMATED_BG_KEYFRAMES } from '../../data/backgrounds';
 import { LIGHT_OVERLAYS } from '../../data/lightOverlays';
 import { DEVICE_MODELS, DEVICE_GROUPS, GROUP_ICONS, getModelById } from '../../data/devices';
@@ -119,10 +118,6 @@ const Toggle = ({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
 );
 
 // ── Slider ────────────────────────────────────────────────────────
-// Uses local state + rAF throttle to decouple drag from store updates.
-// • Label updates instantly (local state, no global re-render).
-// • Store commits at most once per animation frame (~60 fps).
-// • Pointer-up always flushes the final value.
 const Slider = memo(function Slider({ label, value, min, max, step = 1, onChange, unit = '' }: {
   label: string; value: number; min: number; max: number; step?: number;
   onChange: (v: number) => void; unit?: string;
@@ -132,7 +127,6 @@ const Slider = memo(function Slider({ label, value, min, max, step = 1, onChange
   const pending     = useRef<number | null>(null);
   const rafId       = useRef<number>(0);
 
-  // Sync external value → local when a preset/template is applied externally
   useEffect(() => {
     if (!isDragging.current) setLocal(value);
   }, [value]);
@@ -437,7 +431,7 @@ const clampT = (v: number) => Math.max(8, v);
 
 // ── Main component ────────────────────────────────────────────────
 export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: boolean; mobileContentOnly?: Tab }) {
-  const { state, updateState, addText } = useApp();
+  const { state, updateState, addLabel, clearLabels } = useApp();
   const mode = state.creationMode ?? 'mockup';
   const modeAccent = getModeAccent(mode);
 
@@ -478,6 +472,8 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const [scenePopup, setScenePopup]         = useState<null | 'canvas' | 'motion' | 'effects' | 'shadow'>(null);
   const [scenePopupAnchor, setScenePopupAnchor] = useState<{ x: number; y: number } | null>(null);
   const scenePopupRef                        = useRef<HTMLDivElement>(null);
+
+
 
   const [presentsPopupOpen, setPresentsPopupOpen] = useState(false);
   const [presentsPopupAnchor, setPresentsPopupAnchor] = useState<{ x: number; y: number } | null>(null);
@@ -701,11 +697,9 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     const hasColors    = !!activeModel?.hasColors;
     const hasOrientation = !!activeModel?.hasOrientation;
     const hasBrowserTheme = state.deviceType === 'browser';
-    const hasOptions = hasColors || hasOrientation || hasBrowserTheme;
 
     return (
       <>
-        {/* ── Group models popup ───────────────────────────── */}
         {deviceGroupPopup && deviceGroupAnchor && (() => {
           const popupModels = DEVICE_MODELS.filter(m => m.group === deviceGroupPopup);
           return (
@@ -752,7 +746,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           );
         })()}
 
-        {/* ── Color popup ──────────────────────────────────── */}
         {deviceOptPopup === 'color' && deviceOptAnchor && (
           <div ref={deviceOptRef} style={{
             position: 'fixed',
@@ -780,7 +773,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           </div>
         )}
 
-        {/* ── Orient / Theme popup ─────────────────────────── */}
         {deviceOptPopup === 'orient' && deviceOptAnchor && (
           <div ref={deviceOptRef} style={{
             position: 'fixed',
@@ -798,7 +790,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                 <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Orientation</div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   <Chip active={!state.deviceLandscape} onClick={() => updateState({ deviceLandscape: false })}>Portrait</Chip>
-                  <Chip active={state.deviceLandscape}  onClick={() => updateState({ deviceLandscape: true })}>Landscape</Chip>
+                  <Chip active={state.deviceLandscape} onClick={() => updateState({ deviceLandscape: true })}>Landscape</Chip>
                 </div>
               </>
             )}
@@ -806,7 +798,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               <>
                 <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Theme</div>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <Chip active={state.browserMode === 'dark'}  onClick={() => updateState({ browserMode: 'dark' })}>Dark</Chip>
+                  <Chip active={state.browserMode === 'dark'} onClick={() => updateState({ browserMode: 'dark' })}>Dark</Chip>
                   <Chip active={state.browserMode === 'light'} onClick={() => updateState({ browserMode: 'light' })}>Light</Chip>
                 </div>
               </>
@@ -814,7 +806,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           </div>
         )}
 
-        {/* ── Single row: group chips + options button ─────── */}
         <Section label="Device">
           <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
             <div style={{
@@ -822,7 +813,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               scrollbarWidth: 'none', msOverflowStyle: 'none',
             } as React.CSSProperties}>
               {DEVICE_GROUPS.map(group => {
-                const isOpen   = deviceGroupPopup === group;
+                const isOpen = deviceGroupPopup === group;
                 const isActive = activeGroup === group;
                 const repModel = DEVICE_MODELS.find(m => m.group === group);
                 return (
@@ -853,12 +844,10 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               })}
             </div>
 
-            {/* Divider */}
             {(hasColors || hasOrientation || hasBrowserTheme) && (
               <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
             )}
 
-            {/* Color button */}
             {hasColors && (
               <button
                 aria-label="Device color"
@@ -887,7 +876,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
               </button>
             )}
 
-            {/* Orient / Theme button */}
             {(hasOrientation || hasBrowserTheme) && (
               <button
                 aria-label={hasBrowserTheme ? 'Browser theme' : 'Device orientation'}
@@ -1822,6 +1810,11 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     '#ec4899', '#f43f5e', '#fb923c', '#fbbf24', '__custom__',
   ];
   const ANNOTATE_SIZES: ('S' | 'M' | 'L' | 'XL')[] = ['S', 'M', 'L', 'XL'];
+  const LABEL_MODES = [
+    { id: 'follow', label: 'Follow' },
+    { id: 'billboard', label: 'Billboard' },
+    { id: 'fixed', label: 'Fixed' },
+  ] as const;
 
   type AnnotateShapeId = 'arrow' | 'rect' | 'circle' | 'ellipse' | 'triangle' | 'diamond' | 'star' | 'hexagon' | 'spiral' | 'wave';
   const ANNOTATE_SHAPES: { id: AnnotateShapeId; label: string; icon: React.ReactNode }[] = [
@@ -1837,9 +1830,21 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     { id: 'wave',     label: 'Onda',    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12 Q5 6, 8 12 Q11 18, 14 12 Q17 6, 20 12 Q21.5 15, 22 12"/></svg> },
   ];
 
+  const LABEL_POSITIONS: { id: LabelAnchorPosition; left: string; top: string }[] = [
+    { id: 'top', left: '50%', top: '8%' },
+    { id: 'top-right', left: '60%', top: '20%' },
+    { id: 'right', left: '64%', top: '50%' },
+    { id: 'bottom-right', left: '60%', top: '80%' },
+    { id: 'bottom', left: '50%', top: '92%' },
+    { id: 'bottom-left', left: '40%', top: '80%' },
+    { id: 'left', left: '36%', top: '50%' },
+    { id: 'top-left', left: '40%', top: '20%' },
+  ];
+
   const currentShapeItem = ANNOTATE_SHAPES.find(s =>
     state.annotateTool === 'arrow' ? s.id === 'arrow' : s.id === (state.annotateShape ?? 'rect')
   ) ?? ANNOTATE_SHAPES[0];
+  const labelCount = state.texts.filter(text => text.kind === 'label').length;
 
   const AnnotateTab = () => (
     <div ref={annotatePopupRef} style={{ position: 'relative' }}>
@@ -2039,6 +2044,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         </div>
       )}
 
+
       {/* ── Single toolbar row ────────────────────────────────── */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -2133,9 +2139,6 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           {state.annotateSize}
         </button>
 
-        {/* Divider */}
-        <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.12)', flexShrink: 0, margin: '0 2px' }} />
-
         {/* Clear */}
         <button
           onClick={() => updateState({ annotateClearKey: (state.annotateClearKey ?? 0) + 1, annotateStrokes: [] })}
@@ -2149,6 +2152,88 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
       </div>
     </div>
   );
+
+  const LabelsTab = () => {
+    const [lTab, setLTab] = useState<'positions' | 'behavior' | 'style'>('positions');
+    const TABS = [
+      { id: 'positions' as const, label: 'Positions' },
+      { id: 'behavior'  as const, label: 'Behavior'  },
+      { id: 'style'     as const, label: 'Style'     },
+    ];
+    return (
+      <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 14, padding: '10px 10px' }}>
+        {/* Pill tabs */}
+        <div style={{ display: 'flex', gap: 4, marginBottom: 10, background: 'rgba(0,0,0,0.25)', borderRadius: 10, padding: 3 }}>
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setLTab(t.id)}
+              style={{ flex: 1, height: 26, borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700,
+                background: lTab === t.id ? 'rgba(255,255,255,0.13)' : 'transparent',
+                color: lTab === t.id ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.38)',
+                transition: 'all 0.13s' }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Positions */}
+        {lTab === 'positions' && (
+          <>
+            <div style={{ position: 'relative', height: 110, borderRadius: 12, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)', marginBottom: 8 }}>
+              <div style={{ position: 'absolute', left: '50%', top: '50%', width: 44, height: 72, transform: 'translate(-50%,-50%)', borderRadius: 8, border: '2px solid rgba(255,255,255,0.38)' }} />
+              {LABEL_POSITIONS.map(pos => (
+                <button key={pos.id} onClick={() => addLabel(pos.id)} title={`Add ${pos.id} label`}
+                  style={{ position: 'absolute', left: pos.left, top: pos.top, transform: 'translate(-50%,-50%)', width: 22, height: 22, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                </button>
+              ))}
+            </div>
+            <button onClick={clearLabels} disabled={labelCount === 0}
+              style={{ width: '100%', height: 30, borderRadius: 9, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: labelCount === 0 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.52)', fontSize: 11, fontWeight: 700, cursor: labelCount === 0 ? 'not-allowed' : 'pointer' }}>
+              Clear all ({labelCount})
+            </button>
+          </>
+        )}
+
+        {/* Behavior */}
+        {lTab === 'behavior' && (
+          <>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+              {LABEL_MODES.map(mode => (
+                <Chip key={mode.id} active={state.labelDraftMode === mode.id} onClick={() => updateState({ labelDraftMode: mode.id })}>{mode.label}</Chip>
+              ))}
+            </div>
+            <Slider label="Levitation" value={state.labelDraftLevitation} min={0} max={42} step={1} onChange={v => updateState({ labelDraftLevitation: v })} unit="px" />
+          </>
+        )}
+
+        {/* Style */}
+        {lTab === 'style' && (
+          <>
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>Size</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 10px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <input type="number" min={8} max={48} value={state.labelDraftSize} onChange={e => updateState({ labelDraftSize: Number(e.target.value) || 13 })} style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', color: 'rgba(255,255,255,0.9)', fontSize: 14, fontWeight: 700 }} />
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>pt</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Color</span>
+                <div style={{ position: 'relative', width: 44 }}>
+                  <div style={{ width: 44, height: 36, borderRadius: 9, background: state.labelDraftColor, border: '1px solid rgba(255,255,255,0.18)' }} />
+                  <input type="color" value={state.labelDraftColor} onChange={e => updateState({ labelDraftColor: e.target.value })} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+                </div>
+              </label>
+              <button onClick={() => updateState({ labelDraftMode: 'follow', labelDraftSize: 13, labelDraftLevitation: 16, labelDraftColor: '#ffffff' })}
+                style={{ height: 36, padding: '0 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.52)', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                Reset
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
 
   // ── Scene tab content ───────────────────────────────────────────
   const SceneTab = () => {
@@ -2744,6 +2829,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         {mobileContentOnly === 'overlay'    && <OverlayTab />}
         {mobileContentOnly === 'annotate'   && <AnnotateTab />}
         {mobileContentOnly === 'canvas'     && <SceneTab />}
+        {mobileContentOnly === 'labels'     && <LabelsTab />}
       </div>
     );
   }
@@ -2762,6 +2848,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           {activeTab === 'overlay'    && <OverlayTab />}
           {activeTab === 'annotate'   && <AnnotateTab />}
           {activeTab === 'canvas'     && <SceneTab />}
+          {activeTab === 'labels'     && <LabelsTab />}
         </div>
 
         {/* Pill tab bar — fixed at the bottom of the panel */}
@@ -2774,7 +2861,8 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           {TAB_ICONS.map(({ id, icon: Icon, label }) => {
             const active = activeTab === id;
             return (
-              <button key={id} onClick={() => setActiveTab(id)}
+              <button key={id}
+                onClick={() => setActiveTab(id)}
                 style={{
                   flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
                   padding: '9px 16px', borderRadius: 22, fontSize: 12, fontWeight: 600,
@@ -2815,7 +2903,9 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
         }}>M</div>
 
         {TAB_ICONS.map(({ id, icon: Icon, label }) => (
-          <button key={id} onClick={() => setActiveTab(id)} title={label}
+          <button key={id}
+            onClick={() => setActiveTab(id)}
+            title={label}
             style={{
               width: 44, height: 46, borderRadius: 8, border: 'none',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
@@ -2854,6 +2944,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           {activeTab === 'overlay'    && <OverlayTab />}
           {activeTab === 'annotate'   && <AnnotateTab />}
           {activeTab === 'canvas'     && <SceneTab />}
+          {activeTab === 'labels'     && <LabelsTab />}
         </div>
       </div>
     </div>

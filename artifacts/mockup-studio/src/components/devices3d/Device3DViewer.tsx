@@ -33,6 +33,12 @@ export interface Device3DViewerHandle {
   renderAt: (time: number) => void;
 }
 
+export interface DeviceScreenAnchor {
+  x: number;
+  y: number;
+  scale: number;
+}
+
 export type InteractionMode = 'none' | 'drag' | 'zoom';
 
 const ZOOM_SLIDER_MIN = 0;
@@ -633,12 +639,14 @@ function ScreenDropZoneContent({ pencil }: { pencil: boolean }) {
 function DeviceScene({
   floatEnabled, pencilVisible, onShowPencil, onHidePencil,
   screenTexture,
+  onDeviceAnchorChange,
 }: {
   floatEnabled: boolean;
   pencilVisible: boolean;
   onShowPencil: () => void;
   onHidePencil: () => void;
   screenTexture: React.MutableRefObject<THREE.Texture | null>;
+  onDeviceAnchorChange?: (anchor: DeviceScreenAnchor) => void;
 }) {
   const { state, updateState } = useApp();
   const imageFileRef = useRef<HTMLInputElement>(null);
@@ -741,6 +749,8 @@ function DeviceScene({
   const _q    = useRef(new THREE.Quaternion());
   const _pjA  = useRef(new THREE.Vector3());
   const _pjB  = useRef(new THREE.Vector3());
+  const _originProjected = useRef(new THREE.Vector3());
+  const lastAnchorRef = useRef<DeviceScreenAnchor | null>(null);
 
   useFrame(({ camera, gl }) => {
     if (!faceGroupRef.current || !wrapperRef.current) return;
@@ -759,6 +769,23 @@ function DeviceScene({
     // Font-size drives the entire pill via em units; clamp so it's always legible
     const fs = Math.max(9, Math.min(16, pxPerUnit * 0.10));
     wrapperRef.current.style.fontSize = `${fs.toFixed(1)}px`;
+
+    if (onDeviceAnchorChange) {
+      _originProjected.current.set(0, 0, 0).project(camera);
+      const nextAnchor = {
+        x: (_originProjected.current.x + 1) * 50,
+        y: (1 - _originProjected.current.y) * 50,
+        scale: pxPerUnit,
+      };
+      const lastAnchor = lastAnchorRef.current;
+      if (!lastAnchor
+        || Math.abs(lastAnchor.x - nextAnchor.x) > 0.15
+        || Math.abs(lastAnchor.y - nextAnchor.y) > 0.15
+        || Math.abs(lastAnchor.scale - nextAnchor.scale) > 0.35) {
+        lastAnchorRef.current = nextAnchor;
+        onDeviceAnchorChange(nextAnchor);
+      }
+    }
   });
 
   // ── Show icon? ───────────────────────────────────────────────────
@@ -1659,10 +1686,11 @@ interface Device3DViewerProps {
   onInteractionModeChange?: (mode: InteractionMode) => void;
   zoomValue?: number;
   onZoomValueChange?: (value: number) => void;
+  onDeviceAnchorChange?: (anchor: DeviceScreenAnchor) => void;
 }
 
 export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerProps>(
-  function Device3DViewer({ style, className, moviePlaying = false, movieTimeRef: externalMovieTimeRef, interactionMode: externalInteractionMode, onInteractionModeChange, zoomValue: externalZoomValue, onZoomValueChange: externalOnZoomValueChange }, ref) {
+  function Device3DViewer({ style, className, moviePlaying = false, movieTimeRef: externalMovieTimeRef, interactionMode: externalInteractionMode, onInteractionModeChange, zoomValue: externalZoomValue, onZoomValueChange: externalOnZoomValueChange, onDeviceAnchorChange }, ref) {
     const { state, updateState } = useApp();
     const isMobile = useIsMobile();
     const glRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -1833,6 +1861,7 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
                 onShowPencil={() => setPencilVisible(true)}
                 onHidePencil={() => setPencilVisible(false)}
                 screenTexture={screenTexture}
+                onDeviceAnchorChange={onDeviceAnchorChange}
               />
             </Suspense>
           </group>

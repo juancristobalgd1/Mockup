@@ -35,7 +35,14 @@ export interface TextOverlay {
   color: string;
   isBold: boolean;
   isItalic: boolean;
+  kind?: 'text' | 'label';
+  labelAnchor?: LabelAnchorPosition;
+  labelMode?: LabelTrackingMode;
+  levitation?: number;
 }
+
+export type LabelAnchorPosition = 'top' | 'top-right' | 'right' | 'bottom-right' | 'bottom' | 'bottom-left' | 'left' | 'top-left';
+export type LabelTrackingMode = 'follow' | 'billboard' | 'fixed';
 
 export type EnvPreset = 'studio' | 'warehouse' | 'sunset' | 'city' | 'forest' | 'night';
 
@@ -150,6 +157,10 @@ export interface AppState {
   grainBgOnly: boolean;
 
   texts: TextOverlay[];
+  labelDraftMode: LabelTrackingMode;
+  labelDraftSize: number;
+  labelDraftLevitation: number;
+  labelDraftColor: string;
 
   movieMode: boolean;
   movieDuration: number;
@@ -242,6 +253,10 @@ export const defaultState: AppState = {
   grainBgOnly: false,
 
   texts: [],
+  labelDraftMode: 'follow',
+  labelDraftSize: 13,
+  labelDraftLevitation: 16,
+  labelDraftColor: '#ffffff',
 
   movieMode: false,
   movieDuration: 5,
@@ -266,8 +281,10 @@ interface AppContextType {
   state: AppState;
   updateState: (updates: Partial<AppState>, skipHistory?: boolean) => void;
   addText: () => void;
+  addLabel: (anchor: LabelAnchorPosition) => void;
   updateText: (id: string, updates: Partial<TextOverlay>) => void;
   removeText: (id: string) => void;
+  clearLabels: () => void;
   addCameraKeyframe: (kf: Omit<CameraKeyframe, 'id'>) => void;
   removeCameraKeyframe: (id: string) => void;
   updateCameraKeyframe: (id: string, updates: Partial<Omit<CameraKeyframe, 'id'>>) => void;
@@ -334,9 +351,41 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       fontSize: 24,
       color: "#ffffff",
       isBold: false,
-      isItalic: false
+      isItalic: false,
+      kind: 'text',
     };
     setState(prev => ({ ...prev, texts: [...prev.texts, newText] }));
+  };
+
+  const addLabel = (anchor: LabelAnchorPosition) => {
+    setState(prev => {
+      const fixedPositions: Record<LabelAnchorPosition, { x: number; y: number }> = {
+        'top': { x: 50, y: 16 },
+        'top-right': { x: 78, y: 20 },
+        'right': { x: 84, y: 50 },
+        'bottom-right': { x: 78, y: 80 },
+        'bottom': { x: 50, y: 84 },
+        'bottom-left': { x: 22, y: 80 },
+        'left': { x: 16, y: 50 },
+        'top-left': { x: 22, y: 20 },
+      };
+      const fixedPosition = fixedPositions[anchor];
+      const newLabel: TextOverlay = {
+        id: Math.random().toString(36).substr(2, 9),
+        text: 'New label',
+        x: prev.labelDraftMode === 'fixed' ? fixedPosition.x : 50,
+        y: prev.labelDraftMode === 'fixed' ? fixedPosition.y : 50,
+        fontSize: prev.labelDraftSize,
+        color: prev.labelDraftColor,
+        isBold: true,
+        isItalic: false,
+        kind: 'label',
+        labelAnchor: anchor,
+        labelMode: prev.labelDraftMode,
+        levitation: prev.labelDraftLevitation,
+      };
+      return { ...prev, texts: [...prev.texts, newLabel] };
+    });
   };
 
   const updateText = (id: string, updates: Partial<TextOverlay>) => {
@@ -350,6 +399,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setState(prev => ({
       ...prev,
       texts: prev.texts.filter(t => t.id !== id)
+    }));
+  };
+
+  const clearLabels = () => {
+    setState(prev => ({
+      ...prev,
+      texts: prev.texts.filter(t => t.kind !== 'label')
     }));
   };
 
@@ -385,7 +441,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider value={{
       state, updateState,
-      addText, updateText, removeText,
+      addText, addLabel, updateText, removeText, clearLabels,
       addCameraKeyframe, removeCameraKeyframe, updateCameraKeyframe, clearCameraKeyframes,
       undo, redo,
       canUndo: historyLen > 0,
