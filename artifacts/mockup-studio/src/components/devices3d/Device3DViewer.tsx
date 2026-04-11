@@ -1005,10 +1005,78 @@ function applyEasing(alpha: number, easing?: string): number {
   }
 }
 
-// ── Interpolate between camera keyframes ──────────────────────────
+function easeOutQuad(alpha: number) {
+  return 1 - (1 - alpha) * (1 - alpha);
+}
+
+function easeInQuad(alpha: number) {
+  return alpha * alpha;
+}
+
+function getPlaybackAlpha(
+  alpha: number,
+  easing: string | undefined,
+  sameSceneAsPrev: boolean,
+  sameSceneAsNext: boolean,
+) {
+  if (sameSceneAsPrev && sameSceneAsNext) return alpha;
+  if (!sameSceneAsPrev && sameSceneAsNext) return easeOutQuad(alpha);
+  if (sameSceneAsPrev && !sameSceneAsNext) return easeInQuad(alpha);
+  return applyEasing(alpha, easing);
+}
+
+function catmullRomScalar(p0: number, p1: number, p2: number, p3: number, t: number, tension: number) {
+  const t2 = t * t;
+  const t3 = t2 * t;
+  const tangentScale = (1 - tension) * 0.5;
+  const m1 = (p2 - p0) * tangentScale;
+  const m2 = (p3 - p1) * tangentScale;
+  // Hermite basis — guarantees h(0)=p1, h(1)=p2
+  return (2 * t3 - 3 * t2 + 1) * p1
+       + (t3 - 2 * t2 + t) * m1
+       + (-2 * t3 + 3 * t2) * p2
+       + (t3 - t2) * m2;
+}
+
+function catmullRomVector3(a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3, d: THREE.Vector3, t: number, tension: number) {
+  return new THREE.Vector3(
+    catmullRomScalar(a.x, b.x, c.x, d.x, t, tension),
+    catmullRomScalar(a.y, b.y, c.y, d.y, t, tension),
+    catmullRomScalar(a.z, b.z, c.z, d.z, t, tension),
+  );
+}
+
+// ── Spherical helpers (Rotato-style orbit interpolation) ──────────
+function toSpherical(pos: THREE.Vector3, target: THREE.Vector3) {
+  const offset = pos.clone().sub(target);
+  const r = offset.length();
+  if (r < 1e-10) return { r: 0, phi: Math.PI / 2, theta: 0 };
+  const phi = Math.acos(Math.max(-1, Math.min(1, offset.y / r)));
+  const theta = Math.atan2(offset.x, offset.z);
+  return { r, phi, theta };
+}
+
+function fromSpherical(r: number, phi: number, theta: number, target: THREE.Vector3) {
+  return new THREE.Vector3(
+    r * Math.sin(phi) * Math.sin(theta),
+    r * Math.cos(phi),
+    r * Math.sin(phi) * Math.cos(theta),
+  ).add(target);
+}
+
+/** Unwrap angle so it stays within [-π, π] of the reference */
+function unwrapAngle(angle: number, reference: number) {
+  let diff = angle - reference;
+  while (diff > Math.PI) diff -= 2 * Math.PI;
+  while (diff < -Math.PI) diff += 2 * Math.PI;
+  return reference + diff;
+}
+
+// ── Interpolate between camera keyframes (spherical) ──────────────
 function interpolateKeyframes(
   keyframes: CameraKeyframe[],
   t: number,
+  curveTension: number,
 ): { position: THREE.Vector3; target: THREE.Vector3 } | null {
   if (keyframes.length === 0) return null;
   if (keyframes.length === 1) {
@@ -1030,26 +1098,76 @@ function interpolateKeyframes(
       target: new THREE.Vector3(...last.target),
     };
   }
-  let a = keyframes[0], b = keyframes[1];
+
+  // Find segment [a, b] containing t
+  let aIdx = 0;
   for (let i = 0; i < keyframes.length - 1; i++) {
     if (t >= keyframes[i].time && t <= keyframes[i + 1].time) {
-      a = keyframes[i];
-      b = keyframes[i + 1];
+      aIdx = i;
       break;
     }
   }
+  const bIdx = aIdx + 1;
+  const a = keyframes[aIdx];
+  const b = keyframes[bIdx];
+
   const span = b.time - a.time;
-  const alpha = span > 0 ? (t - a.time) / span : 0;
-  const easedAlpha = applyEasing(alpha, b.easing);
-  const position = new THREE.Vector3(...a.position).lerp(new THREE.Vector3(...b.position), easedAlpha);
-  const target = new THREE.Vector3(...a.target).lerp(new THREE.Vector3(...b.target), easedAlpha);
+  const rawAlpha = span > 0 ? (t - a.time) / span : 0;
+
+  // Easing — within a scene use linear timing; between scenes apply easing
+  const sameScene = !!a.sceneId && a.sceneId === b.sceneId;
+  const prevKf = keyframes[Math.max(0, aIdx - 1)];
+  const nextKf = keyframes[Math.min(keyframes.length - 1, bIdx + 1)];
+  const sameSceneAsPrev = !!a.sceneId && a.sceneId === prevKf?.sceneId;
+  const sameSceneAsNext = !!b.sceneId && b.sceneId === nextKf?.sceneId;
+  const easedAlpha = sameScene
+    ? rawAlpha
+    : getPlaybackAlpha(rawAlpha, b.easing, sameSceneAsPrev, sameSceneAsNext);
+
+  // Four Catmull-Rom control points
+  const prevIdx = Math.max(0, aIdx - 1);
+  const nextIdx = Math.min(keyframes.length - 1, bIdx + 1);
+  const prev = keyframes[prevIdx];
+  const next = keyframes[nextIdx];
+
+  // Interpolate targets in Cartesian (targets are usually the same [0,0,0])
+  const prevTarget = new THREE.Vector3(...prev.target);
+  const aTarget    = new THREE.Vector3(...a.target);
+  const bTarget    = new THREE.Vector3(...b.target);
+  const nextTarget = new THREE.Vector3(...next.target);
+  const target = catmullRomVector3(prevTarget, aTarget, bTarget, nextTarget, easedAlpha, curveTension);
+
+  // Convert positions to spherical coords relative to their own targets
+  const s0 = toSpherical(new THREE.Vector3(...prev.position), prevTarget);
+  const s1 = toSpherical(new THREE.Vector3(...a.position),    aTarget);
+  const s2 = toSpherical(new THREE.Vector3(...b.position),    bTarget);
+  const s3 = toSpherical(new THREE.Vector3(...next.position), nextTarget);
+
+  // Unwrap theta for shortest-path orbit continuity
+  s1.theta = unwrapAngle(s1.theta, s0.theta);
+  s2.theta = unwrapAngle(s2.theta, s1.theta);
+  s3.theta = unwrapAngle(s3.theta, s2.theta);
+
+  // Catmull-Rom on spherical coordinates
+  const r     = catmullRomScalar(s0.r,     s1.r,     s2.r,     s3.r,     easedAlpha, curveTension);
+  const phi   = catmullRomScalar(s0.phi,   s1.phi,   s2.phi,   s3.phi,   easedAlpha, curveTension);
+  const theta = catmullRomScalar(s0.theta, s1.theta, s2.theta, s3.theta, easedAlpha, curveTension);
+
+  // Clamp radius and polar angle to valid ranges
+  const position = fromSpherical(
+    Math.max(0.1, r),
+    Math.max(0.01, Math.min(Math.PI - 0.01, phi)),
+    theta,
+    target,
+  );
+
   return { position, target };
 }
 
 // ── OrbitControls ────────────────────────────────────────────────
 function HeroOrbitControls({
   deviceType, autoRotate, autoRotateSpeed, cameraAngle, cameraResetKey,
-  moviePlaying, movieTimeRef, movieKeyframes, cameraStateRef, liftedControlsRef,
+  moviePlaying, movieTimeRef, movieKeyframes, movieCurveTension, cameraStateRef, liftedControlsRef,
 }: {
   deviceType: string;
   autoRotate: boolean;
@@ -1059,6 +1177,7 @@ function HeroOrbitControls({
   moviePlaying: boolean;
   movieTimeRef: React.MutableRefObject<number>;
   movieKeyframes: CameraKeyframe[];
+  movieCurveTension: number;
   cameraStateRef: React.MutableRefObject<{ position: [number, number, number]; target: [number, number, number] } | null>;
   liftedControlsRef?: React.MutableRefObject<any>;
 }) {
@@ -1118,7 +1237,7 @@ function HeroOrbitControls({
 
     // Drive camera during movie playback — runs after OrbitControls, so we win
     if (moviePlaying && movieKeyframes.length >= 2) {
-      const result = interpolateKeyframes(movieKeyframes, movieTimeRef.current);
+      const result = interpolateKeyframes(movieKeyframes, movieTimeRef.current, movieCurveTension);
       if (result) {
         camera.position.copy(result.position);
         controls.target.copy(result.target);
@@ -1207,7 +1326,7 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
 
         const keyframes = cameraKeyframesRef.current;
         if (moviePlayingRef.current && keyframes.length >= 2) {
-          const result = interpolateKeyframes(keyframes, time);
+          const result = interpolateKeyframes(keyframes, time, state.movieCurveTension ?? 0.45);
           if (result) {
             camera.position.copy(result.position);
             // Point camera at the keyframe target so the view matrix is correct
@@ -1342,6 +1461,7 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
             moviePlaying={moviePlaying}
             movieTimeRef={movieTimeRef}
             movieKeyframes={state.cameraKeyframes}
+            movieCurveTension={state.movieCurveTension ?? 0.45}
             cameraStateRef={cameraStateRef}
             liftedControlsRef={liftedControlsRef}
           />

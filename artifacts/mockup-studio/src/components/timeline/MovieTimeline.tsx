@@ -161,12 +161,81 @@ const ANIMATION_PRESETS = [
 ];
 const MIN_SEGMENT_DURATION = 0.25;
 
+type TimelineScene = {
+  index: number;
+  startIndex: number;
+  endIndex: number;
+  start: CameraKeyframe;
+  end: CameraKeyframe;
+  keyframes: CameraKeyframe[];
+  label: string;
+  sceneId?: string;
+};
+
 function sortKeyframesByTime<T extends { time: number }>(keyframes: T[]) {
   return [...keyframes].sort((a, b) => a.time - b.time);
 }
 
 function snapTimelineTime(time: number) {
   return Math.round(time * 20) / 20;
+}
+
+function buildTimelineScenes(keyframes: CameraKeyframe[]) {
+  const scenes: TimelineScene[] = [];
+  let sceneNumber = 1;
+
+  for (let i = 0; i < keyframes.length; i += 1) {
+    const current = keyframes[i];
+
+    if (current.sceneId) {
+      let endIndex = i;
+      while (endIndex + 1 < keyframes.length && keyframes[endIndex + 1].sceneId === current.sceneId) {
+        endIndex += 1;
+      }
+      const sceneKeyframes = keyframes.slice(i, endIndex + 1);
+      scenes.push({
+        index: scenes.length,
+        startIndex: i,
+        endIndex,
+        start: sceneKeyframes[0],
+        end: sceneKeyframes[sceneKeyframes.length - 1],
+        keyframes: sceneKeyframes,
+        label: current.sceneLabel || current.label || `Escena ${sceneNumber}`,
+        sceneId: current.sceneId,
+      });
+      sceneNumber += 1;
+      i = endIndex;
+      continue;
+    }
+
+    if (i < keyframes.length - 1) {
+      const sceneKeyframes = keyframes.slice(i, i + 2);
+      scenes.push({
+        index: scenes.length,
+        startIndex: i,
+        endIndex: i + 1,
+        start: sceneKeyframes[0],
+        end: sceneKeyframes[1],
+        keyframes: sceneKeyframes,
+        label: current.sceneLabel || current.label || keyframes[i + 1].label || `Animación ${scenes.length + 1}`,
+      });
+      continue;
+    }
+
+    scenes.push({
+      index: scenes.length,
+      startIndex: i,
+      endIndex: i,
+      start: current,
+      end: current,
+      keyframes: [current],
+      label: current.sceneLabel || current.label || `Escena ${sceneNumber}`,
+      sceneId: current.sceneId,
+    });
+    sceneNumber += 1;
+  }
+
+  return scenes;
 }
 
 const PRESET_PREVIEW_KEYFRAMES = `
@@ -412,7 +481,8 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
   const [dragPreviewKeyframes, setDragPreviewKeyframes] = useState<CameraKeyframe[] | null>(null);
   const segmentDragRef = useRef<{
     mode: 'move' | 'resize-start' | 'resize-end';
-    segmentIndex: number;
+    startIndex: number;
+    endIndex: number;
     startX: number;
     keyframes: CameraKeyframe[];
   } | null>(null);
@@ -423,15 +493,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
   const timelineKeyframes = sortKeyframesByTime(dragPreviewKeyframes ?? cameraKeyframes);
 
   const activeKf = timelineKeyframes.find(k => k.id === activeKfId) ?? null;
-  const cameraSegments = timelineKeyframes.slice(0, -1).map((start, index) => {
-    const end = timelineKeyframes[index + 1];
-    return {
-      index,
-      start,
-      end,
-      label: start.label || end.label || `Animación ${index + 1}`,
-    };
-  });
+  const cameraScenes = buildTimelineScenes(timelineKeyframes);
 
   // Pixel-based scale (responds to zoom, NOT to duration)
   const effectivePxPerSec = PX_PER_SEC * timelineZoom;
@@ -495,7 +557,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
       if (!cam) return;
       const t = (performance.now() - liveStartRef.current) / 1000;
       capturedFramesRef.current.push({ time: t, position: cam.position, target: cam.target });
-    }, 200);
+    }, 60);
   }, [viewerRef]);
 
   const stopLiveRec = useCallback(() => {
@@ -504,22 +566,45 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
     const frames = capturedFramesRef.current;
     if (frames.length === 0) { setLiveRecording(false); return; }
     const totalTime = frames[frames.length - 1].time;
-    const STEP = 0.5;
     const sampled: Omit<CameraKeyframe, 'id'>[] = [];
+    const STEP = 0.15;
     let nextKeep = 0;
-    for (const f of frames) {
-      if (f.time >= nextKeep) { sampled.push(f); nextKeep = f.time + STEP; }
+    for (const frame of frames) {
+      if (frame.time >= nextKeep) {
+        sampled.push(frame);
+        nextKeep = frame.time + STEP;
+      }
     }
     const last = frames[frames.length - 1];
-    if (sampled.length === 0 || Math.abs(sampled[sampled.length - 1].time - last.time) > 0.05) sampled.push(last);
+    if (sampled.length === 0 || Math.abs(sampled[sampled.length - 1].time - last.time) > 0.05) {
+      sampled.push(last);
+    }
+    const sceneId = Math.random().toString(36).substr(2, 9);
+    const sceneNumber = new Set(cameraKeyframes.map(kf => kf.sceneId).filter(Boolean)).size + 1;
+    const sceneLabel = `Scene ${sceneNumber}`;
     const newDuration = Math.max(movieDuration, Math.ceil(totalTime));
-    if (newDuration !== movieDuration) updateState({ movieDuration: newDuration });
-    sampled.forEach(f => addCameraKeyframe(f));
+    const nextCameraKeyframes = [
+      ...cameraKeyframes.filter(existing => sampled.every(frame => Math.abs(existing.time - frame.time) > 0.1)),
+      ...sampled.map((frame, index) => ({
+        ...frame,
+        sceneId,
+        sceneLabel,
+        sceneSource: 'recording' as const,
+        easing: 'linear' as const,
+        label: index === 0 ? sceneLabel : frame.label,
+        id: Math.random().toString(36).substr(2, 9),
+      })),
+    ].sort((a, b) => a.time - b.time);
+
+    updateState({
+      movieDuration: newDuration,
+      cameraKeyframes: nextCameraKeyframes,
+    });
     movieTimeRef.current = 0;
     setCurrentTime(0);
     setLiveRecording(false);
     capturedFramesRef.current = [];
-  }, [addCameraKeyframe, movieDuration, movieTimeRef, updateState]);
+  }, [cameraKeyframes, movieDuration, movieTimeRef, updateState]);
 
   const stopPlayback = useCallback(() => {
     if (kfRafRef.current) { cancelAnimationFrame(kfRafRef.current); kfRafRef.current = null; }
@@ -578,12 +663,13 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
 
   const handleTrackPointerUp = useCallback(() => { isDragging.current = false; }, []);
 
-  const startSegmentDrag = useCallback((e: React.PointerEvent<HTMLDivElement>, segmentIndex: number, mode: 'move' | 'resize-start' | 'resize-end') => {
+  const startSegmentDrag = useCallback((e: React.PointerEvent<HTMLDivElement>, startIndex: number, endIndex: number, mode: 'move' | 'resize-start' | 'resize-end') => {
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
     segmentDragRef.current = {
       mode,
-      segmentIndex,
+      startIndex,
+      endIndex,
       startX: e.clientX,
       keyframes: sortKeyframesByTime(cameraKeyframes),
     };
@@ -597,39 +683,48 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
     const drag = segmentDragRef.current;
     const nextKeyframes = drag.keyframes.map(kf => ({ ...kf }));
     const deltaSeconds = (e.clientX - drag.startX) / effectivePxPerSec;
-    const startIndex = drag.segmentIndex;
-    const endIndex = drag.segmentIndex + 1;
+    const { startIndex, endIndex } = drag;
     const round = (value: number) => snapTimelineTime(value);
+    const originalStart = drag.keyframes[startIndex].time;
+    const originalEnd = drag.keyframes[endIndex].time;
+    const originalDuration = Math.max(originalEnd - originalStart, MIN_SEGMENT_DURATION);
 
     if (drag.mode === 'move') {
-      const segmentStart = drag.keyframes[startIndex].time;
-      const segmentEnd = drag.keyframes[endIndex].time;
       const prevBound = startIndex > 0 ? drag.keyframes[startIndex - 1].time + MIN_SEGMENT_DURATION : 0;
       const nextBound = endIndex < drag.keyframes.length - 1 ? drag.keyframes[endIndex + 1].time - MIN_SEGMENT_DURATION : movieDuration;
-      const minDelta = prevBound - segmentStart;
-      const maxDelta = nextBound - segmentEnd;
+      const minDelta = prevBound - originalStart;
+      const maxDelta = nextBound - originalEnd;
       const appliedDelta = Math.max(minDelta, Math.min(maxDelta, deltaSeconds));
-      nextKeyframes[startIndex].time = round(segmentStart + appliedDelta);
-      nextKeyframes[endIndex].time = round(segmentEnd + appliedDelta);
+      for (let i = startIndex; i <= endIndex; i += 1) {
+        nextKeyframes[i].time = round(drag.keyframes[i].time + appliedDelta);
+      }
       movieTimeRef.current = nextKeyframes[startIndex].time;
       setCurrentTime(nextKeyframes[startIndex].time);
     }
 
     if (drag.mode === 'resize-start') {
-      const original = drag.keyframes[startIndex].time;
       const prevBound = startIndex > 0 ? drag.keyframes[startIndex - 1].time + MIN_SEGMENT_DURATION : 0;
-      const nextBound = drag.keyframes[endIndex].time - MIN_SEGMENT_DURATION;
-      nextKeyframes[startIndex].time = round(Math.max(prevBound, Math.min(nextBound, original + deltaSeconds)));
+      const nextBound = originalEnd - MIN_SEGMENT_DURATION;
+      const newStart = round(Math.max(prevBound, Math.min(nextBound, originalStart + deltaSeconds)));
+      const scale = (originalEnd - newStart) / originalDuration;
+      for (let i = startIndex; i <= endIndex; i += 1) {
+        const offset = drag.keyframes[i].time - originalStart;
+        nextKeyframes[i].time = round(newStart + offset * scale);
+      }
       movieTimeRef.current = nextKeyframes[startIndex].time;
       setCurrentTime(nextKeyframes[startIndex].time);
       setActiveKfId(nextKeyframes[startIndex].id);
     }
 
     if (drag.mode === 'resize-end') {
-      const original = drag.keyframes[endIndex].time;
-      const prevBound = drag.keyframes[startIndex].time + MIN_SEGMENT_DURATION;
+      const prevBound = originalStart + MIN_SEGMENT_DURATION;
       const nextBound = endIndex < drag.keyframes.length - 1 ? drag.keyframes[endIndex + 1].time - MIN_SEGMENT_DURATION : movieDuration;
-      nextKeyframes[endIndex].time = round(Math.max(prevBound, Math.min(nextBound, original + deltaSeconds)));
+      const newEnd = round(Math.max(prevBound, Math.min(nextBound, originalEnd + deltaSeconds)));
+      const scale = (newEnd - originalStart) / originalDuration;
+      for (let i = startIndex; i <= endIndex; i += 1) {
+        const offset = drag.keyframes[i].time - originalStart;
+        nextKeyframes[i].time = round(originalStart + offset * scale);
+      }
       movieTimeRef.current = nextKeyframes[endIndex].time;
       setCurrentTime(nextKeyframes[endIndex].time);
       setActiveKfId(nextKeyframes[endIndex].id);
@@ -1052,6 +1147,25 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           {displayDuration % 1 === 0 ? `${displayDuration}s` : `${displayDuration.toFixed(1)}s`}
         </span>
 
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 8 }}>
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.32)', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            Curva
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={Math.round((state.movieCurveTension ?? 0.45) * 100)}
+            onChange={e => updateState({ movieCurveTension: Number(e.target.value) / 100 }, true)}
+            title="Tensión de curva: menor valor = más fluido, mayor valor = más rígido"
+            style={{ width: 88, accentColor: '#a78bfa' }}
+          />
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontFamily: 'monospace', minWidth: 30 }}>
+            {Math.round((state.movieCurveTension ?? 0.45) * 100)}%
+          </span>
+        </div>
+
         <div style={{ flex: 1 }} />
 
         {/* Zoom Out */}
@@ -1158,14 +1272,14 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
               textTransform: 'uppercase', letterSpacing: '0.08em', pointerEvents: 'none',
             }}>Camera</span>
 
-            {cameraSegments.map(segment => {
-              const leftPx = segment.start.time * effectivePxPerSec;
-              const widthPx = Math.max((segment.end.time - segment.start.time) * effectivePxPerSec, 18);
-              const isActive = activeKfId === segment.start.id || activeKfId === segment.end.id;
+            {cameraScenes.map(scene => {
+              const leftPx = scene.start.time * effectivePxPerSec;
+              const widthPx = Math.max((scene.end.time - scene.start.time) * effectivePxPerSec, 18);
+              const isActive = scene.keyframes.some(kf => kf.id === activeKfId);
 
               return (
                 <div
-                  key={`${segment.start.id}-${segment.end.id}`}
+                  key={`${scene.start.id}-${scene.end.id}-${scene.index}`}
                   style={{
                     position: 'absolute',
                     left: leftPx,
@@ -1177,13 +1291,13 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
                   }}
                 >
                   <div
-                    onPointerDown={e => startSegmentDrag(e, segment.index, 'move')}
+                    onPointerDown={e => startSegmentDrag(e, scene.startIndex, scene.endIndex, 'move')}
                     onPointerMove={handleSegmentPointerMove}
                     onPointerUp={finishSegmentDrag}
                     onPointerCancel={finishSegmentDrag}
                     onClick={e => {
                       e.stopPropagation();
-                      setActiveKfId(segment.end.id);
+                      setActiveKfId(scene.end.id);
                       setEditingLabel(null);
                     }}
                     style={{
@@ -1215,19 +1329,40 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       pointerEvents: 'none',
-                    }}>{segment.label}</span>
+                    }}>{scene.label}</span>
+
+                    {scene.keyframes.length > 2 && scene.keyframes.slice(1, -1).map(innerKf => {
+                      const progress = (innerKf.time - scene.start.time) / Math.max(scene.end.time - scene.start.time, MIN_SEGMENT_DURATION);
+                      return (
+                        <div
+                          key={innerKf.id}
+                          style={{
+                            position: 'absolute',
+                            left: `${Math.max(0, Math.min(100, progress * 100))}%`,
+                            top: '50%',
+                            width: 6,
+                            height: 6,
+                            transform: 'translate(-50%, -50%) rotate(45deg)',
+                            borderRadius: 1,
+                            background: activeKfId === innerKf.id ? '#93c5fd' : 'rgba(255,255,255,0.48)',
+                            boxShadow: activeKfId === innerKf.id ? '0 0 0 2px rgba(59,130,246,0.16)' : 'none',
+                            pointerEvents: 'none',
+                          }}
+                        />
+                      );
+                    })}
                   </div>
 
                   <div
                     onPointerDown={e => {
-                      setActiveKfId(segment.start.id);
+                      setActiveKfId(scene.start.id);
                       setEditingLabel(null);
-                      startSegmentDrag(e, segment.index, 'resize-start');
+                      startSegmentDrag(e, scene.startIndex, scene.endIndex, 'resize-start');
                     }}
                     onPointerMove={handleSegmentPointerMove}
                     onPointerUp={finishSegmentDrag}
                     onPointerCancel={finishSegmentDrag}
-                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); removeCameraKeyframe(segment.start.id); if (activeKfId === segment.start.id) setActiveKfId(null); }}
+                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); removeCameraKeyframe(scene.start.id); if (activeKfId === scene.start.id) setActiveKfId(null); }}
                     style={{
                       position: 'absolute',
                       left: 0,
@@ -1247,21 +1382,21 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
                       height: 12,
                       transform: 'rotate(45deg)',
                       borderRadius: 2,
-                      background: activeKfId === segment.start.id ? '#3b82f6' : '#d1d5db',
-                      boxShadow: activeKfId === segment.start.id ? '0 0 0 3px rgba(59,130,246,0.18)' : '0 0 0 1px rgba(0,0,0,0.15)',
+                      background: activeKfId === scene.start.id ? '#3b82f6' : '#d1d5db',
+                      boxShadow: activeKfId === scene.start.id ? '0 0 0 3px rgba(59,130,246,0.18)' : '0 0 0 1px rgba(0,0,0,0.15)',
                     }} />
                   </div>
 
                   <div
                     onPointerDown={e => {
-                      setActiveKfId(segment.end.id);
+                      setActiveKfId(scene.end.id);
                       setEditingLabel(null);
-                      startSegmentDrag(e, segment.index, 'resize-end');
+                      startSegmentDrag(e, scene.startIndex, scene.endIndex, 'resize-end');
                     }}
                     onPointerMove={handleSegmentPointerMove}
                     onPointerUp={finishSegmentDrag}
                     onPointerCancel={finishSegmentDrag}
-                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); removeCameraKeyframe(segment.end.id); if (activeKfId === segment.end.id) setActiveKfId(null); }}
+                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); removeCameraKeyframe(scene.end.id); if (activeKfId === scene.end.id) setActiveKfId(null); }}
                     style={{
                       position: 'absolute',
                       right: 0,
@@ -1281,8 +1416,8 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
                       height: 12,
                       transform: 'rotate(45deg)',
                       borderRadius: 2,
-                      background: activeKfId === segment.end.id ? '#3b82f6' : '#d1d5db',
-                      boxShadow: activeKfId === segment.end.id ? '0 0 0 3px rgba(59,130,246,0.18)' : '0 0 0 1px rgba(0,0,0,0.15)',
+                      background: activeKfId === scene.end.id ? '#3b82f6' : '#d1d5db',
+                      boxShadow: activeKfId === scene.end.id ? '0 0 0 3px rgba(59,130,246,0.18)' : '0 0 0 1px rgba(0,0,0,0.15)',
                     }} />
                   </div>
                 </div>

@@ -21,6 +21,9 @@ export interface CameraKeyframe {
   target: [number, number, number];
   easing?: EasingType;
   label?: string;
+  sceneId?: string;
+  sceneLabel?: string;
+  sceneSource?: 'recording' | 'preset' | 'manual';
 }
 
 export interface TextOverlay {
@@ -148,6 +151,7 @@ export interface AppState {
 
   movieMode: boolean;
   movieDuration: number;
+  movieCurveTension: number;
   cameraKeyframes: CameraKeyframe[];
 
   creationMode: CreationMode;
@@ -223,6 +227,7 @@ export const defaultState: AppState = {
 
   movieMode: false,
   movieDuration: 5,
+  movieCurveTension: 0.45,
   cameraKeyframes: [],
 
   creationMode: 'mockup',
