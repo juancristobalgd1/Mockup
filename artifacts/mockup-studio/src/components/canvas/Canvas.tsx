@@ -5,8 +5,8 @@ import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS, ANIMATED_BACKGROUNDS, 
 import type { AnimatedBackground } from '../../data/backgrounds';
 import { LIGHT_OVERLAYS } from '../../data/lightOverlays';
 import { AnnotateCanvas } from './AnnotateCanvas';
-import { Device3DViewer } from '../devices3d/Device3DViewer';
-import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
+import { Device3DViewer, InteractionControls } from '../devices3d/Device3DViewer';
+import type { Device3DViewerHandle, InteractionMode } from '../devices3d/Device3DViewer';
 import { CSSDeviceFallback, checkWebGL } from '../devices3d/WebGLFallback';
 
 interface CanvasProps {
@@ -72,6 +72,9 @@ function CanvasBgRenderer({ bg, opacity, borderRadius }: { bg: AnimatedBackgroun
 export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, onUpdateText, viewerRef, moviePlaying, movieTimeRef }, ref) => {
   const { state } = useApp();
   const [webglAvailable, setWebglAvailable] = useState<boolean | null>(null);
+  const [interactionMode, setInteractionMode] = useState<InteractionMode>('none');
+  const [zoomValue, setZoomValue] = useState(58);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   useEffect(() => {
     setWebglAvailable(checkWebGL());
@@ -148,6 +151,21 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
 
   const borderRadius = state.canvasRadius ? `${state.canvasRadius}px` : undefined;
 
+  const stageStyle: React.CSSProperties = hasRatio && ratioValue
+    ? {
+        position: 'relative',
+        aspectRatio: `${ratioValue}`,
+        maxWidth: 'calc(100% - 48px)',
+        maxHeight: 'calc(100% - 48px)',
+        width: ratioValue >= 1 ? 'calc(100% - 48px)' : 'auto',
+        height: ratioValue < 1 ? 'calc(100% - 48px)' : 'auto',
+      }
+    : {
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+      };
+
   const bgOpacity = state.bgType === 'none' || state.bgType === 'transparent'
     ? 1
     : (state.bgOpacity ?? 100) / 100;
@@ -155,156 +173,182 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
   return (
     <div
       ref={ref}
-      data-canvas-root="true"
-      className="relative flex items-center justify-center overflow-hidden"
-      style={{ width: '100%', height: '100%', borderRadius }}
+      className={`relative ${hasRatio ? 'flex items-center justify-center' : 'overflow-hidden'}`}
+      style={{ width: '100%', height: '100%', overflow: hasRatio ? 'visible' : 'hidden' }}
       data-testid="canvas-area"
     >
       {/* Animated background keyframes injection */}
       {state.bgType === 'animated' && <style>{ANIMATED_BG_KEYFRAMES}</style>}
 
-      {/* Background layer — separate div so opacity doesn't affect children */}
-      {state.bgType === 'animated' ? (() => {
-        const bg = ANIMATED_BACKGROUNDS.find(b => b.id === state.bgAnimated) ?? ANIMATED_BACKGROUNDS[0];
-        if (bg.type === 'iframe' && bg.src) {
+      <div
+        data-canvas-root="true"
+        style={{
+          ...stageStyle,
+          overflow: 'hidden',
+          borderRadius,
+          boxShadow: hasRatio
+            ? '0 0 0 1px rgba(255,255,255,0.08), 0 26px 60px rgba(0,0,0,0.28)'
+            : undefined,
+          background: state.bgType === 'transparent' ? '#1a1a1a' : undefined,
+        }}
+      >
+
+        {/* Background layer — separate div so opacity doesn't affect children */}
+        {state.bgType === 'animated' ? (() => {
+          const bg = ANIMATED_BACKGROUNDS.find(b => b.id === state.bgAnimated) ?? ANIMATED_BACKGROUNDS[0];
+          if (bg.type === 'iframe' && bg.src) {
+            return (
+              <iframe
+                key={bg.id}
+                src={bg.src}
+                title={bg.label}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', zIndex: 0, borderRadius, opacity: bgOpacity }}
+                sandbox="allow-scripts allow-same-origin"
+              />
+            );
+          }
+          if (bg.type === 'canvas' && bg.render) {
+            return <CanvasBgRenderer key={bg.id} bg={bg} opacity={bgOpacity} borderRadius={borderRadius} />;
+          }
           return (
-            <iframe
-              key={bg.id}
-              src={bg.src}
-              title={bg.label}
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', zIndex: 0, borderRadius, opacity: bgOpacity }}
-              sandbox="allow-scripts allow-same-origin"
-            />
+            <div style={{
+              position: 'absolute', inset: 0, zIndex: 0, borderRadius, opacity: bgOpacity,
+              ...(bg.animStyle ?? {}),
+              ...(state.bgBlur > 0 ? { filter: `blur(${state.bgBlur}px)`, transform: 'scale(1.05)' } : {}),
+            }} />
           );
-        }
-        if (bg.type === 'canvas' && bg.render) {
-          return <CanvasBgRenderer key={bg.id} bg={bg} opacity={bgOpacity} borderRadius={borderRadius} />;
-        }
-        return (
+        })() : (
           <div style={{
             position: 'absolute', inset: 0, zIndex: 0, borderRadius, opacity: bgOpacity,
-            ...(bg.animStyle ?? {}),
+            ...getBackground(),
             ...(state.bgBlur > 0 ? { filter: `blur(${state.bgBlur}px)`, transform: 'scale(1.05)' } : {}),
           }} />
-        );
-      })() : (
-        <div style={{
-          position: 'absolute', inset: 0, zIndex: 0, borderRadius, opacity: bgOpacity,
-          ...getBackground(),
-          ...(state.bgBlur > 0 ? { filter: `blur(${state.bgBlur}px)`, transform: 'scale(1.05)' } : {}),
-        }} />
-      )}
+        )}
 
-      {state.bgType === 'video' && state.bgVideo && (
-        <video
-          data-bg-video="true"
-          src={state.bgVideo}
-          autoPlay
-          loop
-          muted
-          playsInline
-          style={{
-            position: 'absolute', inset: 0, zIndex: 0, borderRadius, opacity: bgOpacity,
-            width: '100%', height: '100%', objectFit: 'cover',
-            ...(state.bgBlur > 0 ? { filter: `blur(${state.bgBlur}px)`, transform: 'scale(1.05)' } : {}),
-          }}
-        />
-      )}
+        {state.bgType === 'video' && state.bgVideo && (
+          <video
+            data-bg-video="true"
+            src={state.bgVideo}
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{
+              position: 'absolute', inset: 0, zIndex: 0, borderRadius, opacity: bgOpacity,
+              width: '100%', height: '100%', objectFit: 'cover',
+              ...(state.bgBlur > 0 ? { filter: `blur(${state.bgBlur}px)`, transform: 'scale(1.05)' } : {}),
+            }}
+          />
+        )}
 
-      {/* Vignette overlay */}
-      {state.bgVignette && (
-        <div style={{
-          position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', borderRadius,
-          background: `radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,${(state.bgVignetteIntensity ?? 50) / 100}) 100%)`,
-        }} />
-      )}
-
-      {/* Color overlay */}
-      {state.overlayEnabled && (
-        <div style={{ position: 'absolute', inset: 0, background: state.overlayColor, opacity: state.overlayOpacity / 100, pointerEvents: 'none', zIndex: 1, borderRadius }} />
-      )}
-
-      {/* Light / shadow overlay — zIndex 1 when bgOnly (behind device), 18 otherwise */}
-      {state.lightOverlay && (() => {
-        const preset = LIGHT_OVERLAYS.find(p => p.id === state.lightOverlay);
-        if (!preset) return null;
-        return (
+        {/* Vignette overlay */}
+        {state.bgVignette && (
           <div style={{
-            position: 'absolute', inset: 0, pointerEvents: 'none',
-            zIndex: state.lightOverlayBgOnly ? 1 : 18,
-            borderRadius,
-            backgroundImage: preset.background,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            opacity: state.lightOverlayOpacity / 100,
-            mixBlendMode: state.lightOverlayBgOnly ? 'normal' : state.lightOverlayBlend as React.CSSProperties['mixBlendMode'],
-            filter: preset.filter,
+            position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', borderRadius,
+            background: `radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,${(state.bgVignetteIntensity ?? 50) / 100}) 100%)`,
           }} />
-        );
-      })()}
+        )}
 
-      {/* Film grain overlay — zIndex 1 when bgOnly (behind device), 20 otherwise */}
-      {state.grain && (
-        <div style={{
-          position: 'absolute', inset: 0,
-          zIndex: state.grainBgOnly ? 1 : 20,
-          pointerEvents: 'none', borderRadius,
-          opacity: state.grainIntensity / 100,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-          backgroundRepeat: 'repeat',
-          backgroundSize: '180px 180px',
-          mixBlendMode: 'overlay',
-        }} />
-      )}
+        {/* Color overlay */}
+        {state.overlayEnabled && (
+          <div style={{ position: 'absolute', inset: 0, background: state.overlayColor, opacity: state.overlayOpacity / 100, pointerEvents: 'none', zIndex: 1, borderRadius }} />
+        )}
 
-      {/* Canvas ratio guide */}
-      {hasRatio && ratioValue && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3, pointerEvents: 'none' }}>
+        {/* Light / shadow overlay — zIndex 1 when bgOnly (behind device), 18 otherwise */}
+        {state.lightOverlay && (() => {
+          const preset = LIGHT_OVERLAYS.find(p => p.id === state.lightOverlay);
+          if (!preset) return null;
+          return (
+            <div style={{
+              position: 'absolute', inset: 0, pointerEvents: 'none',
+              zIndex: state.lightOverlayBgOnly ? 1 : 18,
+              borderRadius,
+              backgroundImage: preset.background,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: state.lightOverlayOpacity / 100,
+              mixBlendMode: state.lightOverlayBgOnly ? 'normal' : state.lightOverlayBlend as React.CSSProperties['mixBlendMode'],
+              filter: preset.filter,
+            }} />
+          );
+        })()}
+
+        {/* Film grain overlay — zIndex 1 when bgOnly (behind device), 20 otherwise */}
+        {state.grain && (
           <div style={{
-            position: 'relative', aspectRatio: ratioValue, height: '100%',
-            maxWidth: '100%', maxHeight: '100%', width: `${ratioValue * 100}%`,
-            boxShadow: '0 0 0 9999px rgba(0,0,0,0.35)',
-            border: '1.5px dashed rgba(255,255,255,0.2)', borderRadius: 4,
+            position: 'absolute', inset: 0,
+            zIndex: state.grainBgOnly ? 1 : 20,
+            pointerEvents: 'none', borderRadius,
+            opacity: state.grainIntensity / 100,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+            backgroundRepeat: 'repeat',
+            backgroundSize: '180px 180px',
+            mixBlendMode: 'overlay',
           }} />
-        </div>
-      )}
+        )}
 
-      {/* 3D Device Viewer or CSS fallback */}
-      {webglAvailable === false ? (
-        <CSSDeviceFallback />
-      ) : webglAvailable === true ? (
-        <Device3DViewer
-          ref={viewerRef}
-          style={{ position: 'absolute', inset: 0, zIndex: 2 }}
-          moviePlaying={moviePlaying}
-          movieTimeRef={movieTimeRef}
-        />
-      ) : null /* loading – will resolve synchronously */}
-
-      {/* Annotation drawing layer */}
-      <AnnotateCanvas />
-
-      {/* Text overlays */}
-      {textOverlays.map(overlay => (
-        <div
-          key={overlay.id}
-          style={{
+        {/* Artboard edge */}
+        {hasRatio && ratioValue && (
+          <div style={{
             position: 'absolute',
-            left: `${overlay.x}%`, top: `${overlay.y}%`,
-            transform: 'translate(-50%, -50%)',
-            fontSize: overlay.fontSize, color: overlay.color,
-            fontWeight: overlay.isBold ? 700 : 400,
-            fontStyle: overlay.isItalic ? 'italic' : 'normal',
-            cursor: 'move', userSelect: 'none',
-            textShadow: '0 1px 4px rgba(0,0,0,0.5)',
-            whiteSpace: 'pre', zIndex: 10, fontFamily: 'Inter, sans-serif',
-          }}
-          onMouseDown={(e) => handleTextDrag(overlay.id, e)}
-          data-testid={`text-overlay-${overlay.id}`}
-        >
-          {overlay.text}
-        </div>
-      ))}
+            inset: 0,
+            zIndex: 3,
+            pointerEvents: 'none',
+            borderRadius,
+            boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.08)',
+          }} />
+        )}
+
+        {/* 3D Device Viewer or CSS fallback */}
+        {webglAvailable === false ? (
+          <CSSDeviceFallback />
+        ) : webglAvailable === true ? (
+          <Device3DViewer
+            ref={viewerRef}
+            style={{ position: 'absolute', inset: 0, zIndex: 2 }}
+            moviePlaying={moviePlaying}
+            movieTimeRef={movieTimeRef}
+            interactionMode={interactionMode}
+            onInteractionModeChange={setInteractionMode}
+            zoomValue={zoomValue}
+            onZoomValueChange={setZoomValue}
+          />
+        ) : null /* loading – will resolve synchronously */}
+
+        {/* Annotation drawing layer */}
+        <AnnotateCanvas />
+
+        {/* Text overlays */}
+        {textOverlays.map(overlay => (
+          <div
+            key={overlay.id}
+            style={{
+              position: 'absolute',
+              left: `${overlay.x}%`, top: `${overlay.y}%`,
+              transform: 'translate(-50%, -50%)',
+              fontSize: overlay.fontSize, color: overlay.color,
+              fontWeight: overlay.isBold ? 700 : 400,
+              fontStyle: overlay.isItalic ? 'italic' : 'normal',
+              cursor: 'move', userSelect: 'none',
+              textShadow: '0 1px 4px rgba(0,0,0,0.5)',
+              whiteSpace: 'pre', zIndex: 10, fontFamily: 'Inter, sans-serif',
+            }}
+            onMouseDown={(e) => handleTextDrag(overlay.id, e)}
+            data-testid={`text-overlay-${overlay.id}`}
+          >
+            {overlay.text}
+          </div>
+        ))}
+      </div>
+
+      {/* Interaction controls — outside stage so they float over the workspace */}
+      <InteractionControls
+        mode={interactionMode}
+        onChange={setInteractionMode}
+        zoomValue={zoomValue}
+        onZoomChange={setZoomValue}
+        isMobile={isMobile}
+      />
     </div>
   );
 });

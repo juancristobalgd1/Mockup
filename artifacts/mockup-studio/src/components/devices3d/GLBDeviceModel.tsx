@@ -329,15 +329,30 @@ function countMeshes(root: THREE.Object3D): number {
 
 // ── Material helpers ──────────────────────────────────────────────────
 
+function coatedChassisMat(color: string, roughness = 0.24) {
+  const hex = resolveColor(color);
+  return new THREE.MeshPhysicalMaterial({
+    color: hex,
+    roughness,
+    metalness: 0.12,
+    envMapIntensity: 0.42,
+    clearcoat: 1.0,
+    clearcoatRoughness: Math.max(0.05, roughness * 0.45),
+    reflectivity: 0.56,
+  });
+}
+
 /** PBR override for metal chassis parts (adapts to deviceColor). */
 function metalMat(color: string, roughness = 0.18, metalness = 0.88) {
   const hex = resolveColor(color);
   return new THREE.MeshPhysicalMaterial({
-    color: hex, roughness, metalness,
-    envMapIntensity: 1.4,
-    clearcoat: 0.25,
-    clearcoatRoughness: 0.18,
-    reflectivity: 0.7,
+    color: hex,
+    roughness: Math.max(0.1, roughness),
+    metalness: Math.min(0.88, metalness),
+    envMapIntensity: 0.72,
+    clearcoat: 0.55,
+    clearcoatRoughness: 0.08,
+    reflectivity: 0.62,
   });
 }
 
@@ -491,9 +506,11 @@ function classifyMesh(
   // ── Back frosted glass ────────────────────────────────────────────
   if (key.includes('frosted_glass') || key.includes('tint_back')) {
     return new THREE.MeshPhysicalMaterial({
-      color: '#d8d8d8', roughness: 0.28, metalness: 0.02,
+      color: '#d8d8d8', roughness: 0.34, metalness: 0.02,
       transmission: 0.55, transparent: true, opacity: 0.97,
-      envMapIntensity: 1.1,
+      envMapIntensity: 0.58,
+      clearcoat: 0.85,
+      clearcoatRoughness: 0.12,
     });
   }
 
@@ -503,7 +520,7 @@ function classifyMesh(
     return new THREE.MeshPhysicalMaterial({
       color: '#020506', roughness: 0.01, metalness: 0.18,
       transmission: 0.22, transparent: true, opacity: 0.97,
-      envMapIntensity: 1.8,
+      envMapIntensity: 1.05,
       clearcoat: 1.0, clearcoatRoughness: 0.01,
     });
   }
@@ -516,14 +533,14 @@ function classifyMesh(
   // ── Antenna / plastic / screws ────────────────────────────────────
   if (key.includes('antena') || key.includes('plastic') || key.includes('screw')
       || key.includes('usb') || key.includes('speaker')) {
-    return new THREE.MeshStandardMaterial({ color: '#0e0e11', roughness: 0.5, metalness: 0.5, envMapIntensity: 0.9 });
+    return new THREE.MeshStandardMaterial({ color: '#0e0e11', roughness: 0.58, metalness: 0.22, envMapIntensity: 0.32 });
   }
 
   // ── Logo ──────────────────────────────────────────────────────────
   if (key.includes('logo')) {
     return new THREE.MeshPhysicalMaterial({
-      color: resolveColor(deviceColor, '#8a8a8e'), metalness: 0.98, roughness: 0.02,
-      envMapIntensity: 2.0, clearcoat: 1.0, clearcoatRoughness: 0.0, reflectivity: 1.0,
+      color: resolveColor(deviceColor, '#8a8a8e'), metalness: 0.48, roughness: 0.18,
+      envMapIntensity: 0.46, clearcoat: 1.0, clearcoatRoughness: 0.06, reflectivity: 0.5,
     });
   }
 
@@ -537,14 +554,14 @@ function classifyMesh(
   // ── Dark glossy surfaces (watch back cover, ceramic) ─────────────
   if (key.includes('black') || key.includes('glossy') || key.includes('dark_chrome')) {
     return new THREE.MeshPhysicalMaterial({
-      color: '#080808', roughness: 0.04, metalness: 0.88,
-      envMapIntensity: 1.8, clearcoat: 1.0, clearcoatRoughness: 0.02,
+      color: '#080808', roughness: 0.07, metalness: 0.58,
+      envMapIntensity: 0.78, clearcoat: 1.0, clearcoatRoughness: 0.03,
     });
   }
 
   // ── Sensor / cap (watch health sensors, crown cap) ───────────────
   if (key.includes('sensor') || key.includes('material_')) {
-    return new THREE.MeshStandardMaterial({ color: '#1c1c1e', roughness: 0.22, metalness: 0.60, envMapIntensity: 1.1 });
+    return new THREE.MeshStandardMaterial({ color: '#1c1c1e', roughness: 0.28, metalness: 0.28, envMapIntensity: 0.34 });
   }
 
   // ── Iron / chrome / steel (watch case) ───────────────────────────
@@ -559,7 +576,7 @@ function classifyMesh(
 
   // ── Fallback: generic chassis (hash-named or unknown) ────────────
   // Use moderate roughness so unknown meshes don't become chrome mirrors
-  return metalMat(deviceColor || '#71717a', 0.35, 0.72);
+  return coatedChassisMat(deviceColor || '#71717a', 0.26);
 }
 
 function applyMaterials(
@@ -593,7 +610,7 @@ function applyMaterials(
         const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
         mats.forEach(m => {
           const mat = m as THREE.MeshStandardMaterial;
-          mat.envMapIntensity = 1.4;
+          mat.envMapIntensity = 0.48;
           mat.needsUpdate = true;
         });
       }

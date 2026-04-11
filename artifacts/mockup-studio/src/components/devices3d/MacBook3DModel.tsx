@@ -199,8 +199,8 @@ export function MacBook3DModel({ def, screenTexture, contentType, lidAngle = 112
   const isPro = def.id.includes('pro');
   const isAir = def.id.includes('air');
   const bodyColor = isPro ? '#1c1c1e' : (isAir ? '#e8e0d0' : '#1c1c1e');
-  const metalness = isPro ? 0.85 : 0.60;
-  const roughness = isPro ? 0.12 : 0.22;
+  const metalness = isPro ? 0.34 : 0.22;
+  const roughness = isPro ? 0.24 : 0.30;
   const bodyMat = { color: bodyColor, metalness, roughness };
 
   // Normalized: lid width = 3.0 units
@@ -229,7 +229,7 @@ export function MacBook3DModel({ def, screenTexture, contentType, lidAngle = 112
           castShadow receiveShadow
           position={[0, 0, 0]}
         >
-          <meshStandardMaterial {...bodyMat} envMapIntensity={0.8} />
+          <meshPhysicalMaterial {...bodyMat} envMapIntensity={0.38} clearcoat={1} clearcoatRoughness={0.09} reflectivity={0.52} />
         </RoundedBox>
 
         {/* Keyboard area */}
@@ -260,7 +260,7 @@ export function MacBook3DModel({ def, screenTexture, contentType, lidAngle = 112
       <group position={[0, baseD / 2 - 0.004, -baseH / 2]}>
         <mesh rotation={[0, Math.PI / 2, 0]}>
           <cylinderGeometry args={[0.014, 0.014, baseW * 0.70, 16]} />
-          <meshStandardMaterial color={bodyColor} metalness={metalness + 0.05} roughness={roughness - 0.04} />
+          <meshPhysicalMaterial color={bodyColor} metalness={0.42} roughness={0.22} envMapIntensity={0.34} clearcoat={0.8} clearcoatRoughness={0.08} />
         </mesh>
       </group>
 
@@ -268,18 +268,20 @@ export function MacBook3DModel({ def, screenTexture, contentType, lidAngle = 112
       <group position={[0, baseD / 2, -baseH / 2]} rotation={[-lidRad, 0, 0]}>
         <group position={[0, lidH / 2, 0]}>
           <RoundedBox args={[lidW, lidH, lidD]} radius={0.038} smoothness={6} castShadow>
-            <meshStandardMaterial {...bodyMat} envMapIntensity={0.8} />
+            <meshPhysicalMaterial {...bodyMat} envMapIntensity={0.42} clearcoat={1} clearcoatRoughness={0.08} reflectivity={0.55} />
           </RoundedBox>
 
           {/* Apple logo on back */}
           <group position={[0, 0, -lidD / 2 - 0.001]}>
             <mesh>
               <circleGeometry args={[lidW * 0.06, 32]} />
-              <meshStandardMaterial
+              <meshPhysicalMaterial
                 color={bodyColor}
-                metalness={metalness + 0.08}
-                roughness={roughness - 0.06}
-                envMapIntensity={1.0}
+                metalness={0.22}
+                roughness={0.2}
+                envMapIntensity={0.34}
+                clearcoat={1}
+                clearcoatRoughness={0.06}
               />
             </mesh>
           </group>

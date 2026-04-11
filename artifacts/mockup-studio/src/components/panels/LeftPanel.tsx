@@ -2197,9 +2197,9 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     const effectsOn = (state.reflection ?? false) || (state.grain ?? false);
     const shadowPct = state.contactShadowOpacity;
 
-    const SceneBtn = ({ id, icon, label, active }: {
+    const SceneBtn = ({ id, icon, label, active, accent }: {
       id: 'canvas' | 'motion' | 'effects' | 'shadow';
-      icon: React.ReactNode; label: string; sub?: string; active?: boolean;
+      icon: React.ReactNode; label: string; sub?: string; active?: boolean; accent: string;
     }) => (
       <button
         title={label}
@@ -2214,7 +2214,25 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           color: scenePopup === id ? 'rgba(167,139,250,1)' : active ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
           transition: 'all 0.12s',
         }}>
-        {icon}
+        <div style={{
+          width: 28,
+          height: 28,
+          borderRadius: 9,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: scenePopup === id
+            ? 'rgba(167,139,250,0.18)'
+            : active
+              ? accent
+              : 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))',
+          boxShadow: active
+            ? 'inset 0 1px 0 rgba(255,255,255,0.16), 0 4px 12px rgba(0,0,0,0.18)'
+            : 'inset 0 1px 0 rgba(255,255,255,0.08)',
+          transition: 'all 0.12s',
+        }}>
+          {icon}
+        </div>
       </button>
     );
 
@@ -2315,17 +2333,17 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
 
             {/* Scene buttons (fixed) */}
             <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-              <SceneBtn id="canvas" label="Canvas" active={state.canvasRatio !== 'free' || (state.canvasRadius ?? 0) > 0}
-                icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>}
+              <SceneBtn id="canvas" label="Canvas" active={state.canvasRatio !== 'free' || (state.canvasRadius ?? 0) > 0} accent="linear-gradient(135deg, rgba(59,130,246,0.32), rgba(14,165,233,0.22))"
+                icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M8 9h8M8 13h4" opacity="0.9"/></svg>}
               />
-              <SceneBtn id="motion" label="Motion" active={motionOn}
-                icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>}
+              <SceneBtn id="motion" label="Motion" active={motionOn} accent="linear-gradient(135deg, rgba(16,185,129,0.3), rgba(34,197,94,0.2))"
+                icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15c2.5-4 5.5-6 9-6 2.8 0 5 .9 7 2.6"/><path d="M14.5 6.5 20 11l-5.5 4.5"/></svg>}
               />
-              <SceneBtn id="effects" label="Effects" active={effectsOn}
-                icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6l-5 3.6 1.9-5.8L4 8.8h6.1z"/></svg>}
+              <SceneBtn id="effects" label="Effects" active={effectsOn} accent="linear-gradient(135deg, rgba(244,114,182,0.3), rgba(168,85,247,0.2))"
+                icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3.5 14.1 9l5.9 2.1-5.9 2.1L12 18.5l-2.1-5.3L4 11.1 9.9 9 12 3.5Z"/><circle cx="18.5" cy="5.5" r="1.2" fill="currentColor" stroke="none"/></svg>}
               />
-              <SceneBtn id="shadow" label="Shadow" active={(shadowPct ?? 0) > 0}
-                icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><ellipse cx="12" cy="19" rx="8" ry="2.5"/><path d="M8 12a4 4 0 1 1 8 0"/></svg>}
+              <SceneBtn id="shadow" label="Shadow" active={(shadowPct ?? 0) > 0} accent="linear-gradient(135deg, rgba(99,102,241,0.3), rgba(71,85,105,0.22))"
+                icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M7 11.5c0-2.8 2.2-5 5-5 1.9 0 3.6 1 4.5 2.6"/><path d="M6 16.5c1.8-1.2 3.9-1.8 6-1.8 2.4 0 4.5.6 6.4 1.8" opacity="0.95"/><ellipse cx="12" cy="18.3" rx="7" ry="2.2" opacity="0.7"/></svg>}
               />
             </div>
 

@@ -183,15 +183,15 @@ export const defaultState: AppState = {
   videoUrl: null,
   contentType: null,
 
-  bgType: "gradient",
-  bgColor: "purple-blue",
+  bgType: "solid",
+  bgColor: "#ffffff",
   bgImage: null,
   bgVideo: null,
   bgPattern: "dots",
   bgAnimated: "3d-aura",
   bgOpacity: 100,
 
-  canvasRatio: "free",
+  canvasRatio: "1:1",
   canvasRadius: 0,
 
   overlayEnabled: false,

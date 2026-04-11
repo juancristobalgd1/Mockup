@@ -12,6 +12,7 @@ import * as THREE from 'three';
 import { useApp } from '../../store';
 import type { CameraKeyframe } from '../../store';
 import { getModelById, DEVICE_MODELS } from '../../data/devices';
+import { useIsMobile } from '../../hooks/use-mobile';
 import { useScreenTexture } from './useScreenTexture';
 import { getGlobalScreenTexture } from './textureGlobal';
 import { Phone3DModel } from './Phone3DModel';
@@ -30,6 +31,27 @@ export interface Device3DViewerHandle {
   getCameraState: () => { position: [number, number, number]; target: [number, number, number] } | null;
   /** Synchronously drive camera to keyframe position at `time` seconds and re-render to glEl. */
   renderAt: (time: number) => void;
+}
+
+export type InteractionMode = 'none' | 'drag' | 'zoom';
+
+const ZOOM_SLIDER_MIN = 0;
+const ZOOM_SLIDER_MAX = 100;
+
+function clampZoomSlider(value: number) {
+  return Math.min(ZOOM_SLIDER_MAX, Math.max(ZOOM_SLIDER_MIN, value));
+}
+
+function distanceToZoomValue(distance: number, minDistance: number, maxDistance: number) {
+  const span = Math.max(0.0001, maxDistance - minDistance);
+  const normalized = (distance - minDistance) / span;
+  return clampZoomSlider((1 - normalized) * 100);
+}
+
+function zoomValueToDistance(value: number, minDistance: number, maxDistance: number) {
+  const zoomValue = clampZoomSlider(value);
+  const normalized = 1 - (zoomValue / 100);
+  return minDistance + (maxDistance - minDistance) * normalized;
 }
 
 // ── Loading indicator ─────────────────────────────────────────────
@@ -69,7 +91,241 @@ function RotatoHint({ visible }: { visible: boolean }) {
       pointerEvents: 'none', whiteSpace: 'nowrap', zIndex: 5,
       opacity: visible ? 1 : 0, transition: 'opacity 0.8s ease',
     }}>
-      ⌖ Drag to rotate · Scroll to zoom
+      ⌖ Move para desplazar · Zoom para abrir el slider
+    </div>
+  );
+}
+
+export function InteractionControls({
+  mode,
+  onChange,
+  zoomValue,
+  onZoomChange,
+  isMobile,
+}: {
+  mode: InteractionMode;
+  onChange: (mode: InteractionMode) => void;
+  zoomValue: number;
+  onZoomChange: (value: number) => void;
+  isMobile: boolean;
+}) {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const dragPointerIdRef = useRef<number | null>(null);
+  const dragPointerOffsetRef = useRef({ x: 0, y: 0 });
+  const [customPosition, setCustomPosition] = useState<{ x: number; y: number } | null>(null);
+  const zoomOpen = mode === 'zoom';
+  const toggleMode = (nextMode: Exclude<InteractionMode, 'none'>) => {
+    onChange(mode === nextMode ? 'none' : nextMode);
+  };
+
+  const getClampedPosition = useCallback((left: number, top: number) => {
+    const controlEl = rootRef.current;
+    const parentEl = controlEl?.parentElement;
+    if (!controlEl || !parentEl) return { x: left, y: top };
+
+    const parentRect = parentEl.getBoundingClientRect();
+    const controlRect = controlEl.getBoundingClientRect();
+    const maxX = Math.max(12, parentRect.width - controlRect.width - 12);
+    const maxY = Math.max(12, parentRect.height - controlRect.height - 12);
+
+    return {
+      x: Math.min(Math.max(12, left), maxX),
+      y: Math.min(Math.max(12, top), maxY),
+    };
+  }, []);
+
+  const updateDraggedPosition = useCallback((clientX: number, clientY: number) => {
+    const controlEl = rootRef.current;
+    const parentEl = controlEl?.parentElement;
+    if (!controlEl || !parentEl) return;
+
+    const parentRect = parentEl.getBoundingClientRect();
+    const nextLeft = clientX - parentRect.left - dragPointerOffsetRef.current.x;
+    const nextTop = clientY - parentRect.top - dragPointerOffsetRef.current.y;
+    setCustomPosition(getClampedPosition(nextLeft, nextTop));
+  }, [getClampedPosition]);
+
+  const handleGripPointerDown = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
+    const controlEl = rootRef.current;
+    const parentEl = controlEl?.parentElement;
+    if (!controlEl || !parentEl) return;
+
+    const controlRect = controlEl.getBoundingClientRect();
+    const parentRect = parentEl.getBoundingClientRect();
+    dragPointerIdRef.current = event.pointerId;
+    dragPointerOffsetRef.current = {
+      x: event.clientX - controlRect.left,
+      y: event.clientY - controlRect.top,
+    };
+
+    setCustomPosition((current) => current ?? getClampedPosition(controlRect.left - parentRect.left, controlRect.top - parentRect.top));
+    event.currentTarget.setPointerCapture(event.pointerId);
+    event.preventDefault();
+    event.stopPropagation();
+  }, [getClampedPosition]);
+
+  const handleGripPointerMove = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
+    if (dragPointerIdRef.current !== event.pointerId) return;
+    updateDraggedPosition(event.clientX, event.clientY);
+  }, [updateDraggedPosition]);
+
+  const handleGripPointerUp = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
+    if (dragPointerIdRef.current !== event.pointerId) return;
+    updateDraggedPosition(event.clientX, event.clientY);
+    dragPointerIdRef.current = null;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+  }, [updateDraggedPosition]);
+
+  const pillButton = (active: boolean): React.CSSProperties => ({
+    position: 'relative',
+    width: 44,
+    height: 44,
+    border: 'none',
+    borderRadius: 999,
+    background: active ? 'rgba(255,255,255,0.12)' : 'transparent',
+    color: active ? '#f5f5f5' : 'rgba(255,255,255,0.76)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    boxShadow: active ? 'inset 0 1px 0 rgba(255,255,255,0.12)' : 'none',
+    transition: 'all 0.18s ease',
+  });
+
+  return (
+    <div ref={rootRef} role="toolbar" aria-label="Controles de interaccion 3D" style={{
+      position: 'absolute',
+      left: customPosition ? customPosition.x : isMobile ? '50%' : 18,
+      top: customPosition ? customPosition.y : 'auto',
+      transform: customPosition ? 'none' : isMobile ? 'translateX(-50%)' : 'none',
+      bottom: customPosition ? 'auto' : isMobile ? 'max(92px, calc(env(safe-area-inset-bottom, 0px) + 84px))' : 18,
+      zIndex: 7,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: 6,
+        borderRadius: 999,
+        background: 'linear-gradient(180deg, rgba(32,32,34,0.96), rgba(24,24,26,0.94))',
+        border: '1px solid rgba(255,255,255,0.09)',
+        boxShadow: '0 0 0 1px rgba(255,255,255,0.05), 0 14px 24px rgba(0,0,0,0.24), inset 0 1px 1px rgba(255,255,255,0.08)',
+        backdropFilter: 'blur(18px)',
+      }}>
+        <button
+          aria-label="Recolocar controles"
+          title="Recolocar controles"
+          onPointerDown={handleGripPointerDown}
+          onPointerMove={handleGripPointerMove}
+          onPointerUp={handleGripPointerUp}
+          onPointerCancel={handleGripPointerUp}
+          style={{
+            width: 28,
+            height: 44,
+            border: 'none',
+            borderRadius: 999,
+            background: 'transparent',
+            color: 'rgba(255,255,255,0.48)',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 4px)',
+            gridTemplateRows: 'repeat(3, 4px)',
+            gap: 4,
+            alignContent: 'center',
+            justifyContent: 'center',
+            cursor: dragPointerIdRef.current === null ? 'grab' : 'grabbing',
+            touchAction: 'none',
+          }}
+        >
+          {Array.from({ length: 6 }).map((_, index) => (
+            <span
+              key={index}
+              style={{
+                width: 4,
+                height: 4,
+                borderRadius: 999,
+                background: 'currentColor',
+                opacity: 0.9,
+              }}
+            />
+          ))}
+        </button>
+        <button aria-label="Desplazar dispositivo" aria-pressed={mode === 'drag'} title="Desplazar dispositivo" onClick={() => toggleMode('drag')} style={pillButton(mode === 'drag')}>
+          {mode === 'drag' ? (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M11.5 2.75a1.25 1.25 0 0 0-1.25 1.25V9H9.5V3.75a1.25 1.25 0 1 0-2.5 0V11H6.25V6.75a1.25 1.25 0 1 0-2.5 0v7.5c0 3.45 2.8 6.25 6.25 6.25h1.5c4 0 7.25-3.25 7.25-7.25v-5a1.25 1.25 0 1 0-2.5 0V11h-.75V4.75a1.25 1.25 0 0 0-2.5 0V11h-.75V4a1.25 1.25 0 0 0-1.25-1.25Z" />
+            </svg>
+          ) : (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10" />
+              <path d="M12 10V4.5a1.5 1.5 0 0 1 3 0V11" />
+              <path d="M15 11V6.5a1.5 1.5 0 0 1 3 0V13" />
+              <path d="M6 12V9.5a1.5 1.5 0 0 1 3 0V13" />
+              <path d="M18 13.5c0 4.5-2.7 7.5-6.6 7.5-3.3 0-5.8-2.1-6.7-5.3l-1.3-4.6a1.5 1.5 0 0 1 2.9-.8l.7 2.2" />
+            </svg>
+          )}
+        </button>
+        <button aria-label="Abrir control de zoom" aria-pressed={zoomOpen} title="Zoom" onClick={() => toggleMode('zoom')} style={pillButton(zoomOpen)}>
+          {zoomOpen ? (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M10.5 4a6.5 6.5 0 1 0 4.06 11.58l4.43 4.43 1.41-1.41-4.43-4.43A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9a4.5 4.5 0 0 1 0-9Z" />
+            </svg>
+          ) : (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5" />
+              <path d="m16 16 4.5 4.5" />
+            </svg>
+          )}
+        </button>
+      </div>
+
+      <div aria-hidden={!zoomOpen} style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: zoomOpen ? 54 : 0,
+        opacity: zoomOpen ? 1 : 0,
+        transform: zoomOpen ? 'translateX(0)' : 'translateX(-10px)',
+        pointerEvents: zoomOpen ? 'auto' : 'none',
+        transition: 'width 0.2s ease, opacity 0.18s ease, transform 0.18s ease',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 8,
+          padding: '10px 8px',
+          borderRadius: 18,
+          background: 'linear-gradient(180deg, rgba(32,32,34,0.96), rgba(22,22,24,0.94))',
+          border: '1px solid rgba(255,255,255,0.09)',
+          boxShadow: '0 14px 24px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.06)',
+          backdropFilter: 'blur(18px)',
+        }}>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>+</span>
+          <input
+            aria-label="Nivel de zoom"
+            type="range"
+            min={ZOOM_SLIDER_MIN}
+            max={ZOOM_SLIDER_MAX}
+            value={Math.round(zoomValue)}
+            onChange={(event) => onZoomChange(Number(event.target.value))}
+            style={{
+              writingMode: 'vertical-rl',
+              WebkitAppearance: 'slider-vertical',
+              appearance: 'slider-vertical',
+              width: 16,
+              height: 108,
+              accentColor: '#f4f4f5',
+              cursor: 'ns-resize',
+              background: 'transparent',
+            } as unknown as React.CSSProperties}
+          />
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>-</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -97,12 +353,12 @@ function ExposureControl({ exposure }: { exposure: number }) {
 // Kept in the 1.0–1.6 range: enough for realistic reflections without
 // compounding with the direct lights to create overexposure.
 const ENV_INTENSITY: Record<string, number> = {
-  studio:    1.4,
-  warehouse: 1.6,
-  city:      1.3,
-  sunset:    1.5,
-  forest:    1.2,
-  night:     0.9,
+  studio:    1.0,
+  warehouse: 1.12,
+  city:      0.96,
+  sunset:    1.04,
+  forest:    0.9,
+  night:     0.72,
 };
 
 // ── Per-environment light configs ─────────────────────────────────
@@ -236,6 +492,25 @@ function PostFX({ hasContent, bloomIntensity, dofEnabled, dofFocusDistance, dofF
 }) {
   const base = hasContent ? 0.22 : 0.08;
   const scaled = base * (bloomIntensity / 22);
+  if (dofEnabled) {
+    return (
+      <EffectComposer multisampling={4}>
+        <SMAA />
+        <Bloom
+          luminanceThreshold={0.94}
+          luminanceSmoothing={0.4}
+          intensity={scaled}
+          mipmapBlur
+        />
+        <DepthOfField
+          focusDistance={dofFocusDistance}
+          focalLength={dofFocalLength}
+          bokehScale={dofBokehScale}
+        />
+      </EffectComposer>
+    );
+  }
+
   return (
     <EffectComposer multisampling={4}>
       <SMAA />
@@ -245,13 +520,6 @@ function PostFX({ hasContent, bloomIntensity, dofEnabled, dofFocusDistance, dofF
         intensity={scaled}
         mipmapBlur
       />
-      {dofEnabled && (
-        <DepthOfField
-          focusDistance={dofFocusDistance}
-          focalLength={dofFocalLength}
-          bokehScale={dofBokehScale}
-        />
-      )}
     </EffectComposer>
   );
 }
@@ -1226,7 +1494,8 @@ function interpolateKeyframes(
 // ── OrbitControls ────────────────────────────────────────────────
 function HeroOrbitControls({
   deviceType, autoRotate, autoRotateSpeed, cameraAngle, cameraResetKey,
-  moviePlaying, movieTimeRef, movieKeyframes, movieCurveTension, cameraStateRef, liftedControlsRef,
+  moviePlaying, movieTimeRef, movieKeyframes, movieCurveTension, cameraStateRef, liftedControlsRef, interactionMode,
+  zoomValue, onZoomValueChange,
 }: {
   deviceType: string;
   autoRotate: boolean;
@@ -1239,12 +1508,37 @@ function HeroOrbitControls({
   movieCurveTension: number;
   cameraStateRef: React.MutableRefObject<{ position: [number, number, number]; target: [number, number, number] } | null>;
   liftedControlsRef?: React.MutableRefObject<any>;
+  interactionMode: InteractionMode;
+  zoomValue: number;
+  onZoomValueChange: (value: number) => void;
 }) {
   const isLaptop = deviceType === 'macbook';
   const controlsRef = useRef<any>(null);
+  const zoomValueRef = useRef(zoomValue);
   const { camera } = useThree();
   const isFirstMount = useRef(true);
   const prevDeviceType = useRef(deviceType);
+  const zoomRange = useMemo(() => ({
+    minDistance: isLaptop ? 3 : 2.2,
+    maxDistance: isLaptop ? 18 : 15,
+  }), [isLaptop]);
+  const mouseButtons = useMemo(() => ({
+    LEFT: interactionMode === 'drag' ? THREE.MOUSE.PAN
+        : interactionMode === 'zoom' ? THREE.MOUSE.DOLLY
+        : THREE.MOUSE.ROTATE,
+    MIDDLE: THREE.MOUSE.DOLLY,
+    RIGHT: THREE.MOUSE.PAN,
+  }), [interactionMode]);
+  const touches = useMemo(() => ({
+    ONE: interactionMode === 'drag' ? THREE.TOUCH.PAN
+       : interactionMode === 'zoom' ? THREE.TOUCH.DOLLY_PAN
+       : THREE.TOUCH.ROTATE,
+    TWO: THREE.TOUCH.DOLLY_PAN,
+  }), [interactionMode]);
+
+  useEffect(() => {
+    zoomValueRef.current = zoomValue;
+  }, [zoomValue]);
 
   const applyPreset = useCallback((angle: string, laptop: boolean) => {
     const raf = requestAnimationFrame(() => {
@@ -1260,9 +1554,22 @@ function HeroOrbitControls({
       );
       controls.target.set(0, 0, 0);
       controls.update();
+      onZoomValueChange(distanceToZoomValue(camera.position.distanceTo(controls.target), zoomRange.minDistance, zoomRange.maxDistance));
     });
     return raf;
-  }, [camera]);
+  }, [camera, onZoomValueChange, zoomRange.maxDistance, zoomRange.minDistance]);
+
+  useEffect(() => {
+    const controls = controlsRef.current;
+    if (!controls || moviePlaying) return;
+
+    const currentDirection = new THREE.Vector3().subVectors(camera.position, controls.target);
+    if (currentDirection.lengthSq() === 0) return;
+
+    currentDirection.setLength(zoomValueToDistance(zoomValue, zoomRange.minDistance, zoomRange.maxDistance));
+    camera.position.copy(controls.target).add(currentDirection);
+    controls.update();
+  }, [camera, moviePlaying, zoomRange.maxDistance, zoomRange.minDistance, zoomValue]);
 
   // Camera preset button pressed — skip on first mount (canvas camera prop handles initial position)
   useEffect(() => {
@@ -1310,22 +1617,31 @@ function HeroOrbitControls({
       position: [camera.position.x, camera.position.y, camera.position.z],
       target: [controls.target.x, controls.target.y, controls.target.z],
     };
+
+    const nextZoomValue = distanceToZoomValue(camera.position.distanceTo(controls.target), zoomRange.minDistance, zoomRange.maxDistance);
+    if (Math.abs(nextZoomValue - zoomValueRef.current) > 0.35) {
+      zoomValueRef.current = nextZoomValue;
+      onZoomValueChange(nextZoomValue);
+    }
   }, -2);
 
   return (
     <OrbitControls
       ref={controlsRef}
-      enablePan={false}
-      enableZoom={!moviePlaying}
-      enableRotate={!moviePlaying}
-      minDistance={isLaptop ? 3 : 2.2}
-      maxDistance={isLaptop ? 18 : 15}
+      enablePan={!moviePlaying && (interactionMode === 'drag' || interactionMode === 'none')}
+      enableZoom={!moviePlaying && (interactionMode === 'zoom' || interactionMode === 'none')}
+      enableRotate={!moviePlaying && interactionMode !== 'drag' && interactionMode !== 'zoom'}
+      minDistance={zoomRange.minDistance}
+      maxDistance={zoomRange.maxDistance}
       minPolarAngle={Math.PI * 0.05}
       maxPolarAngle={Math.PI * 0.92}
       dampingFactor={0.05}
       enableDamping={!moviePlaying}
       rotateSpeed={0.7}
+      panSpeed={0.9}
       zoomSpeed={0.75}
+      mouseButtons={mouseButtons}
+      touches={touches}
       autoRotate={autoRotate && !moviePlaying}
       autoRotateSpeed={autoRotateSpeed}
       target={[0, 0, 0]}
@@ -1339,11 +1655,16 @@ interface Device3DViewerProps {
   className?: string;
   moviePlaying?: boolean;
   movieTimeRef?: React.MutableRefObject<number>;
+  interactionMode?: InteractionMode;
+  onInteractionModeChange?: (mode: InteractionMode) => void;
+  zoomValue?: number;
+  onZoomValueChange?: (value: number) => void;
 }
 
 export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerProps>(
-  function Device3DViewer({ style, className, moviePlaying = false, movieTimeRef: externalMovieTimeRef }, ref) {
+  function Device3DViewer({ style, className, moviePlaying = false, movieTimeRef: externalMovieTimeRef, interactionMode: externalInteractionMode, onInteractionModeChange, zoomValue: externalZoomValue, onZoomValueChange: externalOnZoomValueChange }, ref) {
     const { state, updateState } = useApp();
+    const isMobile = useIsMobile();
     const glRef = useRef<THREE.WebGLRenderer | null>(null);
     const cameraRef = useRef<THREE.Camera | null>(null);
     const sceneRef = useRef<THREE.Scene | null>(null);
@@ -1357,6 +1678,12 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
     const [hintVisible, setHintVisible] = useState(true);
     const [dragOver, setDragOver] = useState(false);
     const [pencilVisible, setPencilVisible] = useState(false);
+    const [internalInteractionMode, setInternalInteractionMode] = useState<InteractionMode>('none');
+    const [internalZoomValue, setInternalZoomValue] = useState(58);
+    const interactionMode = externalInteractionMode ?? internalInteractionMode;
+    const setInteractionMode = onInteractionModeChange ?? setInternalInteractionMode;
+    const zoomValue = externalZoomValue ?? internalZoomValue;
+    const setZoomValue = externalOnZoomValueChange ?? setInternalZoomValue;
 
     // ── Texture lives HERE — outside the Canvas so it never gets
     // disposed/reloaded when DeviceScene suspends or remounts. ──────
@@ -1433,7 +1760,13 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
     return (
       <div
         className={className}
-        style={{ position: 'relative', width: '100%', height: '100%', ...style }}
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          cursor: interactionMode === 'drag' ? 'move' : interactionMode === 'zoom' ? 'zoom-in' : 'default',
+          ...style,
+        }}
         onPointerMove={() => setHintVisible(false)}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
@@ -1533,6 +1866,9 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
             movieCurveTension={state.movieCurveTension ?? 0.45}
             cameraStateRef={cameraStateRef}
             liftedControlsRef={liftedControlsRef}
+            interactionMode={interactionMode}
+            zoomValue={zoomValue}
+            onZoomValueChange={setZoomValue}
           />
         </R3FCanvas>
 
