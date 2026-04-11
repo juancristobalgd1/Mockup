@@ -339,6 +339,7 @@ function coatedChassisMat(color: string, roughness = 0.24) {
     clearcoat: 1.0,
     clearcoatRoughness: Math.max(0.05, roughness * 0.45),
     reflectivity: 0.56,
+    side: THREE.DoubleSide,
   });
 }
 
@@ -353,6 +354,7 @@ function metalMat(color: string, roughness = 0.18, metalness = 0.88) {
     clearcoat: 0.55,
     clearcoatRoughness: 0.08,
     reflectivity: 0.62,
+    side: THREE.DoubleSide,
   });
 }
 
@@ -455,137 +457,54 @@ function normalizeScreenUVs(obj: THREE.Mesh, flipU = false) {
 
 const CLAY_MAT = () => new THREE.MeshStandardMaterial({
   color: '#e0dbd0', roughness: 0.90, metalness: 0.0, envMapIntensity: 0.35,
+  side: THREE.DoubleSide,
 });
 
-/** Classify a mesh name/material key and return the right material (or null to keep original). */
-function classifyMesh(
-  key: string,
-  deviceColor: string,
-  screenMeshes: THREE.Mesh[],
-  obj: THREE.Mesh,
-  flipScreenU = false,
-): THREE.Material | null {
+/**
+ * Determine if a material's color is in the "body" range — not too dark
+ * (lenses, sensors) and not too bright/emissive (flash, LED).
+ * Body colors are mid-range tones: metal, glass back, frame, buttons.
+ */
+function isBodyColorRange(mat: THREE.Material): boolean {
+  const m = mat as THREE.MeshStandardMaterial;
+  if (!m.color) return false;
 
-  // ── Clay mode — everything except screen becomes flat matte ──────
-  if (deviceColor === 'clay') {
-    if ((key.includes('display') || key.includes('screen')) && !key.includes('screen2')) {
-      normalizeScreenUVs(obj, flipScreenU);
-      const mat = new THREE.MeshBasicMaterial({ color: '#000000', toneMapped: false });
-      screenMeshes.push(obj);
-      return mat;
-    }
-    if (key.includes('defaultmaterial')) return null;
-    return CLAY_MAT();
-  }
+  const hsl = { h: 0, s: 0, l: 0 };
+  m.color.getHSL(hsl);
 
-  // ── Screen / display ─────────────────────────────────────────────
-  if ((key.includes('display') || key.includes('screen')) && !key.includes('screen2')) {
-    normalizeScreenUVs(obj, flipScreenU);
-    const mat = new THREE.MeshBasicMaterial({
-      color: '#000000',
-      toneMapped: false,
-      side: THREE.DoubleSide,
-    });
-    screenMeshes.push(obj);
-    return mat;
-  }
+  // Very dark materials (l < 0.08) → lenses, sensors, black internals
+  if (hsl.l < 0.08) return false;
 
-  // ── Front glass cover ─────────────────────────────────────────────
-  // Very subtle overlay: nearly invisible, no env-map interaction,
-  // only catches specular from scene lights (not the background).
-  if (key.includes('glass') && !key.includes('frosted') && !key.includes('tint')
-      && !key.includes('back') && !key.includes('camera') && !key.includes('black')) {
-    return new THREE.MeshStandardMaterial({
-      color: '#c8d4e0', metalness: 0, roughness: 0.05,
-      transparent: true, opacity: 0.07,
-      envMapIntensity: 0,
-      depthWrite: false,
-    });
-  }
+  // Very bright / emissive materials → flash, LED
+  if (hsl.l > 0.92) return false;
 
-  // ── Back frosted glass ────────────────────────────────────────────
-  if (key.includes('frosted_glass') || key.includes('tint_back')) {
-    return new THREE.MeshPhysicalMaterial({
-      color: '#d8d8d8', roughness: 0.34, metalness: 0.02,
-      transmission: 0.55, transparent: true, opacity: 0.97,
-      envMapIntensity: 0.58,
-      clearcoat: 0.85,
-      clearcoatRoughness: 0.12,
-    });
-  }
+  // Transparent materials → glass overlays
+  if (m.transparent && m.opacity < 0.5) return false;
 
-  // ── Camera lenses / filters ───────────────────────────────────────
-  if (key.includes('lens') || key.includes('camera_filter') || key.includes('led')
-      || key.includes('sapphire') || key.includes('mirror_filter')) {
-    return new THREE.MeshPhysicalMaterial({
-      color: '#020506', roughness: 0.01, metalness: 0.18,
-      transmission: 0.22, transparent: true, opacity: 0.97,
-      envMapIntensity: 1.05,
-      clearcoat: 1.0, clearcoatRoughness: 0.01,
-    });
-  }
+  // Materials with significant transmission → glass
+  const phys = m as THREE.MeshPhysicalMaterial;
+  if (phys.transmission !== undefined && phys.transmission > 0.3) return false;
 
-  // ── Metal frame / aluminum / titanium ────────────────────────────
-  if (key.includes('aluminum') || key.includes('frame') || key.includes('titanium')) {
-    return metalMat(deviceColor || '#71717a');
-  }
-
-  // ── Antenna / plastic / screws ────────────────────────────────────
-  if (key.includes('antena') || key.includes('plastic') || key.includes('screw')
-      || key.includes('usb') || key.includes('speaker')) {
-    return new THREE.MeshStandardMaterial({ color: '#0e0e11', roughness: 0.58, metalness: 0.22, envMapIntensity: 0.32 });
-  }
-
-  // ── Logo ──────────────────────────────────────────────────────────
-  if (key.includes('logo')) {
-    return new THREE.MeshPhysicalMaterial({
-      color: resolveColor(deviceColor, '#8a8a8e'), metalness: 0.48, roughness: 0.18,
-      envMapIntensity: 0.46, clearcoat: 1.0, clearcoatRoughness: 0.06, reflectivity: 0.5,
-    });
-  }
-
-  // ── Watch band / rubber / silicone ───────────────────────────────
-  if (key.includes('rubber') || key.includes('silicone') || key.includes('band')) {
-    return new THREE.MeshStandardMaterial({
-      color: resolveColor(deviceColor, '#1a1a1a'), roughness: 0.68, metalness: 0.0, envMapIntensity: 0.5,
-    });
-  }
-
-  // ── Dark glossy surfaces (watch back cover, ceramic) ─────────────
-  if (key.includes('black') || key.includes('glossy') || key.includes('dark_chrome')) {
-    return new THREE.MeshPhysicalMaterial({
-      color: '#080808', roughness: 0.07, metalness: 0.58,
-      envMapIntensity: 0.78, clearcoat: 1.0, clearcoatRoughness: 0.03,
-    });
-  }
-
-  // ── Sensor / cap (watch health sensors, crown cap) ───────────────
-  if (key.includes('sensor') || key.includes('material_')) {
-    return new THREE.MeshStandardMaterial({ color: '#1c1c1e', roughness: 0.28, metalness: 0.28, envMapIntensity: 0.34 });
-  }
-
-  // ── Iron / chrome / steel (watch case) ───────────────────────────
-  if (key.includes('iron') || key.includes('chrome') || key.includes('steel')) {
-    return metalMat(deviceColor || '#a1a1aa');
-  }
-
-  // ── Single baked mesh (e.g. defaultMaterial) ──────────────────────
-  if (key.includes('defaultmaterial')) {
-    return null; // keep original baked texture, just boost env response
-  }
-
-  // ── Fallback: generic chassis (hash-named or unknown) ────────────
-  // Use moderate roughness so unknown meshes don't become chrome mirrors
-  return coatedChassisMat(deviceColor || '#71717a', 0.26);
+  return true;
 }
 
+/**
+ * Apply materials to the model.
+ *
+ * For 'original' color: keep all GLB materials, only replace the screen.
+ * For 'clay': replace everything with flat matte.
+ * For any other color: CLONE original materials and tint only "body" parts.
+ *   Dark parts (lenses), transparent (glass), and bright (flash) keep originals.
+ */
 function applyMaterials(
   root: THREE.Object3D,
   deviceColor: string,
   screenMeshes: THREE.Mesh[],
   flipScreenU = false,
+  useOriginalMaterials = false,
 ) {
   let hasDefaultMat = false;
+  let debugLogged = false;
 
   root.traverse((obj: THREE.Object3D) => {
     if (obj instanceof THREE.Camera || obj instanceof THREE.Light) return;
@@ -595,18 +514,57 @@ function applyMaterials(
     obj.receiveShadow = true;
 
     // Never repaint a mesh that has already been identified as the device screen.
-    // This prevents deviceColor from bleeding onto the screen when the user
-    // changes the frame color.
     if (screenMeshes.includes(obj)) return;
 
     const key = meshKey(obj);
 
+    // Save original material on first encounter (before any replacement)
+    if (!obj.userData._origMat) {
+      obj.userData._origMat = obj.material;
+    }
+    const origMat = obj.userData._origMat as THREE.Material;
+
+    // Debug: log mesh info once per model load
+    if (!debugLogged) {
+      debugLogged = true;
+      console.log('[GLB Materials Debug] deviceColor:', deviceColor);
+      root.traverse((o: THREE.Object3D) => {
+        if (!(o instanceof THREE.Mesh)) return;
+        const m = (o.userData._origMat || o.material) as THREE.MeshStandardMaterial;
+        const hsl = { h: 0, s: 0, l: 0 };
+        if (m.color) m.color.getHSL(hsl);
+        console.log(`  mesh: "${o.name}" key: "${meshKey(o)}" color-hsl: L=${hsl.l.toFixed(3)} transparent: ${m.transparent} opacity: ${m.opacity?.toFixed(2)} → isBody: ${isBodyColorRange(m)}`);
+      });
+    }
+
+    // ── 'original' mode: keep GLB materials, only mark screen ────────
+    if (deviceColor === 'original') {
+      if ((key.includes('display') || key.includes('screen')) && !key.includes('screen2')) {
+        normalizeScreenUVs(obj, flipScreenU);
+        obj.material = new THREE.MeshBasicMaterial({
+          color: '#000000', toneMapped: false, side: THREE.DoubleSide,
+        });
+        screenMeshes.push(obj);
+      }
+      return;
+    }
+
+    // ── Screen detection (always replace for mockup) ─────────────────
+    if ((key.includes('display') || key.includes('screen')) && !key.includes('screen2')) {
+      normalizeScreenUVs(obj, flipScreenU);
+      obj.material = new THREE.MeshBasicMaterial({
+        color: '#000000', toneMapped: false, side: THREE.DoubleSide,
+      });
+      screenMeshes.push(obj);
+      return;
+    }
+
+    // ── Baked single-mesh models ─────────────────────────────────────
     if (key.includes('defaultmaterial')) {
       hasDefaultMat = true;
       if (deviceColor === 'clay') {
         obj.material = CLAY_MAT();
       } else {
-        // Keep the original baked texture but maximise IBL response for realism
         const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
         mats.forEach(m => {
           const mat = m as THREE.MeshStandardMaterial;
@@ -617,12 +575,35 @@ function applyMaterials(
       return;
     }
 
-    const mat = classifyMesh(key, deviceColor, screenMeshes, obj, flipScreenU);
-    if (mat !== null) obj.material = mat;
+    // ── Clay mode: everything becomes matte ──────────────────────────
+    if (deviceColor === 'clay') {
+      obj.material = CLAY_MAT();
+      return;
+    }
+
+    // ── Color tinting: clone original material, change only the color ─
+    // Check if this mesh is a "body" part based on its original color
+    if (isBodyColorRange(origMat)) {
+      // Clone the original material to preserve roughness, metalness, normals, etc.
+      const cloned = origMat.clone();
+      cloned.side = THREE.DoubleSide;
+
+      // Tint the color to the chosen device color
+      const targetColor = new THREE.Color(resolveColor(deviceColor));
+      (cloned as THREE.MeshStandardMaterial).color = targetColor;
+      (cloned as THREE.MeshStandardMaterial).needsUpdate = true;
+
+      obj.material = cloned;
+    } else {
+      // Restore original material (lenses, flash, sensors, glass)
+      obj.material = origMat;
+      origMat.side = THREE.DoubleSide;
+    }
   });
 
   return hasDefaultMat;
 }
+
 
 /**
  * Find the screen mesh by exact THREE.js node name (from def.screenMeshName).
@@ -810,7 +791,7 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType, i
       prevTransform.current = transform;
       if (modelChanged) screenMeshes.current = [];
 
-      const hasBaked = applyMaterials(root, deviceColor, screenMeshes.current, !!def.screenFacesBack);
+      const hasBaked = applyMaterials(root, deviceColor, screenMeshes.current, !!def.screenFacesBack, !!def.useOriginalMaterials);
 
       if (screenMeshes.current.length === 0) {
         if (def.screenMeshName) {

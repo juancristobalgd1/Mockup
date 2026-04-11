@@ -76,6 +76,11 @@ export interface DeviceModelDef {
    * material-name heuristics (which break when materials have no names).
    */
   screenMeshName?: string;
+  /**
+   * Set to true to preserve the original materials and textures from the GLB
+   * file instead of using the procedural PBR materials.
+   */
+  useOriginalMaterials?: boolean;
 }
 
 /**
@@ -112,6 +117,26 @@ export interface DeviceModelDef {
  */
 export const DEVICE_MODELS: DeviceModelDef[] = [
   // ── iPhone (GLB real models only) ─────────────────────────────────
+    {
+    id: 'iphone-17-pro-max',
+    label: 'iPhone 17 Pro Max',
+    group: 'iPhone',
+    storeType: 'iphone',
+    w: 197, h: 428,
+    insetTop: 11, insetBottom: 11, insetSide: 9,
+    br: '2.7rem', screenBr: '2.2rem',
+    camera: 'dynamic-island',
+    cameraLayout: 'triple-tri',
+    frame: 'titanium',
+    hasActionButton: true, hasCameraControl: true,
+    hasColors: true, hasOrientation: true,
+   
+    glbUrl: '/models/iphone_17_pro_max.glb',
+    skipOverlay: true,
+    screenMeshName: 'Object_55',
+    useOriginalMaterials: true,
+  },
+  
   {
     id: 'iphone-17-pro',
     label: 'iPhone 17 Pro',
@@ -129,22 +154,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     glbUrl: '/models/iphone17pro.glb',
     skipOverlay: true,
     screenMeshName: 'Object_55',
-  },
-  {
-    id: 'iphone-16',
-    label: 'iPhone 16',
-    group: 'iPhone',
-    storeType: 'iphone',
-    w: 196, h: 424,
-    insetTop: 11, insetBottom: 11, insetSide: 9,
-    br: '2.6rem', screenBr: '2.1rem',
-    camera: 'dynamic-island',
-    cameraLayout: 'dual-v',
-    frame: 'aluminum',
-    hasActionButton: true, hasCameraControl: true,
-    hasColors: true, hasOrientation: true,
-    accent: '#38bdf8',
-    glbUrl: '/models/iphone16.glb',
+    useOriginalMaterials: true,
   },
   {
     id: 'iphone-16-pro-max',
@@ -160,9 +170,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasActionButton: true, hasCameraControl: true,
     hasColors: true, hasOrientation: true,
     accent: '#8c7c6e',
-    glbUrl: '/models/iphone16promax.glb',
-    skipOverlay: true,
-    screenMeshName: 'Object_55',
+  
   },
   // ── Android ───────────────────────────────────────────────────────
   {
@@ -181,6 +189,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     accent: '#475569',
     glbUrl: '/models/samsungs25ultra.glb',
     skipOverlay: true,
+    useOriginalMaterials: true,
   },
   {
     id: 'samsung-s26-ultra',
@@ -198,23 +207,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     accent: '#334155',
     glbUrl: '/models/samsungs25ultra.glb',
     skipOverlay: true,
-  },
-  {
-    id: 'oneplus-12',
-    label: 'OnePlus 12',
-    group: 'Android',
-    storeType: 'android',
-    w: 198, h: 432,
-    insetTop: 10, insetBottom: 10, insetSide: 10,
-    br: '1.9rem', screenBr: '1.5rem',
-    camera: 'punch-hole',
-    cameraLayout: 'triple-round',
-    frame: 'glass',
-    hasColors: true, hasOrientation: true,
-    accent: '#c084fc',
-    glbUrl: '/models/oneplus12.glb',
-    screenFacesBack: true,
-    skipOverlay: true,
+    useOriginalMaterials: true,
   },
   // ── Tablet ────────────────────────────────────────────────────────
   {
@@ -232,6 +225,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     accent: '#94a3b8',
     glbUrl: '/models/ipadpro129.glb',
     skipOverlay: true,
+    useOriginalMaterials: true,
   },
   {
     id: 'ipad-mini-6',
@@ -248,6 +242,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     accent: '#64748b',
     glbUrl: '/models/ipadmini6.glb',
     screenFacesBack: true,
+    useOriginalMaterials: true,
   },
   // ── Desktop ───────────────────────────────────────────────────────
   {
@@ -264,6 +259,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     accent: '#6b7280',
     glbUrl: '/models/macbookpro.glb',
     skipOverlay: true,
+    useOriginalMaterials: true,
   },
   // ── Browser ───────────────────────────────────────────────────────
   {
@@ -309,6 +305,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     glbUrl: '/models/applewatch.glb',
     glbRotateX: -Math.PI / 2,
     skipOverlay: true,
+    useOriginalMaterials: true,
   },
 ];
 

@@ -16,6 +16,7 @@ const FRAME_MAT: Record<string, { color: string; metalness: number; roughness: n
 };
 
 const DEVICE_COLORS: Record<string, string> = {
+  original:     '#71717a',
   titanium:     '#6b7280',
   black:        '#0d0d0f',
   white:        '#e8e8ec',

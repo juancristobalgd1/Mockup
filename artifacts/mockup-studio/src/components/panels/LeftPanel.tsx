@@ -15,6 +15,7 @@ import type { DeviceColor, EnvPreset, CanvasRatio } from '../../store';
 type IconProps = { size?: number; strokeWidth?: number; style?: React.CSSProperties; className?: string };
 
 const IPHONE_COLORS: { id: DeviceColor; label: string; bg: string; border: string }[] = [
+  { id: 'original',     label: 'Original',    bg: 'conic-gradient(from 0deg, #ff4d4d, #f9cb28, #7cfc00, #00ffff, #4d4dff, #ff00ff, #ff4d4d)', border: '#fff' },
   { id: 'titanium',     label: 'Titanium',    bg: 'linear-gradient(135deg, #3a3a3a, #1e1e1e)', border: '#555'    },
   { id: 'black',        label: 'Black',       bg: 'linear-gradient(135deg, #1a1a1a, #050505)', border: '#333'    },
   { id: 'white',        label: 'White',       bg: 'linear-gradient(135deg, #d8d8d8, #b0b0b0)', border: '#aaa'    },
@@ -722,7 +723,14 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   const isSelected = state.deviceModel === model.id;
                   return (
                     <button key={model.id}
-                      onClick={() => { updateState({ deviceModel: model.id, deviceType: model.storeType }); setDeviceGroupPopup(null); }}
+                      onClick={() => {
+                        updateState({
+                          deviceModel: model.id,
+                          deviceType: model.storeType,
+                          deviceColor: model.useOriginalMaterials ? 'original' : 'titanium'
+                        });
+                        setDeviceGroupPopup(null);
+                      }}
                       style={{
                         display: 'flex', flexDirection: 'column', alignItems: 'center',
                         width: 72, padding: '10px 4px 8px', borderRadius: 14, gap: 0,
