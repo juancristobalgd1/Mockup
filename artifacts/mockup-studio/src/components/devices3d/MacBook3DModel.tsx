@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import type { DeviceModelDef } from '../../data/devices';
+import { useApp } from '../../store';
 import { getGlobalScreenTexture } from './textureGlobal';
 
 interface Props {
@@ -196,6 +197,7 @@ function Ports({ baseW, baseH, baseD, isPro, bodyColor, metalness, roughness }: 
 }
 
 export function MacBook3DModel({ def, screenTexture, contentType, lidAngle = 112 }: Props) {
+  const { state } = useApp();
   const isPro = def.id.includes('pro');
   const isAir = def.id.includes('air');
   const bodyColor = isPro ? '#1c1c1e' : (isAir ? '#e8e0d0' : '#1c1c1e');
@@ -306,10 +308,12 @@ export function MacBook3DModel({ def, screenTexture, contentType, lidAngle = 112
           </group>
 
           {/* Screen glass gloss */}
+          {(state.glassReflection ?? true) && (
           <mesh position={[0, sOffY, lidD / 2 + 0.006]}>
             <planeGeometry args={[sW, sH]} />
             <meshStandardMaterial color="#aaccff" transparent opacity={0.018} roughness={0} metalness={0} />
           </mesh>
+          )}
 
           {/* Notch — MacBook Pro */}
           {isPro && (

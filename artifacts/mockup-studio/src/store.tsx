@@ -139,6 +139,7 @@ export interface AppState {
   deviceScale: number;
   reflection: boolean;
   reflectionOpacity: number;
+  glassReflection: boolean;
   grain: boolean;
   grainIntensity: number;
   bloomIntensity: number;
@@ -230,6 +231,7 @@ export const defaultState: AppState = {
   deviceScale: 45,
   reflection: false,
   reflectionOpacity: 50,
+  glassReflection: true,
   grain: false,
   grainIntensity: 35,
   bloomIntensity: 22,

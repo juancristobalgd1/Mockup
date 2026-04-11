@@ -2194,7 +2194,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
     // Summary helpers for button sub-labels
     const canvasSub = state.canvasRatio === 'free' ? 'Free' : state.canvasRatio;
     const motionOn  = state.autoRotate || state.animation === 'float';
-    const effectsOn = (state.reflection ?? false) || (state.grain ?? false);
+    const effectsOn = (state.reflection ?? false) || (state.grain ?? false) || (state.glassReflection ?? true);
     const shadowPct = state.contactShadowOpacity;
 
     const SceneBtn = ({ id, icon, label, active, accent }: {
@@ -2290,6 +2290,12 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
             {scenePopup === 'effects' && (
               <>
                 <div style={POP_LABEL}>Effects</div>
+                <div style={ROW}>
+                  <span style={ROW_LABEL}>Glass Reflection</span>
+                  <Toggle enabled={state.glassReflection ?? true}
+                    onToggle={() => updateState({ glassReflection: !(state.glassReflection ?? true) })} />
+                </div>
+                <div style={DIVIDER} />
                 <div style={ROW}>
                   <span style={ROW_LABEL}>Floor Reflection</span>
                   <Toggle enabled={state.reflection ?? false}

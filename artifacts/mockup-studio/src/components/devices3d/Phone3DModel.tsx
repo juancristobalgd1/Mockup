@@ -4,6 +4,7 @@ import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import type { DeviceModelDef } from '../../data/devices';
 import { getGlobalScreenTexture } from './textureGlobal';
+import { useApp } from '../../store';
 
 // ── Material presets ─────────────────────────────────────────────
 
@@ -357,6 +358,7 @@ interface Props {
 }
 
 export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isLandscape }: Props) {
+  const { state } = useApp();
   const isAndroid = def.storeType === 'android';
   const isPro     = def.id.includes('pro') || def.id.includes('ultra');
 
@@ -439,10 +441,12 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
       </group>
 
       {/* Glass gloss reflection */}
+      {(state.glassReflection ?? true) && (
       <mesh position={[0, sOffY, frontZ + 0.0032]}>
         <planeGeometry args={[sW, sH]} />
         <meshStandardMaterial color="#aaccff" transparent opacity={0.018} roughness={0} metalness={0} />
       </mesh>
+      )}
 
       {/* ── 3. FRONT CAMERA ─────────────────────────────────────── */}
       <group position={[0, sOffY, frontZ + 0.004]}>

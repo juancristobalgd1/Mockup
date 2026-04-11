@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import type { DeviceModelDef } from '../../data/devices';
+import { useApp } from '../../store';
 import { getGlobalScreenTexture } from './textureGlobal';
 
 interface Props {
@@ -48,6 +49,7 @@ function ScreenPlane({
 }
 
 export function Tablet3DModel({ def, screenTexture, contentType, isLandscape }: Props) {
+  const { state } = useApp();
   const scale = 2.4 / (def.h / 100);
   const pW = (def.w / 100) * scale;
   const pH = (def.h / 100) * scale;
@@ -80,10 +82,12 @@ export function Tablet3DModel({ def, screenTexture, contentType, isLandscape }: 
       </group>
 
       {/* Screen gloss */}
+      {(state.glassReflection ?? true) && (
       <mesh position={[0, 0, sZ + 0.003]}>
         <planeGeometry args={[sW, sH]} />
         <meshStandardMaterial color="#fff" transparent opacity={0.03} roughness={0.02} metalness={0} />
       </mesh>
+      )}
 
       {/* Front camera */}
       <mesh position={[0, pH / 2 - def.insetTop / 100 * scale * 0.5, sZ + 0.003]}>
