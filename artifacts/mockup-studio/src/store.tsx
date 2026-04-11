@@ -6,7 +6,7 @@ import type { DeviceStoreType } from "./data/devices";
 export type DeviceType = DeviceStoreType;
 export type DeviceColor = "titanium" | "black" | "white" | "blue" | "naturallight" | "desert" | "sierra" | "clay";
 export type BrowserMode = "dark" | "light";
-export type BackgroundType = "none" | "solid" | "gradient" | "mesh" | "pattern" | "image" | "wallpaper" | "transparent" | "animated";
+export type BackgroundType = "none" | "solid" | "gradient" | "mesh" | "pattern" | "image" | "video" | "wallpaper" | "transparent" | "animated";
 export type ShadowStyle = "none" | "spread" | "hug";
 export type CanvasRatio = "free" | "1:1" | "4:5" | "16:9" | "9:16" | "4:3" | "3:2" | "2:3" | "3:1" | "5:4";
 export type ContentType = "image" | "video" | null;
@@ -95,6 +95,7 @@ export interface AppState {
   bgType: BackgroundType;
   bgColor: string;
   bgImage: string | null;
+  bgVideo: string | null;
   bgPattern: string;
   bgAnimated: string;
   bgOpacity: number;
@@ -185,6 +186,7 @@ export const defaultState: AppState = {
   bgType: "gradient",
   bgColor: "purple-blue",
   bgImage: null,
+  bgVideo: null,
   bgPattern: "dots",
   bgAnimated: "3d-aura",
   bgOpacity: 100,

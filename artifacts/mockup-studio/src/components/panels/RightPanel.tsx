@@ -23,6 +23,7 @@ function waitFrames(n: number): Promise<void> {
 function computeBgStyle(state: AppState): CSSProperties {
   const { bgType, bgColor, bgPattern, bgImage } = state;
   if (bgType === 'none') return { background: '#111113' };
+  if (bgType === 'video') return { background: '#090b10' };
   if (bgType === 'transparent') return {
     backgroundImage: 'linear-gradient(45deg, #2a2a2a 25%, transparent 25%), linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #2a2a2a 75%), linear-gradient(-45deg, transparent 75%, #2a2a2a 75%)',
     backgroundSize: '16px 16px',
@@ -282,6 +283,10 @@ async function captureCanvas(el: HTMLDivElement, glEl?: HTMLCanvasElement | null
     out.width = bgCanvas.width; out.height = bgCanvas.height;
     const ctx = out.getContext('2d')!;
     ctx.drawImage(bgCanvas, 0, 0);
+    const bgVideoEl = el.querySelector('video[data-bg-video]') as HTMLVideoElement | null;
+    if (bgVideoEl && bgVideoEl.videoWidth > 0 && bgVideoEl.videoHeight > 0) {
+      ctx.drawImage(bgVideoEl, 0, 0, out.width, out.height);
+    }
     ctx.drawImage(glEl, 0, 0, out.width, out.height);
     return out;
   }
@@ -428,14 +433,32 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, movieTimeRe
 
       // ── Pre-capture static layers (done once before the draw loop) ─
       const isAnimatedBg = state.bgType === 'animated';
+      const isVideoBg = state.bgType === 'video' && !!state.bgVideo;
       const animatedBg = isAnimatedBg
         ? (ANIMATED_BACKGROUNDS.find(b => b.id === state.bgAnimated) ?? ANIMATED_BACKGROUNDS[0])
         : null;
 
       // 1. Static background (captured once; animated backgrounds are drawn per-frame)
       let bgCanvas: HTMLCanvasElement | null = null;
-      if (!isAnimatedBg) {
+      if (!isAnimatedBg && !isVideoBg) {
         bgCanvas = await captureStyleToCanvas(computeBgStyle(state), W, H);
+      }
+
+      let bgVideoEl: HTMLVideoElement | null = null;
+      if (isVideoBg && state.bgVideo) {
+        bgVideoEl = document.createElement('video');
+        bgVideoEl.src = state.bgVideo;
+        bgVideoEl.muted = true;
+        bgVideoEl.loop = true;
+        bgVideoEl.playsInline = true;
+        await new Promise<void>(resolve => {
+          const onReady = () => {
+            bgVideoEl?.removeEventListener('loadeddata', onReady);
+            resolve();
+          };
+          bgVideoEl.addEventListener('loadeddata', onReady);
+          void bgVideoEl.play().catch(() => resolve());
+        });
       }
 
       // 2. Light overlay captured to canvas so we can drawImage it per-frame with blend mode
@@ -518,6 +541,9 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, movieTimeRe
         if (!exportTransparent) {
           if (isAnimatedBg && animatedBg) {
             drawAnimatedBg(ctx, animatedBg, elapsed, W, H);
+          } else if (bgVideoEl && bgVideoEl.videoWidth > 0 && bgVideoEl.videoHeight > 0) {
+            if (Math.abs(bgVideoEl.currentTime - elapsed / 1000) > 0.08) bgVideoEl.currentTime = elapsed / 1000;
+            ctx.drawImage(bgVideoEl, 0, 0, W, H);
           } else if (bgCanvas) {
             ctx.drawImage(bgCanvas, 0, 0, W, H);
           }
@@ -628,6 +654,8 @@ export function RightPanel({ canvasRef, viewerRef, movieTimelineRef, movieTimeRe
       stopInterval();
       movieTimelineRef?.current?.stopPlayback();
     } finally {
+      const bgVideo = document.querySelector('video[data-bg-video]') as HTMLVideoElement | null;
+      bgVideo?.play?.().catch(() => {});
       setRecording(false);
       setRecordProgress(0);
       setRecordSecsLeft(0);

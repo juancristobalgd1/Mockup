@@ -79,6 +79,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
 
   const getBackground = (): React.CSSProperties => {
     if (state.bgType === 'animated') return {};
+    if (state.bgType === 'video') return { background: '#090b10' };
     if (state.bgType === 'none') return { background: '#111113' };
     if (state.bgType === 'transparent') return {
       backgroundImage: 'linear-gradient(45deg, #2a2a2a 25%, transparent 25%), linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #2a2a2a 75%), linear-gradient(-45deg, transparent 75%, #2a2a2a 75%)',
@@ -192,6 +193,22 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
           ...getBackground(),
           ...(state.bgBlur > 0 ? { filter: `blur(${state.bgBlur}px)`, transform: 'scale(1.05)' } : {}),
         }} />
+      )}
+
+      {state.bgType === 'video' && state.bgVideo && (
+        <video
+          data-bg-video="true"
+          src={state.bgVideo}
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{
+            position: 'absolute', inset: 0, zIndex: 0, borderRadius, opacity: bgOpacity,
+            width: '100%', height: '100%', objectFit: 'cover',
+            ...(state.bgBlur > 0 ? { filter: `blur(${state.bgBlur}px)`, transform: 'scale(1.05)' } : {}),
+          }}
+        />
       )}
 
       {/* Vignette overlay */}

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, memo } from 'react';
 import {
   Smartphone, Shuffle, Wand2, Image as ImageIcon, Sliders,
   LayoutGrid, X, RefreshCw, Sun, RotateCcw, Search,
-  Lamp, Warehouse, Sunset, Building2, TreePine, Moon, Sparkles,
+  Lamp, Warehouse, Sunset, Building2, TreePine, Moon, Sparkles, Video,
 } from 'lucide-react';
 import type { Tab } from './tabs';
 import { TAB_ICONS } from './tabs';
@@ -446,6 +446,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
   const [deviceSearch, setDeviceSearch]     = useState('');
   const [mobileDeviceFilter, setMobileDeviceFilter] = useState<DeviceGroup | 'All'>('All');
   const bgFileRef                            = useRef<HTMLInputElement>(null);
+  const bgVideoFileRef                       = useRef<HTMLInputElement>(null);
   const [extracting, setExtracting]         = useState(false);
   const [annotatePopup, setAnnotatePopup]   = useState<null | 'color' | 'size' | 'shapes'>(null);
   const [annotatePopupAnchor, setAnnotatePopupAnchor] = useState<{ x: number; y: number } | null>(null);
@@ -654,7 +655,12 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
 
   const handleBgImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) updateState({ bgType: 'image', bgImage: URL.createObjectURL(file) });
+    if (file) updateState({ bgType: 'image', bgImage: URL.createObjectURL(file), bgVideo: null });
+  };
+
+  const handleBgVideo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) updateState({ bgType: 'video', bgVideo: URL.createObjectURL(file), bgImage: null });
   };
 
   const handleShuffle = () => {
@@ -950,6 +956,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
       { id: 'wallpaper',label: 'Wallpaper',preview: { background: 'radial-gradient(ellipse at 50% 0%, #bfdbfe 0%, #60a5fa 60%, #dbeafe 100%)' } },
       { id: 'pattern',  label: 'Pattern',  preview: { backgroundColor: '#1a1c2e', backgroundImage: 'radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1px)', backgroundSize: '10px 10px' } },
       { id: 'image',    label: 'Image',    preview: null },
+      { id: 'video',    label: 'Video',    preview: null, icon: <Video size={16} color="rgba(255,255,255,0.40)" /> },
       { id: 'transparent', label: 'Alpha', preview: null, icon:
           <div style={{
             width: '100%', height: '100%', borderRadius: 10,
@@ -1204,6 +1211,27 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
                   {state.bgImage ? 'Change Image' : '+ Upload Image'}
                 </button>
                 <input ref={bgFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { handleBgImage(e); setBgPopup(null); }} />
+              </>
+            )}
+
+            {/* Video upload */}
+            {bgPopup === 'video' && (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Background Video</div>
+                {state.bgVideo && (
+                  <div style={{ width: '100%', height: 92, borderRadius: 10, overflow: 'hidden', marginBottom: 10, border: '1px solid rgba(255,255,255,0.1)', background: '#0f1115' }}>
+                    <video src={state.bgVideo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted autoPlay loop playsInline />
+                  </div>
+                )}
+                <button onClick={() => bgVideoFileRef.current?.click()}
+                  style={{
+                    width: '100%', padding: '10px 0', borderRadius: 10, fontSize: 11, fontWeight: 600,
+                    background: 'rgba(0,0,0,0.5)', border: '1px dashed rgba(255,255,255,0.28)',
+                    color: 'rgba(255,255,255,0.45)', cursor: 'pointer',
+                  }}>
+                  {state.bgVideo ? 'Change Video' : '+ Upload Video'}
+                </button>
+                <input ref={bgVideoFileRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={e => { handleBgVideo(e); setBgPopup(null); }} />
               </>
             )}
 
