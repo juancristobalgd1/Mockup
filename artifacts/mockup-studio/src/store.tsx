@@ -401,7 +401,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         levitation: prev.labelDraftLevitation,
         fontFamily: prev.labelDraftFont,
       };
-      return { ...prev, texts: [...prev.texts, newLabel] };
+      return { 
+        ...prev, 
+        texts: [...prev.texts, newLabel],
+        activeLabelId: newLabel.id
+      };
     });
   };
 

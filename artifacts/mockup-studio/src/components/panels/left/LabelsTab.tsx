@@ -67,8 +67,26 @@ export const LabelsTab = () => {
     updateState({ labelTabActive: tab });
   };
 
+  const FIXED_POSITIONS: Record<string, { x: number; y: number }> = {
+    'top': { x: 50, y: 16 },
+    'top-right': { x: 78, y: 20 },
+    'right': { x: 84, y: 50 },
+    'bottom-right': { x: 78, y: 80 },
+    'bottom': { x: 50, y: 84 },
+    'bottom-left': { x: 22, y: 80 },
+    'left': { x: 16, y: 50 },
+    'top-left': { x: 22, y: 20 },
+  };
+
   const handleUpdate = (updates: any) => {
     if (selectedLabel) {
+      // If switching to 'fixed' mode, initialize coordinates from anchor to avoid jump
+      if (updates.labelMode === 'fixed' && (selectedLabel.labelMode !== 'fixed')) {
+        const anchor = selectedLabel.labelAnchor || 'right';
+        const pos = FIXED_POSITIONS[anchor];
+        updates.x = pos.x;
+        updates.y = pos.y;
+      }
       updateText(selectedLabel.id, updates);
     } else {
       updateState(updates);
@@ -188,6 +206,12 @@ export const LabelsTab = () => {
         {/* Pestaña: CONDUCTA */}
         {lTab === 'behavior' && (
           <Section label={selectedLabel ? `Comportamiento: ${selectedLabel.text}` : "Ajustes de Comportamiento"}>
+            {selectedLabel && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, padding: '4px 8px', borderRadius: 8, background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#3b82f6' }} />
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Editando etiqueta activa</span>
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div>
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', display: 'block', marginBottom: 8 }}>Tipo de Rastreo</span>
@@ -230,6 +254,12 @@ export const LabelsTab = () => {
         {/* Pestaña: ESTILO */}
         {lTab === 'style' && (
           <Section label={selectedLabel ? `Apariencia: ${selectedLabel.text}` : "Estilo Predefinido"}>
+            {selectedLabel && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, padding: '4px 8px', borderRadius: 8, background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)' }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#8b5cf6' }} />
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Editando etiqueta activa</span>
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               
               <div style={{ display: 'flex', gap: 12 }}>
