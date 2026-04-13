@@ -67,8 +67,8 @@
   --rt-hover:        rgba(255,255,255,0.055);
   --rt-active:       rgba(255,255,255,0.10);
   --rt-text:         rgba(255,255,255,0.88);
-  --rt-text-2:       rgba(255,255,255,0.50);
-  --rt-text-3:       rgba(255,255,255,0.28);
+  --rt-text-2:       rgba(255,255,255,0.58);
+  --rt-text-3:       rgba(255,255,255,0.42);
   --rt-accent-green: #30d158;
   --rt-accent-red:   #ff453a;
   --rt-accent-blue:  #0a84ff;
@@ -147,6 +147,26 @@
     @apply font-sans antialiased bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ── A11y: Focus visible ring for keyboard navigation ────── */
+  *:focus-visible {
+    outline: 2px solid var(--rt-accent-blue);
+    outline-offset: 2px;
+    border-radius: inherit;
+    box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.25);
+  }
+  *:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* ── Reduced motion: respect user preference ─────────────── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
@@ -249,7 +269,14 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 .animate-slide-in { animation: slide-in-up 0.6s ease-out forwards; }
 
 /* ─── App Layout ─────────────────────────────────────────────── */
-.app-root { width: 100vw; height: 100dvh; overflow: hidden; }
+.app-root {
+  width: 100vw; height: 100dvh; overflow: hidden;
+  /* Safe area insets for notched / Dynamic Island devices */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
 
 .desktop-layout { display: flex; height: 100%; width: 100%; }
 
@@ -258,6 +285,11 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 @media (max-width: 767px) {
   .desktop-layout { display: none !important; }
   .mobile-layout  { display: flex !important; }
+  /* On mobile, safe-area is handled at root level */
+  .app-root {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
@@ -281,6 +313,50 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
   border-left: none !important;
 }
 .mobile-sheet .left-panel { flex-direction: row; }
+
+/* ─── Horizontal scroll strip with snap ──────────────────────── */
+.hscroll-strip {
+  display: flex; overflow-x: auto; scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.hscroll-strip::-webkit-scrollbar { display: none; }
+.hscroll-strip > * { scroll-snap-align: start; }
+
+/* ─── Tab bar gradient fade on edges ─────────────────────────── */
+.tab-bar-scroll {
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%);
+}
+
+/* ─── Button press micro-animation ───────────────────────────── */
+.btn-press:active { transform: scale(0.95); transition: transform 0.06s ease-out; }
+.btn-press { transition: transform 0.1s ease-out, background 0.12s, opacity 0.12s; }
+
+/* ─── Panel content transitions ──────────────────────────────── */
+.panel-fade-enter {
+  animation: panelFade 0.18s ease-out;
+}
+@keyframes panelFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Skip to content (screen reader) ────────────────────────── */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0;
+  margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}
+.skip-link {
+  position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+  background: var(--rt-accent-blue); color: #fff;
+  padding: 8px 16px; border-radius: 0 0 8px 8px;
+  font-size: 13px; font-weight: 600; z-index: 99999;
+  transition: top 0.2s;
+}
+.skip-link:focus { top: 0; }
 
 /* ─── Glass / panel helpers ──────────────────────────────────── */
 .glass-panel {

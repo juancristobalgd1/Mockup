@@ -9,7 +9,7 @@ import {
 } from '@react-three/drei';
 import { EffectComposer, Bloom, SMAA, DepthOfField } from '@react-three/postprocessing';
 import * as THREE from 'three';
-import { useApp } from '../../store';
+import { useApp, type AppState, type TextOverlay, type DeviceColor, type LabelAnchorPosition } from '../../store';
 import type { CameraKeyframe } from '../../store';
 import { getModelById, DEVICE_MODELS } from '../../data/devices';
 import { useIsMobile } from '../../hooks/use-mobile';
@@ -608,29 +608,31 @@ function ClayOverride({ enabled, color }: { enabled: boolean; color: string }) {
 // Uses em units so it scales naturally with the container font-size
 // (set imperatively from useFrame in DeviceScene).
 function ScreenDropZoneContent({ pencil }: { pencil: boolean }) {
-  const s = 'rgba(255,255,255,0.90)';
+  const s = 'rgba(255,255,255,0.95)';
   const label: React.CSSProperties = {
-    fontSize: '0.85em', color: 'rgba(255,255,255,0.88)',
-    fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 600,
-    letterSpacing: '0.01em', lineHeight: 1,
+    fontSize: '0.9em', color: 'rgba(255,255,255,0.92)',
+    fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 700,
+    letterSpacing: '-0.01em', lineHeight: 1,
   };
   return pencil ? (
     <>
-      <svg width="1.1em" height="1.1em" viewBox="0 0 24 24" fill="none">
-        <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"
-          stroke={s} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-      <span style={label}>Edit</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '1.4em', height: '1.4em', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }}>
+        <svg width="0.9em" height="0.9em" viewBox="0 0 24 24" fill="none" stroke={s} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+          <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </svg>
+      </div>
+      <span style={label}>Editar pantalla</span>
     </>
   ) : (
     <>
-      <svg width="1.1em" height="1.1em" viewBox="0 0 24 24" fill="none">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-          stroke={s} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <polyline points="17 8 12 3 7 8" stroke={s} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <line x1="12" y1="3" x2="12" y2="15" stroke={s} strokeWidth="2" strokeLinecap="round"/>
-      </svg>
-      <span style={label}>Drop media</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '1.4em', height: '1.4em', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }}>
+        <svg width="0.9em" height="0.9em" viewBox="0 0 24 24" fill="none" stroke={s} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </div>
+      <span style={label}>Add media</span>
     </>
   );
 }
@@ -881,25 +883,29 @@ function DeviceScene({
           {showIcon && (
             <div
               onClick={() => setMenuOpen(m => !m)}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLDivElement).style.background = menuOpen
-                  ? 'rgba(50,52,70,0.95)' : 'rgba(40,42,54,0.88)';
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLDivElement).style.background = menuOpen
-                  ? 'rgba(30,32,44,0.92)' : 'rgba(10,10,16,0.72)';
-              }}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '0.45em',
-                padding: '0.42em 0.85em 0.42em 0.65em',
-                borderRadius: '2em',
-                background: menuOpen ? 'rgba(30,32,44,0.92)' : 'rgba(10,10,16,0.72)',
-                border: `1px solid ${menuOpen ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.20)'}`,
-                backdropFilter: 'blur(12px)',
-                cursor: 'pointer', userSelect: 'none', pointerEvents: 'auto',
-                transition: 'background 0.12s',
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLDivElement).style.background = menuOpen
+                    ? 'rgba(50,52,70,0.96)' : 'rgba(40,42,54,0.92)';
+                  (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.05)';
+                  (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.4)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLDivElement).style.background = menuOpen
+                    ? 'rgba(30,32,44,0.94)' : 'rgba(10,10,16,0.76)';
+                  (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)';
+                  (e.currentTarget as HTMLDivElement).style.borderColor = menuOpen ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.20)';
+                }}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.6em',
+                  padding: '0.5em 1em 0.5em 0.7em',
+                  borderRadius: '2.5em',
+                  background: menuOpen ? 'rgba(30,32,44,0.94)' : 'rgba(10,10,16,0.76)',
+                  border: `1px solid ${menuOpen ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.20)'}`,
+                  backdropFilter: 'blur(16px)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
+                  cursor: 'pointer', userSelect: 'none', pointerEvents: 'auto',
+                  transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                 whiteSpace: 'nowrap',
-                boxShadow: '0 1px 8px rgba(0,0,0,0.4)',
               }}
             >
               <svg width="1em" height="1em" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.85 }}>

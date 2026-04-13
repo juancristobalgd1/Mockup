@@ -130,6 +130,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     frame: 'titanium',
     hasActionButton: true, hasCameraControl: true,
     hasColors: true, hasOrientation: true,
+    accent: '#a8a29e',
     glbUrl: '/models/iphone_17_pro_max.glb',
     skipOverlay: true,
     screenMeshName: 'Object_55',
@@ -169,6 +170,9 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasActionButton: true, hasCameraControl: true,
     hasColors: true, hasOrientation: true,
     accent: '#8c7c6e',
+    glbUrl: '/models/iphone16promax.glb',
+    skipOverlay: true,
+    useOriginalMaterials: true,
   },
   {
     id: 'iphone-x',
@@ -183,9 +187,9 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     frame: 'glass',
     hasColors: true, hasOrientation: true,
     accent: '#71717a',
-    glbUrl: '/models/iphone_x.glb',
-
-    
+    glbUrl: '/models/iphonex.glb',
+    skipOverlay: true,
+    useOriginalMaterials: true,
   },
   // ── Android ───────────────────────────────────────────────────────
   {

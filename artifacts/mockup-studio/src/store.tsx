@@ -144,6 +144,10 @@ export interface AppState {
   cameraResetKey: number;
 
   deviceScale: number;
+  scale?: number; // fallback for some legacy CSS views
+  rotation?: number;
+  canvasPadding?: number;
+  labelTabActive?: 'positions' | 'behavior' | 'style';
   reflection: boolean;
   reflectionOpacity: number;
   glassReflection: boolean;
@@ -229,7 +233,7 @@ export const defaultState: AppState = {
   animation: "float",
   autoRotate: false,
   autoRotateSpeed: 1.5,
-  envPreset: "warehouse",
+  envPreset: "studio",
   envEnabled: true,
   lightExposure: 1.0,
   lightBrightness: 40,

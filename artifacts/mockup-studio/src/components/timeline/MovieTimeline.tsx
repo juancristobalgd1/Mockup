@@ -18,6 +18,7 @@ interface MovieTimelineProps {
   onCollapsedChange?: (collapsed: boolean) => void;
   canvasRef: React.RefObject<HTMLDivElement | null>;
   hideManualKeyframeButton?: boolean;
+  forceCollapsed?: boolean;
 }
 
 function formatTimer(s: number) {
@@ -633,7 +634,10 @@ function Diamond({ active, label, onClick, onContextMenu }: {
   );
 }
 
-export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>(function MovieTimeline({ viewerRef, movieTimeRef, onClose, onPlayingChange, onCollapsedChange, canvasRef, hideManualKeyframeButton = false, forceCollapsed }, ref) {
+export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>(function MovieTimeline({ 
+  viewerRef, movieTimeRef, onClose, onPlayingChange, onCollapsedChange, 
+  canvasRef, hideManualKeyframeButton = false, forceCollapsed 
+}, ref) {
   const { state, updateState, addCameraKeyframe, removeCameraKeyframe, updateCameraKeyframe, clearCameraKeyframes } = useApp();
   const { cameraKeyframes, movieDuration } = state;
 

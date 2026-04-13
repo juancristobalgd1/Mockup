@@ -1,5 +1,9 @@
-import { useRef, useState, useEffect } from 'react';
+import * as React from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AppProvider, useApp } from './store';
+import { Toaster } from 'sonner';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import type { CreationMode } from './store';
 import { Canvas } from './components/canvas/Canvas';
 import { LeftPanel } from './components/panels/LeftPanel';
@@ -8,9 +12,21 @@ import type { Tab } from './components/panels/tabs';
 import { RightPanel } from './components/panels/RightPanel';
 import { MovieTimeline } from './components/timeline/MovieTimeline';
 import type { MovieTimelineHandle } from './components/timeline/MovieTimeline';
-import { Download, X, Film, Smartphone, Undo2, Redo2 } from 'lucide-react';
+import { 
+  Undo2, Redo2, 
+  Smartphone, Film, 
+  Download
+} from 'lucide-react';
 import { getModelById } from './data/devices';
 import type { Device3DViewerHandle } from './components/devices3d/Device3DViewer';
+
+function Shortcut({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="ml-2 inline-flex items-center gap-0.5 rounded border border-white/20 bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-white/50">
+      {children}
+    </span>
+  );
+}
 
 const CREATION_MODES: {
   id: CreationMode;
@@ -20,15 +36,15 @@ const CREATION_MODES: {
 }[] = [
   {
     id: 'mockup',
-    label: 'Image',
+    label: 'Imagen',
     icon: <Smartphone size={11} />,
-    desc: 'Device mockup with image or video',
+    desc: 'Mockup de dispositivo con imagen o video',
   },
   {
     id: 'movie',
-    label: 'Movie',
+    label: 'Película',
     icon: <Film size={11} />,
-    desc: 'Animated cinematic video export',
+    desc: 'Exportación de video cinemático animado',
   },
 ];
 
@@ -40,11 +56,17 @@ function Editor() {
   const movieTimelineRef = useRef<MovieTimelineHandle>(null);
   const [moviePlaying, setMoviePlaying] = useState(false);
   const [mobileTab, setMobileTab] = useState<Tab | 'export' | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('presets');
   const [timelineCollapsed, setTimelineCollapsed] = useState(false);
 
   const currentModel = getModelById(state.deviceModel);
   const deviceLabel = currentModel.label;
   const activeMode = CREATION_MODES.find(m => m.id === state.creationMode) ?? CREATION_MODES[0];
+
+  const TOOLBAR_ACTIONS = [
+    { title: 'Deshacer', icon: Undo2, action: undo, enabled: canUndo, shortcut: '⌘Z' },
+    { title: 'Rehacer', icon: Redo2, action: redo, enabled: canRedo, shortcut: '⇧⌘Z' },
+  ];
 
   // ── Global keyboard shortcuts: Ctrl+Z (undo) / Ctrl+Shift+Z (redo) ──
   useEffect(() => {
@@ -62,6 +84,17 @@ function Editor() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [undo, redo]);
 
+  // ── Warn before unload when there are unsaved changes ──
+  useEffect(() => {
+    const hasContent = state.screenshotUrl || state.videoUrl || state.texts.length > 0 || state.annotateStrokes.length > 0;
+    if (!hasContent) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [state.screenshotUrl, state.videoUrl, state.texts.length, state.annotateStrokes.length]);
+
   const handleModeChange = (mode: CreationMode) => {
     const isMovie = mode === 'movie';
     updateState({ creationMode: mode, movieMode: isMovie });
@@ -71,14 +104,19 @@ function Editor() {
   return (
     <div className="app-root" style={{ background: 'var(--rt-canvas)' }}>
 
+      {/* Skip link for keyboard users */}
+      <a href="#main-canvas" className="skip-link">Skip to canvas</a>
+
       {/* ── DESKTOP LAYOUT ─────────────────────────────────────── */}
       <div className="desktop-layout">
-        <LeftPanel />
+        <aside aria-label="Design controls">
+          <LeftPanel activeTab={activeTab} setActiveTab={setActiveTab} />
+        </aside>
 
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
 
           {/* ── Rotato-style Title Bar ──────────────────────────── */}
-          <div style={{
+          <header style={{
             display: 'grid',
             gridTemplateColumns: '1fr auto 1fr',
             alignItems: 'center',
@@ -88,7 +126,7 @@ function Editor() {
           }}>
             {/* Left: traffic lights + title */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
-              <div className="rt-traffic" style={{ flexShrink: 0 }}>
+              <div className="rt-traffic" role="presentation" aria-hidden="true" style={{ flexShrink: 0 }}>
                 <span className="tl-red" />
                 <span className="tl-yellow" />
                 <span className="tl-green" />
@@ -98,7 +136,7 @@ function Editor() {
                   {deviceLabel}
                   {(state.deviceType === 'iphone' || state.deviceType === 'android') && (
                     <span style={{ color: 'var(--rt-text-3)' }}>
-                      {' '}· {state.deviceLandscape ? 'Landscape' : 'Portrait'}
+                      {' '}· {state.deviceLandscape ? 'Horizontal' : 'Vertical'}
                     </span>
                   )}
                 </span>
@@ -110,7 +148,7 @@ function Editor() {
                     color: state.contentType === 'video' ? 'var(--rt-accent-green)' : 'var(--rt-text-3)',
                     border: state.contentType === 'video' ? '1px solid rgba(48,209,88,0.2)' : '1px solid var(--rt-border)',
                   }}>
-                    {state.contentType === 'video' ? '▶ Video' : 'Image'}
+                    {state.contentType === 'video' ? '▶ Video' : 'Imagen'}
                   </span>
                 )}
               </div>
@@ -123,30 +161,34 @@ function Editor() {
               borderRadius: 9, padding: '3px',
               border: '1px solid rgba(255,255,255,0.12)',
             }}>
-              {([
-                { action: undo, enabled: canUndo, icon: <Undo2 size={14} strokeWidth={2} />, title: 'Deshacer (Ctrl+Z)' },
-                { action: redo, enabled: canRedo, icon: <Redo2 size={14} strokeWidth={2} />, title: 'Rehacer (Ctrl+Shift+Z)' },
-              ] as const).map(({ action, enabled, icon, title }, i) => (
-                <button
-                  key={i}
-                  onClick={action}
-                  disabled={!enabled}
-                  title={title}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    width: 30, height: 26, borderRadius: 6,
-                    cursor: enabled ? 'pointer' : 'not-allowed',
-                    transition: 'background 0.12s, opacity 0.12s',
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--rt-text-2)',
-                    opacity: enabled ? 1 : 0.3,
-                  }}
-                  onMouseEnter={e => { if (enabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.14)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-                >
-                  {icon}
-                </button>
+              {TOOLBAR_ACTIONS.map(({ title, icon: Icon, action, enabled, shortcut }, i) => (
+                <Tooltip key={i} delayDuration={400}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={action}
+                      disabled={!enabled}
+                      aria-label={title}
+                      className="btn-press"
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: 30, height: 26, borderRadius: 6,
+                        background: 'transparent', border: 'none',
+                        color: enabled ? 'var(--rt-text)' : 'var(--rt-text-3)',
+                        cursor: enabled ? 'pointer' : 'not-allowed',
+                        transition: 'all 0.12s',
+                        opacity: enabled ? 1 : 0.4,
+                      }}
+                      onMouseEnter={e => { if (enabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.14)'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                    >
+                      <Icon size={14} strokeWidth={2.2} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="flex items-center">
+                    {title}
+                    {shortcut && <Shortcut>{shortcut}</Shortcut>}
+                  </TooltipContent>
+                </Tooltip>
               ))}
             </div>
 
@@ -162,41 +204,58 @@ function Editor() {
                 {CREATION_MODES.map(mode => {
                   const isActive = state.creationMode === mode.id;
                   return (
-                    <button
-                      key={mode.id}
-                      onClick={() => handleModeChange(mode.id)}
-                      title={mode.desc}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 5,
-                        padding: '4px 11px', borderRadius: 6, cursor: 'pointer',
-                        fontSize: 11, fontWeight: 600,
-                        transition: 'all 0.12s',
-                        background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
-                        border: isActive ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
-                        color: isActive ? 'var(--rt-text)' : 'var(--rt-text-3)',
-                        boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
-                      }}
-                    >
-                      {mode.icon}
-                      {mode.label}
-                    </button>
+                    <Tooltip key={mode.id} delayDuration={400}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => handleModeChange(mode.id)}
+                          aria-label={mode.desc}
+                          aria-pressed={isActive}
+                          className="btn-press"
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 5,
+                            padding: '4px 11px', borderRadius: 6, cursor: 'pointer',
+                            fontSize: 11, fontWeight: 600,
+                            transition: 'all 0.12s',
+                            background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
+                            border: isActive ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
+                            color: isActive ? 'var(--rt-text)' : 'var(--rt-text-3)',
+                            boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
+                          }}
+                        >
+                          {mode.icon}
+                          {mode.label}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">{mode.desc}</TooltipContent>
+                    </Tooltip>
                   );
                 })}
               </div>
             </div>
-          </div>
+          </header>
 
           {/* Canvas */}
-          <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }} className="canvas-bg">
-            <Canvas
-              ref={canvasRef}
-              viewerRef={viewerRef}
-              textOverlays={state.texts}
-              onUpdateText={updateText}
-              moviePlaying={moviePlaying}
-              movieTimeRef={movieTimeRef}
-            />
-          </div>
+          <main id="main-canvas" style={{ flex: 1, overflow: 'hidden', position: 'relative' }} className="canvas-bg">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={state.creationMode}
+                initial={{ opacity: 0, scale: 0.98, filter: 'blur(10px)' }}
+                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, scale: 1.02, filter: 'blur(10px)' }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                style={{ width: '100%', height: '100%' }}
+              >
+                <Canvas
+                  ref={canvasRef}
+                  viewerRef={viewerRef}
+                  textOverlays={state.texts}
+                  onUpdateText={updateText}
+                  moviePlaying={moviePlaying}
+                  movieTimeRef={movieTimeRef}
+                />
+              </motion.div>
+            </AnimatePresence>
+          </main>
 
           {/* Movie Timeline */}
           {state.movieMode && (
@@ -211,15 +270,17 @@ function Editor() {
           )}
         </div>
 
-        <RightPanel
-          canvasRef={canvasRef}
-          viewerRef={viewerRef}
-          movieTimelineRef={movieTimelineRef}
-          movieTimeRef={movieTimeRef}
-          textOverlays={state.texts}
-          onUpdateText={updateText}
-          onRemoveText={removeText}
-        />
+        <aside aria-label="Export controls">
+          <RightPanel
+            canvasRef={canvasRef}
+            viewerRef={viewerRef}
+            movieTimelineRef={movieTimelineRef}
+            movieTimeRef={movieTimeRef}
+            textOverlays={state.texts}
+            onUpdateText={updateText}
+            onRemoveText={removeText}
+          />
+        </aside>
       </div>
 
       {/* ── MOBILE LAYOUT ──────────────────────────────────────── */}
@@ -273,7 +334,7 @@ function Editor() {
                     onRemoveText={removeText}
                   />
                 ) : (
-                  <LeftPanel mobile mobileContentOnly={mobileTab as Tab} />
+                  <LeftPanel mobile mobileContentOnly={mobileTab as Tab} activeTab={activeTab} setActiveTab={setActiveTab} />
                 )}
               </div>
             </div>
@@ -305,6 +366,9 @@ function Editor() {
                 const isMovie = mode.id === 'movie';
                 return (
                   <button key={mode.id} onClick={() => handleModeChange(mode.id)}
+                    aria-label={mode.desc}
+                    aria-pressed={isActive}
+                    className="btn-press"
                     style={{
                       display: 'flex', alignItems: 'center', gap: 6,
                       padding: '7px 14px', borderRadius: 11, cursor: 'pointer',
@@ -333,28 +397,27 @@ function Editor() {
             boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
             pointerEvents: 'auto',
           } as React.CSSProperties}>
-            {([
-              { action: undo, enabled: canUndo, icon: <Undo2 size={15} strokeWidth={2} />, title: 'Deshacer' },
-              { action: redo, enabled: canRedo, icon: <Redo2 size={15} strokeWidth={2} />, title: 'Rehacer' },
-            ] as const).map(({ action, enabled, icon, title }, i) => (
+            {TOOLBAR_ACTIONS.map(({ action, enabled, icon: Icon, title }, i) => (
               <button
                 key={i}
                 onClick={action}
                 disabled={!enabled}
-                title={title}
+                aria-label={title}
+                className="btn-press"
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  width: 36, height: 32, borderRadius: 11,
+                  width: 32, height: 32, borderRadius: 8,
                   cursor: enabled ? 'pointer' : 'not-allowed',
-                  background: 'transparent', border: 'none',
-                  color: '#fff',
-                  opacity: enabled ? 1 : 0.3,
                   transition: 'background 0.12s, opacity 0.12s',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--rt-text-2)',
+                  opacity: enabled ? 1 : 0.3,
                 }}
                 onMouseEnter={e => { if (enabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.14)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
               >
-                {icon}
+                <Icon size={15} strokeWidth={2} />
               </button>
             ))}
           </div>
@@ -363,6 +426,8 @@ function Editor() {
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <button
               onClick={() => setMobileTab(mobileTab === 'export' ? null : 'export')}
+              aria-label={mobileTab === 'export' ? 'Close export panel' : 'Open export panel'}
+              className="btn-press"
               style={{
                 display: 'flex', alignItems: 'center', gap: 7,
                 padding: '9px 16px', borderRadius: 14,
@@ -391,15 +456,18 @@ function Editor() {
           display: 'flex', flexDirection: 'column',
         }}>
           {/* Tab pill row */}
-          <div style={{
+          <nav aria-label="Editor tabs" style={{
             display: 'flex', gap: 8, overflowX: 'auto', padding: '10px 14px 22px',
             background: 'transparent', scrollbarWidth: 'none',
-          } as React.CSSProperties}>
+          } as React.CSSProperties} className="tab-bar-scroll">
             {TAB_ICONS.map(({ id, icon: Icon, label }) => {
               const active = mobileTab === id;
               return (
                 <button key={id}
                   onClick={() => setMobileTab(active ? null : id)}
+                  aria-label={label}
+                  aria-pressed={active}
+                  className="btn-press"
                   style={{
                     flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7,
                     padding: '10px 16px', borderRadius: 24,
@@ -416,7 +484,7 @@ function Editor() {
                 </button>
               );
             })}
-          </div>
+          </nav>
 
           {/* Timeline — sits below the tab bar when movie mode is active */}
           {state.movieMode && (
@@ -426,7 +494,7 @@ function Editor() {
               movieTimeRef={movieTimeRef}
               canvasRef={canvasRef}
               hideManualKeyframeButton
-              forceCollapsed={mobileTab}
+              forceCollapsed={!!mobileTab}
               onPlayingChange={setMoviePlaying}
               onCollapsedChange={setTimelineCollapsed}
               onClose={() => { updateState({ movieMode: false }); setMoviePlaying(false); setMobileTab(null); setTimelineCollapsed(false); }}
@@ -440,8 +508,11 @@ function Editor() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <Editor />
-    </AppProvider>
+    <TooltipProvider>
+      <AppProvider>
+        <Editor />
+        <Toaster position="top-center" richColors theme="dark" closeButton />
+      </AppProvider>
+    </TooltipProvider>
   );
 }

@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { LayoutGrid, Smartphone, Image as ImageIcon, Sliders, Layers, Blend, PenLine, Tags } from 'lucide-react';
 import type { LucideProps } from 'lucide-react';
 
