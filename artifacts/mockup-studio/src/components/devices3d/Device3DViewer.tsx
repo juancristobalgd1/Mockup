@@ -1847,19 +1847,22 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
             </Suspense>
           )}
 
-          {/* Soft contact shadow on ground plane */}
-          <ContactShadows
-            position={[0, isLaptop ? -0.8 : -2.0, 0]}
-            opacity={state.contactShadowOpacity / 100}
-            scale={isLaptop ? 10 : 6}
-            blur={isLaptop ? 3.5 : 2.2}
-            far={isLaptop ? 3 : 4}
-            color="#000000"
-            resolution={512}
-          />
-
           {/* Device geometry — wrapped in scale group */}
           <group scale={state.deviceScale / 100}>
+            {/* Soft contact shadow on ground plane */}
+            <ContactShadows
+              position={[0, isLaptop ? -0.8 : -2.0, 0]}
+              opacity={state.contactShadowOpacity / 100}
+              scale={isLaptop ? 10 : 6}
+              blur={isLaptop ? 3.5 : 2.2}
+              far={isLaptop ? 3 : 4}
+              color="#000000"
+              resolution={512}
+            />
+
+            {/* Floor reflection plane */}
+            <FloorReflector isLaptop={isLaptop} />
+
             <Suspense fallback={<Loader />}>
               <DeviceScene
                 floatEnabled={floatEnabled}
@@ -1871,9 +1874,6 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
               />
             </Suspense>
           </group>
-
-          {/* Floor reflection plane */}
-          <FloorReflector isLaptop={isLaptop} />
 
           {/* Clay mode — override all mesh materials to matte */}
           <ClayOverride enabled={state.clayMode ?? false} color={state.clayColor ?? '#e8ddd3'} />
