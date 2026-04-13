@@ -530,6 +530,8 @@ function PostFX({ hasContent, bloomIntensity, dofEnabled, dofFocusDistance, dofF
   );
 }
 
+
+
 // ── Floor reflector (Rotato-style mirror floor) ───────────────────
 function FloorReflector({ isLaptop }: { isLaptop: boolean }) {
   const { state } = useApp();
@@ -1791,6 +1793,29 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
     const camY = isLaptop ? 0.5 : 0.4;   // Slightly above
     const camZ = isLaptop ? 6.2 : 5.6;   // Depth
 
+    const shadowFilter = useMemo(() => {
+      const dir = state.contactShadowDirection || 'atras';
+      const opacity = (state.contactShadowOpacity ?? 65) / 100;
+      if (opacity <= 0) return 'none';
+      
+      // Values optimized for Rotato-style mockup look
+      let dx = 0, dy = 0, blur = isLaptop ? 45 : 35;
+      
+      if (dir === 'abajo') { 
+        dx = isLaptop ? 35 : 25; 
+        dy = isLaptop ? 50 : 35; // Strong diagonal
+      } else if (dir === 'derecha') { 
+        dx = isLaptop ? 60 : 45; dy = 0; 
+      } else if (dir === 'izquierda') { 
+        dx = isLaptop ? -60 : -45; dy = 0; 
+      } else if (dir === 'atras') {
+        dx = 0; dy = 0; blur = isLaptop ? 60 : 50; 
+      }
+      
+      // We use a slight multiplier (0.6) for the opacity to keep it soft and realistic
+      return `drop-shadow(${dx}px ${dy}px ${blur}px rgba(0,0,0,${opacity * 0.6}))`;
+    }, [state.contactShadowDirection, state.contactShadowOpacity, isLaptop]);
+
     return (
       <div
         className={className}
@@ -1799,6 +1824,8 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
           width: '100%',
           height: '100%',
           cursor: interactionMode === 'drag' ? 'move' : interactionMode === 'zoom' ? 'zoom-in' : 'default',
+          filter: shadowFilter,
+          transition: 'filter 0.3s ease',
           ...style,
         }}
         onPointerMove={() => setHintVisible(false)}
@@ -1849,16 +1876,7 @@ export const Device3DViewer = forwardRef<Device3DViewerHandle, Device3DViewerPro
 
           {/* Device geometry — wrapped in scale group */}
           <group scale={state.deviceScale / 100}>
-            {/* Soft contact shadow on ground plane */}
-            <ContactShadows
-              position={[0, isLaptop ? -0.8 : -2.0, 0]}
-              opacity={state.contactShadowOpacity / 100}
-              scale={isLaptop ? 10 : 6}
-              blur={isLaptop ? 3.5 : 2.2}
-              far={isLaptop ? 3 : 4}
-              color="#000000"
-              resolution={512}
-            />
+
 
             {/* Floor reflection plane */}
             <FloorReflector isLaptop={isLaptop} />

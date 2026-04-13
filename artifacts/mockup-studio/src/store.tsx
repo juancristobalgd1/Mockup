@@ -140,6 +140,7 @@ export interface AppState {
   lightWarmth: number;
   lightIBL: number;
   contactShadowOpacity: number;
+  contactShadowDirection?: 'abajo' | 'atras' | 'izquierda' | 'derecha';
   cameraAngle: 'hero' | 'front' | 'side' | 'top' | 'tilt-right' | 'tilt-left' | 'low' | 'diagonal' | 'dramatic';
   cameraResetKey: number;
 
@@ -242,6 +243,7 @@ export const defaultState: AppState = {
   lightWarmth: 0,
   lightIBL: 40,
   contactShadowOpacity: 65,
+  contactShadowDirection: 'atras',
   cameraAngle: "hero",
   cameraResetKey: 0,
 

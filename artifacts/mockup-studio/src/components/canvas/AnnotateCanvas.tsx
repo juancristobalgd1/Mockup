@@ -8,7 +8,7 @@ import type {
   AnnotateShapeTool as ShapeTool,
   AnyAnnotateStroke as AnyStroke,
 } from '../../store';
-import paletteIcon from '@assets/image_1775735507491.png';
+import { Palette } from 'lucide-react';
 
 interface BBox { x: number; y: number; w: number; h: number }
 
@@ -1094,11 +1094,7 @@ export function AnnotateCanvas() {
                       width: 20, height: 20, flexShrink: 0,
                       position: 'relative',
                     }}>
-                      <img
-                        src={paletteIcon}
-                        alt="palette"
-                        style={{ width: 20, height: 20, objectFit: 'contain', display: 'block' }}
-                      />
+                      <Palette size={18} style={{ display: 'block', color: 'rgba(255,255,255,0.85)' }} />
                       <input
                         type="color"
                         value={currentColor}

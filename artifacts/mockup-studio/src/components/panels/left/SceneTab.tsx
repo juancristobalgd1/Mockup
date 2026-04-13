@@ -202,6 +202,24 @@ export const SceneTab = () => {
           {scenePopup === 'shadow' && (
             <>
               <div style={POP_LABEL}>Sombra</div>
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', gap: 4, background: 'rgba(0,0,0,0.2)', padding: 3, borderRadius: 8 }}>
+                  {(['abajo', 'atras', 'izquierda', 'derecha'] as const).map(dir => (
+                    <button key={dir}
+                      onClick={() => updateState({ contactShadowDirection: dir })}
+                      style={{
+                        flex: 1, height: 24, fontSize: 10, fontWeight: 700,
+                        textTransform: 'capitalize',
+                        borderRadius: 6, border: 'none', cursor: 'pointer',
+                        background: (state.contactShadowDirection || 'atras') === dir ? 'rgba(255,255,255,0.15)' : 'transparent',
+                        color: (state.contactShadowDirection || 'atras') === dir ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)',
+                        transition: 'all 0.15s'
+                      }}>
+                      {dir}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <Slider label="Intensidad" value={state.contactShadowOpacity} min={0} max={100}
                 onChange={v => updateState({ contactShadowOpacity: v })} unit="%" />
             </>
