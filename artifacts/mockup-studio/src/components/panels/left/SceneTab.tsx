@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useRef, useEffect } from 'react';
-import { RefreshCw, RotateCcw } from 'lucide-react';
+import { RefreshCw, RotateCcw, Maximize, Activity, Sparkles, Sun, Lamp } from 'lucide-react';
 import { useApp } from '../../../store';
 import { Section, Chip, Slider, MiniSlider, Toggle } from '../../ui/PanelUI';
 import { CANVAS_RATIOS, ENV_PRESETS } from '../../../data/panelConstants';
@@ -17,24 +17,20 @@ export const SceneTab = () => {
   const [lightPopupOpen, setLightPopupOpen] = useState(false);
   const [lightPopupAnchor, setLightPopupAnchor] = useState<{ x: number; y: number } | null>(null);
   const lightPopupRef = useRef<HTMLDivElement>(null);
-  const lightBtnRef = useRef<HTMLButtonElement>(null);
 
   const [envPopupOpen, setEnvPopupOpen] = useState(false);
   const [envPopupAnchor, setEnvPopupAnchor] = useState<{ x: number; y: number } | null>(null);
   const envPopupRef = useRef<HTMLDivElement>(null);
-  const envBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
       if (scenePopup && scenePopupRef.current && !scenePopupRef.current.contains(e.target as Node)) {
         setScenePopup(null);
       }
-      if (lightPopupOpen && lightPopupRef.current && !lightPopupRef.current.contains(e.target as Node)
-          && lightBtnRef.current && !lightBtnRef.current.contains(e.target as Node)) {
+      if (lightPopupOpen && lightPopupRef.current && !lightPopupRef.current.contains(e.target as Node)) {
         setLightPopupOpen(false);
       }
-      if (envPopupOpen && envPopupRef.current && !envPopupRef.current.contains(e.target as Node)
-          && envBtnRef.current && !envBtnRef.current.contains(e.target as Node)) {
+      if (envPopupOpen && envPopupRef.current && !envPopupRef.current.contains(e.target as Node)) {
         setEnvPopupOpen(false);
       }
     };
@@ -85,38 +81,53 @@ export const SceneTab = () => {
   const effectsOn = (state.reflection ?? false) || (state.grain ?? false) || (state.glassReflection ?? true);
   const shadowPct = state.contactShadowOpacity;
 
-  const SceneBtn = ({ id, icon, label, active, accent }: {
-    id: 'canvas' | 'motion' | 'effects' | 'shadow';
-    icon: React.ReactNode; label: string; active?: boolean; accent: string;
-  }) => (
-    <button
-      title={label}
-      onClick={e => openScene(id, e)}
-      style={{
-        flexShrink: 0, width: 46, height: 46, padding: 0, borderRadius: 11, border: 'none', cursor: 'pointer',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: scenePopup === id ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.5)',
-        outline: scenePopup === id
-          ? '2px solid rgba(167,139,250,0.8)'
-          : active ? '2px solid rgba(255,255,255,0.55)' : '1px solid rgba(255,255,255,0.13)',
-        color: scenePopup === id ? 'rgba(167,139,250,1)' : active ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
-        transition: 'all 0.12s',
-      }}>
-      <div style={{
-        width: 28, height: 28, borderRadius: 9,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: scenePopup === id
-          ? 'rgba(167,139,250,0.18)'
-          : active ? accent : 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))',
-        boxShadow: active
-          ? 'inset 0 1px 0 rgba(255,255,255,0.16), 0 4px 12px rgba(0,0,0,0.18)'
-          : 'inset 0 1px 0 rgba(255,255,255,0.08)',
-        transition: 'all 0.12s',
-      }}>
-        {icon}
-      </div>
-    </button>
-  );
+  const SceneBtn = ({ id, icon, label, sublabel, active, accent, onClick }: {
+    id: string;
+    icon: React.ReactNode; label: string; sublabel?: string; active?: boolean; accent?: string;
+    onClick?: (e: React.MouseEvent) => void;
+  }) => {
+    const isOpen = scenePopup === id || (id === 'estudio' && envPopupOpen) || (id === 'luz' && lightPopupOpen);
+    
+    return (
+      <button
+        title={label}
+        onClick={onClick || (e => openScene(id as any, e))}
+        style={{
+          flexShrink: 0, width: 46, height: 46, padding: 0, borderRadius: 11, border: 'none', cursor: 'pointer',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+          background: isOpen ? 'rgba(255,255,255,0.18)' : active ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.5)',
+          outline: isOpen
+            ? '2px solid rgba(167,139,250,0.85)'
+            : active ? '2px solid rgba(255,255,255,0.7)' : '1px solid rgba(255,255,255,0.13)',
+          color: isOpen ? 'rgba(167,139,250,1)' : active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)',
+          transition: 'all 0.12s',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+        {/* Colorful accent background if active and not open */}
+        {active && !isOpen && accent && (
+          <div style={{
+            position: 'absolute', inset: 0, background: accent, opacity: 0.15, pointerEvents: 'none'
+          }} />
+        )}
+        
+        <div style={{ 
+          display: 'flex', alignItems: 'center', justifyContent: 'center', height: 20,
+          color: isOpen ? 'rgba(167,139,250,1)' : active ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.35)',
+          transition: 'all 0.12s'
+        }}>
+          {icon}
+        </div>
+        
+        <span style={{ 
+          fontSize: 7, fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase',
+          lineHeight: 1, color: 'inherit', marginTop: 1
+        }}>
+          {sublabel || label}
+        </span>
+      </button>
+    );
+  };
 
   return (
     <>
@@ -316,75 +327,52 @@ export const SceneTab = () => {
       <Section label="Escena">
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-            <SceneBtn id="canvas" label="Lienzo" active={state.canvasRatio !== 'free' || (state.canvasRadius ?? 0) > 0} accent="linear-gradient(135deg, rgba(59,130,246,0.32), rgba(14,165,233,0.22))"
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M8 9h8M8 13h4" opacity="0.9"/></svg>} />
-            <SceneBtn id="motion" label="Movimiento" active={motionOn} accent="linear-gradient(135deg, rgba(16,185,129,0.3), rgba(34,197,94,0.2))"
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15c2.5-4 5.5-6 9-6 2.8 0 5 .9 7 2.6"/><path d="M14.5 6.5 20 11l-5.5 4.5"/></svg>} />
-            <SceneBtn id="effects" label="Efectos" active={effectsOn} accent="linear-gradient(135deg, rgba(244,114,182,0.3), rgba(168,85,247,0.2))"
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3.5 14.1 9l5.9 2.1-5.9 2.1L12 18.5l-2.1-5.3L4 11.1 9.9 9 12 3.5Z"/><circle cx="18.5" cy="5.5" r="1.2" fill="currentColor" stroke="none"/></svg>} />
-            <SceneBtn id="shadow" label="Sombra" active={(shadowPct ?? 0) > 0} accent="linear-gradient(135deg, rgba(99,102,241,0.3), rgba(71,85,105,0.22))"
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M7 11.5c0-2.8 2.2-5 5-5 1.9 0 3.6 1 4.5 2.6"/><path d="M6 16.5c1.8-1.2 3.9-1.8 6-1.8 2.4 0 4.5.6 6.4 1.8" opacity="0.95"/><ellipse cx="12" cy="18.3" rx="7" ry="2.2" opacity="0.7"/></svg>} />
+            <SceneBtn id="canvas" label="Lienzo" sublabel="Lienzo" active={state.canvasRatio !== 'free' || (state.canvasRadius ?? 0) > 0} accent="rgba(59,130,246,1)"
+              icon={<Maximize size={15} strokeWidth={2.2} />} />
+            <SceneBtn id="motion" label="Movimiento" sublabel="Anim" active={motionOn} accent="rgba(16,185,129,1)"
+              icon={<Activity size={15} strokeWidth={2.2} />} />
+            <SceneBtn id="effects" label="Efectos" sublabel="FX" active={effectsOn} accent="rgba(244,114,182,1)"
+              icon={<Sparkles size={15} strokeWidth={2.2} />} />
+            <SceneBtn id="shadow" label="Sombra" sublabel="Sombra" active={(shadowPct ?? 0) > 0} accent="rgba(99,102,241,1)"
+              icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 11.5c0-2.8 2.2-5 5-5 1.9 0 3.6 1 4.5 2.6"/><path d="M6 16.5c1.8-1.2 3.9-1.8 6-1.8 2.4 0 4.5.6 6.4 1.8" opacity="0.95"/><ellipse cx="12" cy="18.3" rx="7" ry="2.2" opacity="0.7"/></svg>} />
           </div>
 
-          <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
+          <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(255,255,255,0.12)', flexShrink: 0, margin: '0 1px' }} />
 
           {(() => {
             const activeEnv = ENV_PRESETS.find(e => e.id === state.envPreset) ?? ENV_PRESETS[0];
             const envOn = state.envEnabled !== false;
             return (
-              <button
-                ref={envBtnRef}
-                title={`Entorno: ${activeEnv.label}`}
-                onClick={() => {
+              <SceneBtn 
+                id="estudio" 
+                label={`Entorno: ${activeEnv.label}`} 
+                sublabel="Estudio" 
+                active={envOn} 
+                accent="rgba(255,255,255,0.4)"
+                icon={ENV_ICON[activeEnv.id] || <Lamp size={15} strokeWidth={2.2} />}
+                onClick={(e) => {
                   if (envPopupOpen) { setEnvPopupOpen(false); return; }
-                  const r = envBtnRef.current?.getBoundingClientRect();
-                  if (r) setEnvPopupAnchor({ x: r.left + r.width / 2, y: r.top });
+                  const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                  setEnvPopupAnchor({ x: r.left + r.width / 2, y: r.top });
                   setEnvPopupOpen(true);
                 }}
-                style={{
-                  flexShrink: 0, width: 46, height: 46, padding: 0, borderRadius: 11, border: 'none', cursor: 'pointer',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
-                  background: envPopupOpen ? 'rgba(255,255,255,0.18)' : envOn ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.3)',
-                  outline: envPopupOpen
-                    ? '2px solid rgba(167,139,250,0.85)'
-                    : envOn ? '2px solid rgba(255,255,255,0.55)' : '1px solid rgba(255,255,255,0.14)',
-                  color: envPopupOpen ? 'rgba(167,139,250,1)' : envOn ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.3)',
-                  opacity: envOn ? 1 : 0.5,
-                  transition: 'all 0.12s',
-                }}>
-                {ENV_ICON[activeEnv.id]}
-                <span style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.04em', lineHeight: 1, color: 'inherit' }}>
-                  {activeEnv.label.toUpperCase()}
-                </span>
-              </button>
+              />
             );
           })()}
 
-          <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
-
-          <button
-            ref={lightBtnRef}
-            onClick={() => {
+          <SceneBtn 
+            id="luz" 
+            label="Controles de Luz" 
+            sublabel="Luz" 
+            active={true}
+            icon={<Sun size={15} strokeWidth={2.2} />}
+            onClick={(e) => {
               if (lightPopupOpen) { setLightPopupOpen(false); return; }
-              const r = lightBtnRef.current?.getBoundingClientRect();
-              if (r) setLightPopupAnchor({ x: r.left + r.width / 2, y: r.top });
+              const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+              setLightPopupAnchor({ x: r.left + r.width / 2, y: r.top });
               setLightPopupOpen(true);
             }}
-            title="Controles de Luz"
-            style={{
-              flexShrink: 0, width: 46, height: 46, padding: 0, borderRadius: 11, border: 'none', cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
-              background: lightPopupOpen ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.5)',
-              outline: lightPopupOpen ? '2px solid rgba(167,139,250,0.85)' : '1px solid rgba(255,255,255,0.14)',
-              color: lightPopupOpen ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.45)',
-              transition: 'all 0.14s',
-            }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
-            </svg>
-            <span style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.04em', lineHeight: 1, color: 'inherit' }}>LUZ</span>
-          </button>
+          />
         </div>
       </Section>
     </>
