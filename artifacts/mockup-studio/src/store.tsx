@@ -187,6 +187,7 @@ export interface AppState {
   audioVolume: number;        // 0-100
 
   creationMode: CreationMode;
+  showGrid?: boolean;
 }
 
 export const defaultState: AppState = {
@@ -281,6 +282,7 @@ export const defaultState: AppState = {
   audioVolume: 80,
 
   creationMode: 'mockup',
+  showGrid: false,
 };
 
 interface AppContextType {

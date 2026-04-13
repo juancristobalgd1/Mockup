@@ -4,9 +4,9 @@ import { Chip, Slider } from '../../ui/PanelUI';
 import type { LabelAnchorPosition } from '../../../store';
 
 const LABEL_MODES = [
-  { id: 'follow', label: 'Follow' },
-  { id: 'billboard', label: 'Billboard' },
-  { id: 'fixed', label: 'Fixed' },
+  { id: 'follow', label: 'Seguir Cámara' },
+  { id: 'billboard', label: 'Efecto Cartelera' },
+  { id: 'fixed', label: 'Fijo al Modelo' },
 ] as const;
 
 const LABEL_POSITIONS: { id: LabelAnchorPosition; left: string; top: string }[] = [
@@ -28,9 +28,9 @@ export const LabelsTab = () => {
   const setLTab = (tab: 'positions' | 'behavior' | 'style') => updateState({ labelTabActive: tab });
   
   const TABS = [
-    { id: 'positions' as const, label: 'Positions' },
-    { id: 'behavior'  as const, label: 'Behavior'  },
-    { id: 'style'     as const, label: 'Style'     },
+    { id: 'positions' as const, label: 'Posiciones' },
+    { id: 'behavior'  as const, label: 'Comportamiento'  },
+    { id: 'style'     as const, label: 'Estilo'     },
   ];
 
   const ensureStyleTab = () => { if (lTab !== 'style') setLTab('style'); };
@@ -56,7 +56,7 @@ export const LabelsTab = () => {
           <div style={{ position: 'relative', height: 110, borderRadius: 12, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)', marginBottom: 8 }}>
             <div style={{ position: 'absolute', left: '50%', top: '50%', width: 44, height: 72, transform: 'translate(-50%,-50%)', borderRadius: 8, border: '2px solid rgba(255,255,255,0.38)' }} />
             {LABEL_POSITIONS.map(pos => (
-              <button key={pos.id} onClick={() => addLabel(pos.id)} title={`Add ${pos.id} label`}
+              <button key={pos.id} onClick={() => addLabel(pos.id)} title={`Añadir etiqueta de tipo ${pos.id}`}
                 style={{ position: 'absolute', left: pos.left, top: pos.top, transform: 'translate(-50%,-50%)', width: 22, height: 22, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
               </button>
@@ -64,7 +64,7 @@ export const LabelsTab = () => {
           </div>
           <button onClick={clearLabels} disabled={labelCount === 0}
             style={{ width: '100%', height: 30, borderRadius: 9, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: labelCount === 0 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.52)', fontSize: 11, fontWeight: 700, cursor: labelCount === 0 ? 'not-allowed' : 'pointer' }}>
-            Clear all ({labelCount})
+            Borrar todas ({labelCount})
           </button>
         </>
       )}
@@ -77,7 +77,7 @@ export const LabelsTab = () => {
               <Chip key={mode.id} active={state.labelDraftMode === mode.id} onClick={() => updateState({ labelDraftMode: mode.id })}>{mode.label}</Chip>
             ))}
           </div>
-          <Slider label="Levitation" value={state.labelDraftLevitation} min={0} max={42} step={1} onChange={v => updateState({ labelDraftLevitation: v })} unit="px" />
+          <Slider label="Elevación" value={state.labelDraftLevitation} min={0} max={42} step={1} onChange={v => updateState({ labelDraftLevitation: v })} unit="px" />
         </>
       )}
 
@@ -87,7 +87,7 @@ export const LabelsTab = () => {
           <div style={{ marginBottom: 10 }}>
             <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>Size</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>Tamaño</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 10px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
                   <input type="number" min={8} max={48} value={state.labelDraftSize} onChange={e => { ensureStyleTab(); updateState({ labelDraftSize: Number(e.target.value) || 13 }); }} style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', color: 'rgba(255,255,255,0.9)', fontSize: 14, fontWeight: 700 }} />
                   <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>pt</span>
@@ -101,7 +101,7 @@ export const LabelsTab = () => {
                 </div>
               </label>
             </div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>Font</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>Fuente</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 10px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <select value={state.labelDraftFont} onChange={e => { ensureStyleTab(); updateState({ labelDraftFont: e.target.value }); }}
                 style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 700, fontFamily: state.labelDraftFont }}>
@@ -118,7 +118,7 @@ export const LabelsTab = () => {
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
             <button onClick={() => { ensureStyleTab(); updateState({ labelDraftMode: 'follow', labelDraftSize: 13, labelDraftLevitation: 16, labelDraftColor: '#ffffff' }); }}
               style={{ height: 36, padding: '0 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.52)', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-              Reset
+              Restablecer
             </button>
           </div>
         </>

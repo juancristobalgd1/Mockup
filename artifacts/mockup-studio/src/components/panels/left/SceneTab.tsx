@@ -124,31 +124,31 @@ export const SceneTab = () => {
         <div ref={scenePopupRef} style={POPUP_BASE}>
           {scenePopup === 'canvas' && (
             <>
-              <div style={POP_LABEL}>Canvas</div>
+              <div style={POP_LABEL}>Lienzo</div>
               <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 12 }}>
                 {CANVAS_RATIOS.map(r => (
                   <Chip key={r.id} active={state.canvasRatio === r.id}
                     onClick={() => updateState({ canvasRatio: r.id })}>{r.label}</Chip>
                 ))}
               </div>
-              <Slider label="Corner Radius" value={state.canvasRadius ?? 0} min={0} max={80} step={2}
+              <Slider label="Radio de Borde" value={state.canvasRadius ?? 0} min={0} max={80} step={2}
                 onChange={v => updateState({ canvasRadius: v })} unit="px" />
             </>
           )}
 
           {scenePopup === 'motion' && (
             <>
-              <div style={POP_LABEL}>Device & Motion</div>
+              <div style={POP_LABEL}>Dispositivo y Animación</div>
               <div style={ROW}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                   <RefreshCw size={12} style={{ color: 'rgba(255,255,255,0.35)' }} />
-                  <span style={ROW_LABEL}>Auto Rotate</span>
+                  <span style={ROW_LABEL}>Rotación Auto</span>
                 </div>
                 <Toggle enabled={state.autoRotate} onToggle={() => updateState({ autoRotate: !state.autoRotate })} />
               </div>
               {state.autoRotate && (
                 <div style={{ marginTop: 6 }}>
-                  <Slider label="Speed" value={Math.round(state.autoRotateSpeed * 10) / 10}
+                  <Slider label="Velocidad" value={Math.round(state.autoRotateSpeed * 10) / 10}
                     min={0.5} max={8} step={0.5} onChange={v => updateState({ autoRotateSpeed: v })} />
                 </div>
               )}
@@ -156,7 +156,7 @@ export const SceneTab = () => {
               <div style={ROW}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                   <RotateCcw size={12} style={{ color: 'rgba(255,255,255,0.35)' }} />
-                  <span style={ROW_LABEL}>Float</span>
+                  <span style={ROW_LABEL}>Flotación</span>
                 </div>
                 <Toggle enabled={state.animation === 'float'}
                   onToggle={() => updateState({ animation: state.animation === 'float' ? 'none' : 'float' })} />
@@ -166,33 +166,33 @@ export const SceneTab = () => {
 
           {scenePopup === 'effects' && (
             <>
-              <div style={POP_LABEL}>Effects</div>
+              <div style={POP_LABEL}>Efectos</div>
               <div style={ROW}>
-                <span style={ROW_LABEL}>Glass Reflection</span>
+                <span style={ROW_LABEL}>Reflejo de Cristal</span>
                 <Toggle enabled={state.glassReflection ?? true}
                   onToggle={() => updateState({ glassReflection: !(state.glassReflection ?? true) })} />
               </div>
               <div style={DIVIDER} />
               <div style={ROW}>
-                <span style={ROW_LABEL}>Floor Reflection</span>
+                <span style={ROW_LABEL}>Reflejo de Suelo</span>
                 <Toggle enabled={state.reflection ?? false}
                   onToggle={() => updateState({ reflection: !(state.reflection ?? false) })} />
               </div>
               {(state.reflection ?? false) && (
                 <div style={{ marginTop: 6 }}>
-                  <Slider label="Strength" value={state.reflectionOpacity ?? 50} min={0} max={100}
+                  <Slider label="Fuerza" value={state.reflectionOpacity ?? 50} min={0} max={100}
                     onChange={v => updateState({ reflectionOpacity: v })} unit="%" />
                 </div>
               )}
               <div style={DIVIDER} />
               <div style={ROW}>
-                <span style={ROW_LABEL}>Film Grain</span>
+                <span style={ROW_LABEL}>Grano</span>
                 <Toggle enabled={state.grain ?? false}
                   onToggle={() => updateState({ grain: !(state.grain ?? false) })} />
               </div>
               {(state.grain ?? false) && (
                 <div style={{ marginTop: 6 }}>
-                  <Slider label="Intensity" value={state.grainIntensity ?? 35} min={5} max={100}
+                  <Slider label="Intensidad" value={state.grainIntensity ?? 35} min={5} max={100}
                     onChange={v => updateState({ grainIntensity: v })} unit="%" />
                 </div>
               )}
@@ -201,8 +201,8 @@ export const SceneTab = () => {
 
           {scenePopup === 'shadow' && (
             <>
-              <div style={POP_LABEL}>Shadow</div>
-              <Slider label="Intensity" value={state.contactShadowOpacity} min={0} max={100}
+              <div style={POP_LABEL}>Sombra</div>
+              <Slider label="Intensidad" value={state.contactShadowOpacity} min={0} max={100}
                 onChange={v => updateState({ contactShadowOpacity: v })} unit="%" />
             </>
           )}
@@ -224,18 +224,18 @@ export const SceneTab = () => {
           border: '1px solid rgba(255,255,255,0.12)',
           backdropFilter: 'blur(22px)',
         }}>
-          <div style={POP_LABEL}>Light Controls</div>
+          <div style={POP_LABEL}>Controles de Luz</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 12 }}>
-            <MiniSlider label="Brightness" value={state.lightBrightness ?? 40} min={0} max={100} step={1} unit="%" onChange={v => updateState({ lightBrightness: v })} />
-            <MiniSlider label="Ambient"    value={state.lightAmbient ?? 45}    min={0} max={100} step={1} unit="%" onChange={v => updateState({ lightAmbient: v })} />
-            <MiniSlider label="Warmth"     value={state.lightWarmth ?? 0}      min={-50} max={50} step={1}      onChange={v => updateState({ lightWarmth: v })} />
-            <MiniSlider label="Reflections" value={state.lightIBL ?? 40}       min={0} max={100} step={1} unit="%" onChange={v => updateState({ lightIBL: v })} />
-            <MiniSlider label="Exposure"   value={Math.round((state.lightExposure ?? 1.0) * 100) / 100} min={0.4} max={2.0} step={0.05} onChange={v => updateState({ lightExposure: v })} />
-            <MiniSlider label="Bloom"      value={state.bloomIntensity ?? 22}  min={0} max={100} step={1} unit="%" onChange={v => updateState({ bloomIntensity: v })} />
+            <MiniSlider label="Brillo" value={state.lightBrightness ?? 40} min={0} max={100} step={1} unit="%" onChange={v => updateState({ lightBrightness: v })} />
+            <MiniSlider label="Ambiente"    value={state.lightAmbient ?? 45}    min={0} max={100} step={1} unit="%" onChange={v => updateState({ lightAmbient: v })} />
+            <MiniSlider label="Calidez"     value={state.lightWarmth ?? 0}      min={-50} max={50} step={1}      onChange={v => updateState({ lightWarmth: v })} />
+            <MiniSlider label="Reflejos" value={state.lightIBL ?? 40}       min={0} max={100} step={1} unit="%" onChange={v => updateState({ lightIBL: v })} />
+            <MiniSlider label="Exposición"   value={Math.round((state.lightExposure ?? 1.0) * 100) / 100} min={0.4} max={2.0} step={0.05} onChange={v => updateState({ lightExposure: v })} />
+            <MiniSlider label="Resplandor"      value={state.bloomIntensity ?? 22}  min={0} max={100} step={1} unit="%" onChange={v => updateState({ bloomIntensity: v })} />
           </div>
           <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <span style={POP_LABEL}>DSLR Lens</span>
+              <span style={POP_LABEL}>Lente DSLR</span>
               <button
                 onClick={() => updateState({ dofEnabled: !(state.dofEnabled ?? false) })}
                 style={{
@@ -249,8 +249,8 @@ export const SceneTab = () => {
             </div>
             {state.dofEnabled && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 12 }}>
-                <MiniSlider label="Focus" value={state.dofFocus ?? 10} min={0} max={20} step={1} unit="m" onChange={v => updateState({ dofFocus: v })} />
-                <MiniSlider label="Aperture" value={(state.dofAperture ?? 0.02) * 1000} min={1} max={100} step={1} onChange={v => updateState({ dofAperture: v / 1000 })} />
+                <MiniSlider label="Enfoque" value={state.dofFocus ?? 10} min={0} max={20} step={1} unit="m" onChange={v => updateState({ dofFocus: v })} />
+                <MiniSlider label="Apertura" value={(state.dofAperture ?? 0.02) * 1000} min={1} max={100} step={1} onChange={v => updateState({ dofAperture: v / 1000 })} />
               </div>
             )}
           </div>
@@ -271,7 +271,7 @@ export const SceneTab = () => {
           backdropFilter: 'blur(22px)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={POP_LABEL}>Environment</span>
+            <span style={POP_LABEL}>Entorno</span>
             <Toggle enabled={state.envEnabled !== false} onToggle={() => updateState({ envEnabled: state.envEnabled === false })} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
@@ -295,16 +295,16 @@ export const SceneTab = () => {
         </div>
       )}
 
-      <Section label="Scene">
+      <Section label="Escena">
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-            <SceneBtn id="canvas" label="Canvas" active={state.canvasRatio !== 'free' || (state.canvasRadius ?? 0) > 0} accent="linear-gradient(135deg, rgba(59,130,246,0.32), rgba(14,165,233,0.22))"
+            <SceneBtn id="canvas" label="Lienzo" active={state.canvasRatio !== 'free' || (state.canvasRadius ?? 0) > 0} accent="linear-gradient(135deg, rgba(59,130,246,0.32), rgba(14,165,233,0.22))"
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M8 9h8M8 13h4" opacity="0.9"/></svg>} />
-            <SceneBtn id="motion" label="Motion" active={motionOn} accent="linear-gradient(135deg, rgba(16,185,129,0.3), rgba(34,197,94,0.2))"
+            <SceneBtn id="motion" label="Movimiento" active={motionOn} accent="linear-gradient(135deg, rgba(16,185,129,0.3), rgba(34,197,94,0.2))"
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15c2.5-4 5.5-6 9-6 2.8 0 5 .9 7 2.6"/><path d="M14.5 6.5 20 11l-5.5 4.5"/></svg>} />
-            <SceneBtn id="effects" label="Effects" active={effectsOn} accent="linear-gradient(135deg, rgba(244,114,182,0.3), rgba(168,85,247,0.2))"
+            <SceneBtn id="effects" label="Efectos" active={effectsOn} accent="linear-gradient(135deg, rgba(244,114,182,0.3), rgba(168,85,247,0.2))"
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3.5 14.1 9l5.9 2.1-5.9 2.1L12 18.5l-2.1-5.3L4 11.1 9.9 9 12 3.5Z"/><circle cx="18.5" cy="5.5" r="1.2" fill="currentColor" stroke="none"/></svg>} />
-            <SceneBtn id="shadow" label="Shadow" active={(shadowPct ?? 0) > 0} accent="linear-gradient(135deg, rgba(99,102,241,0.3), rgba(71,85,105,0.22))"
+            <SceneBtn id="shadow" label="Sombra" active={(shadowPct ?? 0) > 0} accent="linear-gradient(135deg, rgba(99,102,241,0.3), rgba(71,85,105,0.22))"
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M7 11.5c0-2.8 2.2-5 5-5 1.9 0 3.6 1 4.5 2.6"/><path d="M6 16.5c1.8-1.2 3.9-1.8 6-1.8 2.4 0 4.5.6 6.4 1.8" opacity="0.95"/><ellipse cx="12" cy="18.3" rx="7" ry="2.2" opacity="0.7"/></svg>} />
           </div>
 
@@ -352,7 +352,7 @@ export const SceneTab = () => {
               if (r) setLightPopupAnchor({ x: r.left + r.width / 2, y: r.top });
               setLightPopupOpen(true);
             }}
-            title="Light controls"
+            title="Controles de Luz"
             style={{
               flexShrink: 0, width: 46, height: 46, padding: 0, borderRadius: 11, border: 'none', cursor: 'pointer',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
@@ -365,7 +365,7 @@ export const SceneTab = () => {
               <circle cx="12" cy="12" r="3"/>
               <path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
             </svg>
-            <span style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.04em', lineHeight: 1, color: 'inherit' }}>LIGHT</span>
+            <span style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.04em', lineHeight: 1, color: 'inherit' }}>LUZ</span>
           </button>
         </div>
       </Section>

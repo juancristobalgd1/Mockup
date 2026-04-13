@@ -15,8 +15,9 @@ import type { MovieTimelineHandle } from './components/timeline/MovieTimeline';
 import { 
   Undo2, Redo2, 
   Smartphone, Film, 
-  Download
+  Download, Grid3X3
 } from 'lucide-react';
+import { GridOverlay } from './components/ui/GridOverlay';
 import { getModelById } from './data/devices';
 import type { Device3DViewerHandle } from './components/devices3d/Device3DViewer';
 
@@ -64,25 +65,30 @@ function Editor() {
   const activeMode = CREATION_MODES.find(m => m.id === state.creationMode) ?? CREATION_MODES[0];
 
   const TOOLBAR_ACTIONS = [
+    { title: 'Cuadrícula', icon: Grid3X3, action: () => updateState({ showGrid: !state.showGrid }), enabled: true, shortcut: 'G' },
     { title: 'Deshacer', icon: Undo2, action: undo, enabled: canUndo, shortcut: '⌘Z' },
     { title: 'Rehacer', icon: Redo2, action: redo, enabled: canRedo, shortcut: '⇧⌘Z' },
   ];
 
-  // ── Global keyboard shortcuts: Ctrl+Z (undo) / Ctrl+Shift+Z (redo) ──
+  // ── Global keyboard shortcuts: Ctrl+Z (undo) / Ctrl+Shift+Z (redo) / G (grid) ──
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!e.ctrlKey && !e.metaKey) return;
       const target = e.target as HTMLElement;
       const isEditing = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
       if (isEditing) return;
+      
       const key = e.key.toLowerCase();
-      if (key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
-      else if (key === 'z' && e.shiftKey) { e.preventDefault(); redo(); }
-      else if (key === 'y') { e.preventDefault(); redo(); }
+      if ((e.ctrlKey || e.metaKey)) {
+        if (key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+        else if (key === 'z' && e.shiftKey) { e.preventDefault(); redo(); }
+        else if (key === 'y') { e.preventDefault(); redo(); }
+      } else {
+        if (key === 'g') { e.preventDefault(); updateState({ showGrid: !state.showGrid }); }
+      }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo]);
+  }, [undo, redo, state.showGrid, updateState]);
 
   // ── Warn before unload when there are unsaved changes ──
   useEffect(() => {
@@ -253,6 +259,7 @@ function Editor() {
                   moviePlaying={moviePlaying}
                   movieTimeRef={movieTimeRef}
                 />
+                {state.showGrid && <GridOverlay opacity={0.65} />}
               </motion.div>
             </AnimatePresence>
           </main>

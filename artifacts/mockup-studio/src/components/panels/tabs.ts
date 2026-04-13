@@ -5,12 +5,12 @@ import type { LucideProps } from 'lucide-react';
 export type Tab = 'presets' | 'device' | 'background' | 'canvas' | 'labels' | 'template' | 'overlay' | 'annotate';
 
 export const TAB_ICONS: { id: Tab; icon: React.ComponentType<LucideProps>; label: string }[] = [
-  { id: 'presets',    icon: LayoutGrid, label: 'Presets'    },
-  { id: 'template',   icon: Layers,     label: 'Templates'  },
-  { id: 'device',     icon: Smartphone, label: 'Device'     },
-  { id: 'background', icon: ImageIcon,  label: 'Background' },
-  { id: 'overlay',    icon: Blend,      label: 'Overlay'    },
-  { id: 'annotate',   icon: PenLine,    label: 'Annotate'   },
-  { id: 'canvas',     icon: Sliders,    label: 'Scene'      },
-  { id: 'labels',     icon: Tags,       label: 'Labels'     },
+  { id: 'presets',    icon: LayoutGrid, label: 'Preajustes' },
+  { id: 'template',   icon: Layers,     label: 'Plantillas' },
+  { id: 'device',     icon: Smartphone, label: 'Dispositivo'},
+  { id: 'background', icon: ImageIcon,  label: 'Fondo'      },
+  { id: 'overlay',    icon: Blend,      label: 'Efectos'    },
+  { id: 'annotate',   icon: PenLine,    label: 'Anotar'     },
+  { id: 'canvas',     icon: Sliders,    label: 'Escena'     },
+  { id: 'labels',     icon: Tags,       label: 'Etiquetas'  },
 ];

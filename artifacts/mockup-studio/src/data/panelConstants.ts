@@ -12,16 +12,16 @@ export const IPHONE_COLORS: { id: DeviceColor; label: string; bg: string; border
 ];
 
 export const ENV_PRESETS: { id: 'studio' | 'warehouse' | 'sunset' | 'city' | 'forest' | 'night'; label: string }[] = [
-  { id: 'studio',    label: 'Studio'    },
-  { id: 'warehouse', label: 'Warehouse' },
-  { id: 'city',      label: 'City'      },
-  { id: 'sunset',    label: 'Sunset'    },
-  { id: 'forest',    label: 'Forest'    },
-  { id: 'night',     label: 'Night'     },
+  { id: 'studio',    label: 'Estudio'    },
+  { id: 'warehouse', label: 'Almacén'    },
+  { id: 'city',      label: 'Ciudad'     },
+  { id: 'sunset',    label: 'Atardecer'  },
+  { id: 'forest',    label: 'Bosque'     },
+  { id: 'night',     label: 'Noche'      },
 ];
 
 export const CANVAS_RATIOS = [
-  { id: 'free',  label: 'Free'  },
+  { id: 'free',  label: 'Libre' },
   { id: '1:1',   label: '1:1'   },
   { id: '4:5',   label: '4:5'   },
   { id: '16:9',  label: '16:9'  },
@@ -34,15 +34,15 @@ export const PRESENT_POSES: {
   ry: number; rx: number; rz: number;
   perspective?: number;
 }[] = [
-  { id: 'hero',       label: 'Hero',     ry:  25, rx: -12, rz:  0 },
-  { id: 'front',      label: 'Front',    ry:   0, rx:   0, rz:  0 },
-  { id: 'tilt-right', label: 'Right',    ry:  48, rx:  -8, rz:  0 },
-  { id: 'tilt-left',  label: 'Left',     ry: -48, rx:  -8, rz:  0 },
-  { id: 'top',        label: 'Top',      ry:  12, rx: -58, rz:  0 },
-  { id: 'low',        label: 'Low',      ry:  14, rx:  42, rz:  0 },
-  { id: 'side',       label: 'Side',     ry:  76, rx:   0, rz:  0 },
-  { id: 'diagonal',   label: 'Diagonal', ry:  44, rx: -16, rz:  0 },
-  { id: 'dramatic',   label: 'Dramatic', ry:  20, rx: -38, rz:  0 },
+  { id: 'hero',       label: 'Principal', ry:  25, rx: -12, rz:  0 },
+  { id: 'front',      label: 'Frente',    ry:   0, rx:   0, rz:  0 },
+  { id: 'tilt-right', label: 'Derecha',   ry:  48, rx:  -8, rz:  0 },
+  { id: 'tilt-left',  label: 'Izquierda', ry: -48, rx:  -8, rz:  0 },
+  { id: 'top',        label: 'Arriba',    ry:  12, rx: -58, rz:  0 },
+  { id: 'low',        label: 'Abajo',     ry:  14, rx:  42, rz:  0 },
+  { id: 'side',       label: 'Lado',      ry:  76, rx:   0, rz:  0 },
+  { id: 'diagonal',   label: 'Diagonal',  ry:  44, rx: -16, rz:  0 },
+  { id: 'dramatic',   label: 'Avanzado',  ry:  20, rx: -38, rz:  0 },
 ];
 
 export const LABEL_SHADOW = '0 1px 5px rgba(0,0,0,0.95), 0 0 14px rgba(0,0,0,0.7)';

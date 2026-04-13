@@ -176,7 +176,7 @@ export const OverlayTab = () => {
           {/* Opacity slider */}
           <div style={{ marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>Opacity</span>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>Opacidad</span>
               <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>{state.lightOverlayOpacity}%</span>
             </div>
             <input type="range" min={0} max={100} value={state.lightOverlayOpacity}
@@ -188,7 +188,7 @@ export const OverlayTab = () => {
           {/* Blend mode */}
           {!state.lightOverlayBgOnly && (
             <div style={{ marginBottom: 12 }}>
-              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', display: 'block', marginBottom: 6 }}>Blend mode</span>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', display: 'block', marginBottom: 6 }}>Modo de fusión</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                 {(['multiply', 'overlay', 'screen', 'soft-light'] as const).map(mode => {
                   const sel = state.lightOverlayBlend === mode;
@@ -217,10 +217,10 @@ export const OverlayTab = () => {
           }}>
             <div>
               <div style={{ fontSize: 11, fontWeight: 600, color: state.lightOverlayBgOnly ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)' }}>
-                Background only
+                Solo al fondo
               </div>
               <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 1 }}>
-                Overlay doesn't cover the device
+                El efecto no cubre el dispositivo
               </div>
             </div>
             <button
@@ -241,7 +241,7 @@ export const OverlayTab = () => {
       )}
 
       {/* Combined Overlay row */}
-      <Section label="Overlay">
+      <Section label="Efectos">
         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
 
           {/* Scrollable light preset thumbnails */}
@@ -319,7 +319,7 @@ export const OverlayTab = () => {
             {/* Toggle pill */}
             <button
               onClick={() => updateState({ overlayEnabled: !state.overlayEnabled })}
-              title={state.overlayEnabled ? 'Disable color overlay' : 'Enable color overlay'}
+              title={state.overlayEnabled ? 'Desactivar capa de color' : 'Activar capa de color'}
               style={{
                 width: 32, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer', flexShrink: 0,
                 background: state.overlayEnabled ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.18)',
@@ -386,7 +386,7 @@ export const OverlayTab = () => {
                 const r = (e.currentTarget as HTMLSpanElement).getBoundingClientRect();
                 setOverlayPopupAnchor({ x: r.left, y: r.top });
                 setOverlayPopup('light');
-              }}>Edit ›</span>
+              }}>Editar ›</span>
           </div>
         )}
       </Section>

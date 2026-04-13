@@ -111,7 +111,7 @@ export const DeviceTab = () => {
           border: '1px solid rgba(255,255,255,0.12)',
           backdropFilter: 'blur(22px)',
         }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>Frame Color</div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>Color del Marco</div>
 
           {/* Original color toggle */}
           <button
@@ -130,7 +130,7 @@ export const DeviceTab = () => {
               border: '2px solid rgba(255,255,255,0.3)',
             }} />
             <span style={{ fontSize: 11, fontWeight: 600, color: state.deviceColor === 'original' ? '#fff' : 'rgba(255,255,255,0.6)' }}>
-              Original Model Color
+              Color Original del Modelo
             </span>
           </button>
 
@@ -150,7 +150,7 @@ export const DeviceTab = () => {
             })}
 
             {/* Custom color picker */}
-            <label title="Custom Color" style={{
+            <label title="Color Personalizado" style={{
               width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', position: 'relative',
@@ -190,7 +190,7 @@ export const DeviceTab = () => {
               color: 'rgba(255,255,255,0.5)', letterSpacing: '0.04em',
               textTransform: 'uppercase',
             }}>
-              Custom: {state.deviceColor}
+              Personalizado: {state.deviceColor}
             </div>
           )}
         </div>
@@ -210,26 +210,26 @@ export const DeviceTab = () => {
         }}>
           {hasOrientation && (
             <>
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Orientation</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Orientación</div>
               <div style={{ display: 'flex', gap: 6 }}>
-                <Chip active={!state.deviceLandscape} onClick={() => updateState({ deviceLandscape: false })}>Portrait</Chip>
-                <Chip active={state.deviceLandscape} onClick={() => updateState({ deviceLandscape: true })}>Landscape</Chip>
+                <Chip active={!state.deviceLandscape} onClick={() => updateState({ deviceLandscape: false })}>Vertical</Chip>
+                <Chip active={state.deviceLandscape} onClick={() => updateState({ deviceLandscape: true })}>Horizontal</Chip>
               </div>
             </>
           )}
           {hasBrowserTheme && (
             <>
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Theme</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Tema del Navegador</div>
               <div style={{ display: 'flex', gap: 6 }}>
-                <Chip active={state.browserMode === 'dark'} onClick={() => updateState({ browserMode: 'dark' })}>Dark</Chip>
-                <Chip active={state.browserMode === 'light'} onClick={() => updateState({ browserMode: 'light' })}>Light</Chip>
+                <Chip active={state.browserMode === 'dark'} onClick={() => updateState({ browserMode: 'dark' })}>Oscuro</Chip>
+                <Chip active={state.browserMode === 'light'} onClick={() => updateState({ browserMode: 'light' })}>Claro</Chip>
               </div>
             </>
           )}
         </div>
       )}
 
-      <Section label="Device">
+      <Section label="Dispositivo">
         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
           <div style={{
             flex: 1, display: 'flex', gap: 5, overflowX: 'auto',
@@ -273,7 +273,7 @@ export const DeviceTab = () => {
 
           {hasColors && (
             <button
-              aria-label="Device color"
+              aria-label="Color del Dispositivo"
               ref={deviceColorBtnRef}
               onClick={() => {
                 const next = deviceOptPopup === 'color' ? null : 'color';

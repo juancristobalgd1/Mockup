@@ -14,14 +14,14 @@ import { TemplateTab } from './left/TemplateTab';
 import '../../index.css';
 
 const TAB_ICONS = [
-  { id: 'presets'    as const, icon: Sparkles,     label: 'Presents' },
-  { id: 'template'   as const, icon: Layout,       label: 'Template' },
-  { id: 'device'     as const, icon: Box,          label: 'Device'   },
-  { id: 'background' as const, icon: ImageIcon,    label: 'Backgr.'  },
-  { id: 'overlay'    as const, icon: Palette,      label: 'Overlay'  },
-  { id: 'annotate'   as const, icon: Pencil,       label: 'Annotate' },
-  { id: 'canvas'     as const, icon: Settings2,    label: 'Scene'    },
-  { id: 'labels'     as const, icon: MousePointer2, label: 'Labels'  },
+  { id: 'presets'    as const, icon: Sparkles,     label: 'Preajustes' },
+  { id: 'template'   as const, icon: Layout,       label: 'Plantillas' },
+  { id: 'device'     as const, icon: Box,          label: 'Dispositivo' },
+  { id: 'background' as const, icon: ImageIcon,    label: 'Fondo'       },
+  { id: 'overlay'    as const, icon: Palette,      label: 'Efectos'     },
+  { id: 'annotate'   as const, icon: Pencil,       label: 'Anotar'      },
+  { id: 'canvas'     as const, icon: Settings2,    label: 'Escena'      },
+  { id: 'labels'     as const, icon: MousePointer2, label: 'Etiquetas'   },
 ] as const;
 
 export interface LeftPanelProps {

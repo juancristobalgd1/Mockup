@@ -93,20 +93,20 @@ export const BackgroundTab = () => {
 
   const NO_POPUP_TYPES = new Set(['none', 'transparent']);
   const bgTypeCards = [
-    { id: 'none', label: 'None', preview: { background: '#111113' }, icon:
+    { id: 'none', label: 'Ninguno', preview: { background: '#111113' }, icon:
         <svg width="16" height="16" viewBox="0 0 22 22" fill="none">
           <circle cx="11" cy="11" r="9" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5"/>
           <line x1="4" y1="4" x2="18" y2="18" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
     },
-    { id: 'solid', label: 'Solid', preview: { background: state.bgType === 'solid' ? state.bgColor : '#374151' } },
-    { id: 'gradient', label: 'Gradient', preview: { background: 'linear-gradient(135deg, #3b82f6 0%, #ec4899 100%)' } },
-    { id: 'mesh', label: 'Mesh', preview: { background: 'radial-gradient(at 30% 20%, #0ea5e9 0px, transparent 55%), radial-gradient(at 80% 70%, #ec4899 0px, transparent 55%), #03111e' } },
-    { id: 'wallpaper', label: 'Wallpaper', preview: { background: 'radial-gradient(ellipse at 50% 0%, #bfdbfe 0%, #60a5fa 60%, #dbeafe 100%)' } },
-    { id: 'pattern', label: 'Pattern', preview: { backgroundColor: '#1a1c2e', backgroundImage: 'radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1px)', backgroundSize: '10px 10px' } },
-    { id: 'image', label: 'Image', preview: null },
+    { id: 'solid', label: 'Sólido', preview: { background: state.bgType === 'solid' ? state.bgColor : '#374151' } },
+    { id: 'gradient', label: 'Degradado', preview: { background: 'linear-gradient(135deg, #3b82f6 0%, #ec4899 100%)' } },
+    { id: 'mesh', label: 'Malla', preview: { background: 'radial-gradient(at 30% 20%, #0ea5e9 0px, transparent 55%), radial-gradient(at 80% 70%, #ec4899 0px, transparent 55%), #03111e' } },
+    { id: 'wallpaper', label: 'Fondo de Pantalla', preview: { background: 'radial-gradient(ellipse at 50% 0%, #bfdbfe 0%, #60a5fa 60%, #dbeafe 100%)' } },
+    { id: 'pattern', label: 'Patrón', preview: { backgroundColor: '#1a1c2e', backgroundImage: 'radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1px)', backgroundSize: '10px 10px' } },
+    { id: 'image', label: 'Imagen', preview: null },
     { id: 'video', label: 'Video', preview: null, icon: <Video size={16} color="rgba(255,255,255,0.40)" /> },
-    { id: 'transparent', label: 'Alpha', preview: null, icon:
+    { id: 'transparent', label: 'Alfa', preview: null, icon:
         <div style={{
           width: '100%', height: '100%', borderRadius: 10,
           backgroundImage: 'linear-gradient(45deg, #3a3a3a 25%, transparent 25%), linear-gradient(-45deg, #3a3a3a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #3a3a3a 75%), linear-gradient(-45deg, transparent 75%, #3a3a3a 75%)',
@@ -115,7 +115,7 @@ export const BackgroundTab = () => {
           backgroundColor: '#222',
         }} />
     },
-    { id: 'animated', label: 'Animated', preview: null, icon:
+    { id: 'animated', label: 'Animado', preview: null, icon:
         <div style={{
           width: '100%', height: '100%', borderRadius: 10,
           background: 'linear-gradient(-45deg, #7e22ce, #0ea5e9, #ec4899, #f59e0b)',
@@ -151,7 +151,7 @@ export const BackgroundTab = () => {
         <div ref={bgPopupRef} style={popupStyle}>
           {bgPopup === 'opacity' && (
             <>
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 12, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Opacity</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 12, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Opacidad</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                 <input
                   type="range" min={0} max={100} step={1}
@@ -196,7 +196,7 @@ export const BackgroundTab = () => {
 
           {bgPopup === 'gradient' && (
             <>
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Gradients</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Degradados</div>
               <div style={GRID4}>
                 {GRADIENTS.map(g => {
                   const active = state.bgColor === g.id;
@@ -214,7 +214,7 @@ export const BackgroundTab = () => {
           {bgPopup === 'mesh' && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Mesh Gradients</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Degradados de Malla</span>
                 {state.screenshotUrl && (
                   <button onClick={() => { handleAutoBackground(); setBgPopup(null); }} disabled={extracting}
                     style={{
@@ -222,7 +222,7 @@ export const BackgroundTab = () => {
                       fontSize: 10, fontWeight: 600, background: 'rgba(255,255,255,0.08)',
                       border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.65)', cursor: 'pointer',
                     }}>
-                    <Wand2 size={10} />{extracting ? 'Extracting…' : 'Auto'}
+                    <Wand2 size={10} />{extracting ? 'Extrayendo…' : 'Auto'}
                   </button>
                 )}
               </div>
@@ -242,7 +242,7 @@ export const BackgroundTab = () => {
 
           {bgPopup === 'wallpaper' && (
             <>
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Wallpapers</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Fondos de Pantalla</div>
               <div style={GRID4}>
                 {WALLPAPERS.map(w => {
                   const active = state.bgColor === w.id;
@@ -259,7 +259,7 @@ export const BackgroundTab = () => {
 
           {bgPopup === 'pattern' && (
             <>
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Pattern</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Patrón</div>
               <div style={GRID4}>
                 {PATTERNS.map(p => {
                   const active = state.bgPattern === p.id;
@@ -272,7 +272,7 @@ export const BackgroundTab = () => {
                 })}
               </div>
               <div style={{ marginTop: 12, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 12 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Pattern Color</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Color del Patrón</div>
                 <div style={{ position: 'relative', width: '100%', height: 36, borderRadius: 10, background: state.bgColor, border: '1px solid rgba(255,255,255,0.1)' }}>
                   <input type="color" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
                     style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
@@ -284,7 +284,7 @@ export const BackgroundTab = () => {
           {bgPopup === 'animated' && (
             <>
               <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 12, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                Animated Backgrounds
+                Fondos Animados
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
                 {ANIMATED_BACKGROUNDS.map(bg => {
@@ -334,7 +334,7 @@ export const BackgroundTab = () => {
 
           {bgPopup === 'image' && (
             <>
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Background Image</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Imagen de Fondo</div>
               {state.bgImage && (
                 <div style={{ width: '100%', height: 80, borderRadius: 10, overflow: 'hidden', marginBottom: 10, border: '1px solid rgba(255,255,255,0.1)' }}>
                   <img src={state.bgImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="bg" />
@@ -346,7 +346,7 @@ export const BackgroundTab = () => {
                   background: 'rgba(0,0,0,0.5)', border: '1px dashed rgba(255,255,255,0.28)',
                   color: 'rgba(255,255,255,0.45)', cursor: 'pointer',
                 }}>
-                {state.bgImage ? 'Change Image' : '+ Upload Image'}
+                {state.bgImage ? 'Cambiar Imagen' : '+ Subir Imagen'}
               </button>
               <input ref={bgFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { handleBgImage(e); setBgPopup(null); }} />
             </>
@@ -354,7 +354,7 @@ export const BackgroundTab = () => {
 
           {bgPopup === 'video' && (
             <>
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Background Video</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Video de Fondo</div>
               {state.bgVideo && (
                 <div style={{ width: '100%', height: 92, borderRadius: 10, overflow: 'hidden', marginBottom: 10, border: '1px solid rgba(255,255,255,0.1)', background: '#0f1115' }}>
                   <video src={state.bgVideo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted autoPlay loop playsInline />
@@ -366,7 +366,7 @@ export const BackgroundTab = () => {
                   background: 'rgba(0,0,0,0.5)', border: '1px dashed rgba(255,255,255,0.28)',
                   color: 'rgba(255,255,255,0.45)', cursor: 'pointer',
                 }}>
-                {state.bgVideo ? 'Change Video' : '+ Upload Video'}
+                {state.bgVideo ? 'Cambiar Video' : '+ Subir Video'}
               </button>
               <input ref={bgVideoFileRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={e => { handleBgVideo(e); setBgPopup(null); }} />
             </>
@@ -406,19 +406,19 @@ export const BackgroundTab = () => {
 
             return (
               <>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 14, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Effects</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 14, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Efectos</div>
 
-                <EffectRow label="Blur" active={state.bgBlur > 0} onToggle={() => updateState({ bgBlur: state.bgBlur > 0 ? 0 : 8 })}>
+                <EffectRow label="Desenfoque" active={state.bgBlur > 0} onToggle={() => updateState({ bgBlur: state.bgBlur > 0 ? 0 : 8 })}>
                   <SliderRow value={state.bgBlur} min={1} max={24} step={1} unit="px"
                     onChange={v => updateState({ bgBlur: v })} />
                 </EffectRow>
 
-                <EffectRow label="Noise" active={state.grain} onToggle={() => updateState({ grain: !state.grain })}>
+                <EffectRow label="Ruido" active={state.grain} onToggle={() => updateState({ grain: !state.grain })}>
                   <SliderRow value={state.grainIntensity} min={5} max={100} step={1} unit="%"
                     onChange={v => updateState({ grainIntensity: v })} />
                 </EffectRow>
 
-                <EffectRow label="Vignette" active={state.bgVignette} onToggle={() => updateState({ bgVignette: !state.bgVignette })}>
+                <EffectRow label="Viñeta" active={state.bgVignette} onToggle={() => updateState({ bgVignette: !state.bgVignette })}>
                   <SliderRow value={state.bgVignetteIntensity} min={10} max={100} step={1} unit="%"
                     onChange={v => updateState({ bgVignetteIntensity: v })} />
                 </EffectRow>
@@ -429,10 +429,10 @@ export const BackgroundTab = () => {
                 }}>
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 600, color: state.grainBgOnly ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)' }}>
-                      Background only
+                      Solo al fondo
                     </div>
                     <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 1 }}>
-                      Noise doesn't cover the device
+                      El ruido no cubre el dispositivo
                     </div>
                   </div>
                   <button
@@ -455,14 +455,14 @@ export const BackgroundTab = () => {
         </div>
       )}
 
-      <Section label="Background" action={
+      <Section label="Fondo" action={
         <button onClick={handleShuffle} style={{
           display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8,
           fontSize: 10, fontWeight: 700, background: 'rgba(255,255,255,0.08)',
           border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.65)', cursor: 'pointer',
           transition: 'all 0.12s',
         }}>
-          <Shuffle size={10} /> Shuffle
+          <Shuffle size={10} /> Aleatorio
         </button>
       }>
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' } as React.CSSProperties}>
@@ -505,7 +505,7 @@ export const BackgroundTab = () => {
             const isModified = (state.bgOpacity ?? 100) < 100;
             return (
               <button
-                title="Opacity"
+                title="Opacidad"
                 onClick={e => {
                   if (opacityOpen) { setBgPopup(null); return; }
                   const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
@@ -536,7 +536,7 @@ export const BackgroundTab = () => {
             const hasEffect = state.bgBlur > 0 || state.grain || state.bgVignette;
             return (
               <button
-                title="Effects"
+                title="Efectos"
                 onClick={e => {
                   if (effectsOpen) { setBgPopup(null); return; }
                   const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();

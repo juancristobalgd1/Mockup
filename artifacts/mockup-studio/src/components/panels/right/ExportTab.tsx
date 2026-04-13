@@ -1,17 +1,17 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { Download, Copy, Image as ImageIcon, Video, Film, Check, Sparkles } from 'lucide-react';
+import { Download, Copy, Image as ImageIcon, Video, Film, Check, Sparkles, Instagram, Twitter, Linkedin, Youtube } from 'lucide-react';
 import { useApp } from '../../../store';
 import { Section, Chip } from '../../ui/PanelUI';
 import { toast } from 'sonner';
 
 export const EXPORT_SIZES = [
-  { id: 'ig-post',  label: 'Publicación', platform: 'Instagram', w: 1080, h: 1080 },
-  { id: 'ig-story', label: 'Historia',    platform: 'Instagram', w: 1080, h: 1920 },
-  { id: 'ig-port',  label: 'Retrato',     platform: 'Instagram', w: 1080, h: 1350 },
-  { id: 'twitter',  label: 'Tarjeta',     platform: 'X / Twitter', w: 1200, h: 675  },
-  { id: 'linkedin', label: 'Publicación', platform: 'LinkedIn',  w: 1200, h: 628  },
-  { id: 'wide',     label: 'Panorámico',  platform: 'YouTube / Slides', w: 1920, h: 1080 },
+  { id: 'ig-post',  label: 'Publicación', platform: 'Instagram', icon: Instagram, w: 1080, h: 1080 },
+  { id: 'ig-story', label: 'Historia',    platform: 'Instagram', icon: Instagram, w: 1080, h: 1920 },
+  { id: 'ig-port',  label: 'Retrato',     platform: 'Instagram', icon: Instagram, w: 1080, h: 1350 },
+  { id: 'twitter',  label: 'Tarjeta',     platform: 'Twitter',   icon: Twitter,   w: 1200, h: 675  },
+  { id: 'linkedin', label: 'Feed Post',   platform: 'LinkedIn',  icon: Linkedin,  w: 1200, h: 628  },
+  { id: 'wide',     label: 'Video/Intro', platform: 'YouTube',   icon: Youtube,   w: 1920, h: 1080 },
 ] as const;
 
 interface ExportTabProps {
@@ -206,7 +206,10 @@ export const ExportTab = ({
                       background: active ? 'rgba(255,255,255,0.1)' : 'transparent'
                     }} />
                   </div>
-                  <span style={{ fontSize: 9, color: 'var(--rt-text-3)', marginBottom: 2 }}>{s.platform}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+                    <s.icon size={10} style={{ color: active ? 'var(--rt-text)' : 'var(--rt-text-3)' }} />
+                    <span style={{ fontSize: 9, color: active ? 'var(--rt-text)' : 'var(--rt-text-3)' }}>{s.platform}</span>
+                  </div>
                   <span style={{ fontSize: 11, fontWeight: 600, color: active ? 'var(--rt-text)' : 'var(--rt-text-2)' }}>{s.label}</span>
                   <span style={{ fontSize: 9, fontFamily: 'monospace', color: 'var(--rt-text-3)', marginTop: 4 }}>{s.w}×{s.h}</span>
                 </button>
