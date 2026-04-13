@@ -170,7 +170,23 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasActionButton: true, hasCameraControl: true,
     hasColors: true, hasOrientation: true,
     accent: '#8c7c6e',
-  
+  },
+  {
+    id: 'iphone-x',
+    label: 'iPhone X',
+    group: 'iPhone',
+    storeType: 'iphone',
+    w: 187, h: 406,
+    insetTop: 22, insetBottom: 11, insetSide: 9,
+    br: '2.4rem', screenBr: '1.8rem',
+    camera: 'notch',
+    cameraLayout: 'dual-v',
+    frame: 'glass',
+    hasColors: true, hasOrientation: true,
+    accent: '#71717a',
+    glbUrl: '/models/iphone_x.glb',
+
+    
   },
   // ── Android ───────────────────────────────────────────────────────
   {
@@ -208,6 +224,24 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     glbUrl: '/models/samsungs25ultra.glb',
     skipOverlay: true,
     useOriginalMaterials: true,
+  },
+  {
+    id: 'samsung-s21',
+    label: 'Galaxy S21 Ultra',
+    group: 'Android',
+    storeType: 'android',
+    w: 198, h: 430,
+    insetTop: 10, insetBottom: 10, insetSide: 8,
+    br: '1.4rem', screenBr: '1.0rem',
+    camera: 'punch-hole',
+    cameraLayout: 'quad-samsung',
+    frame: 'glass',
+    hasColors: true, hasOrientation: true,
+    accent: '#1a1a1a',
+    glbUrl: '/models/samsungs21ultra.glb',
+    skipOverlay: true,
+    useOriginalMaterials: true,
+    
   },
   // ── Tablet ────────────────────────────────────────────────────────
   {

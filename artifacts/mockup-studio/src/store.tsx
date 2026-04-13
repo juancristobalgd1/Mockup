@@ -4,7 +4,7 @@ import type { DeviceStoreType } from "./data/devices";
 // DeviceType derives from DeviceStoreType in devices.ts — the single source of truth.
 // When adding a new device category, update DeviceStoreType there; this stays in sync.
 export type DeviceType = DeviceStoreType;
-export type DeviceColor = "original" | "titanium" | "black" | "white" | "blue" | "naturallight" | "desert" | "sierra" | "clay";
+export type DeviceColor = "original" | "titanium" | "black" | "white" | "blue" | "naturallight" | "desert" | "sierra" | "clay" | (string & {});
 export type BrowserMode = "dark" | "light";
 export type BackgroundType = "none" | "solid" | "gradient" | "mesh" | "pattern" | "image" | "video" | "wallpaper" | "transparent" | "animated";
 export type ShadowStyle = "none" | "spread" | "hug";

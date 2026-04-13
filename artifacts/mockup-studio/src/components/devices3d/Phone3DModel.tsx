@@ -378,16 +378,23 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
 
   // Colors
   const isClay      = deviceColor === 'clay';
+  const isOriginal  = deviceColor === 'original';
   const framePreset = FRAME_MAT[def.frame] ?? FRAME_MAT.aluminum;
   const colorKey    = deviceColor || 'titanium';
   const bodyHex     = isClay
     ? '#e0dbd0'
-    : isAndroid
-      ? framePreset.color
+    : colorKey.startsWith('#')
+      ? colorKey
       : (DEVICE_COLORS[colorKey] ?? framePreset.color);
 
-  const metalness = isClay ? 0.0 : framePreset.metalness;
-  const roughness = isClay ? 0.90 : framePreset.roughness;
+  // Metalness & roughness: use frame preset but clamp for realism
+  // Glass/matte phones should not be chrome mirrors
+  const metalness = isClay ? 0.0
+    : def.frame === 'glass' ? 0.15
+    : Math.min(framePreset.metalness, 0.75);
+  const roughness = isClay ? 0.90
+    : def.frame === 'glass' ? 0.35
+    : Math.max(framePreset.roughness, 0.15);
 
   // Screen dimensions (inset from frame edges)
   const iTop  = (def.insetTop    / 100) * scale;

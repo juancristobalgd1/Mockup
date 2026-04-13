@@ -758,7 +758,7 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
           <div ref={deviceOptRef} style={{
             position: 'fixed',
             left: clampL(deviceOptAnchor.x, 240, -120),
-            top: Math.min(deviceOptAnchor.y + 52, window.innerHeight - 160),
+            bottom: Math.max(12, window.innerHeight - deviceOptAnchor.y + 8),
             width: safeW(240),
             background: 'rgba(18,20,26,0.98)',
             borderRadius: 18, padding: '14px 16px', zIndex: 9999,
@@ -767,17 +767,87 @@ export function LeftPanel({ mobile = false, mobileContentOnly }: { mobile?: bool
             backdropFilter: 'blur(22px)',
           }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>Frame Color</div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {IPHONE_COLORS.map(c => (
-                <button key={c.id} title={c.label} onClick={() => updateState({ deviceColor: c.id })}
+
+            {/* Original color toggle */}
+            <button
+              onClick={() => updateState({ deviceColor: 'original' })}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                width: '100%', padding: '8px 10px', marginBottom: 10,
+                background: state.deviceColor === 'original' ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.04)',
+                border: state.deviceColor === 'original' ? '1.5px solid rgba(255,255,255,0.25)' : '1.5px solid rgba(255,255,255,0.08)',
+                borderRadius: 10, cursor: 'pointer', transition: 'all 0.15s',
+              }}
+            >
+              <span style={{
+                width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                background: 'conic-gradient(from 0deg, #ff4d4d, #f9cb28, #7cfc00, #00ffff, #4d4dff, #ff00ff, #ff4d4d)',
+                border: '2px solid rgba(255,255,255,0.3)',
+              }} />
+              <span style={{ fontSize: 11, fontWeight: 600, color: state.deviceColor === 'original' ? '#fff' : 'rgba(255,255,255,0.6)' }}>
+                Original Model Color
+              </span>
+            </button>
+
+            {/* Preset color swatches */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              {IPHONE_COLORS.filter(c => c.id !== 'original').map(c => {
+                const isActive = state.deviceColor === c.id;
+                return (
+                  <button key={c.id} title={c.label} onClick={() => updateState({ deviceColor: c.id })}
+                    style={{
+                      width: 26, height: 26, borderRadius: '50%', background: c.bg,
+                      border: isActive ? '2.5px solid rgba(255,255,255,0.80)' : `2px solid ${c.border}`,
+                      boxShadow: isActive ? '0 0 0 2.5px rgba(255,255,255,0.13)' : 'none',
+                      cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
+                    }} />
+                );
+              })}
+
+              {/* Custom color picker */}
+              <label title="Custom Color" style={{
+                width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', position: 'relative',
+                background: state.deviceColor.startsWith('#')
+                  ? state.deviceColor
+                  : 'linear-gradient(135deg, #444, #222)',
+                border: state.deviceColor.startsWith('#')
+                  ? '2.5px solid rgba(255,255,255,0.80)'
+                  : '2px dashed rgba(255,255,255,0.3)',
+                boxShadow: state.deviceColor.startsWith('#')
+                  ? '0 0 0 2.5px rgba(255,255,255,0.13)' : 'none',
+                transition: 'all 0.15s',
+              }}>
+                <span style={{
+                  fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.6)',
+                  lineHeight: 1,
+                  display: state.deviceColor.startsWith('#') ? 'none' : 'block',
+                }}>+</span>
+                <input
+                  type="color"
+                  value={state.deviceColor.startsWith('#') ? state.deviceColor : '#ff6b35'}
+                  onChange={(e) => updateState({ deviceColor: e.target.value as DeviceColor })}
                   style={{
-                    width: 26, height: 26, borderRadius: '50%', background: c.bg,
-                    border: state.deviceColor === c.id ? '2.5px solid rgba(255,255,255,0.80)' : `2px solid ${c.border}`,
-                    boxShadow: state.deviceColor === c.id ? '0 0 0 2.5px rgba(255,255,255,0.13)' : 'none',
-                    cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
-                  }} />
-              ))}
+                    position: 'absolute', inset: 0,
+                    width: '100%', height: '100%',
+                    opacity: 0, cursor: 'pointer',
+                    border: 'none', padding: 0,
+                  }}
+                />
+              </label>
             </div>
+
+            {/* Show hex value when custom */}
+            {state.deviceColor.startsWith('#') && (
+              <div style={{
+                marginTop: 8, fontSize: 10, fontWeight: 600,
+                color: 'rgba(255,255,255,0.5)', letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+              }}>
+                Custom: {state.deviceColor}
+              </div>
+            )}
           </div>
         )}
 
