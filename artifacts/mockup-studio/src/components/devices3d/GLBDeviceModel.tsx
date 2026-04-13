@@ -537,7 +537,7 @@ function applyMaterials(
       });
     }
 
-    // ── 'original' mode: keep GLB materials, only mark screen ────────
+    // ── 'original' mode: restore GLB materials, only replace screen ───
     if (deviceColor === 'original') {
       if ((key.includes('display') || key.includes('screen')) && !key.includes('screen2')) {
         normalizeScreenUVs(obj, flipScreenU);
@@ -545,6 +545,9 @@ function applyMaterials(
           color: '#000000', toneMapped: false, side: THREE.DoubleSide,
         });
         screenMeshes.push(obj);
+      } else {
+        // Restore the original GLB material
+        obj.material = origMat;
       }
       return;
     }

@@ -130,7 +130,6 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     frame: 'titanium',
     hasActionButton: true, hasCameraControl: true,
     hasColors: true, hasOrientation: true,
-   
     glbUrl: '/models/iphone_17_pro_max.glb',
     skipOverlay: true,
     screenMeshName: 'Object_55',
