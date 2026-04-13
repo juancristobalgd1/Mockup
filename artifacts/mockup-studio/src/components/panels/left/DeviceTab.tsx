@@ -6,7 +6,8 @@ import { DeviceThumbnail } from '../../ui/DeviceThumbnails';
 import { DEVICE_MODELS, DEVICE_GROUPS, getModelById } from '../../../data/devices';
 import { IPHONE_COLORS } from '../../../data/panelConstants';
 import { clampL, safeW } from '../../../utils/panelUtils';
-import type { DeviceGroup, DeviceColor } from '../../../store';
+import type { DeviceColor } from '../../../store';
+import type { DeviceGroup } from '../../../data/devices';
 
 export const DeviceTab = () => {
   const { state, updateState } = useApp();

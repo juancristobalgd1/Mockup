@@ -407,7 +407,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
                     textShadow: '0 1px 4px rgba(0,0,0,0.5)',
                     whiteSpace: 'pre',
                     zIndex: 11,
-                    fontFamily: 'Inter, sans-serif',
+                    fontFamily: `${overlay.fontFamily || 'Inter'}, sans-serif`,
                     padding: `${Math.max(8, overlay.fontSize * 0.32)}px ${Math.max(12, overlay.fontSize * 0.72)}px`,
                     borderRadius: 999,
                     border: `1px solid ${overlay.color}33`,

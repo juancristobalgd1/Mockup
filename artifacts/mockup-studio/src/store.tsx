@@ -39,6 +39,7 @@ export interface TextOverlay {
   labelAnchor?: LabelAnchorPosition;
   labelMode?: LabelTrackingMode;
   levitation?: number;
+  fontFamily?: string;
 }
 
 export type LabelAnchorPosition = 'top' | 'top-right' | 'right' | 'bottom-right' | 'bottom' | 'bottom-left' | 'left' | 'top-left';
@@ -178,6 +179,8 @@ export interface AppState {
   dofFocusDistance: number;   // 0-1 normalised
   dofFocalLength: number;     // 0-1 normalised
   dofBokehScale: number;      // 0-20
+  dofFocus: number;           // Focus distance in meters
+  dofAperture: number;        // Lens aperture (normalized)
 
   // Clay mode
   clayMode: boolean;
@@ -189,6 +192,7 @@ export interface AppState {
 
   creationMode: CreationMode;
   showGrid?: boolean;
+  activeLabelId: string | null;
 }
 
 export const defaultState: AppState = {
@@ -276,6 +280,8 @@ export const defaultState: AppState = {
   dofFocusDistance: 0.02,
   dofFocalLength: 0.05,
   dofBokehScale: 6,
+  dofFocus: 10,
+  dofAperture: 0.02,
 
   clayMode: false,
   clayColor: '#e8ddd3',
@@ -284,7 +290,7 @@ export const defaultState: AppState = {
   audioVolume: 80,
 
   creationMode: 'mockup',
-  showGrid: false,
+  activeLabelId: null,
 };
 
 interface AppContextType {
@@ -393,6 +399,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         labelAnchor: anchor,
         labelMode: prev.labelDraftMode,
         levitation: prev.labelDraftLevitation,
+        fontFamily: prev.labelDraftFont,
       };
       return { ...prev, texts: [...prev.texts, newLabel] };
     });

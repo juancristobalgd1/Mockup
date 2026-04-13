@@ -1,128 +1,308 @@
 import * as React from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { 
+  Plus, Trash2, MapPin, Settings2, Palette, 
+  Type, ChevronDown, ChevronUp, MousePointer2 
+} from 'lucide-react';
 import { useApp } from '../../../store';
-import { Chip, Slider } from '../../ui/PanelUI';
-import type { LabelAnchorPosition } from '../../../store';
+import { Section, Chip, Slider, Toggle } from '../../ui/PanelUI';
+import type { LabelAnchorPosition, TextOverlay, LabelTrackingMode, AppState } from '../../../store';
 
 const LABEL_MODES = [
   { id: 'follow', label: 'Seguir Cámara' },
-  { id: 'billboard', label: 'Efecto Cartelera' },
+  { id: 'billboard', label: 'Cartelera' },
   { id: 'fixed', label: 'Fijo al Modelo' },
 ] as const;
 
 const LABEL_POSITIONS: { id: LabelAnchorPosition; left: string; top: string }[] = [
-  { id: 'top', left: '50%', top: '8%' },
-  { id: 'top-right', left: '60%', top: '20%' },
-  { id: 'right', left: '64%', top: '50%' },
-  { id: 'bottom-right', left: '60%', top: '80%' },
-  { id: 'bottom', left: '50%', top: '92%' },
-  { id: 'bottom-left', left: '40%', top: '80%' },
-  { id: 'left', left: '36%', top: '50%' },
-  { id: 'top-left', left: '40%', top: '20%' },
+  { id: 'top', left: '50%', top: '10%' },
+  { id: 'top-right', left: '62%', top: '22%' },
+  { id: 'right', left: '68%', top: '50%' },
+  { id: 'bottom-right', left: '62%', top: '78%' },
+  { id: 'bottom', left: '50%', top: '90%' },
+  { id: 'bottom-left', left: '38%', top: '78%' },
+  { id: 'left', left: '32%', top: '50%' },
+  { id: 'top-left', left: '38%', top: '22%' },
 ];
 
+const FONTS = ['Inter', 'Roboto', 'Arial', 'Georgia', 'Courier New', 'Times New Roman'];
+
+const DeviceSilhouette = ({ children }: { children: React.ReactNode }) => (
+  <div style={{ 
+    position: 'relative', height: 130, borderRadius: 16, 
+    background: 'linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)', 
+    border: '1px solid rgba(255,255,255,0.06)', 
+    marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden', boxShadow: 'inset 0 0 40px rgba(0,0,0,0.3)'
+  }}>
+    <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: 'linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)', backgroundSize: '15px 15px' }} />
+    <div style={{ 
+      width: 42, height: 80, borderRadius: 10, 
+      border: '2px solid rgba(255,255,255,0.15)', 
+      background: 'rgba(255,255,255,0.03)',
+      boxShadow: '0 0 25px rgba(0,0,0,0.5)',
+      position: 'relative', zIndex: 1
+    }}>
+      <div style={{ margin: 2, height: 'calc(100% - 4px)', borderRadius: 7, background: 'rgba(255,255,255,0.01)' }} />
+    </div>
+    {children}
+  </div>
+);
+
 export const LabelsTab = () => {
-  const { state, updateState, addLabel, clearLabels } = useApp();
-  const labelCount = state.texts.filter(text => text.kind === 'label').length;
+  const { state, updateState, addLabel, clearLabels, updateText, removeText } = useApp();
+  const [lTab, setLTab] = useState<'positions' | 'behavior' | 'style'>(state.labelTabActive ?? 'positions');
   
-  const lTab = state.labelTabActive;
-  const setLTab = (tab: 'positions' | 'behavior' | 'style') => updateState({ labelTabActive: tab });
-  
+  const activeLabels = state.texts.filter(text => text.kind === 'label');
+  const selectedLabel = activeLabels.find(l => l.id === state.activeLabelId);
+
   const TABS = [
-    { id: 'positions' as const, label: 'Posiciones' },
-    { id: 'behavior'  as const, label: 'Comportamiento'  },
-    { id: 'style'     as const, label: 'Estilo'     },
+    { id: 'positions' as const, label: 'Posición', icon: MapPin },
+    { id: 'behavior'  as const, label: 'Conducta', icon: Settings2 },
+    { id: 'style'     as const, label: 'Estilo', icon: Palette },
   ];
 
-  const ensureStyleTab = () => { if (lTab !== 'style') setLTab('style'); };
+  const handleSetTab = (tab: typeof lTab) => {
+    setLTab(tab);
+    updateState({ labelTabActive: tab });
+  };
+
+  const handleUpdate = (updates: any) => {
+    if (selectedLabel) {
+      updateText(selectedLabel.id, updates);
+    } else {
+      updateState(updates);
+    }
+  };
+
+  const getCurrentValue = (key: keyof TextOverlay | keyof AppState, draftKey: keyof AppState) => {
+    if (selectedLabel && key in selectedLabel) return (selectedLabel as any)[key];
+    return (state as any)[draftKey];
+  };
 
   return (
-    <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 14, padding: '10px 10px' }}>
-      {/* Pill tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 10, background: 'rgba(0,0,0,0.25)', borderRadius: 10, padding: 3 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      
+      {/* Sub-tabs premium */}
+      <div style={{ display: 'flex', gap: 4, background: 'rgba(0,0,0,0.25)', borderRadius: 12, padding: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
         {TABS.map(t => (
-          <button key={t.id} onClick={() => setLTab(t.id)}
-            style={{ flex: 1, height: 26, borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700,
-              background: lTab === t.id ? 'rgba(255,255,255,0.13)' : 'transparent',
-              color: lTab === t.id ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.38)',
-              transition: 'all 0.13s' }}>
+          <button key={t.id} onClick={() => handleSetTab(t.id)}
+            style={{ 
+              flex: 1, height: 32, borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              background: lTab === t.id ? 'rgba(255,255,255,0.12)' : 'transparent',
+              color: lTab === t.id ? '#fff' : 'rgba(255,255,255,0.4)',
+              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}>
+            <t.icon size={13} strokeWidth={lTab === t.id ? 2.5 : 2} />
             {t.label}
           </button>
         ))}
       </div>
 
-      {/* Positions */}
-      {lTab === 'positions' && (
-        <>
-          <div style={{ position: 'relative', height: 110, borderRadius: 12, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)', marginBottom: 8 }}>
-            <div style={{ position: 'absolute', left: '50%', top: '50%', width: 44, height: 72, transform: 'translate(-50%,-50%)', borderRadius: 8, border: '2px solid rgba(255,255,255,0.38)' }} />
-            {LABEL_POSITIONS.map(pos => (
-              <button key={pos.id} onClick={() => addLabel(pos.id)} title={`Añadir etiqueta de tipo ${pos.id}`}
-                style={{ position: 'absolute', left: pos.left, top: pos.top, transform: 'translate(-50%,-50%)', width: 22, height: 22, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-              </button>
-            ))}
-          </div>
-          <button onClick={clearLabels} disabled={labelCount === 0}
-            style={{ width: '100%', height: 30, borderRadius: 9, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: labelCount === 0 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.52)', fontSize: 11, fontWeight: 700, cursor: labelCount === 0 ? 'not-allowed' : 'pointer' }}>
-            Borrar todas ({labelCount})
-          </button>
-        </>
-      )}
+      <div style={{ minHeight: 180 }}>
+        {/* Pestaña: POSICIÓN */}
+        {lTab === 'positions' && (
+          <Section label="Ubicación y Gestión">
+            <DeviceSilhouette>
+              {LABEL_POSITIONS.map(pos => (
+                <button key={pos.id} 
+                  onClick={() => {
+                    addLabel(pos.id);
+                    // Select most recently added label - slightly tricky as state update is async
+                    // We'll let the next render handle selection if we put it in store
+                  }} 
+                  title={`Añadir etiqueta en: ${pos.id}`}
+                  style={{ 
+                    position: 'absolute', left: pos.left, top: pos.top, 
+                    transform: 'translate(-50%,-50%)', width: 24, height: 24, 
+                    borderRadius: '50%', border: '1px solid rgba(255,255,255,0.25)', 
+                    background: 'rgba(255,255,255,0.08)', color: '#fff', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                    cursor: 'pointer', transition: 'all 0.15s',
+                    zIndex: 2,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as any).style.background = 'rgba(255,255,255,0.2)'; (e.currentTarget as any).style.scale = '1.1'; }}
+                  onMouseLeave={e => { (e.currentTarget as any).style.background = 'rgba(255,255,255,0.08)'; (e.currentTarget as any).style.scale = '1'; }}
+                >
+                  <Plus size={14} strokeWidth={3} />
+                </button>
+              ))}
+            </DeviceSilhouette>
 
-      {/* Behavior */}
-      {lTab === 'behavior' && (
-        <>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-            {LABEL_MODES.map(mode => (
-              <Chip key={mode.id} active={state.labelDraftMode === mode.id} onClick={() => updateState({ labelDraftMode: mode.id })}>{mode.label}</Chip>
-            ))}
-          </div>
-          <Slider label="Elevación" value={state.labelDraftLevitation} min={0} max={42} step={1} onChange={v => updateState({ labelDraftLevitation: v })} unit="px" />
-        </>
-      )}
+            {/* Lista de etiquetas activas */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Añadidas ({activeLabels.length})
+                </span>
+                {activeLabels.length > 0 && (
+                  <button onClick={clearLabels} style={{ fontSize: 9, background: 'transparent', border: 'none', color: 'rgba(248,113,113,0.7)', cursor: 'pointer', fontWeight: 600 }}>
+                    Borrar todas
+                  </button>
+                )}
+              </div>
+              
+              <div className="styled-scroll" style={{ maxHeight: 160, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {activeLabels.length === 0 ? (
+                  <div style={{ padding: '20px 0', textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: 11, fontStyle: 'italic' }}>
+                    No hay etiquetas aún.<br/>Usa el grid de arriba para añadir.
+                  </div>
+                ) : (
+                  activeLabels.map(l => (
+                    <div key={l.id} 
+                      onClick={() => updateState({ activeLabelId: l.id })}
+                      style={{ 
+                        display: 'flex', alignItems: 'center', gap: 10, padding: '7px 11px', 
+                        borderRadius: 10, cursor: 'pointer',
+                        background: state.activeLabelId === l.id ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${state.activeLabelId === l.id ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                        transition: 'all 0.15s'
+                      }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: l.color, boxShadow: `0 0 8px ${l.color}80` }} />
+                      <input 
+                        value={l.text} 
+                        onChange={(e) => updateText(l.id, { text: e.target.value })}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ 
+                          flex: 1, background: 'transparent', border: 'none', color: state.activeLabelId === l.id ? '#fff' : 'rgba(255,255,255,0.8)',
+                          fontSize: 12, fontWeight: 600, outline: 'none'
+                        }} 
+                      />
+                      <button onClick={(e) => { e.stopPropagation(); removeText(l.id); }} 
+                        style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.25)', cursor: 'pointer', padding: 4 }}
+                        onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.25)')}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </Section>
+        )}
 
-      {/* Style */}
-      {lTab === 'style' && (
-        <>
-          <div style={{ marginBottom: 10 }}>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>Tamaño</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 10px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <input type="number" min={8} max={48} value={state.labelDraftSize} onChange={e => { ensureStyleTab(); updateState({ labelDraftSize: Number(e.target.value) || 13 }); }} style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', color: 'rgba(255,255,255,0.9)', fontSize: 14, fontWeight: 700 }} />
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>pt</span>
+        {/* Pestaña: CONDUCTA */}
+        {lTab === 'behavior' && (
+          <Section label={selectedLabel ? `Comportamiento: ${selectedLabel.text}` : "Ajustes de Comportamiento"}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              <div>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', display: 'block', marginBottom: 8 }}>Tipo de Rastreo</span>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {LABEL_MODES.map(mode => (
+                    <Chip 
+                      key={mode.id} 
+                      active={getCurrentValue('labelMode', 'labelDraftMode') === mode.id} 
+                      onClick={() => handleUpdate({ [selectedLabel ? 'labelMode' : 'labelDraftMode']: mode.id })}
+                    >
+                      {mode.label}
+                    </Chip>
+                  ))}
                 </div>
               </div>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Color</span>
-                <div style={{ position: 'relative', width: 44 }}>
-                  <div style={{ width: 44, height: 36, borderRadius: 9, background: state.labelDraftColor, border: '1px solid rgba(255,255,255,0.18)' }} />
-                  <input type="color" value={state.labelDraftColor} onChange={e => { ensureStyleTab(); updateState({ labelDraftColor: e.target.value }); }} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+              
+              <Slider 
+                label="Elevación (Z)" 
+                value={getCurrentValue('levitation', 'labelDraftLevitation')} 
+                min={0} max={60} 
+                onChange={v => handleUpdate({ [selectedLabel ? 'levitation' : 'labelDraftLevitation']: v })} 
+                unit="px" 
+              />
+              
+              <div style={{ padding: '12px', borderRadius: 12, background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.15)' }}>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5, margin: 0 }}>
+                  <strong style={{ color: 'rgba(167,139,250,0.9)' }}>Tip:</strong> {
+                    getCurrentValue('labelMode', 'labelDraftMode') === 'follow' 
+                    ? "La etiqueta intentará mantenerse legible rotando hacia la cámara."
+                    : getCurrentValue('labelMode', 'labelDraftMode') === 'billboard'
+                    ? "Efecto siempre plano hacia el espectador, ideal para títulos."
+                    : "Anclaje rígido a la superficie del modelo 3D."
+                  }
+                </p>
+              </div>
+            </div>
+          </Section>
+        )}
+
+        {/* Pestaña: ESTILO */}
+        {lTab === 'style' && (
+          <Section label={selectedLabel ? `Apariencia: ${selectedLabel.text}` : "Estilo Predefinido"}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <Slider 
+                    label="Tamaño Fuente" 
+                    value={getCurrentValue('fontSize', 'labelDraftSize')} 
+                    min={8} max={42} 
+                    onChange={v => handleUpdate({ [selectedLabel ? 'fontSize' : 'labelDraftSize']: v })} 
+                    unit="pt" 
+                  />
                 </div>
-              </label>
+                <div style={{ width: 50 }}>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', display: 'block', marginBottom: 6 }}>Color</span>
+                  <div style={{ position: 'relative', width: '100%', height: 34 }}>
+                    <div style={{ 
+                      width: '100%', height: '100%', borderRadius: 8, 
+                      background: getCurrentValue('color', 'labelDraftColor'), 
+                      border: '2px solid rgba(255,255,255,0.2)' 
+                    }} />
+                    <input type="color" 
+                      value={getCurrentValue('color', 'labelDraftColor')} 
+                      onChange={e => handleUpdate({ [selectedLabel ? 'color' : 'labelDraftColor']: e.target.value })} 
+                      style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', display: 'block', marginBottom: 8 }}>Tipografía</span>
+                <div className="styled-scroll" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
+                  {FONTS.map(f => (
+                    <Chip 
+                      key={f} 
+                      active={getCurrentValue('fontFamily', 'labelDraftFont') === f} 
+                      onClick={() => handleUpdate({ [selectedLabel ? 'fontFamily' : 'labelDraftFont']: f })}
+                      style={{ fontFamily: f }}
+                    >
+                      {f}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ marginTop: 8 }}>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', display: 'block', marginBottom: 10 }}>Presets de Estilo</span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                  <button 
+                    onClick={() => handleUpdate({ fontSize: 24, color: '#ffffff', labelMode: 'billboard' })}
+                    style={{ padding: '8px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    Título Grande
+                  </button>
+                  <button 
+                    onClick={() => handleUpdate({ fontSize: 12, color: '#888888', labelMode: 'follow' })}
+                    style={{ padding: '8px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    Detalle Técnico
+                  </button>
+                </div>
+              </div>
+
+              {!selectedLabel && (
+                <div style={{ padding: '10px', borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center' }}>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>Selecciona una etiqueta para editarla</span>
+                </div>
+              )}
             </div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>Fuente</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 10px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <select value={state.labelDraftFont} onChange={e => { ensureStyleTab(); updateState({ labelDraftFont: e.target.value }); }}
-                style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 700, fontFamily: state.labelDraftFont }}>
-                <option value="Inter" style={{ fontFamily: 'Inter' }}>Inter</option>
-                <option value="Roboto" style={{ fontFamily: 'Roboto' }}>Roboto</option>
-                <option value="Arial" style={{ fontFamily: 'Arial' }}>Arial</option>
-                <option value="Georgia" style={{ fontFamily: 'Georgia' }}>Georgia</option>
-                <option value="Comic Sans MS" style={{ fontFamily: 'Comic Sans MS' }}>Comic Sans MS</option>
-                <option value="Courier New" style={{ fontFamily: 'Courier New' }}>Courier New</option>
-                <option value="Times New Roman" style={{ fontFamily: 'Times New Roman' }}>Times New Roman</option>
-              </select>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
-            <button onClick={() => { ensureStyleTab(); updateState({ labelDraftMode: 'follow', labelDraftSize: 13, labelDraftLevitation: 16, labelDraftColor: '#ffffff' }); }}
-              style={{ height: 36, padding: '0 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.52)', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-              Restablecer
-            </button>
-          </div>
-        </>
-      )}
+          </Section>
+        )}
+      </div>
+
     </div>
   );
 };
