@@ -29,25 +29,31 @@ const FONTS = ['Inter', 'Roboto', 'Arial', 'Georgia', 'Courier New', 'Times New 
 
 const DeviceSilhouette = ({ children }: { children: React.ReactNode }) => (
   <div style={{ 
-    position: 'relative', height: 130, borderRadius: 16, 
-    background: 'linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)', 
-    border: '1px solid rgba(255,255,255,0.06)', 
-    marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden', boxShadow: 'inset 0 0 40px rgba(0,0,0,0.3)'
+    position: 'relative', height: 160, borderRadius: 20, 
+    background: '#09090b', 
+    border: '1px solid rgba(255,255,255,0.12)', 
+    marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden', boxShadow: 'inset 0 0 50px rgba(0,0,0,0.8), 0 4px 20px rgba(0,0,0,0.4)'
   }}>
-    <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: 'linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)', backgroundSize: '15px 15px' }} />
     <div style={{ 
-      width: 42, height: 80, borderRadius: 10, 
-      border: '2px solid rgba(255,255,255,0.15)', 
-      background: 'rgba(255,255,255,0.03)',
-      boxShadow: '0 0 25px rgba(0,0,0,0.5)',
-      position: 'relative', zIndex: 1
+      position: 'absolute', inset: 0, opacity: 0.12, 
+      backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.4) 1px, transparent 1px)', 
+      backgroundSize: '20px 20px' 
+    }} />
+    <div style={{ 
+      width: 48, height: 96, borderRadius: 12, 
+      border: '2.5px solid rgba(255,255,255,0.2)', 
+      background: 'rgba(255,255,255,0.04)',
+      boxShadow: '0 0 40px rgba(0,0,0,0.6)',
+      position: 'relative', zIndex: 1,
+      display: 'flex', alignItems: 'center', justifyContent: 'center'
     }}>
-      <div style={{ margin: 2, height: 'calc(100% - 4px)', borderRadius: 7, background: 'rgba(255,255,255,0.01)' }} />
+      <div style={{ width: '85%', height: '90%', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }} />
     </div>
     {children}
   </div>
 );
+
 
 export const LabelsTab = () => {
   const { state, updateState, addLabel, clearLabels, updateText, removeText } = useApp();
@@ -102,15 +108,17 @@ export const LabelsTab = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       
       {/* Sub-tabs premium */}
-      <div style={{ display: 'flex', gap: 4, background: 'rgba(0,0,0,0.25)', borderRadius: 12, padding: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
+      <div className="segmented-control" style={{ display: 'flex', gap: 4, borderRadius: 12, padding: 3 }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => handleSetTab(t.id)}
+            className={lTab === t.id ? 'active-pill' : ''}
             style={{ 
-              flex: 1, height: 32, borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600,
+              flex: 1, height: 32, borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              background: lTab === t.id ? 'rgba(255,255,255,0.12)' : 'transparent',
-              color: lTab === t.id ? '#fff' : 'rgba(255,255,255,0.4)',
-              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+              background: 'transparent',
+              color: lTab === t.id ? '#fff' : 'rgba(255,255,255,0.35)',
+              transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+              textShadow: lTab === t.id ? '0 0 12px rgba(255,255,255,0.3)' : 'none'
             }}>
             <t.icon size={13} strokeWidth={lTab === t.id ? 2.5 : 2} />
             {t.label}
@@ -118,88 +126,104 @@ export const LabelsTab = () => {
         ))}
       </div>
 
+
       <div style={{ minHeight: 180 }}>
         {/* Pestaña: POSICIÓN */}
         {lTab === 'positions' && (
           <Section label="Ubicación y Gestión">
-            <DeviceSilhouette>
-              {LABEL_POSITIONS.map(pos => (
-                <button key={pos.id} 
-                  onClick={() => {
-                    addLabel(pos.id);
-                    // Select most recently added label - slightly tricky as state update is async
-                    // We'll let the next render handle selection if we put it in store
-                  }} 
-                  title={`Añadir etiqueta en: ${pos.id}`}
-                  style={{ 
-                    position: 'absolute', left: pos.left, top: pos.top, 
-                    transform: 'translate(-50%,-50%)', width: 24, height: 24, 
-                    borderRadius: '50%', border: '1px solid rgba(255,255,255,0.25)', 
-                    background: 'rgba(255,255,255,0.08)', color: '#fff', 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                    cursor: 'pointer', transition: 'all 0.15s',
-                    zIndex: 2,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as any).style.background = 'rgba(255,255,255,0.2)'; (e.currentTarget as any).style.scale = '1.1'; }}
-                  onMouseLeave={e => { (e.currentTarget as any).style.background = 'rgba(255,255,255,0.08)'; (e.currentTarget as any).style.scale = '1'; }}
-                >
-                  <Plus size={14} strokeWidth={3} />
-                </button>
-              ))}
-            </DeviceSilhouette>
-
-            {/* Lista de etiquetas activas */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  Añadidas ({activeLabels.length})
-                </span>
-                {activeLabels.length > 0 && (
-                  <button onClick={clearLabels} style={{ fontSize: 9, background: 'transparent', border: 'none', color: 'rgba(248,113,113,0.7)', cursor: 'pointer', fontWeight: 600 }}>
-                    Borrar todas
-                  </button>
-                )}
-              </div>
-              
-              <div className="styled-scroll" style={{ maxHeight: 160, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 5 }}>
-                {activeLabels.length === 0 ? (
-                  <div style={{ padding: '20px 0', textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: 11, fontStyle: 'italic' }}>
-                    No hay etiquetas aún.<br/>Usa el grid de arriba para añadir.
-                  </div>
-                ) : (
-                  activeLabels.map(l => (
-                    <div key={l.id} 
-                      onClick={() => updateState({ activeLabelId: l.id })}
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <div style={{ flex: '0 0 140px' }}>
+                <DeviceSilhouette>
+                  {LABEL_POSITIONS.map(pos => (
+                    <button key={pos.id} 
+                      onClick={() => addLabel(pos.id)} 
+                      title={`Añadir etiqueta en: ${pos.id}`}
                       style={{ 
-                        display: 'flex', alignItems: 'center', gap: 10, padding: '7px 11px', 
-                        borderRadius: 10, cursor: 'pointer',
-                        background: state.activeLabelId === l.id ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.03)',
-                        border: `1px solid ${state.activeLabelId === l.id ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                        transition: 'all 0.15s'
-                      }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: l.color, boxShadow: `0 0 8px ${l.color}80` }} />
-                      <input 
-                        value={l.text} 
-                        onChange={(e) => updateText(l.id, { text: e.target.value })}
-                        onClick={(e) => e.stopPropagation()}
-                        style={{ 
-                          flex: 1, background: 'transparent', border: 'none', color: state.activeLabelId === l.id ? '#fff' : 'rgba(255,255,255,0.8)',
-                          fontSize: 12, fontWeight: 600, outline: 'none'
-                        }} 
-                      />
-                      <button onClick={(e) => { e.stopPropagation(); removeText(l.id); }} 
-                        style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.25)', cursor: 'pointer', padding: 4 }}
-                        onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
-                        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.25)')}
-                      >
-                        <Trash2 size={13} />
-                      </button>
+                        position: 'absolute', left: pos.left, top: pos.top, 
+                        transform: 'translate(-50%,-50%)', width: 20, height: 20, 
+                        borderRadius: '50%', border: '1px solid rgba(255,255,255,0.3)', 
+                        background: 'rgba(255,255,255,0.1)', color: '#fff', 
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                        cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                        zIndex: 2,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                        backdropFilter: 'blur(4px)'
+                      }}
+                      onMouseEnter={e => { 
+                        (e.currentTarget as any).style.background = 'rgba(255,255,255,0.25)'; 
+                        (e.currentTarget as any).style.borderColor = 'rgba(255,255,255,0.6)';
+                        (e.currentTarget as any).style.transform = 'translate(-50%,-50%) scale(1.15)'; 
+                      }}
+                      onMouseLeave={e => { 
+                        (e.currentTarget as any).style.background = 'rgba(255,255,255,0.1)'; 
+                        (e.currentTarget as any).style.borderColor = 'rgba(255,255,255,0.3)';
+                        (e.currentTarget as any).style.transform = 'translate(-50%,-50%) scale(1)'; 
+                      }}
+                    >
+                      <Plus size={12} strokeWidth={3} />
+                    </button>
+                  ))}
+                </DeviceSilhouette>
+              </div>
+
+              {/* Lista de etiquetas activas */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    Etiquetas ({activeLabels.length})
+                  </span>
+                  {activeLabels.length > 0 && (
+                    <button onClick={clearLabels} style={{ fontSize: 8, background: 'transparent', border: 'none', color: 'rgba(248,113,113,0.6)', cursor: 'pointer', fontWeight: 600 }}>
+                      Recetear
+                    </button>
+                  )}
+                </div>
+                
+                <div className="styled-scroll" style={{ height: 160, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 5, paddingRight: 2 }}>
+                  {activeLabels.length === 0 ? (
+                    <div style={{ 
+                      height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 8px', textAlign: 'center', 
+                      background: 'rgba(0,0,0,0.6)', borderRadius: 12, border: '1px dashed rgba(255,255,255,0.1)',
+                      color: 'rgba(255,255,255,0.3)', fontSize: 10, fontStyle: 'italic',
+                      lineHeight: 1.3
+                    }}>
+                      Grid para añadir
                     </div>
-                  ))
-                )}
+                  ) : (
+                    activeLabels.map((l, i) => (
+                      <div key={l.id} 
+                        onClick={() => updateState({ activeLabelId: l.id })}
+                        className="btn-press"
+                        style={{ 
+                          display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', 
+                          borderRadius: 10, cursor: 'pointer',
+                          background: state.activeLabelId === l.id ? 'rgba(139,92,246,0.24)' : 'rgba(0,0,0,0.4)',
+                          border: `1px solid ${state.activeLabelId === l.id ? 'rgba(139,92,246,0.6)' : 'rgba(255,255,255,0.1)'}`,
+                          transition: 'all 0.15s',
+                          animation: `panelFade 0.2s ease-out ${i * 0.03}s both`,
+                        }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: l.color, flexShrink: 0 }} />
+                        <input 
+                          value={l.text} 
+                          onChange={(e) => updateText(l.id, { text: e.target.value })}
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ 
+                            flex: 1, background: 'transparent', border: 'none', color: state.activeLabelId === l.id ? '#fff' : 'rgba(255,255,255,0.6)',
+                            fontSize: 11, fontWeight: 600, outline: 'none'
+                          }} 
+                        />
+                        <button onClick={(e) => { e.stopPropagation(); removeText(l.id); }} 
+                          style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', padding: 2 }}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
+
           </Section>
         )}
 
