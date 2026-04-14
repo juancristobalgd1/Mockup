@@ -4,6 +4,7 @@ import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import type { DeviceModelDef } from '../../data/devices';
 import { getGlobalScreenTexture } from './textureGlobal';
+import { DeviceLabels } from './DeviceLabels';
 
 interface Props {
   def: DeviceModelDef;
@@ -240,6 +241,15 @@ export function Watch3DModel({ def, screenTexture, contentType }: Props) {
           </mesh>
         ))}
       </group>
+
+      {/* 3D Labels — part of the chasis coordinate system */}
+      <DeviceLabels
+        sW={sW}
+        sH={sH}
+        sOffY={0}
+        zPos={sZ + 0.005}
+        modelWidth={pW}
+      />
     </group>
   );
 }

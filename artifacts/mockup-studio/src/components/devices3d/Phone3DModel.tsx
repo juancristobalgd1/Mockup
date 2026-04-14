@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import type { DeviceModelDef } from '../../data/devices';
 import { getGlobalScreenTexture } from './textureGlobal';
 import { useApp } from '../../store';
+import { DeviceLabels } from './DeviceLabels';
 
 // ── Material presets ─────────────────────────────────────────────
 
@@ -508,6 +509,15 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
       {def.cameraLayout === 'triple-round' && (
         <CircularModule {...mProps} isOnePlus={def.id.includes('oneplus')} />
       )}
+
+      {/* 3D Labels — part of the chasis coordinate system */}
+      <DeviceLabels
+        sW={sW}
+        sH={sH}
+        sOffY={sOffY}
+        zPos={frontZ + 0.005}
+        modelWidth={pW}
+      />
 
     </group>
   );

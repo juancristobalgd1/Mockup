@@ -20,6 +20,7 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import type { DeviceModelDef } from '../../data/devices';
 import { getGlobalScreenTexture } from './textureGlobal';
+import { DeviceLabels } from './DeviceLabels';
 
 // ── Geometry helpers ──────────────────────────────────────────────────
 
@@ -891,6 +892,15 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType, i
           contentType={contentType}
         />
       )}
+
+      {/* 3D Labels — part of the chasis coordinate system */}
+      <DeviceLabels
+        sW={sW}
+        sH={sH}
+        sOffY={sOffY}
+        zPos={screenFacesNeg ? screenFaceZ - 0.012 : screenFaceZ + 0.012}
+        modelWidth={modelWidth}
+      />
     </group>
   );
 }

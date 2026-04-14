@@ -6,7 +6,7 @@ import type { AnimatedBackground } from '../../data/backgrounds';
 import { LIGHT_OVERLAYS } from '../../data/lightOverlays';
 import { AnnotateCanvas } from './AnnotateCanvas';
 import { Device3DViewer, InteractionControls } from '../devices3d/Device3DViewer';
-import type { Device3DViewerHandle, DeviceScreenAnchor, InteractionMode } from '../devices3d/Device3DViewer';
+import type { Device3DViewerHandle, InteractionMode } from '../devices3d/Device3DViewer';
 import { CSSDeviceFallback, checkWebGL } from '../devices3d/WebGLFallback';
 
 interface CanvasProps {
@@ -18,73 +18,23 @@ interface CanvasProps {
 }
 
 const RATIO_VALUES: Record<string, number> = {
-  '1:1':  1,
-  '4:5':  4 / 5,
+  '1:1': 1,
+  '4:5': 4 / 5,
   '16:9': 16 / 9,
   '9:16': 9 / 16,
-  '4:3':  4 / 3,
-  '3:2':  3 / 2,
-  '2:3':  2 / 3,
-  '3:1':  3,
-  '5:4':  5 / 4,
+  '4:3': 4 / 3,
+  '3:2': 3 / 2,
+  '2:3': 2 / 3,
+  '3:1': 3,
+  '5:4': 5 / 4,
 };
 
-const LABEL_ANCHOR_VECTORS = {
-  'top': { x: 0, y: -1 },
-  'top-right': { x: 1, y: -1 },
-  'right': { x: 1, y: 0 },
-  'bottom-right': { x: 1, y: 1 },
-  'bottom': { x: 0, y: 1 },
-  'bottom-left': { x: -1, y: 1 },
-  'left': { x: -1, y: 0 },
-  'top-left': { x: -1, y: -1 },
-} as const;
-
-function getDeviceFootprint(deviceType: string, scale: number) {
-  if (deviceType === 'macbook') return { halfW: scale * 1.1, halfH: scale * 0.54 };
-  if (deviceType === 'browser') return { halfW: scale * 1.15, halfH: scale * 0.68 };
-  if (deviceType === 'ipad') return { halfW: scale * 0.56, halfH: scale * 0.8 };
-  if (deviceType === 'watch') return { halfW: scale * 0.32, halfH: scale * 0.38 };
-  return { halfW: scale * 0.38, halfH: scale * 0.76 };
-}
-
-function getLabelPosition(overlay: TextOverlay, deviceType: string, anchor: DeviceScreenAnchor) {
-  if (overlay.kind !== 'label') return null;
-  if (overlay.labelMode === 'fixed') {
-    return {
-      left: `${overlay.x}%`,
-      top: `${overlay.y}%`,
-      dotLeft: `${overlay.x}%`,
-      dotTop: `${overlay.y}%`,
-      textAlign: 'center' as const,
-      translate: 'translate(-50%, -50%)',
-    };
-  }
-
-  const vector = LABEL_ANCHOR_VECTORS[overlay.labelAnchor ?? 'right'];
-  const footprint = getDeviceFootprint(deviceType, anchor.scale);
-  const levitation = overlay.levitation ?? 16;
-  const textGap = levitation + Math.max(18, overlay.fontSize * 1.3);
-  const dotX = footprint.halfW * vector.x * 0.92;
-  const dotY = footprint.halfH * vector.y * 0.92;
-  const labelX = footprint.halfW * vector.x + (vector.x === 0 ? 0 : Math.sign(vector.x) * textGap);
-  const labelY = footprint.halfH * vector.y + (vector.y === 0 ? 0 : Math.sign(vector.y) * textGap);
-
-  return {
-    left: `calc(${anchor.x}% + ${labelX}px)`,
-    top: `calc(${anchor.y}% + ${labelY}px)`,
-    dotLeft: `calc(${anchor.x}% + ${dotX}px)`,
-    dotTop: `calc(${anchor.y}% + ${dotY}px)`,
-    textAlign: vector.x < 0 ? 'right' as const : vector.x > 0 ? 'left' as const : 'center' as const,
-    translate: 'translate(-50%, -50%)',
-  };
-}
 
 /** Renders a type='canvas' AnimatedBackground using a live requestAnimationFrame loop. */
 function CanvasBgRenderer({ bg, opacity, borderRadius }: { bg: AnimatedBackground; opacity: number; borderRadius?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const startRef  = useRef<number>(0);
-  const rafRef    = useRef<number>(0);
+  const startRef = useRef<number>(0);
+  const rafRef = useRef<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -94,7 +44,7 @@ function CanvasBgRenderer({ bg, opacity, borderRadius }: { bg: AnimatedBackgroun
 
     const setSize = () => {
       const { width, height } = canvas.getBoundingClientRect();
-      canvas.width  = Math.round(width)  || 800;
+      canvas.width = Math.round(width) || 800;
       canvas.height = Math.round(height) || 600;
     };
     const ro = new ResizeObserver(setSize);
@@ -125,7 +75,6 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
   const [webglAvailable, setWebglAvailable] = useState<boolean | null>(null);
   const [interactionMode, setInteractionMode] = useState<InteractionMode>('none');
   const [zoomValue, setZoomValue] = useState(58);
-  const [deviceAnchor, setDeviceAnchor] = useState<DeviceScreenAnchor>({ x: 50, y: 50, scale: 140 });
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   useEffect(() => {
@@ -205,18 +154,18 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
 
   const stageStyle: React.CSSProperties = hasRatio && ratioValue
     ? {
-        position: 'relative',
-        aspectRatio: `${ratioValue}`,
-        maxWidth: 'calc(100% - 48px)',
-        maxHeight: 'calc(100% - 48px)',
-        width: ratioValue >= 1 ? 'calc(100% - 48px)' : 'auto',
-        height: ratioValue < 1 ? 'calc(100% - 48px)' : 'auto',
-      }
+      position: 'relative',
+      aspectRatio: `${ratioValue}`,
+      maxWidth: 'calc(100% - 48px)',
+      maxHeight: 'calc(100% - 48px)',
+      width: ratioValue >= 1 ? 'calc(100% - 48px)' : 'auto',
+      height: ratioValue < 1 ? 'calc(100% - 48px)' : 'auto',
+    }
     : {
-        position: 'relative',
-        width: '100%',
-        height: '100%',
-      };
+      position: 'relative',
+      width: '100%',
+      height: '100%',
+    };
 
   const bgOpacity = state.bgType === 'none' || state.bgType === 'transparent'
     ? 1
@@ -364,7 +313,6 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
             onInteractionModeChange={setInteractionMode}
             zoomValue={zoomValue}
             onZoomValueChange={setZoomValue}
-            onDeviceAnchorChange={setDeviceAnchor}
           />
         ) : null /* loading – will resolve synchronously */}
 
@@ -373,57 +321,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
 
         {/* Text overlays */}
         {textOverlays.map(overlay => {
-          if (overlay.kind === 'label') {
-            const labelPosition = getLabelPosition(overlay, state.deviceType, deviceAnchor);
-            if (!labelPosition) return null;
-            const isBillboard = overlay.labelMode === 'billboard';
-            return (
-              <div key={overlay.id} data-testid={`text-overlay-${overlay.id}`}>
-                <div style={{
-                  position: 'absolute',
-                  left: labelPosition.dotLeft,
-                  top: labelPosition.dotTop,
-                  transform: 'translate(-50%, -50%)',
-                  width: 10,
-                  height: 10,
-                  borderRadius: '50%',
-                  background: overlay.color,
-                  boxShadow: `0 0 0 4px ${overlay.color}20, 0 0 12px ${overlay.color}55`,
-                  zIndex: 10,
-                  pointerEvents: 'none',
-                }} />
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: labelPosition.left,
-                    top: labelPosition.top,
-                    transform: labelPosition.translate,
-                    fontSize: overlay.fontSize,
-                    color: overlay.color,
-                    fontWeight: overlay.isBold ? 700 : 400,
-                    fontStyle: overlay.isItalic ? 'italic' : 'normal',
-                    textAlign: labelPosition.textAlign,
-                    userSelect: 'none',
-                    textShadow: '0 1px 4px rgba(0,0,0,0.5)',
-                    whiteSpace: 'pre',
-                    zIndex: 11,
-                    fontFamily: `${overlay.fontFamily || 'Inter'}, sans-serif`,
-                    padding: `${Math.max(8, overlay.fontSize * 0.32)}px ${Math.max(12, overlay.fontSize * 0.72)}px`,
-                    borderRadius: 999,
-                    border: `1px solid ${overlay.color}33`,
-                    background: isBillboard ? 'rgba(16,18,24,0.92)' : 'rgba(16,18,24,0.78)',
-                    backdropFilter: 'blur(12px)',
-                    boxShadow: isBillboard
-                      ? '0 14px 28px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.08)'
-                      : '0 10px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
-                    letterSpacing: '-0.01em',
-                  }}
-                >
-                  {overlay.text}
-                </div>
-              </div>
-            );
-          }
+          if (overlay.kind === 'label') return null;
 
           return (
             <div

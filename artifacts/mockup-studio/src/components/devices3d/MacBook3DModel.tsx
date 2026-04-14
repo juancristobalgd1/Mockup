@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import type { DeviceModelDef } from '../../data/devices';
 import { useApp } from '../../store';
 import { getGlobalScreenTexture } from './textureGlobal';
+import { DeviceLabels } from './DeviceLabels';
 
 interface Props {
   def: DeviceModelDef;
@@ -306,6 +307,15 @@ export function MacBook3DModel({ def, screenTexture, contentType, lidAngle = 112
           <group position={[0, sOffY, lidD / 2 + 0.004]}>
             <ScreenPlane w={sW} h={sH} screenTexture={screenTexture} contentType={contentType} />
           </group>
+
+          {/* 3D Labels — attached to the lid / screen axis */}
+          <DeviceLabels
+            sW={sW}
+            sH={sH}
+            sOffY={sOffY}
+            zPos={lidD / 2 + 0.008}
+            modelWidth={lidW}
+          />
 
           {/* Screen glass gloss */}
           {(state.glassReflection ?? true) && (

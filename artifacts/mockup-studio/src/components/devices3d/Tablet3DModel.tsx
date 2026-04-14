@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import type { DeviceModelDef } from '../../data/devices';
 import { useApp } from '../../store';
 import { getGlobalScreenTexture } from './textureGlobal';
+import { DeviceLabels } from './DeviceLabels';
 
 interface Props {
   def: DeviceModelDef;
@@ -115,6 +116,15 @@ export function Tablet3DModel({ def, screenTexture, contentType, isLandscape }: 
         <circleGeometry args={[0.035, 32]} />
         <meshStandardMaterial color="#111" roughness={0.05} metalness={0.4} />
       </mesh>
+
+      {/* 3D Labels — part of the chasis coordinate system */}
+      <DeviceLabels
+        sW={sW}
+        sH={sH}
+        sOffY={0}
+        zPos={sZ + 0.005}
+        modelWidth={pW}
+      />
     </group>
   );
 }
