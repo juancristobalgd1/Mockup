@@ -15,7 +15,11 @@ import type { MovieTimelineHandle } from './components/timeline/MovieTimeline';
 import { 
   Undo2, Redo2, 
   Smartphone, Film, 
-  Download, Grid3X3
+  Download, Grid3X3,
+  Home, Crown, Lightbulb, MoreHorizontal,
+  Plus, LayoutGrid, Image as ImageIcon, Wand2, Type, 
+  Settings2, Box, Palette, Pencil, MousePointer2, Layers,
+  Tags, Sliders, Blend, PenLine, Sparkles
 } from 'lucide-react';
 import { GridOverlay } from './components/ui/GridOverlay';
 import { getModelById } from './data/devices';
@@ -108,407 +112,188 @@ function Editor() {
   };
 
   return (
-    <div className="app-root" style={{ background: 'var(--rt-canvas)' }}>
+    <div className="app-root" style={{ background: 'var(--ps-canvas)', position: 'relative' }}>
 
       {/* Skip link for keyboard users */}
       <a href="#main-canvas" className="skip-link">Skip to canvas</a>
 
-      {/* ── DESKTOP LAYOUT ─────────────────────────────────────── */}
-      <div className="desktop-layout">
-        <aside aria-label="Design controls">
-          <LeftPanel activeTab={activeTab} setActiveTab={setActiveTab} />
-        </aside>
+      {/* ── MAIN VIEWPORT (Canvas) ─────────────────────────────────── */}
+      <main id="main-canvas" style={{ 
+        position: 'absolute', inset: 0, 
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '60px 20px 140px' 
+      }}>
+        <div style={{ 
+          width: '100%', height: '100%', 
+          position: 'relative', overflow: 'hidden',
+          borderRadius: 20, boxShadow: '0 20px 80px rgba(0,0,0,0.8)'
+        }} className="canvas-bg">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={state.creationMode}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.02 }}
+              transition={{ duration: 0.3 }}
+              style={{ width: '100%', height: '100%' }}
+            >
+              <Canvas
+                ref={canvasRef}
+                viewerRef={viewerRef}
+                textOverlays={state.texts}
+                onUpdateText={updateText}
+                moviePlaying={moviePlaying}
+                movieTimeRef={movieTimeRef}
+              />
+              {state.showGrid && <GridOverlay opacity={0.65} />}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </main>
 
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-
-          {/* ── Rotato-style Title Bar ──────────────────────────── */}
-          <header style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr auto 1fr',
-            alignItems: 'center',
-            padding: '0 14px', height: 42, flexShrink: 0,
-            background: 'var(--rt-panel)',
-            borderBottom: '1px solid var(--rt-border)',
-          }}>
-            {/* Left: traffic lights + title */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
-              <div className="rt-traffic" role="presentation" aria-hidden="true" style={{ flexShrink: 0 }}>
-                <span className="tl-red" />
-                <span className="tl-yellow" />
-                <span className="tl-green" />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--rt-text-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {deviceLabel}
-                  {(state.deviceType === 'iphone' || state.deviceType === 'android') && (
-                    <span style={{ color: 'var(--rt-text-3)' }}>
-                      {' '}· {state.deviceLandscape ? 'Horizontal' : 'Vertical'}
-                    </span>
-                  )}
-                </span>
-                {state.contentType && (
-                  <span style={{
-                    fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
-                    padding: '2px 7px', borderRadius: 20, flexShrink: 0,
-                    background: state.contentType === 'video' ? 'rgba(48,209,88,0.12)' : 'rgba(255,255,255,0.07)',
-                    color: state.contentType === 'video' ? 'var(--rt-accent-green)' : 'var(--rt-text-3)',
-                    border: state.contentType === 'video' ? '1px solid rgba(48,209,88,0.2)' : '1px solid var(--rt-border)',
-                  }}>
-                    {state.contentType === 'video' ? '▶ Video' : 'Imagen'}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Center: Undo / Redo group — always in the exact middle */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 1,
-              background: 'rgba(255,255,255,0.07)',
-              borderRadius: 9, padding: '3px',
-              border: '1px solid rgba(255,255,255,0.12)',
-            }}>
-              {TOOLBAR_ACTIONS.map(({ title, icon: Icon, action, enabled, shortcut }, i) => (
-                <Tooltip key={i} delayDuration={400}>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={action}
-                      disabled={!enabled}
-                      aria-label={title}
-                      className="btn-press"
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        width: 30, height: 26, borderRadius: 6,
-                        background: 'transparent', border: 'none',
-                        color: enabled ? 'var(--rt-text)' : 'var(--rt-text-3)',
-                        cursor: enabled ? 'pointer' : 'not-allowed',
-                        transition: 'all 0.12s',
-                        opacity: enabled ? 1 : 0.4,
-                      }}
-                      onMouseEnter={e => { if (enabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.14)'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-                    >
-                      <Icon size={14} strokeWidth={2.2} />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="flex items-center">
-                    {title}
-                    {shortcut && <Shortcut>{shortcut}</Shortcut>}
-                  </TooltipContent>
-                </Tooltip>
-              ))}
-            </div>
-
-            {/* Right: segmented mode picker */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-              <div style={{
-                display: 'flex', alignItems: 'center',
-                background: 'rgba(255,255,255,0.06)',
-                borderRadius: 8, padding: '2px',
-                border: '1px solid var(--rt-border)',
-                flexShrink: 0,
-              }}>
-                {CREATION_MODES.map(mode => {
-                  const isActive = state.creationMode === mode.id;
-                  return (
-                    <Tooltip key={mode.id} delayDuration={400}>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => handleModeChange(mode.id)}
-                          aria-label={mode.desc}
-                          aria-pressed={isActive}
-                          className="btn-press"
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 5,
-                            padding: '4px 11px', borderRadius: 6, cursor: 'pointer',
-                            fontSize: 11, fontWeight: 600,
-                            transition: 'all 0.12s',
-                            background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
-                            border: isActive ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
-                            color: isActive ? 'var(--rt-text)' : 'var(--rt-text-3)',
-                            boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
-                          }}
-                        >
-                          {mode.icon}
-                          {mode.label}
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">{mode.desc}</TooltipContent>
-                    </Tooltip>
-                  );
-                })}
-              </div>
-            </div>
-          </header>
-
-          {/* Canvas */}
-          <main id="main-canvas" style={{ flex: 1, overflow: 'hidden', position: 'relative' }} className="canvas-bg">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={state.creationMode}
-                initial={{ opacity: 0, scale: 0.98, filter: 'blur(10px)' }}
-                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                exit={{ opacity: 0, scale: 1.02, filter: 'blur(10px)' }}
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                style={{ width: '100%', height: '100%' }}
-              >
-                <Canvas
-                  ref={canvasRef}
-                  viewerRef={viewerRef}
-                  textOverlays={state.texts}
-                  onUpdateText={updateText}
-                  moviePlaying={moviePlaying}
-                  movieTimeRef={movieTimeRef}
-                />
-                {state.showGrid && <GridOverlay opacity={0.65} />}
-              </motion.div>
-            </AnimatePresence>
-          </main>
-
-          {/* Movie Timeline */}
-          {state.movieMode && (
-            <MovieTimeline
-              ref={movieTimelineRef}
-              viewerRef={viewerRef}
-              movieTimeRef={movieTimeRef}
-              canvasRef={canvasRef}
-              onPlayingChange={setMoviePlaying}
-              onClose={() => { updateState({ movieMode: false }); setMoviePlaying(false); }}
-            />
-          )}
+      {/* ── TOP FLOATING PILLS ─────────────────────────────────────── */}
+      <header style={{
+        position: 'absolute', top: 20, left: 20, right: 20, zIndex: 100,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        pointerEvents: 'none'
+      }}>
+        {/* Left: Home & Crown */}
+        <div className="floating-pill" style={{ pointerEvents: 'auto' }}>
+          <button className="btn-press" style={{ padding: '8px 12px', color: '#fff', border: 'none', background: 'none' }}>
+            <Home size={20} />
+          </button>
+          <button className="btn-press" style={{ padding: '8px 12px', border: 'none', background: 'none' }}>
+            <Crown size={20} className="ps-crown-icon" />
+          </button>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', padding: '0 12px 0 4px', opacity: 0.8 }}>
+            {deviceLabel}
+          </div>
         </div>
 
-        <aside aria-label="Export controls">
-          <RightPanel
-            canvasRef={canvasRef}
-            viewerRef={viewerRef}
-            movieTimelineRef={movieTimelineRef}
-            movieTimeRef={movieTimeRef}
-            textOverlays={state.texts}
-            onUpdateText={updateText}
-            onRemoveText={removeText}
-          />
-        </aside>
+        {/* Right: Actions */}
+        <div className="floating-pill" style={{ pointerEvents: 'auto', gap: 2 }}>
+          <button onClick={undo} disabled={!canUndo} className="btn-press" style={{ padding: '8px 12px', border: 'none', background: 'none', color: canUndo ? '#fff' : '#444' }}>
+            <Undo2 size={18} />
+          </button>
+          <button onClick={redo} disabled={!canRedo} className="btn-press" style={{ padding: '8px 12px', border: 'none', background: 'none', color: canRedo ? '#fff' : '#444' }}>
+            <Redo2 size={18} />
+          </button>
+          <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
+          <button onClick={() => updateState({ showGrid: !state.showGrid })} className="btn-press" style={{ padding: '8px 12px', border: 'none', background: 'none', color: state.showGrid ? 'var(--ps-accent-blue)' : '#fff' }}>
+            <Grid3X3 size={18} />
+          </button>
+          <button className="btn-press" style={{ padding: '8px 12px', color: '#fff', border: 'none', background: 'none' }}>
+            <Download size={18} />
+          </button>
+          <button className="btn-press" style={{ padding: '8px 12px', color: '#fff', border: 'none', background: 'none' }}>
+            <MoreHorizontal size={18} />
+          </button>
+        </div>
+      </header>
+
+      {/* ── FLOATING AUXILIARY BUTTONS ────────────────────────────── */}
+      <div style={{ position: 'absolute', bottom: 160, right: 20, zIndex: 100, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
+        <button className="ps-floating-circle btn-press" onClick={() => setActiveTab('template')}>
+          <Plus size={24} />
+        </button>
+        <button className="ps-floating-layer btn-press" onClick={() => setMobileTab(mobileTab === 'export' ? null : 'export')}>
+          {state.screenshotUrl ? <img src={state.screenshotUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Layers size={20} />}
+        </button>
       </div>
 
-      {/* ── MOBILE LAYOUT ──────────────────────────────────────── */}
-      {/* Canvas fills the full screen; tab bar + sheet float over it */}
-      <div className="mobile-layout" style={{ position: 'relative', overflow: 'hidden' }}>
-
-        {/* Canvas — absolute full fill */}
-        <div style={{ position: 'absolute', inset: 0 }} className="canvas-bg">
-
-          <Canvas
-            ref={canvasRef}
-            viewerRef={viewerRef}
-            textOverlays={state.texts}
-            onUpdateText={updateText}
-            moviePlaying={moviePlaying}
-            movieTimeRef={movieTimeRef}
-          />
-        </div>
-
-
-        {/* ── Floating glass panel — appears above tab bar ─── */}
+      {/* ── FLOATING CONTENT SHEET ────────────────────────────────── */}
+      <AnimatePresence>
         {mobileTab !== null && (
-          <>
-            {/* Invisible tap-to-close overlay (no dim) */}
-            <div
-              style={{ position: 'absolute', inset: 0, zIndex: 20 }}
-              onClick={() => setMobileTab(null)}
-            />
-            <div style={{
-              position: 'absolute',
-              bottom: state.movieMode ? (timelineCollapsed ? 96 : 180) : 58,
-              left: 8, right: 8, zIndex: 30,
-              maxHeight: state.movieMode ? (timelineCollapsed ? '68vh' : '48vh') : '70vh',
-              background: 'transparent',
-              backdropFilter: 'none',
-              WebkitBackdropFilter: 'none',
-              borderRadius: 20,
-              border: 'none',
-              boxShadow: 'none',
-              display: 'flex', flexDirection: 'column',
-              overflow: 'hidden',
-            } as React.CSSProperties}>
-              {/* Content — no header, no handle, content starts immediately */}
-              <div className="styled-scroll" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-                {mobileTab === 'export' ? (
-                  <RightPanel
-                    canvasRef={canvasRef}
-                    viewerRef={viewerRef}
-                    textOverlays={state.texts}
-                    onUpdateText={updateText}
-                    onRemoveText={removeText}
-                  />
-                ) : (
-                  <LeftPanel mobile mobileContentOnly={mobileTab as Tab} activeTab={activeTab} setActiveTab={setActiveTab} />
-                )}
-              </div>
-            </div>
-          </>
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 20, opacity: 0 }}
+            style={{
+              position: 'absolute', bottom: 140, left: 20, right: 20, zIndex: 90,
+              background: 'rgba(26,26,26,0.95)', backdropFilter: 'blur(20px)',
+              borderRadius: 24, padding: 20, border: '1px solid rgba(255,255,255,0.1)',
+              maxHeight: '60vh', overflowY: 'auto', boxShadow: '0 -20px 40px rgba(0,0,0,0.5)'
+            }}
+          >
+            {mobileTab === 'export' ? (
+              <RightPanel canvasRef={canvasRef} viewerRef={viewerRef} textOverlays={state.texts} onUpdateText={updateText} onRemoveText={removeText} />
+            ) : (
+              <LeftPanel mobile mobileContentOnly={mobileTab as any} activeTab={activeTab} setActiveTab={setActiveTab} />
+            )}
+          </motion.div>
         )}
+      </AnimatePresence>
 
-        {/* ── Floating top bar — mode group + undo/redo + export ── */}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 40,
-          display: 'grid', gridTemplateColumns: '1fr auto 1fr',
-          alignItems: 'center',
-          padding: '10px 14px',
-          pointerEvents: 'none',
+      {/* ── BOTTOM NAVIGATION & ACTION BAR ────────────────────────── */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 110 }}>
+        {/* Category Icons Row */}
+        <nav className="ps-bottom-nav">
+          <button onClick={() => { setActiveTab('presets'); setMobileTab('presets'); }} className={`ps-nav-item ${activeTab === 'presets' ? 'active' : ''}`}>
+            <Sparkles size={22} strokeWidth={activeTab === 'presets' ? 2.5 : 1.8} />
+            <span>Preajustes</span>
+          </button>
+          <button onClick={() => { setActiveTab('device'); setMobileTab('device'); }} className={`ps-nav-item ${activeTab === 'device' ? 'active' : ''}`}>
+            <Smartphone size={22} strokeWidth={activeTab === 'device' ? 2.5 : 1.8} />
+            <span>Dispositivo</span>
+          </button>
+          <button onClick={() => { setActiveTab('background'); setMobileTab('background'); }} className={`ps-nav-item ${activeTab === 'background' ? 'active' : ''}`}>
+            <ImageIcon size={22} strokeWidth={activeTab === 'background' ? 2.5 : 1.8} />
+            <span>Fondo</span>
+          </button>
+          <button onClick={() => { setActiveTab('overlay'); setMobileTab('overlay'); }} className={`ps-nav-item ${activeTab === 'overlay' ? 'active' : ''}`}>
+            <LayoutGrid size={22} strokeWidth={activeTab === 'overlay' ? 2.5 : 1.8} />
+            <span>Efectos</span>
+          </button>
+          <button onClick={() => { setActiveTab('labels'); setMobileTab('labels'); }} className={`ps-nav-item ${activeTab === 'labels' ? 'active' : ''}`}>
+            <Tags size={22} strokeWidth={activeTab === 'labels' ? 2.5 : 1.8} />
+            <span>Etiquetas</span>
+          </button>
+          <button onClick={() => { setActiveTab('annotate'); setMobileTab('annotate'); }} className={`ps-nav-item ${activeTab === 'annotate' ? 'active' : ''}`}>
+            <Pencil size={22} strokeWidth={activeTab === 'annotate' ? 2.5 : 1.8} />
+            <span>Anotar</span>
+          </button>
+          <button onClick={() => { setActiveTab('canvas'); setMobileTab('canvas'); }} className={`ps-nav-item ${activeTab === 'canvas' ? 'active' : ''}`}>
+            <Sliders size={22} strokeWidth={activeTab === 'canvas' ? 2.5 : 1.8} />
+            <span>Escena</span>
+          </button>
+          <button onClick={() => { setActiveTab('template'); setMobileTab('template'); }} className={`ps-nav-item ${activeTab === 'template' ? 'active' : ''}`}>
+            <Box size={22} strokeWidth={activeTab === 'template' ? 2.5 : 1.8} />
+            <span>Modelos</span>
+          </button>
+        </nav>
+
+        {/* Main Action Pill Container */}
+        <div style={{ 
+          background: 'rgba(10,10,10,1)', padding: '0 0 20px', 
+          display: 'flex', justifyContent: 'center' 
         }}>
-          {/* Left: Image / Movie group button */}
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{
-              display: 'flex', alignItems: 'center',
-              background: 'rgba(22,24,26,0.82)',
-              backdropFilter: 'blur(14px)',
-              WebkitBackdropFilter: 'blur(14px)',
-              borderRadius: 14, padding: 3,
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
-              pointerEvents: 'auto',
-            } as React.CSSProperties}>
-              {CREATION_MODES.map(mode => {
-                const isActive = state.creationMode === mode.id;
-                const isMovie = mode.id === 'movie';
-                return (
-                  <button key={mode.id} onClick={() => handleModeChange(mode.id)}
-                    aria-label={mode.desc}
-                    aria-pressed={isActive}
-                    className="btn-press"
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      padding: '7px 14px', borderRadius: 11, cursor: 'pointer',
-                      fontSize: 12, fontWeight: 600,
-                      transition: 'all 0.13s',
-                      background: isActive ? (isMovie ? '#161819' : 'rgba(255,255,255,0.14)') : 'transparent',
-                      border: isActive ? `1px solid ${isMovie ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.14)'}` : '1px solid transparent',
-                      color: isActive ? '#fff' : 'rgba(255,255,255,0.52)',
-                      boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
-                    }}>
-                    {mode.icon}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Center: Undo / Redo group */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 1,
-            background: 'rgba(22,24,26,0.82)',
-            backdropFilter: 'blur(14px)',
-            WebkitBackdropFilter: 'blur(14px)',
-            borderRadius: 14, padding: 3,
-            border: '1px solid rgba(255,255,255,0.12)',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
-            pointerEvents: 'auto',
-          } as React.CSSProperties}>
-            {TOOLBAR_ACTIONS.map(({ action, enabled, icon: Icon, title }, i) => (
-              <button
-                key={i}
-                onClick={action}
-                disabled={!enabled}
-                aria-label={title}
-                className="btn-press"
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  width: 32, height: 32, borderRadius: 8,
-                  cursor: enabled ? 'pointer' : 'not-allowed',
-                  transition: 'background 0.12s, opacity 0.12s',
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--rt-text-2)',
-                  opacity: enabled ? 1 : 0.3,
-                }}
-                onMouseEnter={e => { if (enabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.14)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-              >
-                <Icon size={15} strokeWidth={2} />
-              </button>
-            ))}
-          </div>
-
-          {/* Right: Export button */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button
-              onClick={() => setMobileTab(mobileTab === 'export' ? null : 'export')}
-              aria-label={mobileTab === 'export' ? 'Close export panel' : 'Open export panel'}
-              className="btn-press"
-              style={{
-                display: 'flex', alignItems: 'center', gap: 7,
-                padding: '9px 16px', borderRadius: 14,
-                fontSize: 13, fontWeight: 700,
-                background: mobileTab === 'export'
-                  ? 'rgba(255,255,255,0.20)'
-                  : 'rgba(22,24,26,0.82)',
-                backdropFilter: 'blur(14px)',
-                WebkitBackdropFilter: 'blur(14px)',
-                border: mobileTab === 'export'
-                  ? '1px solid rgba(255,255,255,0.25)'
-                  : '1px solid rgba(255,255,255,0.08)',
-                color: '#fff',
-                cursor: 'pointer', transition: 'all 0.13s',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
-                pointerEvents: 'auto',
-              } as React.CSSProperties}>
-              <Download size={14} />
+          <div className="ps-action-pill">
+            <button className="ps-action-item">
+              Asistente de IA
+            </button>
+            <button 
+              className={`ps-action-item ${mobileTab !== null ? 'active' : ''}`}
+              onClick={() => {
+                if (mobileTab !== null) setMobileTab(null);
+                else setMobileTab(activeTab as any);
+              }}
+            >
+              Herramientas
             </button>
           </div>
         </div>
-
-        {/* ── Bottom: tab bar (+ timeline in movie mode) ── */}
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 40,
-          display: 'flex', flexDirection: 'column',
-        }}>
-          {/* Tab pill row */}
-          <nav aria-label="Editor tabs" style={{
-            display: 'flex', gap: 8, overflowX: 'auto', padding: '10px 14px 22px',
-            background: 'transparent', scrollbarWidth: 'none',
-          } as React.CSSProperties} className="tab-bar-scroll">
-            {TAB_ICONS.map(({ id, icon: Icon, label }) => {
-              const active = mobileTab === id;
-              return (
-                <button key={id}
-                  onClick={() => setMobileTab(active ? null : id)}
-                  aria-label={label}
-                  aria-pressed={active}
-                  className="btn-press"
-                  style={{
-                    flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7,
-                    padding: '10px 16px', borderRadius: 24,
-                    fontSize: 13, fontWeight: 600, letterSpacing: '-0.01em',
-                    background: active ? 'rgba(255,255,255,0.18)' : 'rgba(30,30,32,0.88)',
-                    border: active ? '1px solid rgba(255,255,255,0.25)' : '1px solid rgba(255,255,255,0.06)',
-                    color: active ? '#fff' : 'rgba(255,255,255,0.78)',
-                    cursor: 'pointer', transition: 'all 0.14s', whiteSpace: 'nowrap',
-                    boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
-                    backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-                  }}>
-                  <Icon size={14} strokeWidth={active ? 2.2 : 1.8} />
-                  {label}
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Timeline — sits below the tab bar when movie mode is active */}
-          {state.movieMode && (
-            <MovieTimeline
-              ref={movieTimelineRef}
-              viewerRef={viewerRef}
-              movieTimeRef={movieTimeRef}
-              canvasRef={canvasRef}
-              hideManualKeyframeButton
-              forceCollapsed={!!mobileTab}
-              onPlayingChange={setMoviePlaying}
-              onCollapsedChange={setTimelineCollapsed}
-              onClose={() => { updateState({ movieMode: false }); setMoviePlaying(false); setMobileTab(null); setTimelineCollapsed(false); }}
-            />
-          )}
-        </div>
       </div>
+
+      {/* Timeline (only in movie mode) */}
+      {state.movieMode && (
+        <div style={{ position: 'absolute', bottom: 130, left: 0, right: 0, zIndex: 120 }}>
+          <MovieTimeline
+            ref={movieTimelineRef} viewerRef={viewerRef} movieTimeRef={movieTimeRef} canvasRef={canvasRef}
+            onPlayingChange={setMoviePlaying}
+            onClose={() => { updateState({ movieMode: false }); setMoviePlaying(false); }}
+          />
+        </div>
+      )}
     </div>
   );
 }
