@@ -19,10 +19,17 @@ import {
   Home, Crown, Lightbulb, MoreHorizontal,
   Plus, LayoutGrid, Image as ImageIcon, Wand2, Type, 
   Settings2, Box, Palette, Pencil, MousePointer2, Layers,
-  Tags, Sliders, Blend, PenLine, Sparkles
+  Tags, Sliders, Blend, PenLine, Sparkles,
+  ChevronLeft, ArrowLeft,
+  User, Pipette,
+  Settings, Focus, ScanLine, RotateCw,
+  CirclePlay, CircleStop, CirclePlus, CircleMinus, MousePointerSquareDashed,
+  PlusCircle, Sun, Lamp, Maximize, Activity, Trash2
 } from 'lucide-react';
 import { GridOverlay } from './components/ui/GridOverlay';
-import { getModelById } from './data/devices';
+import { getModelById, DEVICE_MODELS, DEVICE_GROUPS } from './data/devices';
+import { PRESENT_POSES } from './data/panelConstants';
+import { DeviceThumbnail, PoseThumbnail, MaskThumbnail } from './components/ui/DeviceThumbnails';
 import type { Device3DViewerHandle } from './components/devices3d/Device3DViewer';
 
 function Shortcut({ children }: { children: React.ReactNode }) {
@@ -192,18 +199,31 @@ function Editor() {
       </header>
 
       {/* ── FLOATING AUXILIARY BUTTONS ────────────────────────────── */}
-      <div style={{ position: 'absolute', bottom: 160, right: 20, zIndex: 100, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
-        <button className="ps-floating-circle btn-press" onClick={() => setActiveTab('template')}>
-          <Plus size={24} />
-        </button>
-        <button className="ps-floating-layer btn-press" onClick={() => setMobileTab(mobileTab === 'export' ? null : 'export')}>
-          {state.screenshotUrl ? <img src={state.screenshotUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Layers size={20} />}
-        </button>
+      <div style={{ position: 'absolute', bottom: mobileTab ? 210 : 160, right: 20, zIndex: 100, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', transition: 'bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+        {mobileTab === 'annotate' ? (
+          <>
+            <button className="btn-press" style={{ width: 36, height: 36, borderRadius: 18, background: '#1c1c1e', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+            </button>
+            <button className="btn-press" style={{ background: 'none', border: 'none', padding: 0 }}>
+               <MaskThumbnail active />
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="ps-floating-circle btn-press" onClick={() => setActiveTab('template')}>
+              <Plus size={24} />
+            </button>
+            <button className="ps-floating-layer btn-press" onClick={() => setMobileTab(mobileTab === 'export' ? null : 'export')}>
+              {state.screenshotUrl ? <img src={state.screenshotUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} /> : <Layers size={20} />}
+            </button>
+          </>
+        )}
       </div>
 
-      {/* ── FLOATING CONTENT SHEET ────────────────────────────────── */}
+      {/* ── FLOATING CONTENT SHEET (Export) ─────────────────────────── */}
       <AnimatePresence>
-        {mobileTab !== null && (
+        {mobileTab === 'export' && (
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -215,73 +235,395 @@ function Editor() {
               maxHeight: '60vh', overflowY: 'auto', boxShadow: '0 -20px 40px rgba(0,0,0,0.5)'
             }}
           >
-            {mobileTab === 'export' ? (
-              <RightPanel canvasRef={canvasRef} viewerRef={viewerRef} textOverlays={state.texts} onUpdateText={updateText} onRemoveText={removeText} />
-            ) : (
-              <LeftPanel mobile mobileContentOnly={mobileTab as any} activeTab={activeTab} setActiveTab={setActiveTab} />
-            )}
+            <RightPanel canvasRef={canvasRef} viewerRef={viewerRef} textOverlays={state.texts} onUpdateText={updateText} onRemoveText={removeText} />
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* ── BOTTOM NAVIGATION & ACTION BAR ────────────────────────── */}
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 110 }}>
-        {/* Category Icons Row */}
-        <nav className="ps-bottom-nav">
-          <button onClick={() => { setActiveTab('presets'); setMobileTab('presets'); }} className={`ps-nav-item ${activeTab === 'presets' ? 'active' : ''}`}>
-            <Sparkles size={22} strokeWidth={activeTab === 'presets' ? 2.5 : 1.8} />
-            <span>Preajustes</span>
-          </button>
-          <button onClick={() => { setActiveTab('device'); setMobileTab('device'); }} className={`ps-nav-item ${activeTab === 'device' ? 'active' : ''}`}>
-            <Smartphone size={22} strokeWidth={activeTab === 'device' ? 2.5 : 1.8} />
-            <span>Dispositivo</span>
-          </button>
-          <button onClick={() => { setActiveTab('background'); setMobileTab('background'); }} className={`ps-nav-item ${activeTab === 'background' ? 'active' : ''}`}>
-            <ImageIcon size={22} strokeWidth={activeTab === 'background' ? 2.5 : 1.8} />
-            <span>Fondo</span>
-          </button>
-          <button onClick={() => { setActiveTab('overlay'); setMobileTab('overlay'); }} className={`ps-nav-item ${activeTab === 'overlay' ? 'active' : ''}`}>
-            <LayoutGrid size={22} strokeWidth={activeTab === 'overlay' ? 2.5 : 1.8} />
-            <span>Efectos</span>
-          </button>
-          <button onClick={() => { setActiveTab('labels'); setMobileTab('labels'); }} className={`ps-nav-item ${activeTab === 'labels' ? 'active' : ''}`}>
-            <Tags size={22} strokeWidth={activeTab === 'labels' ? 2.5 : 1.8} />
-            <span>Etiquetas</span>
-          </button>
-          <button onClick={() => { setActiveTab('annotate'); setMobileTab('annotate'); }} className={`ps-nav-item ${activeTab === 'annotate' ? 'active' : ''}`}>
-            <Pencil size={22} strokeWidth={activeTab === 'annotate' ? 2.5 : 1.8} />
-            <span>Anotar</span>
-          </button>
-          <button onClick={() => { setActiveTab('canvas'); setMobileTab('canvas'); }} className={`ps-nav-item ${activeTab === 'canvas' ? 'active' : ''}`}>
-            <Sliders size={22} strokeWidth={activeTab === 'canvas' ? 2.5 : 1.8} />
-            <span>Escena</span>
-          </button>
-          <button onClick={() => { setActiveTab('template'); setMobileTab('template'); }} className={`ps-nav-item ${activeTab === 'template' ? 'active' : ''}`}>
-            <Box size={22} strokeWidth={activeTab === 'template' ? 2.5 : 1.8} />
-            <span>Modelos</span>
-          </button>
-        </nav>
-
-        {/* Main Action Pill Container */}
-        <div style={{ 
-          background: 'rgba(10,10,10,1)', padding: '0 0 20px', 
-          display: 'flex', justifyContent: 'center' 
-        }}>
-          <div className="ps-action-pill">
-            <button className="ps-action-item">
-              Asistente de IA
-            </button>
-            <button 
-              className={`ps-action-item ${mobileTab !== null ? 'active' : ''}`}
-              onClick={() => {
-                if (mobileTab !== null) setMobileTab(null);
-                else setMobileTab(activeTab as any);
-              }}
+        <AnimatePresence mode="wait">
+          {mobileTab === null ? (
+            <motion.div
+              key="main-nav"
+              initial={{ y: 100 }}
+              animate={{ y: 0 }}
+              exit={{ y: 100 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             >
-              Herramientas
-            </button>
-          </div>
-        </div>
+              <nav className="ps-bottom-nav">
+                <button onClick={() => { setActiveTab('presets'); setMobileTab('presets'); }} className={`ps-nav-item ${activeTab === 'presets' ? 'active' : ''}`}>
+                  <Sparkles size={22} strokeWidth={activeTab === 'presets' ? 2.5 : 1.8} />
+                  <span>Preajustes</span>
+                </button>
+                <button onClick={() => { setActiveTab('device'); setMobileTab('device'); }} className={`ps-nav-item ${activeTab === 'device' ? 'active' : ''}`}>
+                  <Smartphone size={22} strokeWidth={activeTab === 'device' ? 2.5 : 1.8} />
+                  <span>Dispositivo</span>
+                </button>
+                <button onClick={() => { setActiveTab('background'); setMobileTab('background'); }} className={`ps-nav-item ${activeTab === 'background' ? 'active' : ''}`}>
+                  <ImageIcon size={22} strokeWidth={activeTab === 'background' ? 2.5 : 1.8} />
+                  <span>Fondo</span>
+                </button>
+                <button onClick={() => { setActiveTab('overlay'); setMobileTab('overlay'); }} className={`ps-nav-item ${activeTab === 'overlay' ? 'active' : ''}`}>
+                  <LayoutGrid size={22} strokeWidth={activeTab === 'overlay' ? 2.5 : 1.8} />
+                  <span>Capa</span>
+                </button>
+                <button onClick={() => { setActiveTab('labels'); setMobileTab('labels'); }} className={`ps-nav-item ${activeTab === 'labels' ? 'active' : ''}`}>
+                  <Tags size={22} strokeWidth={activeTab === 'labels' ? 2.5 : 1.8} />
+                  <span>Etiquetas</span>
+                </button>
+                <button onClick={() => { setActiveTab('canvas'); setMobileTab('canvas'); }} className={`ps-nav-item ${activeTab === 'canvas' ? 'active' : ''}`}>
+                  <Sliders size={22} strokeWidth={activeTab === 'canvas' ? 2.5 : 1.8} />
+                  <span>Escena</span>
+                </button>
+                <button onClick={() => { setActiveTab('overlay'); setMobileTab('overlay'); }} className={`ps-nav-item ${activeTab === 'overlay' ? 'active' : ''}`}>
+                  <LayoutGrid size={22} strokeWidth={activeTab === 'overlay' ? 2.5 : 1.8} />
+                  <span>Capa</span>
+                </button>
+                <button onClick={() => { setActiveTab('annotate'); setMobileTab('annotate'); }} className={`ps-nav-item ${activeTab === 'annotate' ? 'active' : ''}`}>
+                  <Pencil size={22} strokeWidth={activeTab === 'annotate' ? 2.5 : 1.8} />
+                  <span>Máscara</span>
+                </button>
+              </nav>
+
+              <div style={{ background: 'rgba(10,10,10,1)', padding: '0 0 20px', display: 'flex', justifyContent: 'center' }}>
+                <div className="ps-action-pill" style={{ position: 'relative', minWidth: 200 }}>
+                  <button 
+                    className={`ps-action-item ${state.creationMode === 'mockup' ? 'active' : ''}`}
+                    onClick={() => handleModeChange('mockup')}
+                    style={{ position: 'relative', zIndex: 1, flex: 1 }}
+                  >
+                    {state.creationMode === 'mockup' && (
+                      <motion.div
+                        layoutId="active-action-pill"
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background: '#3a3a3a',
+                          borderRadius: 26,
+                          zIndex: -1,
+                        }}
+                        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                    Imagen
+                  </button>
+                  <button 
+                    className={`ps-action-item ${state.creationMode === 'movie' ? 'active' : ''}`}
+                    onClick={() => handleModeChange('movie')}
+                    style={{ position: 'relative', zIndex: 1, flex: 1 }}
+                  >
+                    {state.creationMode === 'movie' && (
+                      <motion.div
+                        layoutId="active-action-pill"
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background: '#3a3a3a',
+                          borderRadius: 26,
+                          zIndex: -1,
+                        }}
+                        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                    Película
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="context-nav"
+              initial={{ y: 100 }}
+              animate={{ y: 0 }}
+              exit={{ y: 100 }}
+              className="ps-tiered-nav"
+            >
+              {/* Floating Action Circles (Above tiers) */}
+              <div style={{ 
+                display: 'flex', justifyContent: 'center', gap: 16, 
+                position: 'absolute', top: -64, left: 0, right: 0,
+                pointerEvents: 'none'
+              }}>
+                {mobileTab === 'annotate' && (
+                  <>
+                    {/* View Mask Button (Left) */}
+                    <button className="ps-tool-icon-btn btn-press" style={{ pointerEvents: 'auto', background: '#1c1c1e', color: '#fff', border: 'none', width: 44, height: 44, borderRadius: 22, boxShadow: '0 4px 12px rgba(0,0,0,0.4)', position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', inset: 8, borderRadius: 4, backgroundImage: 'linear-gradient(45deg, #444 25%, transparent 25%), linear-gradient(-45deg, #444 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #444 75%), linear-gradient(-45deg, transparent 75%, #444 75%)', backgroundSize: '8px 8px', backgroundColor: '#222' }} />
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                      </div>
+                    </button>
+                    
+                    {/* Add/Subtract Pill (Center) */}
+                    <div style={{ pointerEvents: 'auto', display: 'flex', background: '#1c1c1e', borderRadius: 30, padding: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
+                      <button className="btn-press" style={{ width: 40, height: 40, borderRadius: 20, background: '#f5f5f7', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none' }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+                      </button>
+                      <button className="btn-press" style={{ width: 40, height: 40, borderRadius: 20, background: 'transparent', color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none' }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5"/><path d="M8 12h8"/></svg>
+                      </button>
+                    </div>
+
+                    {/* More Options Button (Right) */}
+                    <button className="ps-tool-icon-btn btn-press" style={{ pointerEvents: 'auto', background: '#1c1c1e', color: '#fff', border: 'none', width: 44, height: 44, borderRadius: 22, boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
+                      <MoreHorizontal size={20} />
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Tier 1: Contextual Tools (icons with labels) */}
+              <div className="ps-tier-tools" style={{ padding: '20px 20px 10px' }}>
+                {mobileTab === 'presets' && PRESENT_POSES.map(pose => {
+                  const active = state.cameraAngle === pose.id;
+                  return (
+                    <div key={pose.id} className="ps-tool-thumb-box">
+                      <button 
+                        className={`ps-tool-thumb btn-press ${active ? 'active' : ''}`}
+                        onClick={() => updateState({ cameraAngle: pose.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}
+                      >
+                        <PoseThumbnail ry={pose.ry} rx={pose.rx} rz={pose.rz} active={active} mini />
+                      </button>
+                      <span className="ps-tool-label">{pose.label}</span>
+                    </div>
+                  );
+                })}
+
+                {mobileTab === 'device' && (
+                  <>
+                    {DEVICE_GROUPS.map(group => {
+                      const repModel = DEVICE_MODELS.find(m => m.group === group);
+                      const isActive = getModelById(state.deviceModel)?.group === group && state.deviceSubTab === 'models';
+                      return (
+                        <div key={group} className="ps-tool-thumb-box">
+                          <button 
+                            className={`ps-tool-thumb btn-press ${isActive ? 'active' : ''}`}
+                            onClick={() => {
+                              if (repModel) updateState({ 
+                                deviceModel: repModel.id, 
+                                deviceType: repModel.storeType,
+                                deviceColor: repModel.useOriginalMaterials ? 'original' : 'titanium',
+                                deviceSubTab: 'models'
+                              });
+                            }}
+                          >
+                            <div style={{ transform: 'scale(1.3)' }}>
+                              <DeviceThumbnail modelId={repModel?.id || ''} isSelected={isActive} />
+                            </div>
+                          </button>
+                          <span className="ps-tool-label">{group}</span>
+                        </div>
+                      );
+                    })}
+
+                    <div style={{ width: 1, background: 'rgba(255,255,255,0.12)', height: 64, margin: '0 4px', borderRadius: 2 }} />
+
+                    <div className="ps-tool-thumb-box">
+                      <button 
+                        className={`ps-tool-thumb btn-press ${state.deviceSubTab === 'colors' ? 'active' : ''}`}
+                        onClick={() => updateState({ deviceSubTab: 'colors' })}
+                      >
+                        <Palette size={24} />
+                      </button>
+                      <span className="ps-tool-label">Color</span>
+                    </div>
+
+                    <div className="ps-tool-thumb-box">
+                      <button 
+                        className={`ps-tool-thumb btn-press ${state.deviceSubTab === 'orientation' || state.deviceSubTab === 'browser-theme' ? 'active' : ''}`}
+                        onClick={() => updateState({ deviceSubTab: state.deviceType === 'browser' ? 'browser-theme' : 'orientation' })}
+                      >
+                        <RotateCw size={24} />
+                      </button>
+                      <span className="ps-tool-label">{state.deviceType === 'browser' ? 'Tema' : 'Orientación'}</span>
+                    </div>
+                  </>
+                )}
+
+                {mobileTab === 'annotate' && [
+                  { 
+                    id: 'subject', 
+                    label: 'Sujeto: Preciso', 
+                    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M5 3v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3" strokeDasharray="3 3"/></svg>
+                  },
+                  { 
+                    id: 'bg',      
+                    label: 'Fondo: Preciso',  
+                    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" strokeDasharray="3 3"/><circle cx="12" cy="7" r="4" strokeDasharray="3 3"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                  },
+                  { 
+                    id: 'brush',   
+                    label: 'Pincel: Suave',   
+                    icon: <MaskThumbnail active /> 
+                  },
+                  { 
+                    id: 'mask',    
+                    label: 'Máscara',         
+                    icon: <MaskThumbnail type="horizontal" /> 
+                  },
+                ].map((tool, idx) => (
+                  <div key={tool.id} className="ps-tool-thumb-box">
+                    <button 
+                      className={`ps-tool-thumb btn-press ${idx === 2 ? 'active' : ''}`}
+                      onClick={() => idx === 2 && updateState({ annotateMode: true })}
+                      style={{ padding: 0, width: 60, height: 60, borderRadius: 8, background: '#1c1c1e', border: idx === 2 ? '2px solid #3498db' : '1px solid transparent' }}
+                    >
+                      {tool.icon}
+                    </button>
+                    <span className="ps-tool-label">{tool.label}</span>
+                  </div>
+                ))}
+                
+                {mobileTab === 'background' && (
+                  <>
+                    {[
+                      { id: 'solid', icon: <Palette size={24} />, label: 'Sólido' },
+                      { id: 'gradient', icon: <Blend size={24} />, label: 'Degradado' },
+                      { id: 'image', icon: <ImageIcon size={24} />, label: 'Imagen' },
+                      { id: 'color', icon: <Pipette size={24} />, label: 'Gotero' },
+                    ].map(tool => (
+                      <div key={tool.id} className="ps-tool-thumb-box">
+                        <button 
+                          className={`ps-tool-thumb btn-press ${(state.bgType === tool.id && !state.showBgSettings) ? 'active' : ''}`}
+                          onClick={() => updateState({ bgType: tool.id as any, showBgSettings: false })}
+                        >
+                          {tool.icon}
+                        </button>
+                        <span className="ps-tool-label">{tool.label}</span>
+                      </div>
+                    ))}
+                    
+                    <div style={{ width: 1, background: 'rgba(255,255,255,0.12)', height: 64, margin: '0 4px', borderRadius: 2 }} />
+
+                    <div className="ps-tool-thumb-box">
+                      <button 
+                        className={`ps-tool-thumb btn-press ${state.showBgSettings ? 'active' : ''}`}
+                        onClick={() => updateState({ showBgSettings: !state.showBgSettings })}
+                      >
+                        <Settings2 size={24} />
+                      </button>
+                      <span className="ps-tool-label">Ajustes</span>
+                    </div>
+                  </>
+                )}
+
+                {mobileTab === 'canvas' && (
+                  <>
+                    {[
+                      { id: 'estudio', icon: <Sun size={24} />, label: 'Estudio' },
+                      { id: 'luz', icon: <Lamp size={24} />, label: 'Luz' },
+                    ].map(tool => (
+                      <div key={tool.id} className="ps-tool-thumb-box">
+                        <button 
+                          className={`ps-tool-thumb btn-press ${state.sceneSubTab === tool.id ? 'active' : ''}`}
+                          onClick={() => updateState({ sceneSubTab: tool.id as any })}
+                        >
+                          {tool.icon}
+                        </button>
+                        <span className="ps-tool-label">{tool.label}</span>
+                      </div>
+                    ))}
+                    
+                    <div style={{ width: 1, background: 'rgba(255,255,255,0.12)', height: 64, margin: '0 4px', borderRadius: 2 }} />
+
+                    {[
+                      { id: 'camera', icon: <Maximize size={24} />, label: 'Cámara' },
+                      { id: 'motion', icon: <Activity size={24} />, label: 'Movimiento' },
+                    ].map(tool => (
+                      <div key={tool.id} className="ps-tool-thumb-box">
+                        <button 
+                          className={`ps-tool-thumb btn-press ${state.sceneSubTab === tool.id ? 'active' : ''}`}
+                          onClick={() => updateState({ sceneSubTab: tool.id as any })}
+                        >
+                          {tool.icon}
+                        </button>
+                        <span className="ps-tool-label">{tool.label}</span>
+                      </div>
+                    ))}
+
+                    <div style={{ width: 1, background: 'rgba(255,255,255,0.12)', height: 64, margin: '0 4px', borderRadius: 2 }} />
+
+                    {[
+                      { id: 'effects', icon: <Sparkles size={24} />, label: 'Efectos' },
+                      { id: 'shadow', icon: <Layers size={24} />, label: 'Sombras' },
+                    ].map(tool => (
+                      <div key={tool.id} className="ps-tool-thumb-box">
+                        <button 
+                          className={`ps-tool-thumb btn-press ${state.sceneSubTab === tool.id ? 'active' : ''}`}
+                          onClick={() => updateState({ sceneSubTab: tool.id as any })}
+                        >
+                          {tool.icon}
+                        </button>
+                        <span className="ps-tool-label">{tool.label}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {mobileTab === 'labels' && (
+                  <>
+                    {[
+                      { id: 'view', icon: <MousePointer2 size={24} />, label: 'Gestionar' },
+                      { id: 'add', icon: <PlusCircle size={24} />, label: 'Anclar' },
+                      { id: 'subtract', icon: <Trash2 size={24} />, label: 'Limpiar' },
+                    ].map(tool => (
+                      <div key={tool.id} className="ps-tool-thumb-box">
+                        <button 
+                          className={`ps-tool-thumb btn-press ${state.labelsSubTab === tool.id ? 'active' : ''}`}
+                          onClick={() => updateState({ labelsSubTab: tool.id as any })}
+                        >
+                          {tool.icon}
+                        </button>
+                        <span className="ps-tool-label">{tool.label}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+
+              {/* Tier 2: Action Pill (Photoshop Style Primary Action) */}
+              {mobileTab === 'annotate' && (
+                <div className="ps-tier-info" style={{ padding: '4px 20px 10px', justifyContent: 'space-between', gap: 16 }}>
+                  <button className="ps-active-tool-pill btn-press" style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#e0e0e0', color: '#111', padding: '10px 18px', borderRadius: 8, flex: 1, justifyContent: 'center' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="4 4"/><path d="M10 10l8.5 4.5L14 16l-4-6z"/></svg>
+                    <span style={{ fontSize: 13 }}>
+                      Pulse seleccionar
+                    </span>
+                  </button>
+                  <button style={{ color: '#fff', fontSize: 13, fontWeight: 500, border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'center' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5"/><path d="M5 12h14" strokeDasharray="2 4"/><path d="M18 10l3-5c-2-2-5-3-5-3l-7 13"/></svg>
+                    Pincel de sel. rápida
+                  </button>
+                </div>
+              )}
+
+              {/* Tier 2.5: Inline Panel Settings (Replaces Float Modal) */}
+              {(mobileTab !== 'annotate' || state.annotateMode) && mobileTab !== 'presets' && (
+                <div style={{ width: '100%', minWidth: 0, overflowX: 'hidden', maxHeight: '25vh', overflowY: 'auto', padding: '8px 16px', borderTop: '1px solid rgba(255,255,255,0.06)' }} className="styled-scroll hide-scrollbars">
+                  <LeftPanel mobile mobileContentOnly={mobileTab as any} activeTab={activeTab} setActiveTab={setActiveTab} />
+                </div>
+              )}
+
+              {/* Tier 3: Context Footer */}
+              <div className="ps-tier-footer" style={{ padding: '8px 16px 4px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button className="ps-back-btn btn-press" onClick={() => setMobileTab(null)} style={{ background: 'none', border: 'none', color: '#fff', padding: 0 }}>
+                  <ChevronLeft size={28} />
+                </button>
+                <span className="ps-context-title">
+                  {mobileTab === 'annotate' ? 'Selecciona el área' : 
+                   mobileTab === 'presets' ? 'Preajustes' : 
+                   mobileTab === 'device' ? 'Dispositivo' : 
+                   mobileTab === 'background' ? 'Fondo' : 
+                   mobileTab === 'overlay' ? 'Efectos' : 
+                   mobileTab === 'labels' ? 'Etiquetas' : 
+                   mobileTab === 'canvas' ? 'Escena' : 
+                   'Modelos'}
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Timeline (only in movie mode) */}

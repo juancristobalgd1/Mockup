@@ -2,13 +2,13 @@ import * as React from 'react';
 import { Layout, Palette, Image as ImageIcon, Sparkles, Pencil, MousePointer2, Settings2, Box } from 'lucide-react';
 
 // Modular Components
-import { DeviceTab } from './left/DeviceTab';
+import { DeviceTab } from './left/DeviceTab.fixed';
 import { BackgroundTab } from './left/BackgroundTab';
 import { OverlayTab } from './left/OverlayTab';
-import { AnnotateTab } from './left/AnnotateTab';
+import { AnnotateTab } from './left/AnnotateTab.fixed';
 import { LabelsTab } from './left/LabelsTab';
 import { SceneTab } from './left/SceneTab';
-import { PresetsTab } from './left/PresetsTab';
+import { PresetsTab } from './left/PresetsTab.fixed';
 import { TemplateTab } from './left/TemplateTab';
 
 import '../../index.css';

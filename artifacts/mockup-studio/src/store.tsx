@@ -105,8 +105,10 @@ export interface AppState {
   bgImage: string | null;
   bgVideo: string | null;
   bgPattern: string;
+  bgPattern: string;
   bgAnimated: string;
   bgOpacity: number;
+  showBgSettings?: boolean;
 
   canvasRatio: CanvasRatio;
   canvasRadius: number;
@@ -193,6 +195,9 @@ export interface AppState {
   creationMode: CreationMode;
   showGrid?: boolean;
   activeLabelId: string | null;
+  deviceSubTab: 'models' | 'colors' | 'orientation' | 'browser-theme';
+  sceneSubTab: 'estudio' | 'luz' | 'camera' | 'motion' | 'effects' | 'shadow';
+  labelsSubTab: 'view' | 'add' | 'subtract';
 }
 
 export const defaultState: AppState = {
@@ -213,6 +218,10 @@ export const defaultState: AppState = {
   bgPattern: "dots",
   bgAnimated: "3d-aura",
   bgOpacity: 100,
+  showBgSettings: false,
+  deviceSubTab: 'models',
+  sceneSubTab: 'estudio',
+  labelsSubTab: 'view',
 
   canvasRatio: "1:1",
   canvasRadius: 0,

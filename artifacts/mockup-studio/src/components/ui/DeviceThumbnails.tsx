@@ -131,3 +131,43 @@ export function PoseThumbnail({ ry, rx, rz, active, mini }: {
     </div>
   );
 }
+// ── Mask thumbnail ──────────────────────────────────────────────
+export function MaskThumbnail({ active, type = 'blob' }: { active?: boolean; type?: 'blob' | 'horizontal' }) {
+  return (
+    <div style={{
+      width: 44, height: 44,
+      background: 'rgba(0,0,0,0.5)',
+      borderRadius: 8,
+      position: 'relative',
+      overflow: 'hidden',
+      border: active ? '1.5px solid var(--ps-accent-blue)' : '1px solid rgba(255,255,255,0.1)'
+    }}>
+      {/* Checkered background */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: 'linear-gradient(45deg, #222 25%, transparent 25%), linear-gradient(-45deg, #222 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #222 75%), linear-gradient(-45deg, transparent 75%, #222 75%)',
+        backgroundSize: '10px 10px',
+        backgroundPosition: '0 0, 0 5px, 5px 5px, 5px 0',
+        backgroundColor: '#111'
+      }} />
+      {/* White mask */}
+      {type === 'blob' ? (
+        <div style={{
+          position: 'absolute', top: '20%', left: '20%', width: '60%', height: '60%',
+          background: '#fff',
+          borderRadius: '35% 65% 55% 45% / 45% 35% 65% 55%',
+          filter: 'blur(1px)',
+          opacity: 0.9
+        }} />
+      ) : (
+        <div style={{
+          position: 'absolute', top: '40%', left: '10%', width: '80%', height: '20%',
+          background: '#fff',
+          borderRadius: 4,
+          filter: 'blur(1px)',
+          opacity: 0.9
+        }} />
+      )}
+    </div>
+  );
+}

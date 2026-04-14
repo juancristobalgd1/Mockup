@@ -1,12 +1,12 @@
 import * as React from 'react';
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { 
   Plus, Trash2, MapPin, Settings2, Palette, 
-  Type, ChevronDown, ChevronUp, MousePointer2 
+  MousePointer2 
 } from 'lucide-react';
 import { useApp } from '../../../store';
 import { Section, Chip, Slider, Toggle } from '../../ui/PanelUI';
-import type { LabelAnchorPosition, TextOverlay, LabelTrackingMode, AppState } from '../../../store';
+import type { LabelAnchorPosition, TextOverlay, AppState } from '../../../store';
 
 const LABEL_MODES = [
   { id: 'follow', label: 'Seguir Cámara' },
@@ -29,35 +29,35 @@ const FONTS = ['Inter', 'Roboto', 'Arial', 'Georgia', 'Courier New', 'Times New 
 
 const DeviceSilhouette = ({ children }: { children: React.ReactNode }) => (
   <div style={{ 
-    position: 'relative', height: 160, borderRadius: 20, 
+    position: 'relative', height: 260, borderRadius: 24, 
     background: '#09090b', 
-    border: '1px solid rgba(255,255,255,0.12)', 
-    marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden', boxShadow: 'inset 0 0 50px rgba(0,0,0,0.8), 0 4px 20px rgba(0,0,0,0.4)'
+    border: '1px solid rgba(255,255,255,0.08)', 
+    marginBottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden', boxShadow: 'inset 0 0 60px rgba(0,0,0,0.9)'
   }}>
     <div style={{ 
-      position: 'absolute', inset: 0, opacity: 0.12, 
+      position: 'absolute', inset: 0, opacity: 0.08, 
       backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.4) 1px, transparent 1px)', 
-      backgroundSize: '20px 20px' 
+      backgroundSize: '30px 30px' 
     }} />
     <div style={{ 
-      width: 48, height: 96, borderRadius: 12, 
-      border: '2.5px solid rgba(255,255,255,0.2)', 
-      background: 'rgba(255,255,255,0.04)',
-      boxShadow: '0 0 40px rgba(0,0,0,0.6)',
+      width: 70, height: 140, borderRadius: 16, 
+      border: '3px solid rgba(255,255,255,0.15)', 
+      background: 'rgba(255,255,255,0.03)',
+      boxShadow: '0 0 50px rgba(0,0,0,0.7)',
       position: 'relative', zIndex: 1,
       display: 'flex', alignItems: 'center', justifyContent: 'center'
     }}>
-      <div style={{ width: '85%', height: '90%', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }} />
+      <div style={{ width: '85%', height: '90%', borderRadius: 10, background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.04)' }} />
     </div>
     {children}
   </div>
 );
 
-
 export const LabelsTab = () => {
   const { state, updateState, addLabel, clearLabels, updateText, removeText } = useApp();
-  const [lTab, setLTab] = useState<'positions' | 'behavior' | 'style'>(state.labelTabActive ?? 'positions');
+  const [lTab, setLTab] = useState<'positions' | 'behavior' | 'style'>('positions');
+  const isMobile = window.innerWidth <= 768;
   
   const activeLabels = state.texts.filter(text => text.kind === 'label');
   const selectedLabel = activeLabels.find(l => l.id === state.activeLabelId);
@@ -67,11 +67,6 @@ export const LabelsTab = () => {
     { id: 'behavior'  as const, label: 'Conducta', icon: Settings2 },
     { id: 'style'     as const, label: 'Estilo', icon: Palette },
   ];
-
-  const handleSetTab = (tab: typeof lTab) => {
-    setLTab(tab);
-    updateState({ labelTabActive: tab });
-  };
 
   const FIXED_POSITIONS: Record<string, { x: number; y: number }> = {
     'top': { x: 50, y: 16 },
@@ -86,7 +81,6 @@ export const LabelsTab = () => {
 
   const handleUpdate = (updates: any) => {
     if (selectedLabel) {
-      // If switching to 'fixed' mode, initialize coordinates from anchor to avoid jump
       if (updates.labelMode === 'fixed' && (selectedLabel.labelMode !== 'fixed')) {
         const anchor = selectedLabel.labelAnchor || 'right';
         const pos = FIXED_POSITIONS[anchor];
@@ -105,258 +99,285 @@ export const LabelsTab = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      
-      {/* Sub-tabs premium */}
-      <div className="segmented-control" style={{ display: 'flex', gap: 4, borderRadius: 12, padding: 3 }}>
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => handleSetTab(t.id)}
-            className={lTab === t.id ? 'active-pill' : ''}
-            style={{ 
-              flex: 1, height: 32, borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              background: 'transparent',
-              color: lTab === t.id ? '#fff' : 'rgba(255,255,255,0.35)',
-              transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-              textShadow: lTab === t.id ? '0 0 12px rgba(255,255,255,0.3)' : 'none'
-            }}>
-            <t.icon size={13} strokeWidth={lTab === t.id ? 2.5 : 2} />
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <div className="panel-text-contrast">
+      <style>{`
+        .labels-mobile-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin-top: 12px;
+        }
+        .label-pill {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 14px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 14px;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+        .label-pill.active {
+          background: rgba(59,130,246,0.15);
+          border-color: rgba(59,130,246,0.4);
+        }
+      `}</style>
 
+      {/* ── MOBILE DRILL-DOWN VIEW ──────────────────────────────────── */}
+      {isMobile && (
+        <div className="hide-scrollbars" style={{ overflowY: 'auto' }}>
+          {state.labelsSubTab === 'add' && (
+            <Section label="Puntos de Anclaje">
+              <DeviceSilhouette>
+                {LABEL_POSITIONS.map(pos => (
+                  <button key={pos.id} 
+                    onClick={() => { addLabel(pos.id); updateState({ labelsSubTab: 'view' }); }} 
+                    style={{ 
+                      position: 'absolute', left: pos.left, top: pos.top, 
+                      transform: 'translate(-50%,-50%)', width: 28, height: 28, 
+                      borderRadius: '50%', border: '2px solid rgba(255,255,255,0.4)', 
+                      background: 'rgba(255,255,255,0.15)', color: '#fff', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                      cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(8px)',
+                      boxShadow: '0 4px 15px rgba(0,0,0,0.4)'
+                    }}
+                  >
+                    <Plus size={16} strokeWidth={3} />
+                  </button>
+                ))}
+              </DeviceSilhouette>
+            </Section>
+          )}
 
-      <div style={{ minHeight: 180 }}>
-        {/* Pestaña: POSICIÓN */}
-        {lTab === 'positions' && (
-          <Section label="Ubicación y Gestión">
-            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-              <div style={{ flex: '0 0 140px' }}>
-                <DeviceSilhouette>
-                  {LABEL_POSITIONS.map(pos => (
-                    <button key={pos.id} 
-                      onClick={() => addLabel(pos.id)} 
-                      title={`Añadir etiqueta en: ${pos.id}`}
-                      style={{ 
-                        position: 'absolute', left: pos.left, top: pos.top, 
-                        transform: 'translate(-50%,-50%)', width: 20, height: 20, 
-                        borderRadius: '50%', border: '1px solid rgba(255,255,255,0.3)', 
-                        background: 'rgba(255,255,255,0.1)', color: '#fff', 
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                        cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                        zIndex: 2,
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                        backdropFilter: 'blur(4px)'
-                      }}
-                      onMouseEnter={e => { 
-                        (e.currentTarget as any).style.background = 'rgba(255,255,255,0.25)'; 
-                        (e.currentTarget as any).style.borderColor = 'rgba(255,255,255,0.6)';
-                        (e.currentTarget as any).style.transform = 'translate(-50%,-50%) scale(1.15)'; 
-                      }}
-                      onMouseLeave={e => { 
-                        (e.currentTarget as any).style.background = 'rgba(255,255,255,0.1)'; 
-                        (e.currentTarget as any).style.borderColor = 'rgba(255,255,255,0.3)';
-                        (e.currentTarget as any).style.transform = 'translate(-50%,-50%) scale(1)'; 
-                      }}
-                    >
-                      <Plus size={12} strokeWidth={3} />
-                    </button>
-                  ))}
-                </DeviceSilhouette>
-              </div>
-
-              {/* Lista de etiquetas activas */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    Etiquetas ({activeLabels.length})
-                  </span>
-                  {activeLabels.length > 0 && (
-                    <button onClick={clearLabels} style={{ fontSize: 8, background: 'transparent', border: 'none', color: 'rgba(248,113,113,0.6)', cursor: 'pointer', fontWeight: 600 }}>
-                      Recetear
-                    </button>
-                  )}
+          {state.labelsSubTab === 'view' && (
+            <>
+              {activeLabels.length === 0 ? (
+                <div style={{ padding: '40px 20px', textAlign: 'center', color: 'rgba(255,255,255,0.3)' }}>
+                  <MousePointer2 size={32} style={{ marginBottom: 12, opacity: 0.5 }} />
+                  <p style={{ fontSize: 13, fontWeight: 500 }}>No hay etiquetas</p>
+                  <p style={{ fontSize: 11, marginTop: 4 }}>Pulsa 'Anclar' para añadir una</p>
                 </div>
-                
-                <div className="styled-scroll" style={{ height: 160, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 5, paddingRight: 2 }}>
-                  {activeLabels.length === 0 ? (
-                    <div style={{ 
-                      height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 8px', textAlign: 'center', 
-                      background: 'rgba(0,0,0,0.6)', borderRadius: 12, border: '1px dashed rgba(255,255,255,0.1)',
-                      color: 'rgba(255,255,255,0.3)', fontSize: 10, fontStyle: 'italic',
-                      lineHeight: 1.3
-                    }}>
-                      Grid para añadir
-                    </div>
-                  ) : (
-                    activeLabels.map((l, i) => (
-                      <div key={l.id} 
-                        onClick={() => updateState({ activeLabelId: l.id })}
-                        className="btn-press"
-                        style={{ 
-                          display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', 
-                          borderRadius: 10, cursor: 'pointer',
-                          background: state.activeLabelId === l.id ? 'rgba(139,92,246,0.24)' : 'rgba(0,0,0,0.4)',
-                          border: `1px solid ${state.activeLabelId === l.id ? 'rgba(139,92,246,0.6)' : 'rgba(255,255,255,0.1)'}`,
-                          transition: 'all 0.15s',
-                          animation: `panelFade 0.2s ease-out ${i * 0.03}s both`,
-                        }}>
-                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: l.color, flexShrink: 0 }} />
-                        <input 
-                          value={l.text} 
-                          onChange={(e) => updateText(l.id, { text: e.target.value })}
-                          onClick={(e) => e.stopPropagation()}
-                          style={{ 
-                            flex: 1, background: 'transparent', border: 'none', color: state.activeLabelId === l.id ? '#fff' : 'rgba(255,255,255,0.6)',
-                            fontSize: 11, fontWeight: 600, outline: 'none'
-                          }} 
-                        />
-                        <button onClick={(e) => { e.stopPropagation(); removeText(l.id); }} 
-                          style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', padding: 2 }}
-                        >
-                          <Trash2 size={12} />
-                        </button>
+              ) : (
+                <>
+                  {!selectedLabel ? (
+                    <Section label="Gestionar Etiquetas">
+                      <div className="labels-mobile-list">
+                        {activeLabels.map(l => (
+                          <div key={l.id} className="label-pill" onClick={() => updateState({ activeLabelId: l.id })}>
+                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: l.color }} />
+                            <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#fff' }}>{l.text}</span>
+                            <Trash2 size={14} style={{ color: 'rgba(255,255,255,0.2)' }} onClick={(e) => { e.stopPropagation(); removeText(l.id); }} />
+                          </div>
+                        ))}
                       </div>
-                    ))
+                    </Section>
+                  ) : (
+                    <div style={{ paddingBottom: 20 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, padding: '0 4px' }}>
+                        <button onClick={() => updateState({ activeLabelId: null })} style={{ padding: 4, background: 'none', border: 'none', color: '#fff' }}>
+                           <MousePointer2 size={20} />
+                        </button>
+                        <input value={selectedLabel.text} onChange={(e) => updateText(selectedLabel.id, { text: e.target.value })}
+                          style={{ flex: 1, background: 'none', border: 'none', color: '#fff', fontSize: 16, fontWeight: 700, outline: 'none' }} />
+                        <Trash2 size={18} style={{ color: 'rgba(255,255,255,0.3)' }} onClick={() => { removeText(selectedLabel.id); updateState({ activeLabelId: null }); }} />
+                      </div>
+
+                      <div className="segmented-control" style={{ display: 'flex', gap: 4, borderRadius: 12, padding: 3, marginBottom: 16 }}>
+                        {TABS.map(t => (
+                          <button key={t.id} onClick={() => setLTab(t.id)}
+                            className={lTab === t.id ? 'active-pill' : ''}
+                            style={{ 
+                              flex: 1, height: 32, borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                              background: 'transparent',
+                              color: lTab === t.id ? '#fff' : 'rgba(255,255,255,0.35)',
+                            }}>
+                            <t.icon size={13} />
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {lTab === 'behavior' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                          <div>
+                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', display: 'block', marginBottom: 8 }}>Tipo de Rastreo</span>
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                              {LABEL_MODES.map(mode => (
+                                <Chip key={mode.id} active={selectedLabel.labelMode === mode.id} onClick={() => handleUpdate({ labelMode: mode.id })}>{mode.label}</Chip>
+                              ))}
+                            </div>
+                          </div>
+                          <Slider label="Elevación (Z)" value={selectedLabel.levitation} min={0} max={60} onChange={v => handleUpdate({ levitation: v })} unit="px" />
+                        </div>
+                      )}
+
+                      {lTab === 'style' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                          <div style={{ display: 'flex', gap: 12 }}>
+                            <div style={{ flex: 1 }}>
+                              <Slider label="Tamaño Fuente" value={selectedLabel.fontSize} min={8} max={42} onChange={v => handleUpdate({ fontSize: v })} unit="pt" />
+                            </div>
+                            <div style={{ width: 50 }}>
+                              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', display: 'block', marginBottom: 6 }}>Color</span>
+                              <div style={{ position: 'relative', width: '100%', height: 34 }}>
+                                <div style={{ width: '100%', height: '100%', borderRadius: 8, background: selectedLabel.color, border: '2px solid rgba(255,255,255,0.2)' }} />
+                                <input type="color" value={selectedLabel.color} onChange={e => handleUpdate({ color: e.target.value })} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+                              </div>
+                            </div>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', display: 'block', marginBottom: 8 }}>Tipografía</span>
+                            <div className="ps-responsive-list">
+                              {FONTS.map(f => (
+                                <Chip key={f} active={selectedLabel.fontFamily === f} onClick={() => handleUpdate({ fontFamily: f })} style={{ fontFamily: f }}>{f}</Chip>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {lTab === 'positions' && (
+                        <div style={{ padding: '20px 0', textAlign: 'center', opacity: 0.5 }}>
+                           <p style={{ fontSize: 12 }}>Use el modo 'Anclar' para cambiar la posición</p>
+                        </div>
+                      )}
+                    </div>
                   )}
-                </div>
-              </div>
-            </div>
+                </>
+              )}
+            </>
+          )}
 
-          </Section>
-        )}
+          {state.labelsSubTab === 'subtract' && (
+            <Section label="Limpiar Todo">
+              <div style={{ padding: '20px 10px' }}>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 20 }}>¿Deseas eliminar todas las etiquetas del modelo?</p>
+                <button onClick={() => { clearLabels(); updateState({ labelsSubTab: 'view' }); }}
+                  style={{ width: '100%', padding: '14px', borderRadius: 12, border: 'none', background: 'rgba(239,68,68,0.2)', color: '#f87171', fontWeight: 700, cursor: 'pointer' }}>
+                  Eliminar todo
+                </button>
+              </div>
+            </Section>
+          )}
+        </div>
+      )}
 
-        {/* Pestaña: CONDUCTA */}
-        {lTab === 'behavior' && (
-          <Section label={selectedLabel ? `Comportamiento: ${selectedLabel.text}` : "Ajustes de Comportamiento"}>
-            {selectedLabel && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, padding: '4px 8px', borderRadius: 8, background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#3b82f6' }} />
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Editando etiqueta activa</span>
-              </div>
-            )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <div>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', display: 'block', marginBottom: 8 }}>Tipo de Rastreo</span>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {LABEL_MODES.map(mode => (
-                    <Chip 
-                      key={mode.id} 
-                      active={getCurrentValue('labelMode', 'labelDraftMode') === mode.id} 
-                      onClick={() => handleUpdate({ [selectedLabel ? 'labelMode' : 'labelDraftMode']: mode.id })}
-                    >
-                      {mode.label}
-                    </Chip>
-                  ))}
-                </div>
-              </div>
-              
-              <Slider 
-                label="Elevación (Z)" 
-                value={getCurrentValue('levitation', 'labelDraftLevitation')} 
-                min={0} max={60} 
-                onChange={v => handleUpdate({ [selectedLabel ? 'levitation' : 'labelDraftLevitation']: v })} 
-                unit="px" 
-              />
-              
-              <div style={{ padding: '12px', borderRadius: 12, background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.15)' }}>
-                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5, margin: 0 }}>
-                  <strong style={{ color: 'rgba(167,139,250,0.9)' }}>Tip:</strong> {
-                    getCurrentValue('labelMode', 'labelDraftMode') === 'follow' 
-                    ? "La etiqueta intentará mantenerse legible rotando hacia la cámara."
-                    : getCurrentValue('labelMode', 'labelDraftMode') === 'billboard'
-                    ? "Efecto siempre plano hacia el espectador, ideal para títulos."
-                    : "Anclaje rígido a la superficie del modelo 3D."
-                  }
-                </p>
-              </div>
-            </div>
-          </Section>
-        )}
+      {/* ── DESKTOP VIEW ────────────────────────────────────────────── */}
+      {!isMobile && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Sub-tabs premium */}
+          <div className="segmented-control" style={{ display: 'flex', gap: 4, borderRadius: 12, padding: 3 }}>
+            {TABS.map(t => (
+              <button key={t.id} onClick={() => setLTab(t.id)}
+                className={lTab === t.id ? 'active-pill' : ''}
+                style={{ 
+                  flex: 1, height: 32, borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  background: 'transparent',
+                  color: lTab === t.id ? '#fff' : 'rgba(255,255,255,0.35)',
+                  transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                  textShadow: lTab === t.id ? '0 0 12px rgba(255,255,255,0.3)' : 'none'
+                }}>
+                <t.icon size={13} strokeWidth={lTab === t.id ? 2.5 : 2} />
+                {t.label}
+              </button>
+            ))}
+          </div>
 
-        {/* Pestaña: ESTILO */}
-        {lTab === 'style' && (
-          <Section label={selectedLabel ? `Apariencia: ${selectedLabel.text}` : "Estilo Predefinido"}>
-            {selectedLabel && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, padding: '4px 8px', borderRadius: 8, background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)' }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#8b5cf6' }} />
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Editando etiqueta activa</span>
-              </div>
-            )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              
-              <div style={{ display: 'flex', gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <Slider 
-                    label="Tamaño Fuente" 
-                    value={getCurrentValue('fontSize', 'labelDraftSize')} 
-                    min={8} max={42} 
-                    onChange={v => handleUpdate({ [selectedLabel ? 'fontSize' : 'labelDraftSize']: v })} 
-                    unit="pt" 
-                  />
-                </div>
-                <div style={{ width: 50 }}>
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', display: 'block', marginBottom: 6 }}>Color</span>
-                  <div style={{ position: 'relative', width: '100%', height: 34 }}>
-                    <div style={{ 
-                      width: '100%', height: '100%', borderRadius: 8, 
-                      background: getCurrentValue('color', 'labelDraftColor'), 
-                      border: '2px solid rgba(255,255,255,0.2)' 
-                    }} />
-                    <input type="color" 
-                      value={getCurrentValue('color', 'labelDraftColor')} 
-                      onChange={e => handleUpdate({ [selectedLabel ? 'color' : 'labelDraftColor']: e.target.value })} 
-                      style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} 
-                    />
+          <div style={{ minHeight: 180 }}>
+            {lTab === 'positions' && (
+              <Section label="Ubicación y Gestión">
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ flex: '0 0 140px' }}>
+                    <DeviceSilhouette>
+                      {LABEL_POSITIONS.map(pos => (
+                        <button key={pos.id} onClick={() => addLabel(pos.id)} 
+                          style={{ 
+                            position: 'absolute', left: pos.left, top: pos.top, 
+                            transform: 'translate(-50%,-50%)', width: 20, height: 20, 
+                            borderRadius: '50%', border: '1px solid rgba(255,255,255,0.3)', 
+                            background: 'rgba(255,255,255,0.1)', color: '#fff', 
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+                          }}
+                        >
+                          <Plus size={12} strokeWidth={3} />
+                        </button>
+                      ))}
+                    </DeviceSilhouette>
+                  </div>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                      <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' }}>Etiquetas ({activeLabels.length})</span>
+                      {activeLabels.length > 0 && (
+                        <button onClick={clearLabels} style={{ fontSize: 8, background: 'transparent', border: 'none', color: 'rgba(248,113,113,0.6)', cursor: 'pointer' }}>Recetear</button>
+                      )}
+                    </div>
+                    <div className="styled-scroll" style={{ height: 160, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      {activeLabels.map(l => (
+                        <div key={l.id} onClick={() => updateState({ activeLabelId: l.id })}
+                          style={{ 
+                            display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', borderRadius: 10, cursor: 'pointer',
+                            background: state.activeLabelId === l.id ? 'rgba(139,92,246,0.24)' : 'rgba(0,0,0,0.4)',
+                            border: `1px solid ${state.activeLabelId === l.id ? 'rgba(139,92,246,0.6)' : 'rgba(255,255,255,0.1)'}`
+                          }}>
+                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: l.color }} />
+                          <input value={l.text} onChange={(e) => updateText(l.id, { text: e.target.value })} style={{ flex: 1, background: 'transparent', border: 'none', color: '#fff', fontSize: 11, fontWeight: 600, outline: 'none' }} />
+                          <Trash2 size={12} style={{ color: 'rgba(255,255,255,0.2)' }} onClick={(e) => { e.stopPropagation(); removeText(l.id); }} />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Section>
+            )}
 
-              <div>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', display: 'block', marginBottom: 8 }}>Tipografía</span>
-                <div className="styled-scroll" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
-                  {FONTS.map(f => (
-                    <Chip 
-                      key={f} 
-                      active={getCurrentValue('fontFamily', 'labelDraftFont') === f} 
-                      onClick={() => handleUpdate({ [selectedLabel ? 'fontFamily' : 'labelDraftFont']: f })}
-                      style={{ fontFamily: f }}
-                    >
-                      {f}
-                    </Chip>
-                  ))}
+            {lTab === 'behavior' && (
+              <Section label="Conducta">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                  <div>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', display: 'block', marginBottom: 8 }}>Tipo de Rastreo</span>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {LABEL_MODES.map(mode => (
+                        <Chip key={mode.id} active={getCurrentValue('labelMode', 'labelDraftMode') === mode.id} onClick={() => handleUpdate({ [selectedLabel ? 'labelMode' : 'labelDraftMode']: mode.id })}>{mode.label}</Chip>
+                      ))}
+                    </div>
+                  </div>
+                  <Slider label="Elevación (Z)" value={getCurrentValue('levitation', 'labelDraftLevitation')} min={0} max={60} onChange={v => handleUpdate({ [selectedLabel ? 'levitation' : 'labelDraftLevitation']: v })} unit="px" />
                 </div>
-              </div>
+              </Section>
+            )}
 
-              <div style={{ marginTop: 8 }}>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', display: 'block', marginBottom: 10 }}>Presets de Estilo</span>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-                  <button 
-                    onClick={() => handleUpdate({ fontSize: 24, color: '#ffffff', labelMode: 'billboard' })}
-                    style={{ padding: '8px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}
-                  >
-                    Título Grande
-                  </button>
-                  <button 
-                    onClick={() => handleUpdate({ fontSize: 12, color: '#888888', labelMode: 'follow' })}
-                    style={{ padding: '8px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}
-                  >
-                    Detalle Técnico
-                  </button>
+            {lTab === 'style' && (
+              <Section label="Estilo">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <Slider label="Tamaño Fuente" value={getCurrentValue('fontSize', 'labelDraftSize')} min={8} max={42} onChange={v => handleUpdate({ [selectedLabel ? 'fontSize' : 'labelDraftSize']: v })} unit="pt" />
+                    </div>
+                    <div style={{ width: 50 }}>
+                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', display: 'block', marginBottom: 6 }}>Color</span>
+                      <div style={{ position: 'relative', width: '100%', height: 34 }}>
+                        <div style={{ width: '100%', height: '100%', borderRadius: 8, background: getCurrentValue('color', 'labelDraftColor'), border: '2px solid rgba(255,255,255,0.2)' }} />
+                        <input type="color" value={getCurrentValue('color', 'labelDraftColor')} onChange={e => handleUpdate({ [selectedLabel ? 'color' : 'labelDraftColor']: e.target.value })} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', display: 'block', marginBottom: 8 }}>Tipografía</span>
+                    <div className="ps-responsive-list">
+                      {FONTS.map(f => (
+                        <Chip key={f} active={getCurrentValue('fontFamily', 'labelDraftFont') === f} onClick={() => handleUpdate({ [selectedLabel ? 'fontFamily' : 'labelDraftFont']: f })} style={{ fontFamily: f }}>{f}</Chip>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
-
-              {!selectedLabel && (
-                <div style={{ padding: '10px', borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center' }}>
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>Selecciona una etiqueta para editarla</span>
-                </div>
-              )}
-            </div>
-          </Section>
-        )}
-      </div>
-
+              </Section>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

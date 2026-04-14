@@ -50,7 +50,7 @@ export const OverlayTab = () => {
           maxHeight: 'min(400px, calc(100vh - 16px))',
           overflowY: 'auto',
         }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+          <div className="ps-responsive-list" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
             {OVERLAY_COLOR_GRID.map(col => {
               if (col === '__custom__') {
                 return (
