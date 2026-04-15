@@ -2096,7 +2096,6 @@ function HeroOrbitControls({
 
   return (
     <OrbitControls
-      key={interactionMode}
       ref={controlsRef}
       makeDefault
       enablePan={interactionMode === "drag"}
