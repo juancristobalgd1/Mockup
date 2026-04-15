@@ -5,8 +5,8 @@ import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS, ANIMATED_BACKGROUNDS, 
 import type { AnimatedBackground } from '../../data/backgrounds';
 import { LIGHT_OVERLAYS } from '../../data/lightOverlays';
 import { AnnotateCanvas } from './AnnotateCanvas';
-import { Device3DViewer, InteractionControls } from '../devices3d/Device3DViewer';
-import type { Device3DViewerHandle, InteractionMode } from '../devices3d/Device3DViewer';
+import { Device3DViewer } from '../devices3d/Device3DViewer';
+import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
 import { CSSDeviceFallback, checkWebGL } from '../devices3d/WebGLFallback';
 
 interface CanvasProps {
@@ -73,8 +73,6 @@ function CanvasBgRenderer({ bg, opacity, borderRadius }: { bg: AnimatedBackgroun
 export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, onUpdateText, viewerRef, moviePlaying, movieTimeRef }, ref) => {
   const { state } = useApp();
   const [webglAvailable, setWebglAvailable] = useState<boolean | null>(null);
-  const [interactionMode, setInteractionMode] = useState<InteractionMode>('none');
-  const [zoomValue, setZoomValue] = useState(58);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   useEffect(() => {
@@ -307,12 +305,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
           <Device3DViewer
             ref={viewerRef}
             style={{ position: 'absolute', inset: 0, zIndex: 2 }}
-            moviePlaying={moviePlaying}
             movieTimeRef={movieTimeRef}
-            interactionMode={interactionMode}
-            onInteractionModeChange={setInteractionMode}
-            zoomValue={zoomValue}
-            onZoomValueChange={setZoomValue}
           />
         ) : null /* loading – will resolve synchronously */}
 
@@ -346,14 +339,6 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
         })}
       </div>
 
-      {/* Interaction controls — outside stage so they float over the workspace */}
-      <InteractionControls
-        mode={interactionMode}
-        onChange={setInteractionMode}
-        zoomValue={zoomValue}
-        onZoomChange={setZoomValue}
-        isMobile={isMobile}
-      />
     </div>
   );
 });

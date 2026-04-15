@@ -1,4 +1,4 @@
-import { useState, useRef, createContext, useContext } from "react";
+import { useState, useRef, createContext, useContext, useCallback } from "react";
 import type { DeviceStoreType } from "./data/devices";
 
 // DeviceType derives from DeviceStoreType in devices.ts — the single source of truth.
@@ -11,6 +11,7 @@ export type ShadowStyle = "none" | "spread" | "hug";
 export type CanvasRatio = "free" | "1:1" | "4:5" | "16:9" | "9:16" | "4:3" | "3:2" | "2:3" | "3:1" | "5:4";
 export type ContentType = "image" | "video" | null;
 export type CreationMode = "mockup" | "movie" | "screenshot";
+export type InteractionMode = 'none' | 'drag' | 'zoom';
 
 export type EasingType = 'linear' | 'smooth' | 'ease-in' | 'ease-out' | 'elastic' | 'bounce';
 
@@ -198,6 +199,8 @@ export interface AppState {
   deviceSubTab: 'models' | 'colors' | 'orientation' | 'browser-theme';
   sceneSubTab: 'estudio' | 'luz' | 'camera' | 'motion' | 'effects' | 'shadow';
   labelsSubTab: 'view' | 'add' | 'subtract';
+  interactionMode: InteractionMode;
+  zoomValue: number;
 }
 
 export const defaultState: AppState = {
@@ -300,6 +303,8 @@ export const defaultState: AppState = {
 
   creationMode: 'mockup',
   activeLabelId: null,
+  interactionMode: 'none',
+  zoomValue: 58,
 };
 
 interface AppContextType {
@@ -331,7 +336,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [historyLen, setHistoryLen] = useState(0);
   const [futureLen, setFutureLen] = useState(0);
 
-  const updateState = (updates: Partial<AppState>, skipHistory = false) => {
+  const updateState = useCallback((updates: Partial<AppState>, skipHistory = false) => {
     setState(prev => {
       if (!skipHistory) {
         historyRef.current = [...historyRef.current.slice(-MAX_HISTORY + 1), prev];
@@ -341,9 +346,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       return { ...prev, ...updates };
     });
-  };
+  }, []);
 
-  const undo = () => {
+  const undo = useCallback(() => {
     if (historyRef.current.length === 0) return;
     const prev = historyRef.current[historyRef.current.length - 1];
     historyRef.current = historyRef.current.slice(0, -1);
@@ -353,9 +358,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setFutureLen(futureRef.current.length);
       return prev;
     });
-  };
+  }, []);
 
-  const redo = () => {
+  const redo = useCallback(() => {
     if (futureRef.current.length === 0) return;
     const next = futureRef.current[0];
     futureRef.current = futureRef.current.slice(1);
@@ -365,9 +370,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setFutureLen(futureRef.current.length);
       return next;
     });
-  };
+  }, []);
 
-  const addText = () => {
+  const addText = useCallback(() => {
     const newText: TextOverlay = {
       id: Math.random().toString(36).substr(2, 9),
       text: "Double-click to edit",
@@ -380,9 +385,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       kind: 'text',
     };
     setState(prev => ({ ...prev, texts: [...prev.texts, newText] }));
-  };
+  }, []);
 
-  const addLabel = (anchor: LabelAnchorPosition) => {
+  const addLabel = useCallback((anchor: LabelAnchorPosition) => {
     setState(prev => {
       const fixedPositions: Record<LabelAnchorPosition, { x: number; y: number }> = {
         'top': { x: 50, y: 16 },
@@ -416,57 +421,57 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         activeLabelId: newLabel.id
       };
     });
-  };
+  }, []);
 
-  const updateText = (id: string, updates: Partial<TextOverlay>) => {
+  const updateText = useCallback((id: string, updates: Partial<TextOverlay>) => {
     setState(prev => ({
       ...prev,
       texts: prev.texts.map(t => t.id === id ? { ...t, ...updates } : t)
     }));
-  };
+  }, []);
 
-  const removeText = (id: string) => {
+  const removeText = useCallback((id: string) => {
     setState(prev => ({
       ...prev,
       texts: prev.texts.filter(t => t.id !== id)
     }));
-  };
+  }, []);
 
-  const clearLabels = () => {
+  const clearLabels = useCallback(() => {
     setState(prev => ({
       ...prev,
       texts: prev.texts.filter(t => t.kind !== 'label')
     }));
-  };
+  }, []);
 
-  const addCameraKeyframe = (kf: Omit<CameraKeyframe, 'id'>) => {
+  const addCameraKeyframe = useCallback((kf: Omit<CameraKeyframe, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
     setState(prev => {
       const existing = prev.cameraKeyframes.filter(k => Math.abs(k.time - kf.time) > 0.1);
       const updated = [...existing, { ...kf, id }].sort((a, b) => a.time - b.time);
       return { ...prev, cameraKeyframes: updated };
     });
-  };
+  }, []);
 
-  const removeCameraKeyframe = (id: string) => {
+  const removeCameraKeyframe = useCallback((id: string) => {
     setState(prev => ({
       ...prev,
       cameraKeyframes: prev.cameraKeyframes.filter(k => k.id !== id)
     }));
-  };
+  }, []);
 
-  const updateCameraKeyframe = (id: string, updates: Partial<Omit<CameraKeyframe, 'id'>>) => {
+  const updateCameraKeyframe = useCallback((id: string, updates: Partial<Omit<CameraKeyframe, 'id'>>) => {
     setState(prev => ({
       ...prev,
       cameraKeyframes: prev.cameraKeyframes
         .map(k => k.id === id ? { ...k, ...updates } : k)
         .sort((a, b) => a.time - b.time),
     }));
-  };
+  }, []);
 
-  const clearCameraKeyframes = () => {
+  const clearCameraKeyframes = useCallback(() => {
     setState(prev => ({ ...prev, cameraKeyframes: [] }));
-  };
+  }, []);
 
   return (
     <AppContext.Provider value={{

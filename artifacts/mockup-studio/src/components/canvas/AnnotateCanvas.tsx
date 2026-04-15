@@ -839,7 +839,7 @@ export function AnnotateCanvas() {
   const TOOLBAR_MARGIN = 10;
 
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 25, pointerEvents: state.annotateMode ? 'all' : 'none', touchAction: 'none' }}>
+    <div style={{ position: 'absolute', inset: 0, zIndex: 25, pointerEvents: state.annotateMode ? 'all' : 'none', touchAction: state.annotateMode ? 'none' : 'auto' }}>
 
       {/* Canvas */}
       <canvas
