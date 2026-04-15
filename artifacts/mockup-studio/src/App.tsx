@@ -29,6 +29,7 @@ import {
   Lightbulb,
   MoreHorizontal,
   Plus,
+  Layout,
   LayoutGrid,
   Image as ImageIcon,
   Wand2,
@@ -472,6 +473,19 @@ function Editor() {
                 </button>
                 <button
                   onClick={() => {
+                    setActiveTab("template");
+                    setMobileTab("template");
+                  }}
+                  className={`ps-nav-item ${activeTab === "template" ? "active" : ""}`}
+                >
+                  <Layout
+                    size={22}
+                    strokeWidth={activeTab === "template" ? 2.5 : 1.8}
+                  />
+                  <span>Plantillas</span>
+                </button>
+                <button
+                  onClick={() => {
                     setActiveTab("device");
                     setMobileTab("device");
                   }}
@@ -534,19 +548,6 @@ function Editor() {
                     strokeWidth={activeTab === "canvas" ? 2.5 : 1.8}
                   />
                   <span>Escena</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab("overlay");
-                    setMobileTab("overlay");
-                  }}
-                  className={`ps-nav-item ${activeTab === "overlay" ? "active" : ""}`}
-                >
-                  <LayoutGrid
-                    size={22}
-                    strokeWidth={activeTab === "overlay" ? 2.5 : 1.8}
-                  />
-                  <span>Capa</span>
                 </button>
                 <button
                   onClick={() => {
@@ -1325,17 +1326,19 @@ function Editor() {
                     ? "Selecciona el área"
                     : mobileTab === "presets"
                       ? "Preajustes"
-                      : mobileTab === "device"
-                        ? "Dispositivo"
-                        : mobileTab === "background"
-                          ? "Fondo"
-                          : mobileTab === "overlay"
-                            ? "Efectos"
-                            : mobileTab === "labels"
-                              ? "Etiquetas"
-                              : mobileTab === "canvas"
-                                ? "Escena"
-                                : "Modelos"}
+                      : mobileTab === "template"
+                        ? "Plantillas"
+                        : mobileTab === "device"
+                          ? "Dispositivo"
+                          : mobileTab === "background"
+                            ? "Fondo"
+                            : mobileTab === "overlay"
+                              ? "Efectos"
+                              : mobileTab === "labels"
+                                ? "Etiquetas"
+                                : mobileTab === "canvas"
+                                  ? "Escena"
+                                  : "Modelos"}
                 </span>
               </div>
             </motion.div>
