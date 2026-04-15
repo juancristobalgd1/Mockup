@@ -12,20 +12,20 @@ import { DeviceLabels } from './DeviceLabels';
 const FRAME_MAT: Record<string, { color: string; metalness: number; roughness: number }> = {
   titanium: { color: '#71717a', metalness: 0.90, roughness: 0.08 },
   aluminum: { color: '#e8e8e8', metalness: 0.85, roughness: 0.10 },
-  glass:    { color: '#1c1c1e', metalness: 0.30, roughness: 0.05 },
-  light:    { color: '#f5f5f5', metalness: 0.70, roughness: 0.14 },
+  glass: { color: '#1c1c1e', metalness: 0.30, roughness: 0.05 },
+  light: { color: '#f5f5f5', metalness: 0.70, roughness: 0.14 },
 };
 
 const DEVICE_COLORS: Record<string, string> = {
-  original:     '#71717a',
-  titanium:     '#6b7280',
-  black:        '#0d0d0f',
-  white:        '#e8e8ec',
-  blue:         '#1e3a5f',
+  original: '#71717a',
+  titanium: '#6b7280',
+  black: '#0d0d0f',
+  white: '#e8e8ec',
+  blue: '#1e3a5f',
   naturallight: '#c2b8a3',
-  sierra:       '#6b8ca3',
-  desert:       '#8c7a6e',
-  clay:         '#e0dbd0',
+  sierra: '#6b8ca3',
+  desert: '#8c7a6e',
+  clay: '#e0dbd0',
 };
 
 // ── Screen that updates texture every frame ──────────────────────
@@ -59,10 +59,10 @@ function ScreenContent({
   useFrame(() => {
     const tex = getGlobalScreenTexture();
     if (tex) {
-      const needMap   = mat.map !== tex;
+      const needMap = mat.map !== tex;
       const needColor = mat.color.r < 0.99;
       if (needMap || needColor) {
-        if (needMap)   mat.map = tex;
+        if (needMap) mat.map = tex;
         if (needColor) mat.color.set('#ffffff');
         mat.needsUpdate = true;
       }
@@ -148,11 +148,11 @@ function TripleTriModule({ pW, pH, pD, color, metal, rough }: {
       <RoundedBox args={[mW, mH, 0.020]} radius={0.030} smoothness={6}>
         <meshStandardMaterial color={color} metalness={metal + 0.04} roughness={rough - 0.02} envMapIntensity={0.9} />
       </RoundedBox>
-      <Lens r={0.050} x={-mW * 0.25} y={ mH * 0.22} z={0.013} />
-      <Lens r={0.050} x={ mW * 0.25} y={ mH * 0.22} z={0.013} />
-      <Lens r={0.050} x={0}           y={-mH * 0.20} z={0.013} />
+      <Lens r={0.050} x={-mW * 0.25} y={mH * 0.22} z={0.013} />
+      <Lens r={0.050} x={mW * 0.25} y={mH * 0.22} z={0.013} />
+      <Lens r={0.050} x={0} y={-mH * 0.20} z={0.013} />
       <LiDAR x={mW * 0.32} y={-mH * 0.32} z={0.013} />
-      <Flash x={0}         y={ mH * 0.43} z={0.013} />
+      <Flash x={0} y={mH * 0.43} z={0.013} />
     </group>
   );
 }
@@ -167,7 +167,7 @@ function DualVertModule({ pW, pH, pD, color, metal, rough }: {
       <RoundedBox args={[mW, mH, 0.018]} radius={0.024} smoothness={5}>
         <meshStandardMaterial color={color} metalness={metal + 0.02} roughness={rough} envMapIntensity={0.8} />
       </RoundedBox>
-      <Lens r={0.047} x={0} y={ mH * 0.21} z={0.012} />
+      <Lens r={0.047} x={0} y={mH * 0.21} z={0.012} />
       <Lens r={0.047} x={0} y={-mH * 0.19} z={0.012} />
       <Flash x={0} y={mH * 0.43} z={0.012} />
     </group>
@@ -184,8 +184,8 @@ function DualDiagModule({ pW, pH, pD, color, metal, rough }: {
       <RoundedBox args={[mW, mH, 0.015]} radius={0.026} smoothness={5}>
         <meshStandardMaterial color={color} metalness={metal} roughness={rough} envMapIntensity={0.7} />
       </RoundedBox>
-      <Lens r={0.044} x={-mW * 0.22} y={ mH * 0.22} z={0.010} />
-      <Lens r={0.044} x={ mW * 0.22} y={-mH * 0.22} z={0.010} />
+      <Lens r={0.044} x={-mW * 0.22} y={mH * 0.22} z={0.010} />
+      <Lens r={0.044} x={mW * 0.22} y={-mH * 0.22} z={0.010} />
       <Flash x={mW * 0.30} y={mH * 0.30} z={0.010} />
     </group>
   );
@@ -202,8 +202,8 @@ function QuadSamsungModule({ pW, pH, pD, color, metal, rough }: {
       <RoundedBox args={[mW, mH, 0.016]} radius={0.022} smoothness={5}>
         <meshStandardMaterial color="#111" metalness={0.7} roughness={0.15} />
       </RoundedBox>
-      <Lens r={lr} x={0} y={ mH * 0.30} z={0.010} />
-      <Lens r={lr} x={0} y={ mH * 0.10} z={0.010} />
+      <Lens r={lr} x={0} y={mH * 0.30} z={0.010} />
+      <Lens r={lr} x={0} y={mH * 0.10} z={0.010} />
       <Lens r={lr} x={0} y={-mH * 0.10} z={0.010} />
       <Lens r={lr} x={0} y={-mH * 0.30} z={0.010} />
       <Flash x={0} y={mH * 0.44} z={0.010} />
@@ -222,8 +222,8 @@ function PixelBarModule({ pW, pH, pD, color, metal, rough }: {
         <meshStandardMaterial color="#111" metalness={0.70} roughness={0.15} />
       </RoundedBox>
       <Lens r={0.040} x={-bW * 0.26} y={0} z={0.010} />
-      <Lens r={0.040} x={0}           y={0} z={0.010} />
-      <Lens r={0.040} x={ bW * 0.26} y={0} z={0.010} />
+      <Lens r={0.040} x={0} y={0} z={0.010} />
+      <Lens r={0.040} x={bW * 0.26} y={0} z={0.010} />
       <LiDAR x={bW * 0.40} y={0} z={0.010} />
     </group>
   );
@@ -244,9 +244,9 @@ function CircularModule({ pW, pH, pD, color, metal, rough, isOnePlus = false }: 
         <circleGeometry args={[R * 0.88, 64]} />
         <meshStandardMaterial color={color} metalness={metal + 0.05} roughness={rough - 0.03} />
       </mesh>
-      <Lens r={0.044} x={-R * 0.42} y={ R * 0.42} z={0.006} />
-      <Lens r={0.044} x={ R * 0.42} y={ R * 0.42} z={0.006} />
-      <Lens r={0.044} x={0}         y={-R * 0.42} z={0.006} />
+      <Lens r={0.044} x={-R * 0.42} y={R * 0.42} z={0.006} />
+      <Lens r={0.044} x={R * 0.42} y={R * 0.42} z={0.006} />
+      <Lens r={0.044} x={0} y={-R * 0.42} z={0.006} />
       <Flash x={R * 0.50} y={0} z={0.008} />
     </group>
   );
@@ -362,7 +362,7 @@ interface Props {
 export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isLandscape }: Props) {
   const { state } = useApp();
   const isAndroid = def.storeType === 'android';
-  const isPro     = def.id.includes('pro') || def.id.includes('ultra');
+  const isPro = def.id.includes('pro') || def.id.includes('ultra');
 
   // Scale: phone height = 2.2 units
   const scale = 2.2 / (def.h / 100);
@@ -378,11 +378,11 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
       : 0.114;
 
   // Colors
-  const isClay      = deviceColor === 'clay';
-  const isOriginal  = deviceColor === 'original';
+  const isClay = deviceColor === 'clay';
+  const isOriginal = deviceColor === 'original';
   const framePreset = FRAME_MAT[def.frame] ?? FRAME_MAT.aluminum;
-  const colorKey    = deviceColor || 'titanium';
-  const bodyHex     = isClay
+  const colorKey = deviceColor || 'titanium';
+  const bodyHex = isClay
     ? '#e0dbd0'
     : colorKey.startsWith('#')
       ? colorKey
@@ -392,22 +392,22 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
   // Glass/matte phones should not be chrome mirrors
   const metalness = isClay ? 0.0
     : def.frame === 'glass' ? 0.15
-    : Math.min(framePreset.metalness, 0.75);
+      : Math.min(framePreset.metalness, 0.75);
   const roughness = isClay ? 0.90
     : def.frame === 'glass' ? 0.35
-    : Math.max(framePreset.roughness, 0.15);
+      : Math.max(framePreset.roughness, 0.15);
 
   // Screen dimensions (inset from frame edges)
-  const iTop  = (def.insetTop    / 100) * scale;
-  const iBot  = (def.insetBottom / 100) * scale;
-  const iSide = (def.insetSide   / 100) * scale;
-  const sW    = pW - iSide * 2;
-  const sH    = pH - iTop - iBot;
+  const iTop = (def.insetTop / 100) * scale;
+  const iBot = (def.insetBottom / 100) * scale;
+  const iSide = (def.insetSide / 100) * scale;
+  const sW = pW - iSide * 2;
+  const sH = pH - iTop - iBot;
   const sOffY = -(iTop - iBot) / 2;
 
   // Z positions
   const frontZ = pD / 2;  // body front face
-  const backZ  = -pD / 2; // body back face
+  const backZ = -pD / 2; // body back face
 
   const mProps = { pW, pH, pD, color: bodyHex, metal: metalness, rough: roughness };
 
@@ -451,17 +451,17 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
 
       {/* Glass gloss reflection */}
       {(state.glassReflection ?? true) && (
-      <mesh position={[0, sOffY, frontZ + 0.0032]}>
-        <planeGeometry args={[sW, sH]} />
-        <meshStandardMaterial color="#aaccff" transparent opacity={0.018} roughness={0} metalness={0} />
-      </mesh>
+        <mesh position={[0, sOffY, frontZ + 0.0032]}>
+          <planeGeometry args={[sW, sH]} />
+          <meshStandardMaterial color="#aaccff" transparent opacity={0.018} roughness={0} metalness={0} />
+        </mesh>
       )}
 
       {/* ── 3. FRONT CAMERA ─────────────────────────────────────── */}
       <group position={[0, sOffY, frontZ + 0.004]}>
         {def.camera === 'dynamic-island' && <DynamicIsland sH={sH} isLandscape={isLandscape} />}
-        {def.camera === 'punch-hole'     && <PunchHole sH={sH} sW={sW} isLandscape={isLandscape} />}
-        {def.camera === 'notch'          && <Notch sH={sH} isLandscape={isLandscape} />}
+        {def.camera === 'punch-hole' && <PunchHole sH={sH} sW={sW} isLandscape={isLandscape} />}
+        {def.camera === 'notch' && <Notch sH={sH} isLandscape={isLandscape} />}
       </group>
 
       {/* ── 4. BACK FACE — logo + shimmer ────────────────────────── */}
@@ -501,11 +501,11 @@ export function Phone3DModel({ def, deviceColor, screenTexture, contentType, isL
       )}
 
       {/* ── 7. BACK CAMERA MODULE ────────────────────────────────── */}
-      {def.cameraLayout === 'triple-tri'   && <TripleTriModule {...mProps} />}
-      {def.cameraLayout === 'dual-v'       && <DualVertModule  {...mProps} />}
-      {def.cameraLayout === 'dual-diag'    && <DualDiagModule  {...mProps} />}
+      {def.cameraLayout === 'triple-tri' && <TripleTriModule {...mProps} />}
+      {def.cameraLayout === 'dual-v' && <DualVertModule  {...mProps} />}
+      {def.cameraLayout === 'dual-diag' && <DualDiagModule  {...mProps} />}
       {def.cameraLayout === 'quad-samsung' && <QuadSamsungModule {...mProps} />}
-      {def.cameraLayout === 'triple-bar'   && <PixelBarModule  {...mProps} />}
+      {def.cameraLayout === 'triple-bar' && <PixelBarModule  {...mProps} />}
       {def.cameraLayout === 'triple-round' && (
         <CircularModule {...mProps} isOnePlus={def.id.includes('oneplus')} />
       )}

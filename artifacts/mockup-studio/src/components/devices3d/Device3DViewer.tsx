@@ -1363,7 +1363,7 @@ function DeviceScene({
       </mesh>
     ) : null;
 
-  if (floatEnabled) {
+  if (state.animation === "float") {
     return (
       <Float
         speed={1.4}
@@ -1377,6 +1377,27 @@ function DeviceScene({
       </Float>
     );
   }
+
+  if (state.animation === "spin") {
+    return (
+      <SpinWrapper>
+        {inner}
+        {screenClickMesh}
+        {overlay}
+      </SpinWrapper>
+    );
+  }
+
+  if (state.animation === "pulse") {
+    return (
+      <PulseWrapper>
+        {inner}
+        {screenClickMesh}
+        {overlay}
+      </PulseWrapper>
+    );
+  }
+
   return (
     <>
       {inner}
@@ -1384,6 +1405,27 @@ function DeviceScene({
       {overlay}
     </>
   );
+}
+
+function SpinWrapper({ children }: { children: React.ReactNode }) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame((st) => {
+    if (ref.current) {
+      ref.current.rotation.y = st.clock.elapsedTime * 0.4;
+    }
+  });
+  return <group ref={ref}>{children}</group>;
+}
+
+function PulseWrapper({ children }: { children: React.ReactNode }) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame((st) => {
+    if (ref.current) {
+      const s = 1 + Math.sin(st.clock.elapsedTime * 2) * 0.025;
+      ref.current.scale.set(s, s, s);
+    }
+  });
+  return <group ref={ref}>{children}</group>;
 }
 
 // ── Browser: screen content mesh (texture updated every frame) ────
@@ -2024,7 +2066,7 @@ function HeroOrbitControls({
     if (!controls) return;
     if (liftedControlsRef) liftedControlsRef.current = controls;
 
-    if (moviePlaying && movieKeyframes.length >= 2) {
+    if (moviePlaying && movieKeyframes.length >= 2 && !isInteractingRef.current) {
       const result = interpolateKeyframes(
         movieKeyframes,
         movieTimeRef.current,
@@ -2057,21 +2099,21 @@ function HeroOrbitControls({
       key={interactionMode}
       ref={controlsRef}
       makeDefault
-      enablePan={!moviePlaying && interactionMode === "drag"}
-      enableZoom={!moviePlaying}
-      enableRotate={!moviePlaying && interactionMode !== "drag"}
+      enablePan={interactionMode === "drag"}
+      enableZoom={true}
+      enableRotate={interactionMode !== "drag"}
       minDistance={zoomRange.minDistance}
       maxDistance={zoomRange.maxDistance}
       minPolarAngle={Math.PI * 0.05}
       maxPolarAngle={Math.PI * 0.92}
       dampingFactor={0.05}
-      enableDamping={!moviePlaying}
+      enableDamping={true}
       rotateSpeed={0.7}
       panSpeed={0.9}
       zoomSpeed={0.75}
       mouseButtons={mouseButtons}
       touches={touches}
-      autoRotate={autoRotate && !moviePlaying}
+      autoRotate={autoRotate}
       autoRotateSpeed={autoRotateSpeed}
       onStart={() => {
         isInteractingRef.current = true;

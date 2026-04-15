@@ -24,10 +24,10 @@ function ScreenPlane({ w, h, screenTexture, contentType }: {
   useFrame(() => {
     const tex = getGlobalScreenTexture();
     if (tex) {
-      const needMap   = mat.map !== tex;
+      const needMap = mat.map !== tex;
       const needColor = mat.color.r < 0.99;
       if (needMap || needColor) {
-        if (needMap)   mat.map = tex;
+        if (needMap) mat.map = tex;
         if (needColor) mat.color.set('#ffffff');
         mat.needsUpdate = true;
       }

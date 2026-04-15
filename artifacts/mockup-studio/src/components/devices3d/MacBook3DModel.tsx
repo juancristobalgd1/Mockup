@@ -26,10 +26,10 @@ function ScreenPlane({ w, h, screenTexture, contentType }: {
   useFrame(() => {
     const tex = getGlobalScreenTexture();
     if (tex) {
-      const needMap   = mat.map !== tex;
+      const needMap = mat.map !== tex;
       const needColor = mat.color.r < 0.99;
       if (needMap || needColor) {
-        if (needMap)   mat.map = tex;
+        if (needMap) mat.map = tex;
         if (needColor) mat.color.set('#ffffff');
         mat.needsUpdate = true;
       }
@@ -249,7 +249,7 @@ export function MacBook3DModel({ def, screenTexture, contentType, lidAngle = 112
 
         {/* Bottom rubber feet */}
         {[[-baseW * 0.40, -baseH * 0.42], [baseW * 0.40, -baseH * 0.42],
-          [-baseW * 0.40,  baseH * 0.42], [baseW * 0.40,  baseH * 0.42]].map(([x, z], i) => (
+        [-baseW * 0.40, baseH * 0.42], [baseW * 0.40, baseH * 0.42]].map(([x, z], i) => (
           <group key={i} position={[x, -baseD / 2 - 0.002, z]}>
             <mesh>
               <cylinderGeometry args={[0.025, 0.025, 0.004, 12]} />
@@ -319,10 +319,10 @@ export function MacBook3DModel({ def, screenTexture, contentType, lidAngle = 112
 
           {/* Screen glass gloss */}
           {(state.glassReflection ?? true) && (
-          <mesh position={[0, sOffY, lidD / 2 + 0.006]}>
-            <planeGeometry args={[sW, sH]} />
-            <meshStandardMaterial color="#aaccff" transparent opacity={0.018} roughness={0} metalness={0} />
-          </mesh>
+            <mesh position={[0, sOffY, lidD / 2 + 0.006]}>
+              <planeGeometry args={[sW, sH]} />
+              <meshStandardMaterial color="#aaccff" transparent opacity={0.018} roughness={0} metalness={0} />
+            </mesh>
           )}
 
           {/* Notch — MacBook Pro */}

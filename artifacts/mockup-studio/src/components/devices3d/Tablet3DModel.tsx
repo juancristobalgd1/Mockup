@@ -28,10 +28,10 @@ function ScreenPlane({
   useFrame(() => {
     const tex = getGlobalScreenTexture();
     if (tex) {
-      const needMap   = mat.map !== tex;
+      const needMap = mat.map !== tex;
       const needColor = mat.color.r < 0.99;
       if (needMap || needColor) {
-        if (needMap)   mat.map = tex;
+        if (needMap) mat.map = tex;
         if (needColor) mat.color.set('#ffffff');
         mat.needsUpdate = true;
       }
@@ -84,10 +84,10 @@ export function Tablet3DModel({ def, screenTexture, contentType, isLandscape }: 
 
       {/* Screen gloss */}
       {(state.glassReflection ?? true) && (
-      <mesh position={[0, 0, sZ + 0.003]}>
-        <planeGeometry args={[sW, sH]} />
-        <meshStandardMaterial color="#fff" transparent opacity={0.03} roughness={0.02} metalness={0} />
-      </mesh>
+        <mesh position={[0, 0, sZ + 0.003]}>
+          <planeGeometry args={[sW, sH]} />
+          <meshStandardMaterial color="#fff" transparent opacity={0.03} roughness={0.02} metalness={0} />
+        </mesh>
       )}
 
       {/* Front camera */}

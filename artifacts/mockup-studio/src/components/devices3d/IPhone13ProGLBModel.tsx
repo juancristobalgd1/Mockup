@@ -32,10 +32,10 @@ const MODEL_POS: [number, number, number] = [-0.629, -1.261, 0.057];
 const MODEL_ROT: [number, number, number] = [-Math.PI / 2, 0, 0];
 
 export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }: Props) {
-  const gltf       = useGLTF(MODEL_URL) as any;
-  const groupRef   = useRef<THREE.Group>(null);
+  const gltf = useGLTF(MODEL_URL) as any;
+  const groupRef = useRef<THREE.Group>(null);
   const screenMeshes = useRef<THREE.Mesh[]>([]);
-  const setupDone  = useRef(false);
+  const setupDone = useRef(false);
 
   // Apply PBR materials once after mount (and on deviceColor change)
   useEffect(() => {
@@ -52,7 +52,7 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
       if (!(obj instanceof THREE.Mesh)) return;
 
       obj.frustumCulled = false;
-      obj.castShadow    = true;
+      obj.castShadow = true;
       obj.receiveShadow = true;
 
       const name = obj.name.toLowerCase();
@@ -128,12 +128,12 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
         mat.needsUpdate = true;
       }
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceColor]);
 
   // Update screen texture every frame using the global singleton
   const prevTex = useRef<THREE.Texture | null>(null);
-  const ctRef   = useRef(contentType);
+  const ctRef = useRef(contentType);
   ctRef.current = contentType;
 
   useFrame(() => {
@@ -141,10 +141,10 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
     screenMeshes.current.forEach(mesh => {
       const mat = mesh.material as THREE.MeshStandardMaterial;
       if (tex) {
-        const needMap   = mat.map !== tex;
+        const needMap = mat.map !== tex;
         const needColor = mat.color.r < 0.99;
         if (needMap || needColor) {
-          if (needMap)   mat.map = tex;
+          if (needMap) mat.map = tex;
           if (needColor) mat.color.set('#ffffff');
           mat.needsUpdate = true;
         }

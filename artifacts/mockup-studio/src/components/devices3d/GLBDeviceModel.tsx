@@ -41,12 +41,12 @@ function makeRoundedRectGeom(w: number, h: number, r: number): THREE.ShapeGeomet
   const shape = new THREE.Shape();
   const hw = w / 2, hh = h / 2;
   shape.moveTo(-hw + safeR, -hh);
-  shape.lineTo( hw - safeR, -hh);
-  shape.quadraticCurveTo( hw, -hh,  hw, -hh + safeR);
-  shape.lineTo( hw,  hh - safeR);
-  shape.quadraticCurveTo( hw,  hh,  hw - safeR,  hh);
-  shape.lineTo(-hw + safeR,  hh);
-  shape.quadraticCurveTo(-hw,  hh, -hw,  hh - safeR);
+  shape.lineTo(hw - safeR, -hh);
+  shape.quadraticCurveTo(hw, -hh, hw, -hh + safeR);
+  shape.lineTo(hw, hh - safeR);
+  shape.quadraticCurveTo(hw, hh, hw - safeR, hh);
+  shape.lineTo(-hw + safeR, hh);
+  shape.quadraticCurveTo(-hw, hh, -hw, hh - safeR);
   shape.lineTo(-hw, -hh + safeR);
   shape.quadraticCurveTo(-hw, -hh, -hw + safeR, -hh);
 
@@ -54,9 +54,9 @@ function makeRoundedRectGeom(w: number, h: number, r: number): THREE.ShapeGeomet
 
   // ShapeGeometry uses shape-space UVs; remap to [0,1] across the rectangle.
   const pos = geom.attributes.position as THREE.BufferAttribute;
-  const uv  = new Float32Array(pos.count * 2);
+  const uv = new Float32Array(pos.count * 2);
   for (let i = 0; i < pos.count; i++) {
-    uv[i * 2]     = pos.getX(i) / w + 0.5;
+    uv[i * 2] = pos.getX(i) / w + 0.5;
     uv[i * 2 + 1] = pos.getY(i) / h + 0.5;
   }
   geom.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
@@ -69,14 +69,14 @@ const TARGET_H = 2.5;
 // THREE.Color cannot parse 'titanium', 'desert', etc.  Always resolve
 // before passing to any material constructor.
 const DEVICE_COLOR_HEX: Record<string, string> = {
-  titanium:     '#8a8680',
-  black:        '#1c1c1e',
-  white:        '#e8e8ea',
-  blue:         '#2c4a6e',
+  titanium: '#8a8680',
+  black: '#1c1c1e',
+  white: '#e8e8ea',
+  blue: '#2c4a6e',
   naturallight: '#c8bfb0',
-  sierra:       '#7a9ab0',
-  desert:       '#9c8878',
-  clay:         '#e0dbd0',
+  sierra: '#7a9ab0',
+  desert: '#9c8878',
+  clay: '#e0dbd0',
 };
 
 function resolveColor(deviceColor: string, fallback = '#71717a'): string {
@@ -194,8 +194,8 @@ function computeTransform(sceneObj: THREE.Object3D, def: DeviceModelDef): ModelT
   // detached scenes (not yet added to the Three.js renderer scene graph).
   sceneObj.updateMatrixWorld(true);
 
-  const box    = new THREE.Box3().setFromObject(sceneObj);
-  const size   = new THREE.Vector3();
+  const box = new THREE.Box3().setFromObject(sceneObj);
+  const size = new THREE.Vector3();
   const center = new THREE.Vector3();
   box.getSize(size);
   box.getCenter(center);
@@ -205,15 +205,15 @@ function computeTransform(sceneObj: THREE.Object3D, def: DeviceModelDef): ModelT
 
   // Identify Z-up vs Y-up (auto-detect only; manual glbRotateX overrides this path).
   const glbRotX = def.glbRotateX ?? 0;
-  const isZUp   = glbRotX === 0 && size.z > size.y * 1.4 && size.z > size.x * 1.4;
+  const isZUp = glbRotX === 0 && size.z > size.y * 1.4 && size.z > size.x * 1.4;
 
   if (isZUp) {
     const s = TARGET_H / size.z;
-    const rotation: [number,number,number] = [-Math.PI / 2, 0, 0];
-    const position: [number,number,number] = [
+    const rotation: [number, number, number] = [-Math.PI / 2, 0, 0];
+    const position: [number, number, number] = [
       -center.x * s,
       -center.z * s,
-       center.y * s,
+      center.y * s,
     ];
     // Screen face: +Y in 3ds Max → -Z after rotation
     const screenFaceZ = -(box.max.y - center.y) * s;
@@ -242,15 +242,15 @@ function computeTransform(sceneObj: THREE.Object3D, def: DeviceModelDef): ModelT
   // ── Step 1: Z rotation (swaps XY extents for landscape exports) ──────
   const effW_z = Math.abs(size.x * cosZ) + Math.abs(size.y * sinZ);
   const effH_z = Math.abs(size.x * sinZ) + Math.abs(size.y * cosZ);
-  const eCX    = center.x * cosZ - center.y * sinZ;
-  const eCY_z  = center.x * sinZ + center.y * cosZ;
+  const eCX = center.x * cosZ - center.y * sinZ;
+  const eCY_z = center.x * sinZ + center.y * cosZ;
 
   // ── Step 2: X rotation (swaps YZ extents, e.g. Apple Watch) ─────────
   // After X rotation: new Y = eCY_z*cosX - center.z*sinX
   //                   new Z = eCY_z*sinX + center.z*cosX
-  const effH   = Math.abs(effH_z * cosX) + Math.abs(size.z * sinX);
-  const eCY    = eCY_z * cosX - center.z * sinX;
-  const eCZ    = eCY_z * sinX + center.z * cosX;
+  const effH = Math.abs(effH_z * cosX) + Math.abs(size.z * sinX);
+  const eCY = eCY_z * cosX - center.z * sinX;
+  const eCZ = eCY_z * sinX + center.z * cosX;
 
   // Scale so the effective height fills TARGET_H.
   const s = TARGET_H / effH;
@@ -299,16 +299,16 @@ function computeTransform(sceneObj: THREE.Object3D, def: DeviceModelDef): ModelT
     }
 
     // Screen extents after Z then X rotation:
-    const ss_x_z  = Math.abs(ss.x * cosZ) + Math.abs(ss.y * sinZ);
-    const ss_y_z  = Math.abs(ss.x * sinZ) + Math.abs(ss.y * cosZ);
-    const ss_y_x  = Math.abs(ss_y_z * cosX) + Math.abs(ss.z * sinX);
+    const ss_x_z = Math.abs(ss.x * cosZ) + Math.abs(ss.y * sinZ);
+    const ss_y_z = Math.abs(ss.x * sinZ) + Math.abs(ss.y * cosZ);
+    const ss_y_x = Math.abs(ss_y_z * cosX) + Math.abs(ss.z * sinX);
 
     // Screen center Y in the final rotated frame:
-    const sc_y_x  = sc_y_z * cosX - sc_z_z * sinX;
+    const sc_y_x = sc_y_z * cosX - sc_z_z * sinX;
 
     detectedScreen = {
-      sW:    ss_x_z * s,
-      sH:    ss_y_x * s,
+      sW: ss_x_z * s,
+      sH: ss_y_x * s,
       sOffY: (sc_y_x - eCY) * s,
     };
   }
@@ -369,7 +369,7 @@ function metalMat(color: string, roughness = 0.18, metalness = 0.88) {
  */
 function normalizeScreenUVs(obj: THREE.Mesh, flipU = false) {
   const geom = obj.geometry;
-  const pos  = geom.attributes.position as THREE.BufferAttribute | undefined;
+  const pos = geom.attributes.position as THREE.BufferAttribute | undefined;
 
   // ── UV-axis orientation check + V-flip auto-detection ──────────────
   // Compute Pearson correlations between position (X,Y) and UV (U,V).
@@ -423,7 +423,7 @@ function normalizeScreenUVs(obj: THREE.Mesh, flipU = false) {
     for (let i = 0; i < pos.count; i++) {
       const u = (pos.getX(i) - minX) / rX;
       const v = (pos.getY(i) - minY) / rY;
-      uvs[i * 2]     = flipU ? 1 - u : u;
+      uvs[i * 2] = flipU ? 1 - u : u;
       uvs[i * 2 + 1] = flipV ? 1 - v : v;
     }
     geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
@@ -443,14 +443,14 @@ function normalizeScreenUVs(obj: THREE.Mesh, flipU = false) {
 
   // Skip if already [0,1] with no flip needed
   if (!flipU && !flipV &&
-      Math.abs(minU) < 0.005 && Math.abs(1 - maxU) < 0.005 &&
-      Math.abs(minV) < 0.005 && Math.abs(1 - maxV) < 0.005) return;
+    Math.abs(minU) < 0.005 && Math.abs(1 - maxU) < 0.005 &&
+    Math.abs(minV) < 0.005 && Math.abs(1 - maxV) < 0.005) return;
 
   const uv2 = new Float32Array(uvAttr.count * 2);
   for (let i = 0; i < uvAttr.count; i++) {
     const u = (uvAttr.getX(i) - minU) / rU;
     const v = (uvAttr.getY(i) - minV) / rV;
-    uv2[i * 2]     = flipU ? 1 - u : u;
+    uv2[i * 2] = flipU ? 1 - u : u;
     uv2[i * 2 + 1] = flipV ? 1 - v : v;
   }
   geom.setAttribute('uv', new THREE.BufferAttribute(uv2, 2));
@@ -511,7 +511,7 @@ function applyMaterials(
     if (obj instanceof THREE.Camera || obj instanceof THREE.Light) return;
     if (!(obj instanceof THREE.Mesh)) return;
     obj.frustumCulled = false;
-    obj.castShadow    = true;
+    obj.castShadow = true;
     obj.receiveShadow = true;
 
     // Never repaint a mesh that has already been identified as the device screen.
@@ -644,9 +644,9 @@ function detectAndMarkScreen(
   let bestMesh: THREE.Mesh | null = null;
   let bestScore = -Infinity;
 
-  const localBox  = new THREE.Box3();
+  const localBox = new THREE.Box3();
   const localSize = new THREE.Vector3();
-  const localCtr  = new THREE.Vector3();
+  const localCtr = new THREE.Vector3();
 
   root.traverse((obj: THREE.Object3D) => {
     if (!(obj instanceof THREE.Mesh)) return;
@@ -724,10 +724,10 @@ function ScreenOverlay({ sW, sH, sOffY, screenFaceZ, facesNeg, cornerRadius, scr
   useFrame(() => {
     const tex = getGlobalScreenTexture();
     if (tex) {
-      const needMap   = mat.map !== tex;
+      const needMap = mat.map !== tex;
       const needColor = mat.color.r < 0.99;
       if (needMap || needColor) {
-        if (needMap)   mat.map = tex;
+        if (needMap) mat.map = tex;
         if (needColor) mat.color.set('#ffffff');
         mat.needsUpdate = true;
       }
@@ -768,7 +768,7 @@ interface Props {
 }
 
 export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType, isLandscape = false }: Props) {
-  const gltf    = useGLTF(def.glbUrl!) as any;
+  const gltf = useGLTF(def.glbUrl!) as any;
   const sceneObj: THREE.Object3D | null =
     gltf?.scene ?? gltf?.scenes?.[0] ?? null;
 
@@ -776,12 +776,12 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType, i
   const transform = useMemo<ModelTransform | null>(() => {
     if (!sceneObj) return null;
     return computeTransform(sceneObj, def);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneObj]);
 
   // ── Apply / update materials when model or color changes ──────────
-  const groupRef      = useRef<THREE.Group>(null);
-  const screenMeshes  = useRef<THREE.Mesh[]>([]);
+  const groupRef = useRef<THREE.Group>(null);
+  const screenMeshes = useRef<THREE.Mesh[]>([]);
   const prevTransform = useRef<ModelTransform | null>(null);
 
   useEffect(() => {
@@ -814,7 +814,7 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType, i
       });
     }, 0);
     return () => clearTimeout(id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceColor, transform]);
 
   // ── Sync screen texture into detected screen meshes (multi-mesh / skipOverlay=true) ──
@@ -827,10 +827,10 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType, i
     screenMeshes.current.forEach(mesh => {
       const mat = mesh.material as THREE.MeshBasicMaterial;
       if (tex) {
-        const needMap   = mat.map !== tex;
+        const needMap = mat.map !== tex;
         const needColor = mat.color.r < 0.99;
         if (needMap || needColor) {
-          if (needMap)   mat.map = tex;
+          if (needMap) mat.map = tex;
           if (needColor) mat.color.set('#ffffff');
           mat.needsUpdate = true;
         }
@@ -856,17 +856,17 @@ export function GLBDeviceModel({ def, deviceColor, screenTexture, contentType, i
     // Fallback: derive from device definition proportions
     const screenWFrac = (def.w - def.insetSide * 2) / def.w;
     const screenHFrac = (def.h - def.insetTop - def.insetBottom) / def.h;
-    const topHeavy    = (def.insetTop - def.insetBottom) / def.h;
-    sW    = modelWidth * screenWFrac;
-    sH    = TARGET_H  * screenHFrac;
+    const topHeavy = (def.insetTop - def.insetBottom) / def.h;
+    sW = modelWidth * screenWFrac;
+    sH = TARGET_H * screenHFrac;
     sOffY = -TARGET_H * topHeavy;
   }
 
   // ── Corner radius for the overlay ────────────────────────────────
   // Convert def.screenBr (CSS) to Three.js world units using screen width.
-  const screenBrPx    = parseScreenBrPx(def.screenBr);
+  const screenBrPx = parseScreenBrPx(def.screenBr);
   const screenWidthPx = def.w - def.insetSide * 2;
-  const cornerRadius  = screenBrPx > 0 && screenWidthPx > 0
+  const cornerRadius = screenBrPx > 0 && screenWidthPx > 0
     ? Math.min(screenBrPx * (sW / screenWidthPx), Math.min(sW, sH) * 0.45)
     : 0;
 
