@@ -17,7 +17,6 @@ export const EXPORT_SIZES = [
 interface ExportTabProps {
   onDownloadPNG: () => void;
   onDownloadVideo: () => void;
-  onRecordWebM: () => void;
   onCopy: () => void;
   exporting: boolean;
   copying: boolean;
@@ -25,6 +24,8 @@ interface ExportTabProps {
   recording: boolean;
   recordProgress: number;
   recordSecsLeft: number;
+  canDownloadVideo: boolean;
+  isMovieMode: boolean;
   selectedSize: string;
   setSelectedSize: (id: string) => void;
   exportScale: number;
@@ -38,7 +39,6 @@ interface ExportTabProps {
 export const ExportTab = ({
   onDownloadPNG,
   onDownloadVideo,
-  onRecordWebM,
   onCopy,
   exporting,
   copying,
@@ -46,6 +46,8 @@ export const ExportTab = ({
   recording,
   recordProgress,
   recordSecsLeft,
+  canDownloadVideo,
+  isMovieMode,
   selectedSize,
   setSelectedSize,
   exportScale,
@@ -57,86 +59,45 @@ export const ExportTab = ({
 }: ExportTabProps) => {
   const { state } = useApp();
   const isVideo = state.contentType === 'video';
-  const isMovieMode = state.creationMode === 'movie';
+  const hasVideoSource = Boolean(state.videoUrl || isMovieMode);
+  const [exportType, setExportType] = useState<'image' | 'video'>('image');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          className="btn-press"
+          onClick={() => setExportType('image')}
+          style={{
+            flex: 1,
+            padding: '10px 12px',
+            borderRadius: 12,
+            border: exportType === 'image' ? '1px solid rgba(255,255,255,0.3)' : '1px solid transparent',
+            background: exportType === 'image' ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
+            color: exportType === 'image' ? 'var(--rt-text)' : 'var(--rt-text-2)',
+            fontWeight: 700,
+            cursor: 'pointer'
+          }}
+        >Imagen</button>
+        <button
+          className="btn-press"
+          onClick={() => setExportType('video')}
+          style={{
+            flex: 1,
+            padding: '10px 12px',
+            borderRadius: 12,
+            border: exportType === 'video' ? '1px solid rgba(255,255,255,0.3)' : '1px solid transparent',
+            background: exportType === 'video' ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
+            color: exportType === 'video' ? 'var(--rt-text)' : 'var(--rt-text-2)',
+            fontWeight: 700,
+            cursor: 'pointer'
+          }}
+        >Video</button>
+      </div>
+
       {/* Primary Actions */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {isMovieMode ? (
-          <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 8 }}>
-              <Section label="Resolución">
-                <div style={{ display: 'flex', gap: 4 }}>
-                  {([1, 2, 3] as const).map(s => (
-                    <Chip key={s} active={exportScale === s} onClick={() => setExportScale(s)} style={{ flex: 1, padding: '6px 0', textAlign: 'center' }}>
-                      {s === 1 ? '1×' : s === 2 ? '2× HD' : '3× 4K'}
-                    </Chip>
-                  ))}
-                </div>
-              </Section>
-
-              <Section label="FPS">
-                <div style={{ display: 'flex', gap: 4 }}>
-                  {([30, 60] as const).map(f => (
-                    <Chip key={f} active={exportFps === f} onClick={() => setExportFps(f)} style={{ flex: 1, padding: '6px 0', textAlign: 'center' }}>
-                      {f} fps
-                    </Chip>
-                  ))}
-                </div>
-              </Section>
-
-              <button
-                onClick={() => setExportTransparent(!exportTransparent)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
-                  borderRadius: 10, border: '1px solid var(--rt-border)', cursor: 'pointer',
-                  background: exportTransparent ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.03)',
-                  color: exportTransparent ? '#60a5fa' : 'var(--rt-text-2)',
-                  fontSize: 11, fontWeight: 600, transition: 'all 0.15s'
-                }}
-              >
-                <div style={{
-                  width: 16, height: 16, borderRadius: 4,
-                  border: `1.5px solid ${exportTransparent ? '#60a5fa' : 'rgba(255,255,255,0.2)'}`,
-                  background: exportTransparent ? '#60a5fa' : 'transparent',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                  {exportTransparent && <Check size={10} color="white" strokeWidth={3} />}
-                </div>
-                Fondo transparente
-              </button>
-            </div>
-
-            <button
-              onClick={onRecordWebM}
-              disabled={recording}
-              className="btn-press"
-              style={{
-                width: '100%', padding: '12px', borderRadius: 12, fontSize: 13, fontWeight: 700,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                background: recording ? 'rgba(30,12,8,0.9)' : 'rgba(255,255,255,0.95)',
-                color: recording ? '#fca5a5' : '#0d0e0f',
-                border: recording ? '1px solid rgba(239,68,68,0.3)' : 'none',
-                cursor: recording ? 'not-allowed' : 'pointer',
-                position: 'relative', overflow: 'hidden'
-              }}
-            >
-              {recording && (
-                <div style={{
-                  position: 'absolute', left: 0, top: 0, bottom: 0,
-                  width: `${recordProgress}%`, background: 'rgba(239,68,68,0.2)',
-                  transition: 'width 0.1s linear', zIndex: 0
-                }} />
-              )}
-              <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-                {recording ? <Film size={14} /> : <Download size={14} />}
-                {recording ? `Renderizando (${recordSecsLeft}s)` : 'Descargar video'}
-              </span>
-            </button>
-          </>
-        ) : (
+        {exportType === 'image' ? (
           <>
             <button
               onClick={onDownloadPNG}
@@ -151,7 +112,7 @@ export const ExportTab = ({
               }}
             >
               <Download size={14} />
-              {exporting ? 'Exportando...' : 'Descargar PNG'}
+              {exporting ? 'Exportando...' : 'Descargar imagen'}
             </button>
 
             <button
@@ -170,6 +131,91 @@ export const ExportTab = ({
               {copied ? <Check size={14} /> : <Copy size={14} />}
               {copied ? '¡Copiado!' : copying ? 'Copiando...' : 'Copiar al portapapeles'}
             </button>
+          </>
+        ) : (
+          <>
+            <div style={{ display: 'grid', gap: 12 }}>
+              <Section label="Resolución">
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {([1, 2, 3] as const).map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setExportScale(s)}
+                      className="btn-press"
+                      style={{
+                        flex: 1,
+                        padding: '8px 0',
+                        borderRadius: 10,
+                        border: exportScale === s ? '1px solid rgba(255,255,255,0.3)' : '1px solid transparent',
+                        background: exportScale === s ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.05)',
+                        color: exportScale === s ? 'var(--rt-text)' : 'var(--rt-text-2)',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {s === 1 ? '1×' : s === 2 ? '2× HD' : '3× 4K'}
+                    </button>
+                  ))}
+                </div>
+              </Section>
+
+              <Section label="FPS">
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {([30, 60] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setExportFps(f)}
+                      className="btn-press"
+                      style={{
+                        flex: 1,
+                        padding: '8px 0',
+                        borderRadius: 10,
+                        border: exportFps === f ? '1px solid rgba(255,255,255,0.3)' : '1px solid transparent',
+                        background: exportFps === f ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.05)',
+                        color: exportFps === f ? 'var(--rt-text)' : 'var(--rt-text-2)',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {f} fps
+                    </button>
+                  ))}
+                </div>
+              </Section>
+            </div>
+            <button
+              onClick={onDownloadVideo}
+              disabled={!canDownloadVideo || recording}
+              className="btn-press"
+              style={{
+                width: '100%', padding: '12px', borderRadius: 12, fontSize: 13, fontWeight: 700,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                background: recording ? 'rgba(30,12,8,0.9)' : 'rgba(255,255,255,0.95)',
+                color: recording ? '#fca5a5' : '#0d0e0f',
+                border: recording ? '1px solid rgba(239,68,68,0.3)' : 'none',
+                cursor: !canDownloadVideo || recording ? 'not-allowed' : 'pointer',
+                position: 'relative', overflow: 'hidden'
+              }}
+            >
+              {recording && (
+                <div style={{
+                  position: 'absolute', left: 0, top: 0, bottom: 0,
+                  width: `${recordProgress}%`, background: 'rgba(239,68,68,0.2)',
+                  transition: 'width 0.1s linear', zIndex: 0
+                }} />
+              )}
+              <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+                {recording ? <Film size={14} /> : <Video size={14} />}
+                {recording ? `Renderizando (${recordSecsLeft}s)` : 'Descargar video'}
+              </span>
+            </button>
+            {!hasVideoSource && (
+              <p style={{ fontSize: 12, color: 'var(--rt-text-3)', marginTop: 4 }}>
+                No hay video disponible. Carga un video o activa el modo película para generar video.
+              </p>
+            )}
           </>
         )}
       </div>

@@ -1,7 +1,6 @@
 import { useState, useRef, type CSSProperties, memo } from 'react';
 import { useApp } from '../../store';
 import { ExportTab } from './right/ExportTab';
-import { LayersTab } from './right/LayersTab';
 import { toast } from 'sonner';
 
 // Data & Helpers
@@ -77,7 +76,6 @@ export const RightPanel = memo(({
   textOverlays, onUpdateText, onRemoveText 
 }: RightPanelProps) => {
   const { state } = useApp();
-  const [activeTab, setActiveTab] = useState<'export' | 'layers'>('export');
   
   // Export State
   const [exporting, setExporting] = useState(false);
@@ -171,59 +169,46 @@ export const RightPanel = memo(({
     link.click();
   };
 
+  const handleExportVideo = () => {
+    if (state.videoUrl) {
+      handleDownloadVideo();
+      return;
+    }
+    if (state.creationMode === 'movie') {
+      handleRecordWebM();
+      return;
+    }
+    toast.error('No hay video disponible para descargar');
+  };
+
   return (
     <div className="right-panel glass-panel" style={{
       width: 240, height: '100%', display: 'flex', flexDirection: 'column',
       borderLeft: '1px solid var(--rt-border)', flexShrink: 0,
       position: 'relative', zIndex: 10
     }}>
-      {/* Tab Switcher */}
-      <div style={{
-        display: 'flex', padding: '10px 14px', gap: 14,
-        borderBottom: '1px solid var(--rt-border)', flexShrink: 0
-      }}>
-        <button onClick={() => setActiveTab('export')} style={{
-          fontSize: 12, fontWeight: 600, border: 'none', background: 'none', cursor: 'pointer',
-          color: activeTab === 'export' ? 'var(--rt-text)' : 'var(--rt-text-3)',
-          transition: 'color 0.2s'
-        }}>Export</button>
-        <button onClick={() => setActiveTab('layers')} style={{
-          fontSize: 12, fontWeight: 600, border: 'none', background: 'none', cursor: 'pointer',
-          color: activeTab === 'layers' ? 'var(--rt-text)' : 'var(--rt-text-3)',
-          transition: 'color 0.2s'
-        }}>Capas {textOverlays.length > 0 && `(${textOverlays.length})`}</button>
-      </div>
-
-      {/* Content */}
       <div className="styled-scroll panel-text-contrast" style={{ flex: 1, overflowY: 'auto', padding: '16px 14px 24px' }}>
-        {activeTab === 'export' ? (
-          <ExportTab 
-            onDownloadPNG={handleDownloadPNG}
-            onDownloadVideo={handleDownloadVideo}
-            onRecordWebM={handleRecordWebM}
-            onCopy={handleCopy}
-            exporting={exporting}
-            copying={copying}
-            copied={copied}
-            recording={recording}
-            recordProgress={recordProgress}
-            recordSecsLeft={recordSecsLeft}
-            selectedSize={selectedSize}
-            setSelectedSize={setSelectedSize}
-            exportScale={exportScale}
-            setExportScale={setExportScale}
-            exportFps={exportFps}
-            setExportFps={setExportFps}
-            exportTransparent={exportTransparent}
-            setExportTransparent={setExportTransparent}
-          />
-        ) : (
-          <LayersTab 
-            textOverlays={textOverlays}
-            onUpdateText={onUpdateText}
-            onRemoveText={onRemoveText}
-          />
-        )}
+        <ExportTab 
+          onDownloadPNG={handleDownloadPNG}
+          onDownloadVideo={handleExportVideo}
+          onCopy={handleCopy}
+          exporting={exporting}
+          copying={copying}
+          copied={copied}
+          recording={recording}
+          recordProgress={recordProgress}
+          recordSecsLeft={recordSecsLeft}
+          selectedSize={selectedSize}
+          setSelectedSize={setSelectedSize}
+          exportScale={exportScale}
+          setExportScale={setExportScale}
+          exportFps={exportFps}
+          setExportFps={setExportFps}
+          exportTransparent={exportTransparent}
+          setExportTransparent={setExportTransparent}
+          canDownloadVideo={Boolean(state.videoUrl || state.creationMode === 'movie')}
+          isMovieMode={state.creationMode === 'movie'}
+        />
       </div>
     </div>
   );

@@ -341,6 +341,7 @@ export function AnnotateCanvas() {
 
   const lw = state.annotateLineWidth ?? SIZE_MAP[state.annotateSize] ?? 5;
   const fontSize = FONT_SIZE_MAP[state.annotateSize] ?? 20;
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   // ── Canvas-to-screen coordinate helpers ───────────────────────────
   const getPos = useCallback((e: React.PointerEvent<HTMLElement>): Point => {
@@ -1205,7 +1206,8 @@ export function AnnotateCanvas() {
           style={{
             position: 'absolute',
             left: Math.min(textInput.screenX, (canvasRef.current?.clientWidth ?? 9999) - 260),
-            top: textInput.screenY,
+            top: isMobile ? undefined : textInput.screenY,
+            bottom: isMobile ? 140 : undefined,
             zIndex: 50,
             display: 'flex', flexDirection: 'column', gap: 6,
             filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.7))',

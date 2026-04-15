@@ -2,6 +2,7 @@ import * as React from "react";
 import { useRef, useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppProvider, useApp } from "./store";
+import type { CreationMode } from "./store";
 import { Toaster } from "sonner";
 import {
   Tooltip,
@@ -9,7 +10,6 @@ import {
   TooltipContent,
   TooltipProvider,
 } from "@/components/ui/tooltip";
-import type { CreationMode } from "./store";
 import { Canvas } from "./components/canvas/Canvas";
 import { LeftPanel } from "./components/panels/LeftPanel";
 import { TAB_ICONS } from "./components/panels/tabs";
@@ -126,9 +126,6 @@ function Editor() {
 
   const currentModel = getModelById(state.deviceModel);
   const deviceLabel = currentModel.label;
-  const activeMode =
-    CREATION_MODES.find((m) => m.id === state.creationMode) ??
-    CREATION_MODES[0];
 
   const TOOLBAR_ACTIONS = [
     {
@@ -207,10 +204,10 @@ function Editor() {
     state.annotateStrokes.length,
   ]);
 
-  const handleModeChange = (mode: CreationMode) => {
-    const isMovie = mode === "movie";
-    updateState({ creationMode: mode, movieMode: isMovie });
-    if (!isMovie) setMoviePlaying(false);
+  const handleViewToggle = (showVideoEditor: boolean) => {
+    setMobileTab(null);
+    updateState({ movieMode: showVideoEditor });
+    if (!showVideoEditor) setMoviePlaying(false);
   };
 
   return (
@@ -452,7 +449,7 @@ function Editor() {
         }}
       >
         <AnimatePresence mode="wait">
-          {mobileTab === null ? (
+          {!state.movieMode && mobileTab === null ? (
             <motion.div
               key="main-nav"
               initial={{ y: 100 }}
@@ -567,11 +564,12 @@ function Editor() {
                   style={{ position: "relative", minWidth: 200 }}
                 >
                   <button
-                    className={`ps-action-item ${state.creationMode === "mockup" ? "active" : ""}`}
-                    onClick={() => handleModeChange("mockup")}
-                    style={{ position: "relative", zIndex: 1, flex: 1 }}
+                    className={`ps-action-item ${!state.movieMode ? "active" : ""}`}
+                    onClick={() => handleViewToggle(false)}
+                    aria-label="Herramientas"
+                    style={{ position: "relative", zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
-                    {state.creationMode === "mockup" && (
+                    {!state.movieMode && (
                       <motion.div
                         layoutId="active-action-pill"
                         style={{
@@ -588,14 +586,15 @@ function Editor() {
                         }}
                       />
                     )}
-                    Imagen
+                    <Sliders size={16} />
                   </button>
                   <button
-                    className={`ps-action-item ${state.creationMode === "movie" ? "active" : ""}`}
-                    onClick={() => handleModeChange("movie")}
-                    style={{ position: "relative", zIndex: 1, flex: 1 }}
+                    className={`ps-action-item ${state.movieMode ? "active" : ""}`}
+                    onClick={() => handleViewToggle(true)}
+                    aria-label="Timeline"
+                    style={{ position: "relative", zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
-                    {state.creationMode === "movie" && (
+                    {state.movieMode && (
                       <motion.div
                         layoutId="active-action-pill"
                         style={{
@@ -612,7 +611,80 @@ function Editor() {
                         }}
                       />
                     )}
-                    Película
+                    <Film size={16} />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ) : mobileTab === null && state.movieMode ? (
+            <motion.div
+              key="video-editor"
+              initial={{ y: 100 }}
+              animate={{ y: 0 }}
+              exit={{ y: 100 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            >
+              <div
+                style={{
+                  background: "var(--ps-panel)",
+                  padding: "0 0 20px",
+                  display: "flex",
+                  justifyContent: "center",
+                }}
+              >
+                <div
+                  className="ps-action-pill"
+                  style={{ position: "relative", minWidth: 200 }}
+                >
+                  <button
+                    className={`ps-action-item ${!state.movieMode ? "active" : ""}`}
+                    onClick={() => handleViewToggle(false)}
+                    aria-label="Herramientas"
+                    style={{ position: "relative", zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    {!state.movieMode && (
+                      <motion.div
+                        layoutId="active-action-pill"
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: "#3a3a3a",
+                          borderRadius: 26,
+                          zIndex: -1,
+                        }}
+                        transition={{
+                          type: "spring",
+                          bounce: 0.2,
+                          duration: 0.6,
+                        }}
+                      />
+                    )}
+                    <Sliders size={16} />
+                  </button>
+                  <button
+                    className={`ps-action-item ${state.movieMode ? "active" : ""}`}
+                    onClick={() => handleViewToggle(true)}
+                    aria-label="Timeline"
+                    style={{ position: "relative", zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    {state.movieMode && (
+                      <motion.div
+                        layoutId="active-action-pill"
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: "#3a3a3a",
+                          borderRadius: 26,
+                          zIndex: -1,
+                        }}
+                        transition={{
+                          type: "spring",
+                          bounce: 0.2,
+                          duration: 0.6,
+                        }}
+                      />
+                    )}
+                    <Film size={16} />
                   </button>
                 </div>
               </div>
@@ -1341,7 +1413,7 @@ function Editor() {
         <div
           style={{
             position: "absolute",
-            bottom: 130,
+            bottom: 64,
             left: 0,
             right: 0,
             zIndex: 120,
