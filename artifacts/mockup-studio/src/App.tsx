@@ -121,7 +121,7 @@ function Editor() {
   const movieTimelineRef = useRef<MovieTimelineHandle>(null);
   const [moviePlaying, setMoviePlaying] = useState(false);
   const [mobileTab, setMobileTab] = useState<Tab | "export" | null>(null);
-  const [activeTab, setActiveTab] = useState<string>("presets");
+  const [activeTab, setActiveTab] = useState<string>("template");
   const [timelineCollapsed, setTimelineCollapsed] = useState(false);
 
   const currentModel = getModelById(state.deviceModel);
@@ -394,8 +394,8 @@ function Editor() {
       {/* ── UNIFIED COMMAND BAR ────────────────────────────── */}
       <FloatingToolbar
         onAddElement={() => {
-          setActiveTab("presets");
-          setMobileTab("presets");
+          setActiveTab("template");
+          setMobileTab("template");
         }}
         onToggleExport={() =>
           setMobileTab(mobileTab === "export" ? null : "export")
@@ -458,19 +458,6 @@ function Editor() {
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
             >
               <nav className="ps-bottom-nav">
-                <button
-                  onClick={() => {
-                    setActiveTab("presets");
-                    setMobileTab("presets");
-                  }}
-                  className={`ps-nav-item ${activeTab === "presets" ? "active" : ""}`}
-                >
-                  <Sparkles
-                    size={22}
-                    strokeWidth={activeTab === "presets" ? 2.5 : 1.8}
-                  />
-                  <span>Preajustes</span>
-                </button>
                 <button
                   onClick={() => {
                     setActiveTab("template");
