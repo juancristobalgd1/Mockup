@@ -627,7 +627,7 @@ function Editor() {
               <div
                 style={{
                   background: "var(--ps-panel)",
-                  padding: "0 0 20px",
+                  padding: "0 0 12px",
                   display: "flex",
                   justifyContent: "center",
                 }}
@@ -688,6 +688,17 @@ function Editor() {
                   </button>
                 </div>
               </div>
+              <MovieTimeline
+                ref={movieTimelineRef}
+                viewerRef={viewerRef}
+                movieTimeRef={movieTimeRef}
+                canvasRef={canvasRef}
+                onPlayingChange={setMoviePlaying}
+                onClose={() => {
+                  updateState({ movieMode: false });
+                  setMoviePlaying(false);
+                }}
+              />
             </motion.div>
           ) : (
             <motion.div
@@ -1408,30 +1419,6 @@ function Editor() {
         </AnimatePresence>
       </div>
 
-      {/* Timeline (only in movie mode) */}
-      {state.movieMode && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: 64,
-            left: 0,
-            right: 0,
-            zIndex: 120,
-          }}
-        >
-          <MovieTimeline
-            ref={movieTimelineRef}
-            viewerRef={viewerRef}
-            movieTimeRef={movieTimeRef}
-            canvasRef={canvasRef}
-            onPlayingChange={setMoviePlaying}
-            onClose={() => {
-              updateState({ movieMode: false });
-              setMoviePlaying(false);
-            }}
-          />
-        </div>
-      )}
     </div>
   );
 }

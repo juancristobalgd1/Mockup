@@ -1875,9 +1875,9 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           borderTop: '1px solid rgba(255,255,255,0.07)',
           padding: '8px 14px',
           display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-          background: 'rgba(59,130,246,0.05)',
+          background: 'rgba(255,255,255,0.03)',
         }}>
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
             Keyframe · {formatTime(activeKf.time)}
           </span>
 
