@@ -448,7 +448,7 @@ function Editor() {
           bottom: 0,
           left: 0,
           right: 0,
-          zIndex: 110,
+          zIndex: 160,
         }}
       >
         <AnimatePresence mode="wait">
