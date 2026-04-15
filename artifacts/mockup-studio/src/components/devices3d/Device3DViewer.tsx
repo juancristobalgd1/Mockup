@@ -19,6 +19,9 @@ import {
   useGLTF,
   RoundedBox,
   MeshReflectorMaterial,
+  GizmoHelper,
+  GizmoViewport,
+  Hud,
 } from "@react-three/drei";
 import {
   EffectComposer,
@@ -1670,8 +1673,11 @@ function BrowserFrame3D({
 const CAMERA_PRESETS: Record<string, { phi: number; theta: number }> = {
   hero: { phi: Math.PI / 2 - 0.12, theta: 0.28 },
   front: { phi: Math.PI / 2, theta: 0 },
+  back: { phi: Math.PI / 2, theta: Math.PI },
   side: { phi: Math.PI / 2, theta: Math.PI / 2 },
+  left: { phi: Math.PI / 2, theta: -Math.PI / 2 },
   top: { phi: 0.18, theta: 0 },
+  bottom: { phi: Math.PI - 0.18, theta: 0 },
   "tilt-right": { phi: Math.PI / 2 - 0.08, theta: 0.72 },
   "tilt-left": { phi: Math.PI / 2 - 0.08, theta: -0.72 },
   low: { phi: Math.PI / 2 + 0.45, theta: 0.22 },
@@ -1958,6 +1964,15 @@ function HeroOrbitControls({
   const isFirstMount = useRef(true);
   const prevDeviceType = useRef(deviceType);
   const isInteractingRef = useRef(false);
+  const animationStateRef = useRef<{
+    pos: THREE.Vector3;
+    target: THREE.Vector3;
+    active: boolean;
+  }>({
+    pos: new THREE.Vector3(),
+    target: new THREE.Vector3(),
+    active: false,
+  });
 
   const zoomRange = useMemo(
     () => ({
@@ -2008,35 +2023,28 @@ function HeroOrbitControls({
 
   const applyPreset = useCallback(
     (angle: string, laptop: boolean) => {
-      const raf = requestAnimationFrame(() => {
-        const controls = controlsRef.current;
-        if (!controls) return;
-        const preset = CAMERA_PRESETS[angle] ?? CAMERA_PRESETS.hero;
-        const dist = laptop ? 6.2 : 5.6;
-        const { phi, theta } = preset;
-        camera.position.set(
-          dist * Math.sin(phi) * Math.sin(theta),
-          dist * Math.cos(phi),
-          dist * Math.sin(phi) * Math.cos(theta),
-        );
-        controls.target.set(0, 0, 0);
-        controls.update();
-        onZoomValueChangeInternal(
-          distanceToZoomValue(
-            camera.position.distanceTo(controls.target),
-            zoomRange.minDistance,
-            zoomRange.maxDistance,
-          ),
-        );
-      });
-      return raf;
+      const controls = controlsRef.current;
+      if (!controls) return;
+      
+      const preset = CAMERA_PRESETS[angle] ?? CAMERA_PRESETS.hero;
+      const dist = laptop ? 6.2 : 5.6;
+      const { phi, theta } = preset;
+      
+      const targetPos = new THREE.Vector3(
+        dist * Math.sin(phi) * Math.sin(theta),
+        dist * Math.cos(phi),
+        dist * Math.sin(phi) * Math.cos(theta),
+      );
+      
+      animationStateRef.current = {
+        pos: targetPos,
+        target: new THREE.Vector3(0, 0, 0),
+        active: true,
+      };
+      
+      return 0; // Return dummy raf ID
     },
-    [
-      camera,
-      zoomRange.maxDistance,
-      zoomRange.minDistance,
-      onZoomValueChangeInternal,
-    ],
+    [],
   );
 
   useEffect(() => {
@@ -2100,6 +2108,19 @@ function HeroOrbitControls({
       if (result) {
         camera.position.copy(result.position);
         controls.target.copy(result.target);
+      }
+    } else if (animationStateRef.current.active && !isInteractingRef.current) {
+      // Smoothly interpolate to preset view
+      const target = animationStateRef.current;
+      camera.position.lerp(target.pos, 0.08);
+      controls.target.lerp(target.target, 0.08);
+      controls.update();
+
+      if (camera.position.distanceTo(target.pos) < 0.01 && controls.target.distanceTo(target.target) < 0.01) {
+        target.active = false;
+        camera.position.copy(target.pos);
+        controls.target.copy(target.target);
+        controls.update();
       }
     }
 
@@ -2188,22 +2209,43 @@ export const Device3DViewer = forwardRef<
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    if (interactionMode === "drag") {
+    // Left click for Move tool, or Right click for any mode
+    if (interactionMode === "drag" || e.button === 2) {
       dragStartRef.current = { x: e.clientX, y: e.clientY };
       e.currentTarget.setPointerCapture(e.pointerId);
+      // If right click, we may want to prevent the menu immediately, 
+      // but usually contextmenu event is better.
     }
   };
 
+  // Use a ref to track current pan values to avoid stale closures during high-frequency updates
+  const panCacheRef = useRef({ x: state.canvasPanX ?? 0, y: state.canvasPanY ?? 0 });
+  
+  // Sync cache with state updates from other sources (like a reset)
+  useEffect(() => {
+    panCacheRef.current = { x: state.canvasPanX ?? 0, y: state.canvasPanY ?? 0 };
+  }, [state.canvasPanX, state.canvasPanY]);
+
   const handlePointerMove = (e: React.PointerEvent) => {
     setHintVisible(false);
-    if (interactionMode === "drag" && dragStartRef.current) {
+    
+    // Check for either 'drag' mode with left click OR any mode with right click
+    const isDragging = (interactionMode === "drag" && (e.buttons & 1)) || (e.buttons & 2);
+    
+    if (isDragging && dragStartRef.current) {
       const dx = e.clientX - dragStartRef.current.x;
       const dy = e.clientY - dragStartRef.current.y;
       dragStartRef.current = { x: e.clientX, y: e.clientY };
+      
+      const nextX = panCacheRef.current.x + dx;
+      const nextY = panCacheRef.current.y + dy;
+      
+      panCacheRef.current = { x: nextX, y: nextY };
+      
       updateState(
         {
-          canvasPanX: (state.canvasPanX ?? 0) + dx,
-          canvasPanY: (state.canvasPanY ?? 0) + dy,
+          canvasPanX: nextX,
+          canvasPanY: nextY,
         },
         true,
       );
@@ -2367,6 +2409,7 @@ export const Device3DViewer = forwardRef<
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onContextMenu={(e) => e.preventDefault()}
       onDragOver={(e) => {
         e.preventDefault();
         setDragOver(true);
@@ -2477,6 +2520,9 @@ export const Device3DViewer = forwardRef<
         />
       </R3FCanvas>
 
+      {/* High-fidelity Orientation Gizmo (Spline-style) */}
+      <OrientationGimbal mainCamera={cameraRef.current} />
+
       <RotatoHint visible={hintVisible} />
 
       {/* ── Drag-and-drop visual feedback ────────────────────────── */}
@@ -2497,3 +2543,101 @@ export const Device3DViewer = forwardRef<
     </div>
   );
 });
+
+/** 
+ * High-fidelity 3D Orientation Gimbal
+ * Rendered in a separate mini-canvas to stay on top and avoid main-scene camera offsets.
+ */
+function OrientationGimbal({ mainCamera }: { mainCamera: THREE.Camera | null }) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 24,
+        right: 24,
+        width: 82,
+        height: 82,
+        pointerEvents: "auto",
+        zIndex: 100,
+        cursor: "default",
+      }}
+    >
+      <R3FCanvas
+        camera={{ position: [0, 0, 5], fov: 28 }}
+        style={{ background: "transparent" }}
+        gl={{ alpha: true, antialias: true }}
+      >
+        <ambientLight intensity={2} />
+        <pointLight position={[5, 5, 5]} intensity={1.5} />
+        
+        {/* Soft glass background circle */}
+        <mesh raycast={() => null}>
+          <circleGeometry args={[1.5, 32]} />
+          <meshBasicMaterial color="white" opacity={0.6} transparent />
+        </mesh>
+        {/* Subtle shadow ring */}
+        <mesh position={[0, 0, -0.1]} raycast={() => null}>
+          <circleGeometry args={[1.56, 32]} />
+          <meshBasicMaterial color="#000" opacity={0.05} transparent />
+        </mesh>
+
+        <GimbalContent mainCamera={mainCamera} />
+      </R3FCanvas>
+    </div>
+  );
+}
+
+function GimbalContent({ mainCamera }: { mainCamera: THREE.Camera | null }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const { updateState } = useApp();
+
+  useFrame(() => {
+    if (groupRef.current && mainCamera) {
+      // Sync gimbal orientation with main camera
+      groupRef.current.quaternion.copy(mainCamera.quaternion).invert();
+    }
+  });
+
+  const axisLength = 1.05;
+  const axes = [
+    { dir: new THREE.Vector3(1, 0, 0), color: "#ff4444", label: "X", angle: "side" },
+    { dir: new THREE.Vector3(0, 1, 0), color: "#22c35e", label: "Y", angle: "top" },
+    { dir: new THREE.Vector3(0, 0, 1), color: "#2196f3", label: "Z", angle: "front" },
+    { dir: new THREE.Vector3(-1, 0, 0), color: "#ddd", label: "", angle: "left" },
+    { dir: new THREE.Vector3(0, -1, 0), color: "#ddd", label: "", angle: "bottom" },
+    { dir: new THREE.Vector3(0, 0, -1), color: "#ddd", label: "", angle: "back" },
+  ];
+
+  return (
+    <group ref={groupRef}>
+      {axes.map((axis, i) => (
+        <group key={i}>
+          <mesh 
+            position={axis.dir.clone().multiplyScalar(axisLength)}
+            onClick={(e) => {
+              e.stopPropagation();
+              updateState({ cameraAngle: axis.angle as any });
+            }}
+            onPointerOver={(e) => {
+               document.body.style.cursor = 'pointer';
+            }}
+            onPointerOut={(e) => {
+               document.body.style.cursor = 'default';
+            }}
+          >
+            <sphereGeometry args={[0.2, 16, 16]} />
+            <meshStandardMaterial 
+              color={axis.color} 
+              emissive={axis.color} 
+              emissiveIntensity={0.2} 
+            />
+          </mesh>
+          <line raycast={() => null}>
+            <bufferGeometry attach="geometry" {...new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), axis.dir.clone().multiplyScalar(axisLength)])} />
+            <lineBasicMaterial attach="material" color={axis.color} linewidth={2} transparent opacity={0.4} />
+          </line>
+        </group>
+      ))}
+    </group>
+  );
+}

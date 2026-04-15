@@ -145,7 +145,7 @@ export interface AppState {
   lightIBL: number;
   contactShadowOpacity: number;
   contactShadowDirection?: 'abajo' | 'atras' | 'izquierda' | 'derecha';
-  cameraAngle: 'hero' | 'front' | 'side' | 'top' | 'tilt-right' | 'tilt-left' | 'low' | 'diagonal' | 'dramatic';
+  cameraAngle: 'hero' | 'front' | 'back' | 'top' | 'bottom' | 'side' | 'left' | 'tilt-right' | 'tilt-left' | 'low' | 'diagonal' | 'dramatic';
   cameraResetKey: number;
 
   deviceScale: number;
