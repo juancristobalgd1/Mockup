@@ -201,6 +201,8 @@ export interface AppState {
   labelsSubTab: 'view' | 'add' | 'subtract';
   interactionMode: InteractionMode;
   zoomValue: number;
+  canvasPanX: number;
+  canvasPanY: number;
 }
 
 export const defaultState: AppState = {
@@ -305,6 +307,8 @@ export const defaultState: AppState = {
   activeLabelId: null,
   interactionMode: 'none',
   zoomValue: 58,
+  canvasPanX: 0,
+  canvasPanY: 0,
 };
 
 interface AppContextType {

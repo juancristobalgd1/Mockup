@@ -186,6 +186,31 @@ function ExposureControl({ exposure }: { exposure: number }) {
   return null;
 }
 
+/** Professional Camera Lens Shift (Composition Pan)
+ * This allows shifting the projection center so the device moves on screen
+ * while the 3D rotation center remains perfectly at (0,0,0).
+ */
+function LensShift({ px, py }: { px: number; py: number }) {
+  const { camera, size } = useThree();
+  useFrame(() => {
+    if ((camera as THREE.PerspectiveCamera).isPerspectiveCamera) {
+      const cam = camera as THREE.PerspectiveCamera;
+      // We use setViewOffset to shift the viewport within a virtual larger screen.
+      // -px, -py shifts the "film" in the opposite direction of the desired movement.
+      cam.setViewOffset(
+        size.width,
+        size.height,
+        -px,
+        -py,
+        size.width,
+        size.height,
+      );
+      cam.updateProjectionMatrix();
+    }
+  });
+  return null;
+}
+
 // ── Per-preset HDR environment intensity ───────────────────────────
 // Kept in the 1.0–1.6 range: enough for realistic reflections without
 // compounding with the direct lights to create overexposure.
@@ -2098,7 +2123,7 @@ function HeroOrbitControls({
     <OrbitControls
       ref={controlsRef}
       makeDefault
-      enablePan={interactionMode === "drag"}
+      enablePan={false} // Custom high-fidelity LensShift Pan used instead
       enableZoom={true}
       enableRotate={interactionMode !== "drag"}
       minDistance={zoomRange.minDistance}
@@ -2159,6 +2184,39 @@ export const Device3DViewer = forwardRef<
   const [pencilVisible, setPencilVisible] = useState(false);
   const interactionMode = state.interactionMode;
   const zoomValue = state.zoomValue;
+
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (interactionMode === "drag") {
+      dragStartRef.current = { x: e.clientX, y: e.clientY };
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    setHintVisible(false);
+    if (interactionMode === "drag" && dragStartRef.current) {
+      const dx = e.clientX - dragStartRef.current.x;
+      const dy = e.clientY - dragStartRef.current.y;
+      dragStartRef.current = { x: e.clientX, y: e.clientY };
+      updateState(
+        {
+          canvasPanX: (state.canvasPanX ?? 0) + dx,
+          canvasPanY: (state.canvasPanY ?? 0) + dy,
+        },
+        true,
+      );
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (dragStartRef.current) {
+      dragStartRef.current = null;
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
+
 
   // ── Texture lives HERE — outside the Canvas so it never gets
   // disposed/reloaded when DeviceScene suspends or remounts. ──────
@@ -2306,7 +2364,9 @@ export const Device3DViewer = forwardRef<
         transition: "filter 0.3s ease",
         ...style,
       }}
-      onPointerMove={() => setHintVisible(false)}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
       onDragOver={(e) => {
         e.preventDefault();
         setDragOver(true);
@@ -2387,6 +2447,9 @@ export const Device3DViewer = forwardRef<
           enabled={state.clayMode ?? false}
           color={state.clayColor ?? "#e8ddd3"}
         />
+
+        {/* High-fidelity Lens Shift for Composition Pan */}
+        <LensShift px={state.canvasPanX ?? 0} py={state.canvasPanY ?? 0} />
 
         {/* Post-processing: bloom + DoF + SMAA */}
         <PostFX
