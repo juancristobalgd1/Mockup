@@ -299,17 +299,6 @@ function Editor() {
           >
             <Crown size={20} className="ps-crown-icon" />
           </button>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: "#fff",
-              padding: "0 12px 0 4px",
-              opacity: 0.8,
-            }}
-          >
-            {deviceLabel}
-          </div>
         </div>
 
         {/* Right: Actions */}
