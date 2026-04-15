@@ -214,33 +214,6 @@ export function FloatingToolbar({
           )}
         </button>
 
-        {/* EXTRA TOOLS SEPARATOR */}
-        <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
-
-        {/* ADD TOOL */}
-        <button aria-label="Añadir elemento" title="Añadir" onClick={onAddElement} style={pillButton(false)}>
-          <Plus size={22} strokeWidth={2.2} />
-        </button>
-
-        {/* LAYERS / EXPORT TOOL */}
-        <button aria-label="Capas y Exportar" title="Capas" onClick={onToggleExport} style={pillButton(isExportOpen)}>
-          <div style={{ position: 'relative', width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {state.screenshotUrl ? (
-              <img 
-                src={state.screenshotUrl} 
-                style={{ 
-                  width: '100%', 
-                  height: '100%', 
-                  objectFit: 'cover', 
-                  borderRadius: 4,
-                  border: isExportOpen ? '1px solid #fff' : '1px solid rgba(255,255,255,0.2)'
-                }} 
-              />
-            ) : (
-              <Layers size={22} strokeWidth={2.2} />
-            )}
-          </div>
-        </button>
       </div>
 
       {/* ZOOM SLIDER POPUP */}

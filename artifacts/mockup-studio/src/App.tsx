@@ -367,6 +367,9 @@ function Editor() {
             <Grid3X3 size={18} />
           </button>
           <button
+            aria-label="Abrir opciones de descarga"
+            title="Descargar"
+            onClick={() => setMobileTab(mobileTab === "export" ? null : "export")}
             className="btn-press"
             style={{
               padding: "8px 12px",
