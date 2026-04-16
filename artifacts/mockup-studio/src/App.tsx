@@ -129,6 +129,7 @@ function Editor() {
   const [labelsPanelView, setLabelsPanelView] = useState<'hub' | 'content'>('hub');
   const [annotatePanelView, setAnnotatePanelView] = useState<'hub' | 'shapes'>('hub');
   const [annotateProperty, setAnnotateProperty] = useState<'size' | 'opacity' | 'color' | 'hardness' | null>(null);
+  const [overlayProperty, setOverlayProperty] = useState<'color' | 'opacity' | 'light' | 'more' | null>(null);
   const [timelineCollapsed, setTimelineCollapsed] = useState(false);
 
   const currentModel = getModelById(state.deviceModel);
@@ -905,6 +906,196 @@ function Editor() {
                         pointerEvents: "auto",
                         background: "#1c1c1e",
                         color: "#fff",
+                        border: "none",
+                        width: 44,
+                        height: 44,
+                        borderRadius: 22,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                      }}
+                    >
+                      <MoreHorizontal size={20} />
+                    </button>
+                  </>
+                )}
+
+                {mobileTab === "overlay" && (
+                  <>
+                    {/* Tooltips Layer */}
+                    <AnimatePresence>
+                      {overlayProperty && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          style={{
+                            position: "absolute",
+                            bottom: 60,
+                            left: 0,
+                            right: 0,
+                            zIndex: 200,
+                            display: "flex",
+                            justifyContent: "center",
+                            pointerEvents: "auto"
+                          }}
+                        >
+                          <div style={{
+                            background: "rgba(30,30,32,0.95)",
+                            backdropFilter: "blur(20px)",
+                            borderRadius: 20,
+                            padding: "16px 20px",
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            boxShadow: "0 10px 40px rgba(0,0,0,0.6)",
+                            minWidth: 260,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 12
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                {overlayProperty === 'color' ? 'Color Sólido' : overlayProperty === 'opacity' ? 'Opacidad Sólido' : overlayProperty === 'light' ? 'Opacidad Luz' : 'Mezcla'}
+                              </span>
+                              <button onClick={() => setOverlayProperty(null)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18, padding: 0, cursor: 'pointer' }}>×</button>
+                            </div>
+
+                            {overlayProperty === 'color' ? (
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+                                {['#ffffff', '#aaaaaa', '#333333', '#000000', '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7'].map(c => (
+                                  <button
+                                    key={c}
+                                    onClick={() => updateState({ overlayColor: c, overlayEnabled: true })}
+                                    style={{
+                                      width: 38, height: 38, borderRadius: '50%', background: c, border: state.overlayColor === c ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)', cursor: 'pointer'
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            ) : overlayProperty === 'more' ? (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                {(['multiply', 'screen', 'overlay', 'soft-light'] as const).map(mode => (
+                                  <button
+                                    key={mode}
+                                    onClick={() => updateState({ lightOverlayBlend: mode })}
+                                    style={{
+                                      padding: '8px 12px', borderRadius: 10, border: 'none', fontSize: 11, fontWeight: 700,
+                                      background: state.lightOverlayBlend === mode ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)',
+                                      color: state.lightOverlayBlend === mode ? '#000' : '#fff'
+                                    }}
+                                  >
+                                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <input
+                                  type="range"
+                                  min={0}
+                                  max={100}
+                                  step={1}
+                                  value={overlayProperty === 'opacity' ? state.overlayOpacity : state.lightOverlayOpacity}
+                                  onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    if (overlayProperty === 'opacity') updateState({ overlayOpacity: val, overlayEnabled: true });
+                                    else updateState({ lightOverlayOpacity: val });
+                                  }}
+                                  style={{ flex: 1, accentColor: '#3498db', height: 4 }}
+                                />
+                                <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', minWidth: 36, textAlign: 'right' }}>
+                                  {overlayProperty === 'opacity' ? `${state.overlayOpacity}%` : `${state.lightOverlayOpacity}%`}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Overlay Color Button (Left) */}
+                    <button
+                      className="ps-tool-icon-btn btn-press"
+                      onClick={() => setOverlayProperty(overlayProperty === 'color' ? null : 'color')}
+                      style={{
+                        pointerEvents: "auto",
+                        background: overlayProperty === 'color' ? "#fff" : "#1c1c1e",
+                        color: overlayProperty === 'color' ? "#000" : "#fff",
+                        border: "none",
+                        width: 44,
+                        height: 44,
+                        borderRadius: 22,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                        position: "relative",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div style={{
+                        position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}>
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: state.overlayColor, border: '2px solid rgba(255,255,255,0.8)', opacity: state.overlayEnabled ? 1 : 0.4 }} />
+                      </div>
+                    </button>
+
+                    {/* Property Pill (Center) */}
+                    <div
+                      style={{
+                        pointerEvents: "auto",
+                        display: "flex",
+                        background: "#1c1c1e",
+                        borderRadius: 30,
+                        padding: 4,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                      }}
+                    >
+                      <button
+                        className="btn-press"
+                        onClick={() => setOverlayProperty(overlayProperty === 'opacity' ? null : 'opacity')}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          background: overlayProperty === 'opacity' ? "#f5f5f7" : "transparent",
+                          color: overlayProperty === 'opacity' ? "#000" : (state.overlayEnabled ? "#fff" : "rgba(255,255,255,0.4)"),
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "none",
+                        }}
+                      >
+                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" />
+                          <path d="M8 12h8" />
+                        </svg>
+                      </button>
+                      <button
+                        className="btn-press"
+                        onClick={() => setOverlayProperty(overlayProperty === 'light' ? null : 'light')}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          background: overlayProperty === 'light' ? "#f5f5f7" : "transparent",
+                          color: overlayProperty === 'light' ? "#000" : (state.lightOverlay ? "#fff" : "rgba(255,255,255,0.4)"),
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "none",
+                        }}
+                      >
+                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" />
+                          <path d="M8 12h8" />
+                          <path d="M12 8v8" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* More Options (Right) */}
+                    <button
+                      className="ps-tool-icon-btn btn-press"
+                      onClick={() => setOverlayProperty(overlayProperty === 'more' ? null : 'more')}
+                      style={{
+                        pointerEvents: "auto",
+                        background: overlayProperty === 'more' ? "#fff" : "#1c1c1e",
+                        color: overlayProperty === 'more' ? "#000" : "#fff",
                         border: "none",
                         width: 44,
                         height: 44,
