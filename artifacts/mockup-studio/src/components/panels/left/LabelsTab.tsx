@@ -67,7 +67,7 @@ const DeviceSilhouette = ({ children, height = 260 }: { children: React.ReactNod
 
 export const LabelsTab = () => {
   const { state, updateState, addLabel, clearLabels, updateText, removeText } = useApp();
-  const [lTab, setLTab] = useState<'style' | 'behavior' | 'font'>('style');
+  const [lTab, setLTab] = useState<'style' | 'behavior' | 'font' | 'positions'>('style');
   const isMobile = window.innerWidth <= 768;
   
   const activeLabels = state.texts.filter(text => text.kind === 'label');
@@ -235,7 +235,7 @@ export const LabelsTab = () => {
                           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 10 }}>
                             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.05)' }}>
                               <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Tamaño Fuente</span>
-                              <Slider value={selectedLabel.fontSize} min={8} max={42} onChange={v => handleUpdate({ fontSize: v })} unit="pt" />
+                              <Slider label="Tamaño" value={selectedLabel.fontSize} min={8} max={42} onChange={v => handleUpdate({ fontSize: v })} unit="pt" />
                             </div>
                             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.05)' }}>
                               <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Color</span>
@@ -270,7 +270,7 @@ export const LabelsTab = () => {
                             </div>
                             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.05)' }}>
                               <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Elevación (Z)</span>
-                              <Slider value={selectedLabel.levitation} min={0} max={60} onChange={v => handleUpdate({ levitation: v })} unit="px" />
+                              <Slider label="Elevación" value={selectedLabel.levitation ?? 0} min={0} max={60} onChange={v => handleUpdate({ levitation: v })} unit="px" />
                             </div>
                           </div>
                         )}

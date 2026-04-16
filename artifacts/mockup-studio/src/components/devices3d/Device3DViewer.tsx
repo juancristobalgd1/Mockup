@@ -2426,7 +2426,7 @@ export const Device3DViewer = forwardRef<
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.2,
         }}
-        shadows="soft"
+        shadows
         style={{ background: "transparent" }}
         dpr={[1, 2]}
         onPointerMissed={() => setPencilVisible(false)}

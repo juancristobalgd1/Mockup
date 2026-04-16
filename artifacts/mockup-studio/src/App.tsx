@@ -1560,10 +1560,8 @@ function Editor() {
                       </div>
                     </button>
 
-                    {/* Scale/Opacity Pill (Center) */}
                     <div
                       style={{
-                        pointerEvents: "auto",
                         display: "flex",
                         background: "#1c1c1e",
                         borderRadius: 30,

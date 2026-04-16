@@ -186,8 +186,8 @@
     pointer-events: none;
   }
 
-  .no-default-hover-elevate {}
-  .no-default-active-elevate {}
+  .no-default-hover-elevate { display: contents; }
+  .no-default-active-elevate { display: contents; }
   .toggle-elevate::before, .toggle-elevate-2::before {
     content: ""; pointer-events: none; position: absolute;
     inset: 0px; border-radius: inherit; z-index: -1;
@@ -460,6 +460,7 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
   -webkit-mask-image: linear-gradient(to right, transparent 0%, black 20px, black calc(100% - 20px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 20px, black calc(100% - 20px), transparent 100%);
 }
 .ps-tier-tools::-webkit-scrollbar { display: none; }
 

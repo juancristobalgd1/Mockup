@@ -13,7 +13,12 @@ import {
 } from '../../../data/backgrounds';
 import { extractColorsFromImage, clampL, safeW } from '../../../utils/panelUtils';
 
-export const BackgroundTab = () => {
+interface BackgroundTabProps {
+  mobileView?: 'hub' | 'content';
+  setMobileView?: (view: 'hub' | 'content') => void;
+}
+
+export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps) => {
   const { state, updateState } = useApp();
   const [bgPopup, setBgPopup] = useState<null | string>(null);
   const [bgPopupAnchor, setBgPopupAnchor] = useState<{ x: number; y: number } | null>(null);

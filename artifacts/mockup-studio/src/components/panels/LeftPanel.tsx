@@ -10,7 +10,7 @@ import { LabelsTab } from './left/LabelsTab';
 import { SceneTab } from './left/SceneTab';
 import { PresetsTab } from './left/PresetsTab.fixed';
 import { TemplateTab } from './left/TemplateTab';
-import { PatternsTab } from './left/PatternsTab';
+import PatternsTab from './left/PatternsTab.fixed';
 
 import '../../index.css';
 
