@@ -1249,24 +1249,32 @@ function Editor() {
                   <>
                     {[
                       {
-                        id: "view",
-                        icon: <MousePointer2 size={24} />,
-                        label: "Gestionar",
-                      },
-                      {
                         id: "add",
                         icon: <PlusCircle size={24} />,
                         label: "Anclar",
+                        disabled: false,
+                      },
+                      {
+                        id: "view",
+                        icon: <MousePointer2 size={24} />,
+                        label: "Gestionar",
+                        disabled: state.texts.filter(t => t.kind === 'label').length === 0,
                       },
                       {
                         id: "subtract",
                         icon: <Trash2 size={24} />,
                         label: "Limpiar",
+                        disabled: state.texts.filter(t => t.kind === 'label').length === 0,
                       },
                     ].map((tool) => (
-                      <div key={tool.id} className="ps-tool-thumb-box">
+                      <div 
+                        key={tool.id} 
+                        className="ps-tool-thumb-box"
+                        style={{ opacity: tool.disabled ? 0.35 : 1, pointerEvents: tool.disabled ? 'none' : 'auto' }}
+                      >
                         <button
                           className="ps-tool-thumb btn-press"
+                          disabled={tool.disabled}
                           onClick={() => {
                             updateState({ labelsSubTab: tool.id as any });
                             setLabelsPanelView('content');
