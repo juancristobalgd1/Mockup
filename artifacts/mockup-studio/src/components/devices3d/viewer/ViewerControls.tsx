@@ -79,6 +79,15 @@ export function interpolateKeyframes(
       case "linear": return v;
       case "ease-in": return v * v;
       case "ease-out": return v * (2 - v);
+      case "expo-in-out": {
+        if (v === 0 || v === 1) return v;
+        return v < 0.5 ? 0.5 * Math.pow(2, 20 * v - 10) : -0.5 * Math.pow(2, -20 * v + 10) + 1;
+      }
+      case "back-out": {
+        const c1 = 1.70158;
+        const c3 = c1 + 1;
+        return 1 + c3 * Math.pow(v - 1, 3) + c1 * Math.pow(v - 1, 2);
+      }
       case "elastic": {
         const c4 = (2 * Math.PI) / 3;
         return v === 0 ? 0 : v === 1 ? 1 : Math.pow(2, -10 * v) * Math.sin((v * 10 - 0.75) * c4) + 1;
@@ -91,10 +100,30 @@ export function interpolateKeyframes(
         else if (v2 < 2.5 / d1) return n1 * (v2 -= 2.25 / d1) * v2 + 0.9375;
         else return n1 * (v2 -= 2.625 / d1) * v2 + 0.984375;
       }
+      case "bezier": {
+        const pts = k2.bezierPoints || [0.42, 0, 0.58, 1];
+        // Simple cubic bezier approximation
+        const cx = 3.0 * pts[0];
+        const bx = 3.0 * (pts[2] - pts[0]) - cx;
+        const ax = 1.0 - cx - bx;
+        const cy = 3.0 * pts[1];
+        const by = 3.0 * (pts[3] - pts[1]) - cy;
+        const ay = 1.0 - cy - by;
+        
+        let t = v;
+        for (let i = 0; i < 5; i++) {
+          const x = ((ax * t + bx) * t + cx) * t;
+          const dx = (3.0 * ax * t + 2.0 * bx) * t + cx;
+          if (Math.abs(x - v) < 0.001) break;
+          t -= (x - v) / dx;
+        }
+        return ((ay * t + by) * t + cy) * t;
+      }
       case "smooth":
       default: return v * v * (3 - 2 * v);
     }
   };
+
   const et = ease(t);
 
   const pos = new THREE.Vector3();

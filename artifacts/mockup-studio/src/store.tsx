@@ -13,7 +13,7 @@ export type ContentType = "image" | "video" | null;
 export type CreationMode = "mockup" | "movie" | "screenshot";
 export type InteractionMode = 'none' | 'drag' | 'zoom';
 
-export type EasingType = 'linear' | 'smooth' | 'ease-in' | 'ease-out' | 'elastic' | 'bounce';
+export type EasingType = 'linear' | 'smooth' | 'ease-in' | 'ease-out' | 'elastic' | 'bounce' | 'expo-in-out' | 'back-out' | 'bezier';
 
 export interface CameraKeyframe {
   id: string;
@@ -21,7 +21,9 @@ export interface CameraKeyframe {
   position: [number, number, number];
   target: [number, number, number];
   easing?: EasingType;
+  bezierPoints?: [number, number, number, number]; // [x1, y1, x2, y2] for custom curves
   label?: string;
+
   sceneId?: string;
   sceneLabel?: string;
   sceneSource?: 'recording' | 'preset' | 'manual';

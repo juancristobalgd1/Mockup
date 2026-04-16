@@ -20,9 +20,9 @@ Este listado representa nuestras metas a corto y mediano plazo para elevar la ap
 
 ### 🎬 Fase 2: Animación Cinematográfica
 *Meta: Que cualquier usuario pueda crear trailers de productos con un clic.*
-- [ ] **Curvas Bezier en la Timeline:** Control granular de la aceleración (easings) para movimientos de cámara fluidos.
-- [ ] **Biblioteca de "Camera Actions":** Presets de un solo clic como "Hero Spin", "Dramatic Tilt" o "Macro Zoom".
-- [ ] **Modo Audio-Reactivo:** Sincronización opcional de la luz y la cámara con la frecuencia de la música de fondo.
+- [x] **Curvas Bezier en la Timeline:** Control granular de la aceleración (easings) con nuevos modos como Expo, Back y Custom Bezier.
+- [x] **Biblioteca de "Camera Actions":** Nuevos presets pro como "Macro Detail", "Cenital Orbit" y "Whip Pan" mejorado.
+
 
 ### 🛠️ Fase 3: Flujo de Trabajo e Interactividad
 *Meta: Integrarse perfectamente en el ecosistema del diseñador moderno.*

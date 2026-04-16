@@ -35,13 +35,17 @@ function formatTime(s: number) {
 }
 
 const EASING_OPTIONS: { value: EasingType; label: string; desc: string }[] = [
-  { value: 'smooth',   label: 'Suave',      desc: 'Entrada y salida suave (por defecto)' },
-  { value: 'linear',   label: 'Lineal',     desc: 'Velocidad constante' },
-  { value: 'ease-in',  label: 'Acelerar',   desc: 'Empieza lento, termina rápido' },
-  { value: 'ease-out', label: 'Frenar',     desc: 'Empieza rápido, termina lento' },
-  { value: 'elastic',  label: 'Elástico',   desc: 'Rebote elástico al final' },
-  { value: 'bounce',   label: 'Rebote',     desc: 'Rebote físico al llegar' },
+  { value: 'smooth',      label: 'Suave',      desc: 'Entrada y salida suave (curva clásica)' },
+  { value: 'expo-in-out',  label: 'Exponencial', desc: 'Aceleración y frenada ultra agresiva' },
+  { value: 'back-out',     label: 'Overshoot',   desc: 'Efecto elástico que se pasa del destino' },
+  { value: 'linear',      label: 'Lineal',     desc: 'Velocidad constante' },
+  { value: 'ease-in',     label: 'Acelerar',   desc: 'Empieza lento, termina rápido' },
+  { value: 'ease-out',    label: 'Frenar',     desc: 'Empieza rápido, termina lento' },
+  { value: 'elastic',     label: 'Elástico',   desc: 'Rebote elástico al final' },
+  { value: 'bounce',      label: 'Rebote',     desc: 'Rebote físico al llegar' },
+  { value: 'bezier',      label: 'Cubic Bezier', desc: 'Control total de la curva' },
 ];
+
 
 function buildPresetKeyframes(preset: string, getCam: () => { position: [number,number,number]; target: [number,number,number] } | null, duration: number): Omit<CameraKeyframe, 'id'>[] {
   const cam = getCam();
@@ -134,10 +138,29 @@ function buildPresetKeyframes(preset: string, getCam: () => { position: [number,
       });
     }
     case 'whip-pan': return [
-      { time: 0, position: [px - rx * dist * 1.3, py + dist * 0.08, pz - rz * dist * 1.3] as [number,number,number], target: [tx, ty, tz], easing: 'ease-in' },
-      { time: duration * 0.45, position: [px + rx * dist * 0.75, py - dist * 0.04, pz + rz * dist * 0.75] as [number,number,number], target: [tx, ty, tz], easing: 'ease-out' },
+      { time: 0, position: [px - rx * dist * 1.5, py + dist * 0.1, pz - rz * dist * 1.5] as [number,number,number], target: [tx, ty, tz], easing: 'expo-in-out' },
+      { time: duration * 0.45, position: [px + rx * dist * 0.9, py - dist * 0.05, pz + rz * dist * 0.9] as [number,number,number], target: [tx, ty, tz], easing: 'back-out' },
       { time: duration, position: [px + rx * dist * 0.18, py, pz + rz * dist * 0.18] as [number,number,number], target: [tx, ty, tz], easing: 'smooth' },
     ];
+    case 'macro-float': return [
+      { time: 0, position: [px * 0.5, py * 0.5, pz * 0.5], target: [tx + 0.1, ty + 0.1, tz], easing: 'smooth' },
+      { time: duration, position: [px * 0.42, py * 0.42, pz * 0.42], target: [tx - 0.1, ty - 0.1, tz], easing: 'smooth' },
+    ];
+    case 'top-down-orbit': {
+      const steps = 4;
+      return Array.from({ length: steps + 1 }, (_, i) => {
+        const t = i / steps;
+        const angle = t * Math.PI * 0.5;
+        const radius = dist * 0.5;
+        return {
+          time: t * duration,
+          position: [radius * Math.cos(angle), dist * 1.2, radius * Math.sin(angle)] as [number, number, number],
+          target: [0, 0, 0],
+          easing: 'smooth' as EasingType,
+        };
+      });
+    }
+
     case 'float-rise': return [
       { time: 0, position: [px - rx * dist * 0.22, py + dist * 0.3, pz - rz * dist * 0.22] as [number,number,number], target: [tx, ty, tz], easing: 'smooth' },
       { time: duration * 0.6, position: [px + rx * dist * 0.15, py - dist * 0.08, pz + rz * dist * 0.15] as [number,number,number], target: [tx, ty, tz], easing: 'smooth' },
@@ -159,7 +182,10 @@ const ANIMATION_PRESETS = [
   { id: 'spiral-in',      label: 'Espiral In',        desc: 'Entrada en espiral hacia el producto' },
   { id: 'whip-pan',       label: 'Whip Pan',          desc: 'Barrido veloz con overshoot' },
   { id: 'float-rise',     label: 'Float Rise',        desc: 'Flota y asciende con suavidad' },
+  { id: 'macro-float',    label: 'Macro Detail',      desc: 'Primer plano lento y elegante' },
+  { id: 'top-down-orbit', label: 'Cenital Orbit',     desc: 'Órbita desde vista superior' },
 ];
+
 
 // ── Complete animation templates (multi-scene) ────────────────────
 const ANIMATION_TEMPLATES = [
