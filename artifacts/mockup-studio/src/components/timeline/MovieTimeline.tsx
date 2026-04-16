@@ -772,32 +772,47 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
   ];
 
   const startLiveRec = useCallback(() => {
+    if (liveTimerRafRef.current) return; // Already recording
     capturedFramesRef.current = [];
     liveStartRef.current = performance.now();
     setLiveTime(0);
     setLiveRecording(true);
-    const timerLoop = () => {
-      setLiveTime((performance.now() - liveStartRef.current) / 1000);
-      liveTimerRafRef.current = requestAnimationFrame(timerLoop);
-    };
-    liveTimerRafRef.current = requestAnimationFrame(timerLoop);
-    captureIntervalRef.current = setInterval(() => {
-      const cam = viewerRef.current?.getCameraState();
-      if (!cam) return;
+    
+    const captureFrame = () => {
       const t = (performance.now() - liveStartRef.current) / 1000;
-      capturedFramesRef.current.push({ time: t, position: cam.position, target: cam.target });
-    }, 60);
+      setLiveTime(t);
+      
+      const cam = viewerRef.current?.getCameraState();
+      if (cam) {
+        capturedFramesRef.current.push({ time: t, position: cam.position, target: cam.target });
+      }
+      
+      liveTimerRafRef.current = requestAnimationFrame(captureFrame);
+    };
+    
+    liveTimerRafRef.current = requestAnimationFrame(captureFrame);
   }, [viewerRef]);
 
+
   const stopLiveRec = useCallback(() => {
-    if (liveTimerRafRef.current) { cancelAnimationFrame(liveTimerRafRef.current); liveTimerRafRef.current = null; }
-    if (captureIntervalRef.current) { clearInterval(captureIntervalRef.current); captureIntervalRef.current = null; }
+    // Stop the RAF loop
+    setLiveRecording(false);
+    if (liveTimerRafRef.current) { 
+      cancelAnimationFrame(liveTimerRafRef.current); 
+      liveTimerRafRef.current = null; 
+    }
+    
     const frames = capturedFramesRef.current;
-    if (frames.length === 0) { setLiveRecording(false); return; }
+    if (frames.length === 0) return;
+
     const totalTime = frames[frames.length - 1].time;
     const sampled: Omit<CameraKeyframe, 'id'>[] = [];
-    const STEP = 0.15;
+    
+    // Closer sampling (80ms) preserves the nuance of manual movement 
+    // while keeping the keyframe count manageable for the spline.
+    const STEP = 0.08; 
     let nextKeep = 0;
+
     for (const frame of frames) {
       if (frame.time >= nextKeep) {
         sampled.push(frame);
@@ -819,7 +834,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
         sceneId,
         sceneLabel,
         sceneSource: 'recording' as const,
-        easing: 'linear' as const,
+        easing: 'smooth' as const,
         label: index === 0 ? sceneLabel : frame.label,
         id: Math.random().toString(36).substr(2, 9),
       })),

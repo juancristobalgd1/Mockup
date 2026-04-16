@@ -32,21 +32,26 @@ export function zoomValueToDistance(
   return minDistance + (maxDistance - minDistance) * normalized;
 }
 
-// ── Spline-style Camera Interpolation (Spherical) ────────────────
+// ── Spline-style Camera Interpolation (Catmull-Rom + Distance Preservation) ───
 interface InterpolationResult {
   position: THREE.Vector3;
   target: THREE.Vector3;
 }
 
+/**
+ * Smoothly interpolates between keyframes using Catmull-Rom splines.
+ * To prevent the "accidental zoom" (dipping) often seen in Cartesian interpolation
+ * during orbits, this separate the path into target position, direction, and distance.
+ */
 export function interpolateKeyframes(
   keyframes: CameraKeyframe[],
   time: number,
   curveTension: number = 0.45,
 ): InterpolationResult | null {
   if (keyframes.length === 0) return null;
+  
   const sorted = [...keyframes].sort((a, b) => a.time - b.time);
 
-  // Before first or after last
   if (time <= sorted[0].time) {
     return {
       position: new THREE.Vector3(...sorted[0].position),
@@ -61,40 +66,93 @@ export function interpolateKeyframes(
     };
   }
 
-  // Find the segment
   let i = 0;
   while (i < sorted.length - 1 && sorted[i + 1].time < time) i++;
-  const k0 = sorted[i];
-  const k1 = sorted[i + 1];
-  const t = (time - k0.time) / (k1.time - k0.time);
+  
+  const k1 = sorted[i];
+  const k2 = sorted[i + 1];
+  const t = (time - k1.time) / (k2.time - k1.time);
 
-  // Easing
   const ease = (v: number) => {
-    const e = k1.easing || "smooth";
-    if (e === "linear") return v;
-    if (e === "ease-in") return v * v;
-    if (e === "ease-out") return v * (2 - v);
-    return v * v * (3 - 2 * v); // smooth
+    const e = k2.easing || "smooth";
+    switch (e) {
+      case "linear": return v;
+      case "ease-in": return v * v;
+      case "ease-out": return v * (2 - v);
+      case "elastic": {
+        const c4 = (2 * Math.PI) / 3;
+        return v === 0 ? 0 : v === 1 ? 1 : Math.pow(2, -10 * v) * Math.sin((v * 10 - 0.75) * c4) + 1;
+      }
+      case "bounce": {
+        const n1 = 7.5625, d1 = 2.75;
+        let v2 = v;
+        if (v2 < 1 / d1) return n1 * v2 * v2;
+        else if (v2 < 2 / d1) return n1 * (v2 -= 1.5 / d1) * v2 + 0.75;
+        else if (v2 < 2.5 / d1) return n1 * (v2 -= 2.25 / d1) * v2 + 0.9375;
+        else return n1 * (v2 -= 2.625 / d1) * v2 + 0.984375;
+      }
+      case "smooth":
+      default: return v * v * (3 - 2 * v);
+    }
   };
   const et = ease(t);
 
   const pos = new THREE.Vector3();
   const tar = new THREE.Vector3();
 
-  // Basic lerp (can be expanded to Catmull-Rom for smoother paths)
-  pos.lerpVectors(
-    new THREE.Vector3(...k0.position),
-    new THREE.Vector3(...k1.position),
-    et,
+  // Helper for Catmull-Rom scalar interpolation
+  const tension = 1 - curveTension;
+  const interpolate = (p0: number, p1: number, p2: number, p3: number, alpha: number) => {
+    const a2 = alpha * alpha, a3 = a2 * alpha;
+    const f1 = -tension * a3 + 2 * tension * a2 - tension * alpha;
+    const f2 = (2 - tension) * a3 + (tension - 3) * a2 + 1;
+    const f3 = (tension - 2) * a3 + (3 - 2 * tension) * a2 + tension * alpha;
+    const f4 = tension * a3 - tension * a2;
+    return p0 * f1 + p1 * f2 + p2 * f3 + p3 * f4;
+  };
+
+  const getPoints = (idx: number, attr: 'position' | 'target') => {
+    const p1 = sorted[idx][attr];
+    const p2 = sorted[idx + 1][attr];
+    const p0 = idx > 0 ? sorted[idx - 1][attr] : [p1[0] + (p1[0] - p2[0]), p1[1] + (p1[1] - p2[1]), p1[2] + (p1[2] - p2[2])];
+    const p3 = idx < sorted.length - 2 ? sorted[idx + 2][attr] : [p2[0] + (p2[0] - p1[0]), p2[1] + (p2[1] - p1[1]), p2[2] + (p2[2] - p1[2])];
+    return [p0, p1, p2, p3];
+  };
+
+  // 1. Interpolate Target Cartesianly
+  const tPts = getPoints(i, 'target');
+  tar.set(
+    interpolate(tPts[0][0], tPts[1][0], tPts[2][0], tPts[3][0], et),
+    interpolate(tPts[0][1], tPts[1][1], tPts[2][1], tPts[3][1], et),
+    interpolate(tPts[0][2], tPts[1][2], tPts[2][2], tPts[3][2], et)
   );
-  tar.lerpVectors(
-    new THREE.Vector3(...k0.target),
-    new THREE.Vector3(...k1.target),
-    et,
-  );
+
+  if (k2.easing === 'linear') {
+    pos.lerpVectors(new THREE.Vector3(...k1.position), new THREE.Vector3(...k2.position), et);
+    return { position: pos, target: tar };
+  }
+
+  // 2. Interpolate OFFSET VECTOR (Direction component)
+  // This preserves the arc of the movement.
+  const pPts = getPoints(i, 'position');
+  const oPts = pPts.map((p, idx) => [p[0] - tPts[idx][0], p[1] - tPts[idx][1], p[2] - tPts[idx][2]]);
+  const offX = interpolate(oPts[0][0], oPts[1][0], oPts[2][0], oPts[3][0], et);
+  const offY = interpolate(oPts[0][1], oPts[1][1], oPts[2][1], oPts[3][1], et);
+  const offZ = interpolate(oPts[0][2], oPts[1][2], oPts[2][2], oPts[3][2], et);
+
+  // 3. Interpolate DISTANCE (Zoom component)
+  // This ensures that if start and end distance is same, the camera doesn't "dip" in.
+  const dists = oPts.map(o => Math.sqrt(o[0] * o[0] + o[1] * o[1] + o[2] * o[2]));
+  const resDist = interpolate(dists[0], dists[1], dists[2], dists[3], et);
+
+  // 4. Combine: Final Position = Target + Direction(normalized) * Distance
+  const dir = new THREE.Vector3(offX, offY, offZ).normalize();
+  pos.copy(tar).add(dir.multiplyScalar(resDist));
 
   return { position: pos, target: tar };
 }
+
+
 
 
 
@@ -275,10 +333,20 @@ export function HeroOrbitControls({
         movieCurveTension,
       );
       if (result) {
-        camera.position.copy(result.position);
-        controls.target.copy(result.target);
+        // Rotato-style "Cinematic Weight" 
+        // Instead of snapping, we lerp with a high coefficient to absorb tiny Recording/Spline jitters.
+        // This gives the camera a sense of physical mass.
+        if (movieTimeRef.current < 0.1) {
+          // Snap at the very beginning of the clip to prevent a starting jump
+          camera.position.copy(result.position);
+          controls.target.copy(result.target);
+        } else {
+          camera.position.lerp(result.position, 0.4);
+          controls.target.lerp(result.target, 0.4);
+        }
       }
     } else if (animationStateRef.current.active && !isInteractingRef.current) {
+
       const target = animationStateRef.current;
       camera.position.lerp(target.pos, 0.08);
       controls.target.lerp(target.target, 0.08);
