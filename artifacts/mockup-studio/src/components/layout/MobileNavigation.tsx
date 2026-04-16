@@ -1,19 +1,20 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Smartphone, 
-  Image as ImageIcon, 
-  Layers, 
-  Grid3X3, 
-  Tags, 
-  Sliders, 
-  PenLine, 
+import {
+  Smartphone,
+  Image as ImageIcon,
+  Layers,
+  Grid3X3,
+  Tags,
+  Sliders,
+  PenLine,
   Film,
   Shuffle,
   MoreHorizontal,
-  LayoutGrid,
   Palette,
   Pencil,
+  Plus,
+  Search,
   Box,
   Type,
   Eraser,
@@ -21,6 +22,7 @@ import {
   ArrowLeft,
   Trash2,
   Blend,
+  Hand,
   MousePointer2,
   PlusCircle,
   Maximize,
@@ -202,52 +204,53 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
 
             <div
               style={{
-                background: "rgba(10,10,10,1)",
-                padding: "0 20px 20px",
-                display: "flex",
-                justifyContent: "center",
+                background: "var(--ps-panel)",
+                padding: "0 12px 20px",
+                display: "grid",
+                gridTemplateColumns: "1fr auto 1fr",
                 alignItems: "center",
-                position: "relative",
+                gap: 8
               }}
             >
-              <button
-                onClick={() => {
-                  setActiveTab("template");
-                  setMobileTab("template");
-                }}
-                className="btn-press"
-                style={{
-                  position: "absolute",
-                  left: 20,
-                  background: activeTab === 'template' ? '#333' : '#1a1a1a',
-                  color: activeTab === 'template' ? '#fff' : 'var(--ps-text-dim)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: 30,
-                  padding: '0 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  height: 44,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-                  zIndex: 2
-                }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="5" y="8" width="14" height="8" rx="1.5" />
-                  <rect x="8" y="5" width="8" height="14" rx="1.5" />
-                </svg>
-                <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.02em' }}>{state.canvasRatio || "1:1"}</span>
-              </button>
+              <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                <button
+                  onClick={() => {
+                    setActiveTab("template");
+                    setMobileTab("template");
+                  }}
+                  className="btn-press"
+                  style={{
+                    background: activeTab === 'template' ? '#333' : '#1a1a1a',
+                    color: activeTab === 'template' ? '#fff' : 'var(--ps-text-dim)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 30,
+                    padding: '0 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    height: 44,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                    zIndex: 2,
+                    flexShrink: 0
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="8" width="14" height="8" rx="1.5" />
+                    <rect x="8" y="5" width="8" height="14" rx="1.5" />
+                  </svg>
+                  <span style={{ fontSize: 13, fontWeight: 700 }}>{state.canvasRatio || "1:1"}</span>
+                </button>
+              </div>
 
               <div
                 className="ps-action-pill"
-                style={{ position: "relative", minWidth: 200 }}
+                style={{ position: "relative", minWidth: 140, height: 44, padding: '2px' }}
               >
                 <button
                   className={`ps-action-item ${!state.movieMode ? "active" : ""}`}
                   onClick={() => handleViewToggle(false)}
                   aria-label="Herramientas"
-                  style={{ position: "relative", zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ position: "relative", zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, height: 40 }}
                 >
                   {!state.movieMode && (
                     <motion.div
@@ -272,7 +275,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   className={`ps-action-item ${state.movieMode ? "active" : ""}`}
                   onClick={() => handleViewToggle(true)}
                   aria-label="Timeline"
-                  style={{ position: "relative", zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ position: "relative", zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, height: 40 }}
                 >
                   {state.movieMode && (
                     <motion.div
@@ -294,6 +297,116 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   <Film size={16} />
                 </button>
               </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <div
+                  className="ps-action-pill"
+                  style={{ position: "relative", minWidth: 84, height: 44, padding: '2px' }}
+                >
+                  <button
+                    className={`ps-action-item ${state.interactionMode === 'drag' ? "active" : ""}`}
+                    onClick={() => updateState({ interactionMode: state.interactionMode === 'drag' ? 'none' : 'drag' })}
+                    aria-label="Cámara"
+                    style={{ position: "relative", zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, height: 40 }}
+                  >
+                    {state.interactionMode === 'drag' && (
+                      <motion.div
+                        layoutId="active-action-pill-interaction"
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: "#3a3a3a",
+                          borderRadius: 26,
+                          zIndex: -1,
+                        }}
+                        transition={{
+                          type: "spring",
+                          bounce: 0.2,
+                          duration: 0.6,
+                        }}
+                      />
+                    )}
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10" />
+                      <path d="M12 10V4.5a1.5 1.5 0 0 1 3 0V11" />
+                      <path d="M15 11V6.5a1.5 1.5 0 0 1 3 0V13" />
+                      <path d="M6 12V9.5a1.5 1.5 0 0 1 3 0V13" />
+                      <path d="M18 13.5c0 4.5-2.7 7.5-6.6 7.5-3.3 0-5.8-2.1-6.7-5.3l-1.3-4.6a1.5 1.5 0 0 1 2.9-.8l.7 2.2" />
+                    </svg>
+                  </button>
+                  <button
+                    className={`ps-action-item ${state.interactionMode === 'zoom' ? "active" : ""}`}
+                    onClick={() => updateState({ interactionMode: state.interactionMode === 'zoom' ? 'none' : 'zoom' })}
+                    aria-label="Zoom"
+                    style={{ position: "relative", zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, height: 40 }}
+                  >
+                    {state.interactionMode === 'zoom' && (
+                      <motion.div
+                        layoutId="active-action-pill-interaction"
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: "#3a3a3a",
+                          borderRadius: 26,
+                          zIndex: -1,
+                        }}
+                        transition={{
+                          type: "spring",
+                          bounce: 0.2,
+                          duration: 0.6,
+                        }}
+                      />
+                    )}
+                    <Search size={16} />
+                  </button>
+                </div>
+
+                <AnimatePresence>
+                  {state.interactionMode === 'zoom' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      style={{
+                        position: 'absolute',
+                        right: 20,
+                        bottom: 70,
+                        zIndex: 100,
+                        padding: '12px 10px',
+                        borderRadius: 20,
+                        background: 'rgba(26, 26, 26, 0.96)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                        backdropFilter: 'blur(20px)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 8
+                      }}
+                    >
+                      <Plus size={12} color="rgba(255,255,255,0.6)" />
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={state.zoomValue}
+                        onChange={(e) => updateState({ zoomValue: Number(e.target.value) }, true)}
+                        style={{
+                          writingMode: 'vertical-rl',
+                          WebkitAppearance: 'slider-vertical',
+                          appearance: 'slider-vertical',
+                          width: 16,
+                          height: 120,
+                          accentColor: '#f4f4f5',
+                          cursor: 'ns-resize',
+                          background: 'transparent',
+                        } as any}
+                      />
+                      <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>-</div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </motion.div>
         ) : mobileTab === null && state.movieMode ? (
@@ -307,51 +420,52 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
             <div
               style={{
                 background: "var(--ps-panel)",
-                padding: "0 20px 12px",
-                display: "flex",
-                justifyContent: "center",
+                padding: "0 12px 20px",
+                display: "grid",
+                gridTemplateColumns: "1fr auto 1fr",
                 alignItems: "center",
-                position: "relative",
+                gap: 8
               }}
             >
-              <button
-                onClick={() => {
-                  setActiveTab("template");
-                  setMobileTab("template");
-                }}
-                className="btn-press"
-                style={{
-                  position: "absolute",
-                  left: 20,
-                  background: activeTab === 'template' ? '#333' : '#1a1a1a',
-                  color: activeTab === 'template' ? '#fff' : 'var(--ps-text-dim)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: 30,
-                  padding: '0 14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  height: 40,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-                  zIndex: 2
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="5" y="8" width="14" height="8" rx="1" />
-                  <rect x="8" y="5" width="8" height="14" rx="1" />
-                </svg>
-                <span style={{ fontSize: 12, fontWeight: 700 }}>{state.canvasRatio || "1:1"}</span>
-              </button>
+              <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                <button
+                  onClick={() => {
+                    setActiveTab("template");
+                    setMobileTab("template");
+                  }}
+                  className="btn-press"
+                  style={{
+                    background: activeTab === 'template' ? '#333' : '#1a1a1a',
+                    color: activeTab === 'template' ? '#fff' : 'var(--ps-text-dim)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 30,
+                    padding: '0 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    height: 44,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                    zIndex: 2,
+                    flexShrink: 0
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="8" width="14" height="8" rx="1.5" />
+                    <rect x="8" y="5" width="8" height="14" rx="1.5" />
+                  </svg>
+                  <span style={{ fontSize: 13, fontWeight: 700 }}>{state.canvasRatio || "1:1"}</span>
+                </button>
+              </div>
 
               <div
                 className="ps-action-pill"
-                style={{ position: "relative", minWidth: 200 }}
+                style={{ position: "relative", minWidth: 140, height: 44, padding: '2px' }}
               >
                 <button
                   className={`ps-action-item ${!state.movieMode ? "active" : ""}`}
                   onClick={() => handleViewToggle(false)}
                   aria-label="Herramientas"
-                  style={{ position: "relative", zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ position: "relative", zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, height: 40 }}
                 >
                   {!state.movieMode && (
                     <motion.div
@@ -376,7 +490,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   className={`ps-action-item ${state.movieMode ? "active" : ""}`}
                   onClick={() => handleViewToggle(true)}
                   aria-label="Timeline"
-                  style={{ position: "relative", zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ position: "relative", zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, height: 40 }}
                 >
                   {state.movieMode && (
                     <motion.div
@@ -397,6 +511,116 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   )}
                   <Film size={16} />
                 </button>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <div
+                  className="ps-action-pill"
+                  style={{ position: "relative", minWidth: 84, height: 44, padding: '2px' }}
+                >
+                  <button
+                    className={`ps-action-item ${state.interactionMode === 'drag' ? "active" : ""}`}
+                    onClick={() => updateState({ interactionMode: state.interactionMode === 'drag' ? 'none' : 'drag' })}
+                    aria-label="Cámara"
+                    style={{ position: "relative", zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, height: 40 }}
+                  >
+                    {state.interactionMode === 'drag' && (
+                      <motion.div
+                        layoutId="active-action-pill-interaction-movie"
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: "#3a3a3a",
+                          borderRadius: 26,
+                          zIndex: -1,
+                        }}
+                        transition={{
+                          type: "spring",
+                          bounce: 0.2,
+                          duration: 0.6,
+                        }}
+                      />
+                    )}
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10" />
+                      <path d="M12 10V4.5a1.5 1.5 0 0 1 3 0V11" />
+                      <path d="M15 11V6.5a1.5 1.5 0 0 1 3 0V13" />
+                      <path d="M6 12V9.5a1.5 1.5 0 0 1 3 0V13" />
+                      <path d="M18 13.5c0 4.5-2.7 7.5-6.6 7.5-3.3 0-5.8-2.1-6.7-5.3l-1.3-4.6a1.5 1.5 0 0 1 2.9-.8l.7 2.2" />
+                    </svg>
+                  </button>
+                  <button
+                    className={`ps-action-item ${state.interactionMode === 'zoom' ? "active" : ""}`}
+                    onClick={() => updateState({ interactionMode: state.interactionMode === 'zoom' ? 'none' : 'zoom' })}
+                    aria-label="Zoom"
+                    style={{ position: "relative", zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, height: 40 }}
+                  >
+                    {state.interactionMode === 'zoom' && (
+                      <motion.div
+                        layoutId="active-action-pill-interaction-movie"
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: "#3a3a3a",
+                          borderRadius: 26,
+                          zIndex: -1,
+                        }}
+                        transition={{
+                          type: "spring",
+                          bounce: 0.2,
+                          duration: 0.6,
+                        }}
+                      />
+                    )}
+                    <Search size={16} />
+                  </button>
+                </div>
+
+                <AnimatePresence>
+                  {state.interactionMode === 'zoom' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      style={{
+                        position: 'absolute',
+                        right: 20,
+                        bottom: 70,
+                        zIndex: 100,
+                        padding: '12px 10px',
+                        borderRadius: 20,
+                        background: 'rgba(26, 26, 26, 0.96)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                        backdropFilter: 'blur(20px)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 8
+                      }}
+                    >
+                      <Plus size={12} color="rgba(255,255,255,0.6)" />
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={state.zoomValue}
+                        onChange={(e) => updateState({ zoomValue: Number(e.target.value) }, true)}
+                        style={{
+                          writingMode: 'vertical-rl',
+                          WebkitAppearance: 'slider-vertical',
+                          appearance: 'slider-vertical',
+                          width: 16,
+                          height: 120,
+                          accentColor: '#f4f4f5',
+                          cursor: 'ns-resize',
+                          background: 'transparent',
+                        } as any}
+                      />
+                      <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>-</div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
             <MovieTimeline
@@ -514,7 +738,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                     </button>
                     <button className="btn-press" onClick={() => setAnnotateProperty(annotateProperty === 'opacity' ? null : 'opacity')}
                       style={{ width: 40, height: 40, borderRadius: 20, background: annotateProperty === 'opacity' ? "#f5f5f7" : "transparent", color: annotateProperty === 'opacity' ? "#000" : "rgba(255,255,255,0.4)", display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}>
-                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" /><path d="M8 12h8" /></svg>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" /><path d="M8 12h8" /></svg>
                     </button>
                   </div>
 
@@ -547,7 +771,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                           {(['multiply', 'screen', 'overlay', 'soft-light'] as const).map(mode => (
-                             <button key={mode} onClick={() => updateState({ lightOverlayBlend: mode })} style={{ padding: '8px 12px', borderRadius: 10, border: 'none', fontSize: 11, fontWeight: 700, background: state.lightOverlayBlend === mode ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)', color: state.lightOverlayBlend === mode ? '#000' : '#fff' }}> {mode.charAt(0).toUpperCase() + mode.slice(1)} </button>
+                            <button key={mode} onClick={() => updateState({ lightOverlayBlend: mode })} style={{ padding: '8px 12px', borderRadius: 10, border: 'none', fontSize: 11, fontWeight: 700, background: state.lightOverlayBlend === mode ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)', color: state.lightOverlayBlend === mode ? '#000' : '#fff' }}> {mode.charAt(0).toUpperCase() + mode.slice(1)} </button>
                           ))}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
@@ -577,11 +801,11 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   <div style={{ pointerEvents: "auto", display: "flex", background: "#1c1c1e", borderRadius: 30, padding: 4, boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}>
                     <button className="btn-press" onClick={() => setOverlayProperty(overlayProperty === 'opacity' ? null : 'opacity')}
                       style={{ width: 40, height: 40, borderRadius: 20, background: overlayProperty === 'opacity' ? "#f5f5f7" : "transparent", color: overlayProperty === 'opacity' ? "#000" : (state.overlayEnabled ? "#fff" : "rgba(255,255,255,0.4)"), display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}>
-                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" /><path d="M8 12h8" /></svg>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" /><path d="M8 12h8" /></svg>
                     </button>
                     <button className="btn-press" onClick={() => setOverlayProperty(overlayProperty === 'light' ? null : 'light')}
                       style={{ width: 40, height: 40, borderRadius: 20, background: overlayProperty === 'light' ? "#f5f5f7" : "transparent", color: overlayProperty === 'light' ? "#000" : (state.lightOverlay ? "#fff" : "rgba(255,255,255,0.4)"), display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}>
-                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" /><path d="M8 12h8" /><path d="M12 8v8" /></svg>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" /><path d="M8 12h8" /><path d="M12 8v8" /></svg>
                     </button>
                   </div>
 
@@ -613,16 +837,16 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                     )}
                   </PropertyTooltip>
 
-                  <button className="ps-tool-icon-btn btn-press" onClick={() => { const pool = [ { bgType: 'solid', bgColor: '#ffffff' }, { bgType: 'solid', bgColor: '#1c1c1e' }, { bgType: 'solid', bgColor: '#ef4444' }, { bgType: 'gradient', bgColor: 'sky' }, { bgType: 'gradient', bgColor: 'fire' }, { bgType: 'mesh', bgColor: 'aurora' }, { bgType: 'mesh', bgColor: 'ocean' }, { bgType: 'wallpaper', bgColor: 'nature-1' }, ]; const pick = pool[Math.floor(Math.random() * pool.length)]; updateState(pick as any); }} style={{ pointerEvents: "auto", background: "#1c1c1e", color: "#fff", border: "none", width: 44, height: 44, borderRadius: 22, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <button className="ps-tool-icon-btn btn-press" onClick={() => { const pool = [{ bgType: 'solid', bgColor: '#ffffff' }, { bgType: 'solid', bgColor: '#1c1c1e' }, { bgType: 'solid', bgColor: '#ef4444' }, { bgType: 'gradient', bgColor: 'sky' }, { bgType: 'gradient', bgColor: 'fire' }, { bgType: 'mesh', bgColor: 'aurora' }, { bgType: 'mesh', bgColor: 'ocean' }, { bgType: 'wallpaper', bgColor: 'nature-1' },]; const pick = pool[Math.floor(Math.random() * pool.length)]; updateState(pick as any); }} style={{ pointerEvents: "auto", background: "#1c1c1e", color: "#fff", border: "none", width: 44, height: 44, borderRadius: 22, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Shuffle size={20} />
                   </button>
 
                   <div style={{ pointerEvents: "auto", display: "flex", background: "#1c1c1e", borderRadius: 30, padding: 4, boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}>
                     <button className="btn-press" onClick={() => setBackgroundProperty(backgroundProperty === 'opacity' ? null : 'opacity')} style={{ width: 40, height: 40, borderRadius: 20, background: backgroundProperty === 'opacity' ? "#f5f5f7" : "transparent", color: backgroundProperty === 'opacity' ? "#000" : "rgba(255,255,255,0.4)", display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}>
-                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" /><path d="M8 12h8" /></svg>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" /><path d="M8 12h8" /></svg>
                     </button>
                     <button className="btn-press" onClick={() => setBackgroundProperty(backgroundProperty === 'blur' ? null : 'blur')} style={{ width: 40, height: 40, borderRadius: 20, background: backgroundProperty === 'blur' ? "#f5f5f7" : "transparent", color: backgroundProperty === 'blur' ? "#000" : (state.bgBlur > 0 ? "#fff" : "rgba(255,255,255,0.4)"), display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}>
-                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" /><path d="M8 12h8" /><path d="M12 8v8" /></svg>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" /><path d="M8 12h8" /><path d="M12 8v8" /></svg>
                     </button>
                   </div>
 
@@ -715,9 +939,9 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
             {/* Tier 1: Contextual Tools */}
             {((mobileTab === 'presets') || (mobileTab === 'device' && devicePanelView === 'hub') || (mobileTab === 'annotate') || (mobileTab === 'background' && backgroundPanelView === 'hub') || (mobileTab === 'canvas' && scenePanelView === 'hub') || (mobileTab === 'labels' && labelsPanelView === 'hub')) && (
               <div className="ps-tier-tools" style={{ padding: "20px 20px 10px" }}>
-                {mobileTab === "presets" && PRESENT_POSES.map((pose) => { const active = state.cameraAngle === pose.id; return ( <div key={pose.id} className="ps-tool-thumb-box"> <button className={`ps-tool-thumb btn-press ${active ? "active" : ""}`} onClick={() => updateState({ cameraAngle: pose.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}> <PoseThumbnail ry={pose.ry} rx={pose.rx} rz={pose.rz} active={active} mini /> </button> <span className="ps-tool-label">{pose.label}</span> </div> ) })}
-                {mobileTab === "device" && devicePanelView === 'hub' && DEVICE_GROUPS.map((group) => { const repModel = DEVICE_MODELS.find((m) => m.group === group); return ( <div key={group} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { if (repModel) { updateState({ deviceModel: repModel.id, deviceType: repModel.storeType, deviceColor: repModel.useOriginalMaterials ? "original" : "titanium", deviceSubTab: "models" }); setDevicePanelView('content'); } }}> <div style={{ transform: "scale(1.3)" }}><DeviceThumbnail modelId={repModel?.id || ""} isSelected={false} /></div> </button> <span className="ps-tool-label">{group}</span> </div> ) })}
-                {mobileTab === "annotate" && annotatePanelView === 'hub' && [ { id: "select", label: "Seleccionar", icon: <MousePointer2 size={24} />, action: () => updateState({ annotateTool: 'select', annotateMode: true }) }, { id: "pen", label: "Pincel", icon: <Pencil size={24} />, action: () => updateState({ annotateTool: 'pen', annotateMode: true }) }, { id: "shapes", label: "Formas", icon: <Box size={24} />, action: () => setAnnotatePanelView('shapes') }, { id: "text", label: "Texto", icon: <Type size={24} />, action: () => updateState({ annotateTool: 'text', annotateMode: true }) }, { id: "eraser", label: "Borrador", icon: <Eraser size={24} />, action: () => updateState({ annotateTool: 'eraser', annotateMode: true }) }, { id: "stickers", label: "Stickers", icon: <Sparkles size={24} />, action: () => setAnnotatePanelView('stickers') }, ].map((tool) => { const isActive = state.annotateTool === tool.id || (tool.id === 'shapes' && (state.annotateTool as any) && ['rect', 'arrow', 'circle'].includes(state.annotateTool as any)); return ( <div key={tool.id} className="ps-tool-thumb-box"> <button className={`ps-tool-thumb btn-press ${isActive ? "active" : ""}`} onClick={tool.action} style={{ padding: 0, width: 60, height: 60, borderRadius: 12, background: "#1c1c1e", border: isActive ? "2px solid #3498db" : "1px solid rgba(255,255,255,0.1)", display: 'flex', alignItems: 'center', justifyContent: 'center', color: isActive ? '#3498db' : '#fff' }}> {tool.icon} </button> <span className="ps-tool-label" style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.4)' }}>{tool.label}</span> </div> ) })}
+                {mobileTab === "presets" && PRESENT_POSES.map((pose) => { const active = state.cameraAngle === pose.id; return (<div key={pose.id} className="ps-tool-thumb-box"> <button className={`ps-tool-thumb btn-press ${active ? "active" : ""}`} onClick={() => updateState({ cameraAngle: pose.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}> <PoseThumbnail ry={pose.ry} rx={pose.rx} rz={pose.rz} active={active} mini /> </button> <span className="ps-tool-label">{pose.label}</span> </div>) })}
+                {mobileTab === "device" && devicePanelView === 'hub' && DEVICE_GROUPS.map((group) => { const repModel = DEVICE_MODELS.find((m) => m.group === group); return (<div key={group} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { if (repModel) { updateState({ deviceModel: repModel.id, deviceType: repModel.storeType, deviceColor: repModel.useOriginalMaterials ? "original" : "titanium", deviceSubTab: "models" }); setDevicePanelView('content'); } }}> <div style={{ transform: "scale(1.3)" }}><DeviceThumbnail modelId={repModel?.id || ""} isSelected={false} /></div> </button> <span className="ps-tool-label">{group}</span> </div>) })}
+                {mobileTab === "annotate" && annotatePanelView === 'hub' && [{ id: "select", label: "Seleccionar", icon: <MousePointer2 size={24} />, action: () => updateState({ annotateTool: 'select', annotateMode: true }) }, { id: "pen", label: "Pincel", icon: <Pencil size={24} />, action: () => updateState({ annotateTool: 'pen', annotateMode: true }) }, { id: "shapes", label: "Formas", icon: <Box size={24} />, action: () => setAnnotatePanelView('shapes') }, { id: "text", label: "Texto", icon: <Type size={24} />, action: () => updateState({ annotateTool: 'text', annotateMode: true }) }, { id: "eraser", label: "Borrador", icon: <Eraser size={24} />, action: () => updateState({ annotateTool: 'eraser', annotateMode: true }) }, { id: "stickers", label: "Stickers", icon: <Sparkles size={24} />, action: () => setAnnotatePanelView('stickers') },].map((tool) => { const isActive = state.annotateTool === tool.id || (tool.id === 'shapes' && (state.annotateTool as any) && ['rect', 'arrow', 'circle'].includes(state.annotateTool as any)); return (<div key={tool.id} className="ps-tool-thumb-box"> <button className={`ps-tool-thumb btn-press ${isActive ? "active" : ""}`} onClick={tool.action} style={{ padding: 0, width: 60, height: 60, borderRadius: 12, background: "#1c1c1e", border: isActive ? "2px solid #3498db" : "1px solid rgba(255,255,255,0.1)", display: 'flex', alignItems: 'center', justifyContent: 'center', color: isActive ? '#3498db' : '#fff' }}> {tool.icon} </button> <span className="ps-tool-label" style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.4)' }}>{tool.label}</span> </div>) })}
                 {mobileTab === "annotate" && annotatePanelView === 'shapes' && (
                   <>
                     <div className="ps-tool-thumb-box" style={{ paddingRight: 12, marginRight: 12, borderRight: '1px solid rgba(255,255,255,0.1)' }}>
@@ -725,17 +949,17 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                       <span className="ps-tool-label">Volver</span>
                     </div>
                     {[
-                      { id: 'arrow', label: 'Flecha', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></svg> },
-                      { id: 'rect', label: 'Rect', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> },
-                      { id: 'circle', label: 'Círculo', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/></svg> },
-                      { id: 'ellipse', label: 'Elipse', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6"/></svg> },
-                      { id: 'triangle', label: 'Triáng.', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,2 22,22 2,22"/></svg> },
-                      { id: 'diamond', label: 'Rombo', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,1 23,12 12,23 1,12"/></svg> },
-                      { id: 'star', label: 'Estrella', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,1 15.09,8.26 23,9.27 17.5,14.63 18.18,22.54 12,19.27 5.82,22.54 6.5,14.63 1,9.27 8.91,8.26"/></svg> },
-                      { id: 'hexagon', label: 'Hexág.', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,1 21.66,6.5 21.66,17.5 12,23 2.34,17.5 2.34,6.5"/></svg> },
-                      { id: 'spiral', label: 'Espiral', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 12 C12 12, 18 10, 18 6 C18 2, 12 1, 8 3 C3 5, 2 11, 5 15 C8 19, 15 20, 19 17 C23 14, 22 7, 19 4"/></svg> },
-                      { id: 'wave', label: 'Ondulada', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12 Q5 6, 8 12 Q11 18, 14 12 Q17 6, 20 12 Q21.5 15, 22 12"/></svg> },
-                    ].map((sh) => { const isActive = state.annotateTool === sh.id || (state.annotateTool === 'rect' && state.annotateShape === sh.id); return ( <div key={sh.id} className="ps-tool-thumb-box"> <button className={`ps-tool-thumb btn-press ${isActive ? "active" : ""}`} onClick={() => updateState({ annotateTool: sh.id === 'arrow' ? 'arrow' : 'rect', annotateShape: sh.id as any, annotateMode: true })} style={{ padding: 0, width: 60, height: 60, borderRadius: 12, background: "#1c1c1e", border: isActive ? "2px solid #3498db" : "1px solid rgba(255,255,255,0.1)", display: 'flex', alignItems: 'center', justifyContent: 'center', color: isActive ? '#3498db' : '#fff' }}> {sh.icon} </button> <span className="ps-tool-label" style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.4)' }}>{sh.label}</span> </div> ) })}
+                      { id: 'arrow', label: 'Flecha', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="19" x2="19" y2="5" /><polyline points="9 5 19 5 19 15" /></svg> },
+                      { id: 'rect', label: 'Rect', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /></svg> },
+                      { id: 'circle', label: 'Círculo', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /></svg> },
+                      { id: 'ellipse', label: 'Elipse', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6" /></svg> },
+                      { id: 'triangle', label: 'Triáng.', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,2 22,22 2,22" /></svg> },
+                      { id: 'diamond', label: 'Rombo', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,1 23,12 12,23 1,12" /></svg> },
+                      { id: 'star', label: 'Estrella', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,1 15.09,8.26 23,9.27 17.5,14.63 18.18,22.54 12,19.27 5.82,22.54 6.5,14.63 1,9.27 8.91,8.26" /></svg> },
+                      { id: 'hexagon', label: 'Hexág.', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,1 21.66,6.5 21.66,17.5 12,23 2.34,17.5 2.34,6.5" /></svg> },
+                      { id: 'spiral', label: 'Espiral', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 12 C12 12, 18 10, 18 6 C18 2, 12 1, 8 3 C3 5, 2 11, 5 15 C8 19, 15 20, 19 17 C23 14, 22 7, 19 4" /></svg> },
+                      { id: 'wave', label: 'Ondulada', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12 Q5 6, 8 12 Q11 18, 14 12 Q17 6, 20 12 Q21.5 15, 22 12" /></svg> },
+                    ].map((sh) => { const isActive = state.annotateTool === sh.id || (state.annotateTool === 'rect' && state.annotateShape === sh.id); return (<div key={sh.id} className="ps-tool-thumb-box"> <button className={`ps-tool-thumb btn-press ${isActive ? "active" : ""}`} onClick={() => updateState({ annotateTool: sh.id === 'arrow' ? 'arrow' : 'rect', annotateShape: sh.id as any, annotateMode: true })} style={{ padding: 0, width: 60, height: 60, borderRadius: 12, background: "#1c1c1e", border: isActive ? "2px solid #3498db" : "1px solid rgba(255,255,255,0.1)", display: 'flex', alignItems: 'center', justifyContent: 'center', color: isActive ? '#3498db' : '#fff' }}> {sh.icon} </button> <span className="ps-tool-label" style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.4)' }}>{sh.label}</span> </div>) })}
                   </>
                 )}
                 {mobileTab === "annotate" && annotatePanelView === 'stickers' && (
@@ -743,20 +967,20 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                     <div className="ps-tool-thumb-box" style={{ paddingRight: 12, marginRight: 12, borderRight: '1px solid rgba(255,255,255,0.1)' }}>
                       <button className="ps-tool-thumb btn-press" onClick={() => setAnnotatePanelView('hub')} style={{ width: 60, height: 60, borderRadius: 12, background: "rgba(255,255,255,0.05)", display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}><ArrowLeft size={24} /></button> <span className="ps-tool-label">Volver</span>
                     </div>
-                    {[ { id: 'heart', label: 'Corazón', icon: '❤️' }, { id: 'star_s', label: 'Estrella', icon: '⭐' }, { id: 'fire', label: 'Fuego', icon: '🔥' }, { id: 'rocket', label: 'Cohete', icon: '🚀' }, { id: 'crown_s', label: 'Corona', icon: '👑' }, ].map((tool) => ( <div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { const newSticker: any = { id: Math.random().toString(36).substr(2, 9), kind: 'sticker', stickerId: tool.id, icon: tool.icon, position: { x: 50, y: 50 }, size: 40 }; updateState({ annotateStrokes: [...state.annotateStrokes, newSticker] }); setAnnotatePanelView('hub'); }} style={{ padding: 0, width: 60, height: 60, borderRadius: 12, background: "#1c1c1e", border: "1px solid rgba(255,255,255,0.1)", display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div> ))}
+                    {[{ id: 'heart', label: 'Corazón', icon: '❤️' }, { id: 'star_s', label: 'Estrella', icon: '⭐' }, { id: 'fire', label: 'Fuego', icon: '🔥' }, { id: 'rocket', label: 'Cohete', icon: '🚀' }, { id: 'crown_s', label: 'Corona', icon: '👑' },].map((tool) => (<div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { const newSticker: any = { id: Math.random().toString(36).substr(2, 9), kind: 'sticker', stickerId: tool.id, icon: tool.icon, position: { x: 50, y: 50 }, size: 40 }; updateState({ annotateStrokes: [...state.annotateStrokes, newSticker] }); setAnnotatePanelView('hub'); }} style={{ padding: 0, width: 60, height: 60, borderRadius: 12, background: "#1c1c1e", border: "1px solid rgba(255,255,255,0.1)", display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div>))}
                   </>
                 )}
-                {mobileTab === "background" && backgroundPanelView === 'hub' && [ { id: "solid", icon: <Palette size={24} />, label: "Sólido" }, { id: "gradient", icon: <Blend size={24} />, label: "Degradado" }, { id: "image", icon: <ImageIcon size={24} />, label: "Imagen" }, { id: "color", icon: <Pipette size={24} />, label: "Gotero" }, { id: "transparent", icon: <div style={{ width: 24, height: 24, borderRadius: 4, backgroundImage: 'linear-gradient(45deg, #444 25%, transparent 25%), linear-gradient(-45deg, #444 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #444 75%), linear-gradient(-45deg, transparent 75%, #444 75%)', backgroundSize: '8px 8px', backgroundColor: '#222' }} />, label: "Transp." }, { id: "mesh", icon: <Sparkles size={24} />, label: "Mesh" }, { id: "wallpaper", icon: <LayoutList size={24} />, label: "Walls" }, ].map((tool) => ( <div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { if (tool.id === 'transparent') { updateState({ bgType: 'transparent', bgColor: 'transparent', bgImage: null, bgVideo: null }); } else { updateState({ bgType: tool.id as any, showBgSettings: false }); } setBackgroundPanelView('content'); }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div> ))}
+                {mobileTab === "background" && backgroundPanelView === 'hub' && [{ id: "solid", icon: <Palette size={24} />, label: "Sólido" }, { id: "gradient", icon: <Blend size={24} />, label: "Degradado" }, { id: "image", icon: <ImageIcon size={24} />, label: "Imagen" }, { id: "color", icon: <Pipette size={24} />, label: "Gotero" }, { id: "transparent", icon: <div style={{ width: 24, height: 24, borderRadius: 4, backgroundImage: 'linear-gradient(45deg, #444 25%, transparent 25%), linear-gradient(-45deg, #444 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #444 75%), linear-gradient(-45deg, transparent 75%, #444 75%)', backgroundSize: '8px 8px', backgroundColor: '#222' }} />, label: "Transp." }, { id: "mesh", icon: <Sparkles size={24} />, label: "Mesh" }, { id: "wallpaper", icon: <LayoutList size={24} />, label: "Walls" },].map((tool) => (<div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { if (tool.id === 'transparent') { updateState({ bgType: 'transparent', bgColor: 'transparent', bgImage: null, bgVideo: null }); } else { updateState({ bgType: tool.id as any, showBgSettings: false }); } setBackgroundPanelView('content'); }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div>))}
                 {mobileTab === "canvas" && scenePanelView === 'hub' && (
                   <>
-                    {[ { id: "estudio", icon: <Sun size={24} />, label: "Estudio" }, { id: "luz", icon: <Lamp size={24} />, label: "Luz" }, ].map((tool) => ( <div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { updateState({ sceneSubTab: tool.id as any }); setScenePanelView('content'); }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div> ))}
+                    {[{ id: "estudio", icon: <Sun size={24} />, label: "Estudio" }, { id: "luz", icon: <Lamp size={24} />, label: "Luz" },].map((tool) => (<div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { updateState({ sceneSubTab: tool.id as any }); setScenePanelView('content'); }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div>))}
                     <div style={{ width: 1, background: "rgba(255,255,255,0.12)", height: 64, margin: "0 4px", borderRadius: 2 }} />
-                    {[ { id: "camera", icon: <Maximize size={24} />, label: "Cámara" }, { id: "motion", icon: <Activity size={24} />, label: "Movimiento" }, ].map((tool) => ( <div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { updateState({ sceneSubTab: tool.id as any }); setScenePanelView('content'); }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div> ))}
+                    {[{ id: "camera", icon: <Maximize size={24} />, label: "Cámara" }, { id: "motion", icon: <Activity size={24} />, label: "Movimiento" },].map((tool) => (<div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { updateState({ sceneSubTab: tool.id as any }); setScenePanelView('content'); }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div>))}
                     <div style={{ width: 1, background: "rgba(255,255,255,0.12)", height: 64, margin: "0 4px", borderRadius: 2 }} />
-                    {[ { id: "effects", icon: <Sparkles size={24} />, label: "Efectos" }, { id: "shadow", icon: <Layers size={24} />, label: "Sombras" }, ].map((tool) => ( <div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { updateState({ sceneSubTab: tool.id as any }); setScenePanelView('content'); }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div> ))}
+                    {[{ id: "effects", icon: <Sparkles size={24} />, label: "Efectos" }, { id: "shadow", icon: <Layers size={24} />, label: "Sombras" },].map((tool) => (<div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { updateState({ sceneSubTab: tool.id as any }); setScenePanelView('content'); }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div>))}
                   </>
                 )}
-                {mobileTab === "labels" && labelsPanelView === 'hub' && [ { id: "add", icon: <PlusCircle size={24} />, label: "Anclar", disabled: false }, { id: "view", icon: <MousePointer2 size={24} />, label: "Gestionar", disabled: state.texts.filter((t: any) => t.kind === 'label').length === 0 }, { id: "subtract", icon: <Trash2 size={24} />, label: "Limpiar", disabled: state.texts.filter((t: any) => t.kind === 'label').length === 0 }, ].map((tool) => ( <div key={tool.id} className="ps-tool-thumb-box" style={{ opacity: tool.disabled ? 0.35 : 1, pointerEvents: tool.disabled ? 'none' : 'auto' }}> <button className="ps-tool-thumb btn-press" disabled={tool.disabled} onClick={() => { updateState({ labelsSubTab: tool.id as any }); setLabelsPanelView('content'); }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div> ))}
+                {mobileTab === "labels" && labelsPanelView === 'hub' && [{ id: "add", icon: <PlusCircle size={24} />, label: "Anclar", disabled: false }, { id: "view", icon: <MousePointer2 size={24} />, label: "Gestionar", disabled: state.texts.filter((t: any) => t.kind === 'label').length === 0 }, { id: "subtract", icon: <Trash2 size={24} />, label: "Limpiar", disabled: state.texts.filter((t: any) => t.kind === 'label').length === 0 },].map((tool) => (<div key={tool.id} className="ps-tool-thumb-box" style={{ opacity: tool.disabled ? 0.35 : 1, pointerEvents: tool.disabled ? 'none' : 'auto' }}> <button className="ps-tool-thumb btn-press" disabled={tool.disabled} onClick={() => { updateState({ labelsSubTab: tool.id as any }); setLabelsPanelView('content'); }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div>))}
               </div>
             )}
 

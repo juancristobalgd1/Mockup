@@ -135,19 +135,6 @@ function Editor() {
         removeText={removeText}
       />
 
-      {/* 4. Unified Command Bar (Floating Zoom & Move) */}
-      <FloatingToolbar
-        onAddElement={() => {
-          nav.setActiveTab("template");
-          nav.setMobileTab("template");
-        }}
-        onToggleExport={() =>
-          nav.setMobileTab(nav.mobileTab === "export" ? null : "export")
-        }
-        isExportOpen={nav.mobileTab === "export"}
-        isMobile={window.innerWidth < 768}
-      />
-
       {/* 5. Mobile Navigation & Context Panels */}
       <MobileNavigation
         state={state}

@@ -12,6 +12,8 @@ interface FloatingToolbarProps {
   onToggleExport: () => void;
   isExportOpen: boolean;
   isMobile: boolean;
+  mobileTab: string | null;
+  movieMode: boolean;
 }
 
 export function FloatingToolbar({
@@ -19,16 +21,15 @@ export function FloatingToolbar({
   onToggleExport,
   isExportOpen,
   isMobile,
+  mobileTab,
+  movieMode,
 }: FloatingToolbarProps) {
   const { state, updateState } = useApp();
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const dragPointerIdRef = useRef<number | null>(null);
-  const dragPointerOffsetRef = useRef({ x: 0, y: 0 });
-  const [customPosition, setCustomPosition] = useState<{ x: number; y: number } | null>(null);
-
   const mode = state.interactionMode;
   const zoomValue = state.zoomValue;
   const zoomOpen = mode === 'zoom';
+  const isNavOpen = !!mobileTab || movieMode;
+  const isPanelOpen = !!mobileTab && mobileTab !== "export";
 
   const toggleMode = (nextMode: Exclude<InteractionMode, 'none'>) => {
     updateState({ interactionMode: mode === nextMode ? 'none' : nextMode });
@@ -37,64 +38,6 @@ export function FloatingToolbar({
   const onZoomChange = (value: number) => {
     updateState({ zoomValue: value }, true); // skipHistory: true for smooth slider
   };
-
-  const getClampedPosition = useCallback((left: number, top: number) => {
-    const controlEl = rootRef.current;
-    const parentEl = controlEl?.parentElement;
-    if (!controlEl || !parentEl) return { x: left, y: top };
-
-    const parentRect = parentEl.getBoundingClientRect();
-    const controlRect = controlEl.getBoundingClientRect();
-    const maxX = Math.max(12, parentRect.width - controlRect.width - 24);
-    const maxY = Math.max(12, parentRect.height - controlRect.height - 24);
-
-    return {
-      x: Math.min(Math.max(12, left), maxX),
-      y: Math.min(Math.max(12, top), maxY),
-    };
-  }, []);
-
-  const updateDraggedPosition = useCallback((clientX: number, clientY: number) => {
-    const controlEl = rootRef.current;
-    const parentEl = controlEl?.parentElement;
-    if (!controlEl || !parentEl) return;
-
-    const parentRect = parentEl.getBoundingClientRect();
-    const nextLeft = clientX - parentRect.left - dragPointerOffsetRef.current.x;
-    const nextTop = clientY - parentRect.top - dragPointerOffsetRef.current.y;
-    setCustomPosition(getClampedPosition(nextLeft, nextTop));
-  }, [getClampedPosition]);
-
-  const handleGripPointerDown = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
-    const controlEl = rootRef.current;
-    const parentEl = controlEl?.parentElement;
-    if (!controlEl || !parentEl) return;
-
-    const controlRect = controlEl.getBoundingClientRect();
-    const parentRect = parentEl.getBoundingClientRect();
-    dragPointerIdRef.current = event.pointerId;
-    dragPointerOffsetRef.current = {
-      x: event.clientX - controlRect.left,
-      y: event.clientY - controlRect.top,
-    };
-
-    setCustomPosition((current) => current ?? getClampedPosition(controlRect.left - parentRect.left, controlRect.top - parentRect.top));
-    event.currentTarget.setPointerCapture(event.pointerId);
-    event.preventDefault();
-    event.stopPropagation();
-  }, [getClampedPosition]);
-
-  const handleGripPointerMove = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
-    if (dragPointerIdRef.current !== event.pointerId) return;
-    updateDraggedPosition(event.clientX, event.clientY);
-  }, [updateDraggedPosition]);
-
-  const handleGripPointerUp = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
-    if (dragPointerIdRef.current !== event.pointerId) return;
-    updateDraggedPosition(event.clientX, event.clientY);
-    dragPointerIdRef.current = null;
-    event.currentTarget.releasePointerCapture(event.pointerId);
-  }, [updateDraggedPosition]);
 
   const pillButton = (active: boolean): React.CSSProperties => ({
     position: 'relative',
@@ -114,22 +57,22 @@ export function FloatingToolbar({
 
   return (
     <div 
-      ref={rootRef} 
       role="toolbar" 
       aria-label="Unified Command Bar" 
       style={{
         position: 'absolute',
-        left: customPosition ? customPosition.x : isMobile ? '50%' : 'auto',
-        right: customPosition ? 'auto' : isMobile ? 'auto' : 24,
-        top: customPosition ? customPosition.y : 'auto',
-        transform: customPosition ? 'none' : isMobile ? 'translateX(-50%)' : 'none',
-        bottom: customPosition ? 'auto' : isMobile ? 'max(92px, calc(env(safe-area-inset-bottom, 0px) + 84px))' : 160,
+        left: isMobile ? '50%' : 'auto',
+        right: isMobile ? 'auto' : 24,
+        transform: isMobile ? 'translateX(-50%)' : 'none',
+        bottom: isMobile 
+          ? (movieMode ? 340 : (isPanelOpen ? 370 : 160)) 
+          : (movieMode ? 360 : (isPanelOpen ? 400 : 180)),
         zIndex: 150,
         display: 'flex',
         alignItems: 'center',
         gap: 8,
         pointerEvents: 'auto',
-        transition: !customPosition ? 'bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1)' : 'none'
+        transition: 'bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
       }}
       className="btn-press"
     >
@@ -137,51 +80,13 @@ export function FloatingToolbar({
         display: 'flex',
         alignItems: 'center',
         gap: 4,
-        padding: 6,
+        padding: '6px 12px',
         borderRadius: 999,
         background: 'linear-gradient(rgba(32, 32, 34, 0.96), rgba(24, 24, 26, 0.94))',
         border: '1px solid rgba(255, 255, 255, 0.09)',
         boxShadow: 'rgba(255, 255, 255, 0.05) 0px 0px 0px 1px, rgba(0, 0, 0, 0.24) 0px 14px 24px, rgba(255, 255, 255, 0.08) 0px 1px 1px inset',
         backdropFilter: 'blur(18px)',
       }}>
-        {/* DRAG HANDLE */}
-        <button
-          aria-label="Recolocar controles"
-          title="Recolocar controles"
-          onPointerDown={handleGripPointerDown}
-          onPointerMove={handleGripPointerMove}
-          onPointerUp={handleGripPointerUp}
-          onPointerCancel={handleGripPointerUp}
-          style={{
-            width: 28,
-            height: 44,
-            border: 'none',
-            borderRadius: 999,
-            background: 'transparent',
-            color: 'rgba(255,255,255,0.48)',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 4px)',
-            gridTemplateRows: 'repeat(3, 4px)',
-            gap: 4,
-            alignContent: 'center',
-            justifyContent: 'center',
-            cursor: dragPointerIdRef.current === null ? 'grab' : 'grabbing',
-            touchAction: 'none',
-          }}
-        >
-          {Array.from({ length: 6 }).map((_, index) => (
-            <span
-              key={index}
-              style={{
-                width: 4,
-                height: 4,
-                borderRadius: 999,
-                background: 'currentColor',
-                opacity: 0.9,
-              }}
-            />
-          ))}
-        </button>
 
         {/* MOVE TOOL */}
         <button aria-label="Desplazar dispositivo" aria-pressed={mode === 'drag'} title="Desplazar dispositivo" onClick={() => toggleMode('drag')} style={pillButton(mode === 'drag')}>
