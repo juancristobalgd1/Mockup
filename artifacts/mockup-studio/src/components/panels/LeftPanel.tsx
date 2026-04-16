@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Layout, Palette, Image as ImageIcon, Sparkles, Pencil, MousePointer2, Settings2, Box, Layers } from 'lucide-react';
+import { Layout, Palette, Image as ImageIcon, Sparkles, Pencil, MousePointer2, Settings2, Box, Layers, Grid3X3 } from 'lucide-react';
 
 // Modular Components
 import { DeviceTab } from './left/DeviceTab.fixed';
@@ -10,6 +10,7 @@ import { LabelsTab } from './left/LabelsTab';
 import { SceneTab } from './left/SceneTab';
 import { PresetsTab } from './left/PresetsTab.fixed';
 import { TemplateTab } from './left/TemplateTab';
+import { PatternsTab } from './left/PatternsTab';
 
 import '../../index.css';
 
@@ -19,6 +20,7 @@ const TAB_ICONS = [
   { id: 'device'     as const, icon: Box,          label: 'Dispositivo' },
   { id: 'background' as const, icon: ImageIcon,    label: 'Fondo'       },
   { id: 'overlay'    as const, icon: Layers,       label: 'Overlay'     },
+  { id: 'patterns'   as const, icon: Grid3X3,      label: 'Patrones'    },
   { id: 'annotate'   as const, icon: Pencil,       label: 'Annotate'      },
   { id: 'canvas'     as const, icon: Settings2,    label: 'Escena'      },
   { id: 'labels'     as const, icon: MousePointer2, label: 'Etiquetas'   },
@@ -26,7 +28,7 @@ const TAB_ICONS = [
 
 export interface LeftPanelProps {
   mobile?: boolean;
-  mobileContentOnly?: 'presets' | 'template' | 'device' | 'background' | 'overlay' | 'annotate' | 'canvas' | 'labels';
+  mobileContentOnly?: 'presets' | 'template' | 'device' | 'background' | 'overlay' | 'patterns' | 'annotate' | 'canvas' | 'labels';
   activeTab: string;
   setActiveTab: (tab: any) => void;
   backgroundPanelView?: 'hub' | 'content';
@@ -50,6 +52,7 @@ export function LeftPanel({
         {mobileContentOnly === 'device'     && <DeviceTab />}
         {mobileContentOnly === 'background' && <BackgroundTab mobileView={backgroundPanelView} setMobileView={setBackgroundPanelView} />}
         {mobileContentOnly === 'overlay'    && <OverlayTab />}
+        {mobileContentOnly === 'patterns'   && <PatternsTab />}
         {mobileContentOnly === 'annotate'   && <AnnotateTab />}
         {mobileContentOnly === 'canvas'     && <SceneTab />}
         {mobileContentOnly === 'labels'     && <LabelsTab />}
@@ -67,6 +70,7 @@ export function LeftPanel({
           {activeTab === 'device'     && <DeviceTab />}
           {activeTab === 'background' && <BackgroundTab />}
           {activeTab === 'overlay'    && <OverlayTab />}
+          {activeTab === 'patterns'   && <PatternsTab />}
           {activeTab === 'annotate'   && <AnnotateTab />}
           {activeTab === 'canvas'     && <SceneTab />}
           {activeTab === 'labels'     && <LabelsTab />}
@@ -169,6 +173,7 @@ export function LeftPanel({
           {activeTab === 'device'     && <DeviceTab />}
           {activeTab === 'background' && <BackgroundTab />}
           {activeTab === 'overlay'    && <OverlayTab />}
+          {activeTab === 'patterns'   && <PatternsTab />}
           {activeTab === 'annotate'   && <AnnotateTab />}
           {activeTab === 'canvas'     && <SceneTab />}
           {activeTab === 'labels'     && <LabelsTab />}

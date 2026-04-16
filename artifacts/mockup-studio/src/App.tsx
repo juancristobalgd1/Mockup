@@ -133,6 +133,7 @@ function Editor() {
   const [annotateProperty, setAnnotateProperty] = useState<'size' | 'opacity' | 'color' | 'hardness' | 'more' | null>(null);
   const [overlayProperty, setOverlayProperty] = useState<'color' | 'opacity' | 'light' | 'more' | null>(null);
   const [backgroundProperty, setBackgroundProperty] = useState<'color' | 'opacity' | 'blur' | 'more' | null>(null);
+  const [patternsProperty, setPatternsProperty] = useState<'color' | 'opacity' | 'scale' | 'more' | null>(null);
   const [deviceProperty, setDeviceProperty] = useState<'color' | 'reflection' | 'shadow' | 'more' | null>(null);
   const [timelineCollapsed, setTimelineCollapsed] = useState(false);
   const [showGlobalMenu, setShowGlobalMenu] = useState(false);
@@ -582,6 +583,19 @@ function Editor() {
                     strokeWidth={activeTab === "overlay" ? 2.5 : 1.8}
                   />
                   <span>Overlay</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab("patterns");
+                    setMobileTab("patterns");
+                  }}
+                  className={`ps-nav-item ${activeTab === "patterns" ? "active" : ""}`}
+                >
+                  <Grid3X3
+                    size={22}
+                    strokeWidth={activeTab === "patterns" ? 2.5 : 1.8}
+                  />
+                  <span>Patrones</span>
                 </button>
                 <button
                   onClick={() => {
@@ -1402,6 +1416,198 @@ function Editor() {
                         pointerEvents: "auto",
                         background: backgroundProperty === 'more' ? "#fff" : "#1c1c1e",
                         color: backgroundProperty === 'more' ? "#000" : "#fff",
+                        border: "none",
+                        width: 44,
+                        height: 44,
+                        borderRadius: 22,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                      }}
+                    >
+                      <MoreHorizontal size={20} />
+                    </button>
+                  </>
+                )}
+                {mobileTab === "patterns" && (
+                  <>
+                    {/* Tooltips Layer */}
+                    <AnimatePresence>
+                      {patternsProperty && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          style={{
+                            position: "absolute",
+                            bottom: 60,
+                            left: 0,
+                            right: 0,
+                            zIndex: 200,
+                            display: "flex",
+                            justifyContent: "center",
+                            pointerEvents: "auto"
+                          }}
+                        >
+                          <div style={{
+                            background: "rgba(30,30,32,0.95)",
+                            backdropFilter: "blur(20px)",
+                            borderRadius: 20,
+                            padding: "16px 20px",
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            boxShadow: "0 10px 40px rgba(0,0,0,0.6)",
+                            minWidth: 260,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 12
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                {patternsProperty === 'color' ? 'Color de Fondo' : patternsProperty === 'opacity' ? 'Opacidad' : patternsProperty === 'scale' ? 'Escala' : 'Ajustes'}
+                              </span>
+                              <button onClick={() => setPatternsProperty(null)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18, padding: 0, cursor: 'pointer' }}>×</button>
+                            </div>
+
+                            {patternsProperty === 'color' ? (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div style={{ position: 'relative', width: 44, height: 44, borderRadius: 12, background: state.bgColor, border: '1px solid rgba(255,255,255,0.2)' }}>
+                                  <input 
+                                    type="color" 
+                                    value={state.bgColor.startsWith('#') ? state.bgColor : '#000000'} 
+                                    onChange={e => updateState({ bgType: 'pattern', bgColor: e.target.value })}
+                                    style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
+                                  />
+                                </div>
+                                <input 
+                                  type="text" 
+                                  value={state.bgColor} 
+                                  onChange={e => updateState({ bgType: 'pattern', bgColor: e.target.value })}
+                                  className="rt-input" 
+                                  style={{ flex: 1, height: 44, fontFamily: 'monospace', fontSize: 14 }}
+                                />
+                              </div>
+                            ) : patternsProperty === 'more' ? (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                <button onClick={() => updateState({ bgType: 'solid' })}
+                                  style={{
+                                    padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700,
+                                    background: 'rgba(255,100,100,0.1)',
+                                    color: 'rgba(255,150,150,1)',
+                                    border: '1px solid rgba(255,100,100,0.2)'
+                                  }}>Eliminar Patrón</button>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <input
+                                  type="range"
+                                  min={0}
+                                  max={100}
+                                  step={1}
+                                  value={patternsProperty === 'opacity' ? state.bgOpacity : (state.bgPatternScale * 25)}
+                                  onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    if (patternsProperty === 'opacity') updateState({ bgOpacity: val });
+                                    else updateState({ bgPatternScale: val / 25 });
+                                  }}
+                                  style={{ flex: 1, accentColor: '#fff', height: 4 }}
+                                />
+                                <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', minWidth: 36, textAlign: 'right' }}>
+                                  {patternsProperty === 'opacity' ? `${state.bgOpacity}%` : `${Math.round(state.bgPatternScale * 100)}%`}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Color Button (Left) */}
+                    <button
+                      className="ps-tool-icon-btn btn-press"
+                      onClick={() => setPatternsProperty(patternsProperty === 'color' ? null : 'color')}
+                      style={{
+                        pointerEvents: "auto",
+                        background: patternsProperty === 'color' ? "#fff" : "#1c1c1e",
+                        color: patternsProperty === 'color' ? "#000" : "#fff",
+                        border: "none",
+                        width: 44,
+                        height: 44,
+                        borderRadius: 22,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}
+                    >
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ 
+                          width: 22, height: 22, borderRadius: '50%', 
+                          background: state.bgColor, 
+                          border: '2px solid rgba(255,255,255,0.8)', 
+                          opacity: 0.8
+                        }}></div>
+                      </div>
+                    </button>
+
+                    {/* Scale/Opacity Pill (Center) */}
+                    <div
+                      style={{
+                        pointerEvents: "auto",
+                        display: "flex",
+                        background: "#1c1c1e",
+                        borderRadius: 30,
+                        padding: 4,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                      }}
+                    >
+                      <button
+                        className="btn-press"
+                        onClick={() => setPatternsProperty(patternsProperty === 'opacity' ? null : 'opacity')}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          background: patternsProperty === 'opacity' ? "#f5f5f7" : "transparent",
+                          color: patternsProperty === 'opacity' ? "#000" : "rgba(255,255,255,0.4)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "none",
+                        }}
+                      >
+                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" />
+                          <path d="M8 12h8" />
+                        </svg>
+                      </button>
+                      <button
+                        className="btn-press"
+                        onClick={() => setPatternsProperty(patternsProperty === 'scale' ? null : 'scale')}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          background: patternsProperty === 'scale' ? "#f5f5f7" : "transparent",
+                          color: patternsProperty === 'scale' ? "#000" : "rgba(255,255,255,0.4)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "none",
+                        }}
+                      >
+                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" />
+                          <path d="M8 12h8" />
+                          <path d="M12 8v8" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* More Options (Right) */}
+                    <button
+                      className="ps-tool-icon-btn btn-press"
+                      onClick={() => setPatternsProperty(patternsProperty === 'more' ? null : 'more')}
+                      style={{
+                        pointerEvents: "auto",
+                        background: patternsProperty === 'more' ? "#fff" : "#1c1c1e",
+                        color: patternsProperty === 'more' ? "#000" : "#fff",
                         border: "none",
                         width: 44,
                         height: 44,
