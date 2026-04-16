@@ -46,7 +46,7 @@ function Editor() {
   const props = usePropertyEditor();
 
   // Global Listeners & Shortcuts
-  useGlobalShortcuts({ undo, redo, showGrid: state.showGrid, updateState });
+  useGlobalShortcuts({ undo, redo, showGrid: !!state.showGrid, updateState });
   useWindowListeners({ state, showGlobalMenu: nav.showGlobalMenu, setShowGlobalMenu: nav.setShowGlobalMenu });
 
   const handleViewToggle = (showVideoEditor: boolean) => {
@@ -66,10 +66,10 @@ function Editor() {
         redo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
-        showGrid={state.showGrid}
+        showGrid={!!state.showGrid}
         updateState={updateState}
         mobileTab={nav.mobileTab}
-        setMobileTab={nav.setMobileTab}
+        setMobileTab={(tab) => nav.setMobileTab(tab as any)}
         showGlobalMenu={nav.showGlobalMenu}
         setShowGlobalMenu={nav.setShowGlobalMenu}
         annotateStrokes={state.annotateStrokes}
