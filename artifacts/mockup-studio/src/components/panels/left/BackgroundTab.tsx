@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useRef, useEffect } from 'react';
-import { Shuffle, Wand2, Image as ImageIcon, Video, Sparkles } from 'lucide-react';
+import { Shuffle, Wand2, Image as ImageIcon, Video, Sparkles, Pipette } from 'lucide-react';
 import { useApp } from '../../../store';
 import { Section } from '../../ui/PanelUI';
 import { 
@@ -9,7 +9,8 @@ import {
   PATTERNS, 
   WALLPAPERS, 
   ANIMATED_BACKGROUNDS, 
-  ANIMATED_BG_KEYFRAMES 
+  ANIMATED_BG_KEYFRAMES,
+  SOLIDS
 } from '../../../data/backgrounds';
 import { extractColorsFromImage, clampL, safeW } from '../../../utils/panelUtils';
 
@@ -202,14 +203,48 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
         <div style={{ marginBottom: 20 }}>
         {state.bgType === 'solid' && (
           <Section label="Color Sólido">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: state.bgColor, border: '1px solid rgba(255,255,255,0.12)' }} />
+            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6 }} className="hide-scrollbars">
+              {/* Custom Color Picker */}
+              <div style={{ 
+                flexShrink: 0, 
+                position: 'relative', 
+                width: 44, 
+                height: 44, 
+                borderRadius: '50%', 
+                background: 'conic-gradient(#ff0000, #ff7f00, #ffff00, #00ff00, #00ffff, #0000ff, #8b00ff, #ff00ff, #ff0000)',
+                border: '2px solid rgba(255,255,255,0.3)', 
+                boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+                cursor: 'pointer', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                overflow: 'hidden',
+                transition: 'transform 0.15s ease'
+              }} className="btn-press">
+                <Pipette size={20} color="#fff" strokeWidth={2.5} style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />
                 <input type="color" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
                   style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
               </div>
-              <input type="text" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
-                className="rt-input" style={{ fontFamily: 'monospace', flex: 1, height: 44, fontSize: 13 }} />
+
+              {/* Sample Colors */}
+              {SOLIDS.map(color => (
+                <button
+                  key={color}
+                  onClick={() => updateState({ bgColor: color })}
+                  style={{
+                    flexShrink: 0,
+                    width: 44,
+                    height: 44,
+                    borderRadius: '50%',
+                    background: color,
+                    border: state.bgColor === color ? '2px solid #fff' : '2px solid rgba(255,255,255,0.08)',
+                    boxShadow: state.bgColor === color ? '0 0 10px rgba(255,255,255,0.4)' : 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  className="btn-press"
+                />
+              ))}
             </div>
           </Section>
         )}
