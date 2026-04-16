@@ -105,13 +105,6 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
           <line x1="4" y1="4" x2="18" y2="18" stroke="rgba(0,0,0,0.2)" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
     },
-    { id: 'solid', label: 'Sólido', preview: { background: state.bgType === 'solid' ? state.bgColor : '#374151' } },
-    { id: 'gradient', label: 'Degradado', preview: { background: 'linear-gradient(135deg, #3b82f6 0%, #ec4899 100%)' } },
-    { id: 'mesh', label: 'Malla', preview: { background: 'radial-gradient(at 30% 20%, #0ea5e9 0px, transparent 55%), radial-gradient(at 80% 70%, #ec4899 0px, transparent 55%), #03111e' } },
-    { id: 'wallpaper', label: 'Fondo de Pantalla', preview: { background: 'radial-gradient(ellipse at 50% 0%, #bfdbfe 0%, #60a5fa 60%, #dbeafe 100%)' } },
-    { id: 'pattern', label: 'Patrón', preview: { backgroundColor: '#1a1c2e', backgroundImage: 'radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1px)', backgroundSize: '10px 10px' } },
-    { id: 'image', label: 'Imagen', preview: null },
-    { id: 'video', label: 'Video', preview: null, icon: <Video size={16} color="rgba(255,255,255,0.40)" /> },
     { id: 'transparent', label: 'Alfa', preview: null, icon:
         <div style={{
           width: '100%', height: '100%', borderRadius: 10,
@@ -121,6 +114,13 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
           backgroundColor: '#222',
         }} />
     },
+    { id: 'separator', type: 'separator' },
+    { id: 'solid', label: 'Sólido', preview: { background: state.bgType === 'solid' ? state.bgColor : '#374151' } },
+    { id: 'gradient', label: 'Degradado', preview: { background: 'linear-gradient(135deg, #3b82f6 0%, #ec4899 100%)' } },
+    { id: 'mesh', label: 'Malla', preview: { background: 'radial-gradient(at 30% 20%, #0ea5e9 0px, transparent 55%), radial-gradient(at 80% 70%, #ec4899 0px, transparent 55%), #03111e' } },
+    { id: 'wallpaper', label: 'Fondo de Pantalla', preview: { background: 'radial-gradient(ellipse at 50% 0%, #bfdbfe 0%, #60a5fa 60%, #dbeafe 100%)' } },
+    { id: 'pattern', label: 'Patrón', preview: { backgroundColor: '#1a1c2e', backgroundImage: 'radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1px)', backgroundSize: '10px 10px' } },
+    { id: 'video', label: 'Video', preview: null, icon: <Video size={16} color="rgba(255,255,255,0.40)" /> },
     { id: 'animated', label: 'Animado', preview: null, icon:
         <div style={{
           width: '100%', height: '100%', borderRadius: 10,
@@ -129,6 +129,7 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
           animation: 'bgShift 4s ease infinite',
         }} />
     },
+    { id: 'image', label: 'Imagen', preview: null },
   ];
 
   const popupStyle: React.CSSProperties = {
@@ -166,12 +167,19 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
             }} 
             className="hide-scrollbars"
           >
-            {bgTypeCards.map((card) => {
+            {bgTypeCards.map((card: any) => {
+              if (card.type === 'separator') {
+                return (
+                  <div key={card.id} style={{ width: 1.5, minHeight: 40, background: 'rgba(255,255,255,0.25)', margin: '0 12px', alignSelf: 'center', flexShrink: 0, opacity: 0.8 }} />
+                );
+              }
               const active = state.bgType === card.id;
               return (
                 <button
                   key={card.id}
-                  onClick={() => updateState({ bgType: card.id as any, bgImage: card.id !== 'image' ? state.bgImage : state.bgImage, bgVideo: card.id !== 'video' ? state.bgVideo : state.bgVideo })}
+                  onClick={() => {
+                    updateState({ bgType: card.id as any, bgImage: card.id !== 'image' ? state.bgImage : state.bgImage, bgVideo: card.id !== 'video' ? state.bgVideo : state.bgVideo });
+                  }}
                   style={{
                     ...SWATCH_BTN(active),
                     scrollSnapAlign: 'start',
