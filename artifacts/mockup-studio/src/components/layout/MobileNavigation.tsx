@@ -204,7 +204,9 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
 
             <div
               style={{
-                background: "var(--ps-panel)",
+                background: "rgba(10, 10, 10, 0.96)",
+                backdropFilter: "blur(28px)",
+                WebkitBackdropFilter: "blur(28px)",
                 padding: "0 12px 20px",
                 display: "grid",
                 gridTemplateColumns: "1fr auto 1fr",
@@ -220,7 +222,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   }}
                   className="btn-press"
                   style={{
-                    background: activeTab === 'template' ? '#333' : '#1a1a1a',
+                    background: activeTab === 'template' ? '#333' : 'rgba(10, 10, 10, 0.96)',
                     color: activeTab === 'template' ? '#fff' : 'var(--ps-text-dim)',
                     border: '1px solid rgba(255,255,255,0.12)',
                     borderRadius: 30,
@@ -244,7 +246,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
 
               <div
                 className="ps-action-pill"
-                style={{ position: "relative", minWidth: 140, height: 44, padding: '2px' }}
+                style={{ position: "relative", minWidth: 130, height: 44, padding: '2px' }}
               >
                 <button
                   className={`ps-action-item ${!state.movieMode ? "active" : ""}`}
@@ -301,7 +303,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <div
                   className="ps-action-pill"
-                  style={{ position: "relative", minWidth: 84, height: 44, padding: '2px' }}
+                  style={{ position: "relative", minWidth: 90, height: 44, padding: '2px' }}
                 >
                   <button
                     className={`ps-action-item ${state.interactionMode === 'drag' ? "active" : ""}`}
@@ -419,7 +421,9 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
           >
             <div
               style={{
-                background: "var(--ps-panel)",
+                background: "rgba(10, 10, 10, 0.96)",
+                backdropFilter: "blur(28px)",
+                WebkitBackdropFilter: "blur(28px)",
                 padding: "0 12px 20px",
                 display: "grid",
                 gridTemplateColumns: "1fr auto 1fr",
@@ -435,7 +439,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   }}
                   className="btn-press"
                   style={{
-                    background: activeTab === 'template' ? '#333' : '#1a1a1a',
+                    background: activeTab === 'template' ? '#333' : 'rgba(10, 10, 10, 0.96)',
                     color: activeTab === 'template' ? '#fff' : 'var(--ps-text-dim)',
                     border: '1px solid rgba(255,255,255,0.12)',
                     borderRadius: 30,
@@ -459,7 +463,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
 
               <div
                 className="ps-action-pill"
-                style={{ position: "relative", minWidth: 140, height: 44, padding: '2px' }}
+                style={{ position: "relative", minWidth: 130, height: 44, padding: '2px' }}
               >
                 <button
                   className={`ps-action-item ${!state.movieMode ? "active" : ""}`}
@@ -516,7 +520,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <div
                   className="ps-action-pill"
-                  style={{ position: "relative", minWidth: 84, height: 44, padding: '2px' }}
+                  style={{ position: "relative", minWidth: 90, height: 44, padding: '2px' }}
                 >
                   <button
                     className={`ps-action-item ${state.interactionMode === 'drag' ? "active" : ""}`}

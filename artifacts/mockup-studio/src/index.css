@@ -592,7 +592,7 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 }
 
 .ps-action-pill {
-  background: #1a1a1a;
+  background: rgba(10, 10, 10, 0.96);
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 30px;
   padding: 3px;
