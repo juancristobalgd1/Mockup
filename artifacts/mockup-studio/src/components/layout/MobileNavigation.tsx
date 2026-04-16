@@ -979,7 +979,6 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   { id: "solid", icon: <Palette size={24} />, label: "Sólido" }, 
                   { id: "gradient", icon: <Blend size={24} />, label: "Degradado" }, 
                   { id: "image", icon: <ImageIcon size={24} />, label: "Imagen" }, 
-                  { id: "color", icon: <Pipette size={24} />, label: "Gotero" }, 
                   { id: "transparent", icon: <div style={{ width: 24, height: 24, borderRadius: 4, backgroundImage: 'linear-gradient(45deg, #444 25%, transparent 25%), linear-gradient(-45deg, #444 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #444 75%), linear-gradient(-45deg, transparent 75%, #444 75%)', backgroundSize: '8px 8px', backgroundColor: '#222' }} />, label: "Transp." }, 
                   { id: "mesh", icon: <Sparkles size={24} />, label: "Mesh" }, 
                   { id: "wallpaper", icon: <LayoutList size={24} />, label: "Walls" },
