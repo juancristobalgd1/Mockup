@@ -1,7 +1,6 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Layout, 
   Smartphone, 
   Image as ImageIcon, 
   Layers, 
@@ -12,6 +11,7 @@ import {
   Film,
   Shuffle,
   MoreHorizontal,
+  LayoutGrid,
   Palette,
   Pencil,
   Box,
@@ -106,19 +106,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
           >
             <nav className="ps-bottom-nav">
-              <button
-                onClick={() => {
-                  setActiveTab("template");
-                  setMobileTab("template");
-                }}
-                className={`ps-nav-item ${activeTab === "template" ? "active" : ""}`}
-              >
-                <Layout
-                  size={22}
-                  strokeWidth={activeTab === "template" ? 2.5 : 1.8}
-                />
-                <span>Plantillas</span>
-              </button>
+
               <button
                 onClick={() => {
                   setActiveTab("device");
@@ -215,11 +203,42 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
             <div
               style={{
                 background: "rgba(10,10,10,1)",
-                padding: "0 0 20px",
+                padding: "0 20px 20px",
                 display: "flex",
                 justifyContent: "center",
+                alignItems: "center",
+                position: "relative",
               }}
             >
+              <button
+                onClick={() => {
+                  setActiveTab("template");
+                  setMobileTab("template");
+                }}
+                className="btn-press"
+                style={{
+                  position: "absolute",
+                  left: 20,
+                  background: activeTab === 'template' ? '#333' : '#1a1a1a',
+                  color: activeTab === 'template' ? '#fff' : 'var(--ps-text-dim)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 30,
+                  padding: '0 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  height: 44,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                  zIndex: 2
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="5" y="8" width="14" height="8" rx="1.5" />
+                  <rect x="8" y="5" width="8" height="14" rx="1.5" />
+                </svg>
+                <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.02em' }}>{state.canvasRatio || "1:1"}</span>
+              </button>
+
               <div
                 className="ps-action-pill"
                 style={{ position: "relative", minWidth: 200 }}
@@ -288,11 +307,42 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
             <div
               style={{
                 background: "var(--ps-panel)",
-                padding: "0 0 12px",
+                padding: "0 20px 12px",
                 display: "flex",
                 justifyContent: "center",
+                alignItems: "center",
+                position: "relative",
               }}
             >
+              <button
+                onClick={() => {
+                  setActiveTab("template");
+                  setMobileTab("template");
+                }}
+                className="btn-press"
+                style={{
+                  position: "absolute",
+                  left: 20,
+                  background: activeTab === 'template' ? '#333' : '#1a1a1a',
+                  color: activeTab === 'template' ? '#fff' : 'var(--ps-text-dim)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 30,
+                  padding: '0 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  height: 40,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                  zIndex: 2
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="5" y="8" width="14" height="8" rx="1" />
+                  <rect x="8" y="5" width="8" height="14" rx="1" />
+                </svg>
+                <span style={{ fontSize: 12, fontWeight: 700 }}>{state.canvasRatio || "1:1"}</span>
+              </button>
+
               <div
                 className="ps-action-pill"
                 style={{ position: "relative", minWidth: 200 }}
