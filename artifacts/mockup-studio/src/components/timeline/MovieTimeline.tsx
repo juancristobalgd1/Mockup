@@ -1276,25 +1276,6 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           </div>
         )}
 
-        {/* Add keyframe manually (Only if no active keyframe to keep header clean) */}
-        {!liveRecording && !hideManualKeyframeButton && !activeKfId && (
-          <button
-            onClick={handleAddKeyframe}
-            title="Añadir keyframe manual"
-            style={{
-              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 6, height: 28, padding: '0 10px', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 5,
-              color: 'rgba(255,255,255,0.55)', fontSize: 11, fontWeight: 600,
-            }}
-          >
-            <Plus size={11} />
-            Keyframe
-            {cameraKeyframes.length > 0 && (
-              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10 }}>({cameraKeyframes.length})</span>
-            )}
-          </button>
-        )}
 
         {/* Clear all (Back to main bar as requested) */}
         {cameraKeyframes.length > 0 && !liveRecording && (
