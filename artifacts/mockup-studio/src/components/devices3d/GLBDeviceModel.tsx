@@ -330,34 +330,37 @@ function countMeshes(root: THREE.Object3D): number {
 
 // ── Material helpers ──────────────────────────────────────────────────
 
-function coatedChassisMat(color: string, roughness = 0.24) {
+function coatedChassisMat(color: string, roughness = 0.18) {
   const hex = resolveColor(color);
   return new THREE.MeshPhysicalMaterial({
     color: hex,
-    roughness,
-    metalness: 0.12,
-    envMapIntensity: 0.42,
+    roughness: Math.max(0.02, roughness),
+    metalness: 0.05,
+    envMapIntensity: 1.2, // Boosted for better reflections
     clearcoat: 1.0,
-    clearcoatRoughness: Math.max(0.05, roughness * 0.45),
-    reflectivity: 0.56,
+    clearcoatRoughness: 0.02,
+    ior: 1.5,
+    reflectivity: 0.8,
     side: THREE.DoubleSide,
   });
 }
 
+
 /** PBR override for metal chassis parts (adapts to deviceColor). */
-function metalMat(color: string, roughness = 0.18, metalness = 0.88) {
+function metalMat(color: string, roughness = 0.12, metalness = 1.0) {
   const hex = resolveColor(color);
   return new THREE.MeshPhysicalMaterial({
     color: hex,
-    roughness: Math.max(0.1, roughness),
-    metalness: Math.min(0.88, metalness),
-    envMapIntensity: 0.72,
-    clearcoat: 0.55,
-    clearcoatRoughness: 0.08,
-    reflectivity: 0.62,
+    roughness: Math.max(0.08, roughness),
+    metalness: metalness,
+    envMapIntensity: 1.5, // Stronger highlights for metal
+    clearcoat: 0.8,
+    clearcoatRoughness: 0.05,
+    reflectivity: 1.0,
     side: THREE.DoubleSide,
   });
 }
+
 
 /**
  * Ensure a screen mesh has normalised UV coordinates in [0, 1] so that any
@@ -588,21 +591,29 @@ function applyMaterials(
     // ── Color tinting: clone original material, change only the color ─
     // Check if this mesh is a "body" part based on its original color
     if (isBodyColorRange(origMat)) {
-      // Clone the original material to preserve roughness, metalness, normals, etc.
-      const cloned = origMat.clone();
-      cloned.side = THREE.DoubleSide;
-
-      // Tint the color to the chosen device color
-      const targetColor = new THREE.Color(resolveColor(deviceColor));
-      (cloned as THREE.MeshStandardMaterial).color = targetColor;
-      (cloned as THREE.MeshStandardMaterial).needsUpdate = true;
-
-      obj.material = cloned;
+      // For frames and chassis, use our specialized premium materials
+      if (key.includes('frame') || key.includes('metal') || key.includes('rim')) {
+        obj.material = metalMat(deviceColor);
+      } else if (key.includes('chassis') || key.includes('body') || key.includes('glass')) {
+        obj.material = coatedChassisMat(deviceColor);
+      } else {
+        // Fallback: clone original material to preserve roughness, metalness, normals, etc.
+        const cloned = origMat.clone() as THREE.MeshStandardMaterial;
+        cloned.side = THREE.DoubleSide;
+        
+        // Tint the color to the chosen device color
+        const targetColor = new THREE.Color(resolveColor(deviceColor));
+        cloned.color = targetColor;
+        cloned.envMapIntensity = 1.0; // Ensure environmental reflections are visible
+        cloned.needsUpdate = true;
+        obj.material = cloned;
+      }
     } else {
       // Restore original material (lenses, flash, sensors, glass)
       obj.material = origMat;
       origMat.side = THREE.DoubleSide;
     }
+
   });
 
   return hasDefaultMat;

@@ -149,6 +149,39 @@ export function StudioLights({
         distance={6}
         decay={2}
       />
+
+      {/* ── Studio Softboxes (Invisible planes that create reflections) ── */}
+      <group>
+        {/* Main top-right key softbox */}
+        <StudioSoftbox position={[4, 5, 2]} rotation={[0, -Math.PI / 4, 0]} width={2} height={8} intensity={2} />
+        {/* Side fill softbox for long edge highlights */}
+        <StudioSoftbox position={[-5, 2, 0]} rotation={[0, Math.PI / 2, 0]} width={1} height={10} intensity={1} />
+        {/* Rim softbox for back edge separation */}
+        <StudioSoftbox position={[0, 4, -5]} rotation={[Math.PI, 0, 0]} width={6} height={2} intensity={1.5} />
+      </group>
     </>
   );
 }
+
+function StudioSoftbox({ position, rotation, width, height, intensity }: { 
+  position: [number, number, number], 
+  rotation: [number, number, number],
+  width: number,
+  height: number,
+  intensity: number
+}) {
+  return (
+    <mesh position={position} rotation={rotation}>
+      <planeGeometry args={[width, height]} />
+      <meshStandardMaterial 
+        color="white" 
+        emissive="white" 
+        emissiveIntensity={intensity} 
+        transparent 
+        opacity={0} // Invisible to camera
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
+
