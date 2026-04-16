@@ -132,22 +132,21 @@ function GimbalContent({ mainCamera }: { mainCamera: THREE.Camera | null }) {
               emissiveIntensity={0.15}
             />
           </mesh>
-          <line raycast={() => null}>
-            <bufferGeometry
-              attach="geometry"
-              {...new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(0, 0, 0),
-                axis.dir.clone().multiplyScalar(axisLength),
-              ])}
-            />
-            <lineBasicMaterial
-              attach="material"
+          <mesh
+            position={axis.dir.clone().multiplyScalar(axisLength / 2)}
+            quaternion={new THREE.Quaternion().setFromUnitVectors(
+              new THREE.Vector3(0, 1, 0),
+              axis.dir,
+            )}
+            raycast={() => null}
+          >
+            <cylinderGeometry args={[0.015, 0.015, axisLength, 8]} />
+            <meshBasicMaterial
               color={i < 3 ? axis.color : "#cbd5e1"}
-              linewidth={1}
               transparent
-              opacity={0.6}
+              opacity={0.4}
             />
-          </line>
+          </mesh>
         </group>
       ))}
     </group>
