@@ -125,6 +125,7 @@ function Editor() {
   const [backgroundPanelView, setBackgroundPanelView] = useState<'hub' | 'content'>('hub');
   const [devicePanelView, setDevicePanelView] = useState<'hub' | 'content'>('hub');
   const [scenePanelView, setScenePanelView] = useState<'hub' | 'content'>('hub');
+  const [labelsPanelView, setLabelsPanelView] = useState<'hub' | 'content'>('hub');
   const [timelineCollapsed, setTimelineCollapsed] = useState(false);
 
   const currentModel = getModelById(state.deviceModel);
@@ -134,6 +135,7 @@ function Editor() {
     if (mobileTab === "background") setBackgroundPanelView('hub');
     if (mobileTab === "device") setDevicePanelView('hub');
     if (mobileTab === "canvas") setScenePanelView('hub');
+    if (mobileTab === "labels") setLabelsPanelView('hub');
   }, [mobileTab]);
 
   const TOOLBAR_ACTIONS = [
@@ -1243,7 +1245,7 @@ function Editor() {
                   </>
                 )}
 
-                {mobileTab === "labels" && (
+                {mobileTab === "labels" && labelsPanelView === 'hub' && (
                   <>
                     {[
                       {
@@ -1264,10 +1266,11 @@ function Editor() {
                     ].map((tool) => (
                       <div key={tool.id} className="ps-tool-thumb-box">
                         <button
-                          className={`ps-tool-thumb btn-press ${state.labelsSubTab === tool.id ? "active" : ""}`}
-                          onClick={() =>
-                            updateState({ labelsSubTab: tool.id as any })
-                          }
+                          className="ps-tool-thumb btn-press"
+                          onClick={() => {
+                            updateState({ labelsSubTab: tool.id as any });
+                            setLabelsPanelView('content');
+                          }}
                         >
                           {tool.icon}
                         </button>
@@ -1362,7 +1365,8 @@ function Editor() {
                 mobileTab !== "presets" &&
                 (mobileTab !== "background" || backgroundPanelView === 'content') &&
                 (mobileTab !== "device" || devicePanelView === 'content') &&
-                (mobileTab !== "canvas" || scenePanelView === 'content') && (
+                (mobileTab !== "canvas" || scenePanelView === 'content') &&
+                (mobileTab !== "labels" || labelsPanelView === 'content') && (
                   <div
                     style={{
                       width: "100%",
@@ -1393,7 +1397,7 @@ function Editor() {
                   padding: "8px 16px 4px",
                   display: "flex",
                   alignItems: "center",
-                  gap: 12,
+                  gap: 16,
                 }}
               >
                 <button
@@ -1405,56 +1409,66 @@ function Editor() {
                       setDevicePanelView('hub');
                     } else if (mobileTab === 'canvas' && scenePanelView === 'content') {
                       setScenePanelView('hub');
+                    } else if (mobileTab === 'labels' && state.activeLabelId) {
+                      updateState({ activeLabelId: null });
+                    } else if (mobileTab === 'labels' && labelsPanelView === 'content') {
+                      setLabelsPanelView('hub');
                     } else {
                       setMobileTab(null);
                     }
                   }}
                   style={{
+                    position: "relative",
+                    left: "auto",
                     background: "none",
                     border: "none",
                     color: "#fff",
                     padding: 0,
+                    flexShrink: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
                   <ChevronLeft size={28} />
                 </button>
-                <span className="ps-context-title">
-                  {mobileTab === "annotate"
-                    ? "Selecciona el área"
-                    : mobileTab === "presets"
-                      ? "Preajustes"
-                      : mobileTab === "template"
-                        ? "Plantillas"
-                        : mobileTab === "device"
-                          ? (devicePanelView === 'content' ? (
-                              state.deviceSubTab === 'colors' ? "Color del Dispositivo" :
-                              state.deviceSubTab === 'orientation' || state.deviceSubTab === 'browser-theme' ? "Orientación" :
-                              (getModelById(state.deviceModel)?.group || "Modelos")
-                            ) : "Dispositivo")
-                        : mobileTab === "background"
-                          ? (backgroundPanelView === 'content' ? (
-                              state.showBgSettings ? "Ajustes Globales" : (
-                                state.bgType === 'solid' ? "Color Sólido" :
-                                state.bgType === 'gradient' ? "Degradado" :
-                                state.bgType === 'image' ? "Imagen" :
-                                state.bgType === 'color' ? "Gotero" : "Fondo"
-                              )
-                            ) : "Fondo")
-                        : mobileTab === "overlay"
-                          ? "Efectos"
-                          : mobileTab === "labels"
-                            ? "Etiquetas"
-                            : mobileTab === "canvas"
-                              ? (scenePanelView === 'content' ? (
-                                  state.sceneSubTab === 'estudio' ? "Entorno" :
-                                  state.sceneSubTab === 'luz' ? "Iluminación" :
-                                  state.sceneSubTab === 'camera' ? "Cámara" :
-                                  state.sceneSubTab === 'motion' ? "Movimiento" :
-                                  state.sceneSubTab === 'effects' ? "Efectos Visuales" :
-                                  state.sceneSubTab === 'shadow' ? "Sombras" : "Escena"
-                                ) : "Escena")
-                              : "Modelos"}
-                </span>
+                {mobileTab === 'labels' && state.activeLabelId ? (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, marginLeft: 4 }}>
+                    <div style={{ flex: 1 }}>
+                      <input 
+                        value={state.texts.find(t => t.id === state.activeLabelId)?.text || ""} 
+                        onChange={(e) => updateText(state.activeLabelId!, { text: e.target.value })}
+                        placeholder="Texto..."
+                        style={{ 
+                          width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', 
+                          color: '#fff', fontSize: 13, fontWeight: 700, outline: 'none', padding: '8px 10px', borderRadius: 10
+                        }} 
+                      />
+                    </div>
+                    <button onClick={() => { removeText(state.activeLabelId!); updateState({ activeLabelId: null }); }}
+                      style={{ 
+                        width: 32, height: 32, borderRadius: 10, background: 'rgba(239,68,68,0.1)', 
+                        border: 'none', color: '#f87171', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <span className="ps-context-title" style={{ flex: 1, textAlign: 'center', marginRight: 40 }}>
+                    {mobileTab === "annotate" ? "Selecciona el área" :
+                     mobileTab === "presets" ? "Preajustes" :
+                     mobileTab === "template" ? "Plantillas" :
+                     mobileTab === "device" ? (devicePanelView === 'content' ? "Modelo" : "Dispositivo") :
+                     mobileTab === "background" ? (backgroundPanelView === 'content' ? "Fondo" : "Fondo") :
+                     mobileTab === "overlay" ? "Efectos" :
+                     mobileTab === "labels" ? (labelsPanelView === 'content' ? (
+                        state.labelsSubTab === 'view' ? "Gestionar Etiquetas" :
+                        state.labelsSubTab === 'add' ? "Anclar Nueva" :
+                        state.labelsSubTab === 'subtract' ? "Limpiar Todo" : "Etiquetas"
+                     ) : "Etiquetas") :
+                     mobileTab === "canvas" ? (scenePanelView === 'content' ? "Escena" : "Lienzo") : ""}
+                  </span>
+                )}
               </div>
             </motion.div>
           )}
