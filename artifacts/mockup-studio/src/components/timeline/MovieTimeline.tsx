@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Play, Pause, Plus, Trash2, Circle, X, Square, Sparkles, Copy, ChevronDown, ChevronUp, Palette, ZoomIn, ZoomOut, Volume2, VolumeX, Music } from 'lucide-react';
+import { Play, Pause, Plus, Trash2, Circle, X, Square, Sparkles, Copy, ChevronDown, ChevronUp, Palette, ZoomIn, ZoomOut, Volume2, VolumeX, Music, List } from 'lucide-react';
 import { useApp } from '../../store';
 import type { CameraKeyframe, EasingType } from '../../store';
 import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
@@ -677,7 +677,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeKfId, setActiveKfId] = useState<string | null>(null);
-  const [showPresets, setShowPresets] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [editingLabel, setEditingLabel] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   useEffect(() => { onCollapsedChange?.(collapsed); }, [collapsed, onCollapsedChange]);
@@ -781,10 +781,10 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
   }, []);
 
   useEffect(() => {
-    const handleClick = () => { setShowPresets(false); setShowColorPicker(false); };
-    if (showPresets || showColorPicker) document.addEventListener('click', handleClick);
+    const handleClick = () => { setShowMenu(false); setShowColorPicker(false); };
+    if (showMenu || showColorPicker) document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
-  }, [showPresets, showColorPicker]);
+  }, [showMenu, showColorPicker]);
 
   const BAR_COLORS = [
     { value: '#161819', label: 'Oscuro (por defecto)' },
@@ -1061,7 +1061,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
   }, [addCameraKeyframe, movieDuration]);
 
   const handleApplyPreset = useCallback((presetId: string) => {
-    setShowPresets(false);
+    setShowMenu(false);
     const getCam = () => viewerRef.current?.getCameraState() ?? null;
     const keyframes = buildPresetKeyframes(presetId, getCam, movieDuration);
     if (keyframes.length === 0) return;
@@ -1095,7 +1095,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
   }, [addCameraKeyframe, cameraKeyframes, clearCameraKeyframes, movieDuration, movieTimeRef, updateState, viewerRef]);
 
   const handleApplyTemplate = useCallback((templateId: string) => {
-    setShowPresets(false);
+    setShowMenu(false);
     const getCam = () => viewerRef.current?.getCameraState() ?? null;
     const { keyframes, duration } = buildTemplateKeyframes(templateId, getCam);
     if (keyframes.length === 0) return;
@@ -1276,11 +1276,11 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           </div>
         )}
 
-        {/* Add keyframe manually */}
-        {!liveRecording && !hideManualKeyframeButton && (
+        {/* Add keyframe manually (Only if no active keyframe to keep header clean) */}
+        {!liveRecording && !hideManualKeyframeButton && !activeKfId && (
           <button
             onClick={handleAddKeyframe}
-            title="Añadir keyframe manual en la posición actual del playhead"
+            title="Añadir keyframe manual"
             style={{
               background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
               borderRadius: 6, height: 28, padding: '0 10px', cursor: 'pointer',
@@ -1296,131 +1296,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           </button>
         )}
 
-        {/* Presets dropdown */}
-        {!liveRecording && (
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={e => { e.stopPropagation(); setShowPresets(v => !v); }}
-              title="Aplicar preset de animación"
-              style={{
-                background: showPresets ? 'rgba(139,92,246,0.2)' : 'rgba(139,92,246,0.08)',
-                border: `1px solid ${showPresets ? 'rgba(139,92,246,0.5)' : 'rgba(139,92,246,0.25)'}`,
-                borderRadius: 6, height: 28, padding: '0 10px', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 5,
-                color: '#a78bfa', fontSize: 11, fontWeight: 600,
-              }}
-            >
-              <Sparkles size={11} />
-              Presets
-              <ChevronDown size={10} style={{ transform: showPresets ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
-            </button>
-            {showPresets && (
-              <div
-                onClick={e => e.stopPropagation()}
-                style={{
-                  position: 'absolute', bottom: '100%', left: 0, marginBottom: 6,
-                  background: '#1e2022', border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: 8, overflow: 'hidden', zIndex: 100,
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                  width: 'min(360px, calc(100vw - 32px))',
-                  maxHeight: 'min(420px, 60vh)',
-                  overflowY: 'auto',
-                }}
-              >
-                <div style={{ padding: '6px 10px 4px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-                  <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
-                    Presets de animación
-                  </span>
-                </div>
-                {ANIMATION_PRESETS.map(preset => (
-                  <button
-                    key={preset.id}
-                    onClick={() => handleApplyPreset(preset.id)}
-                    style={{
-                      width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '10px 12px', background: 'none', border: 'none', cursor: 'pointer',
-                      borderBottom: '1px solid rgba(255,255,255,0.04)',
-                      transition: 'background 0.12s', textAlign: 'left',
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(139,92,246,0.15)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                  >
-                    <PresetPreview presetId={preset.id} />
-                    <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.88)', fontWeight: 700, lineHeight: 1.2 }}>{preset.label}</span>
-                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', lineHeight: 1.35 }}>{preset.desc}</span>
-                      <span style={{ fontSize: 9, color: 'rgba(167,139,250,0.9)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginTop: 3 }}>
-                        Vista previa
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        width: 34,
-                        height: 34,
-                        borderRadius: '50%',
-                        flexShrink: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: 'rgba(255,255,255,0.14)',
-                        color: 'rgba(255,255,255,0.7)',
-                      }}
-                    >
-                      <Plus size={18} />
-                    </div>
-                  </button>
-                ))}
-
-                {/* Templates section */}
-                <div style={{ padding: '6px 10px 4px', borderTop: '1px solid rgba(255,255,255,0.07)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-                  <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
-                    Templates completos
-                  </span>
-                </div>
-                {ANIMATION_TEMPLATES.map(tpl => (
-                  <button
-                    key={tpl.id}
-                    onClick={() => handleApplyTemplate(tpl.id)}
-                    style={{
-                      width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '10px 12px', background: 'none', border: 'none', cursor: 'pointer',
-                      borderBottom: '1px solid rgba(255,255,255,0.04)',
-                      transition: 'background 0.12s', textAlign: 'left',
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.15)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                  >
-                    <TemplatePreview templateId={tpl.id} />
-                    <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.88)', fontWeight: 700, lineHeight: 1.2 }}>{tpl.label}</span>
-                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', lineHeight: 1.35 }}>{tpl.desc}</span>
-                      <span style={{ fontSize: 9, color: 'rgba(59,130,246,0.9)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginTop: 3 }}>
-                        {tpl.duration}s · Template
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        width: 34,
-                        height: 34,
-                        borderRadius: '50%',
-                        flexShrink: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: 'rgba(255,255,255,0.14)',
-                        color: 'rgba(255,255,255,0.7)',
-                      }}
-                    >
-                      <Plus size={18} />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Clear all */}
+        {/* Clear all (Back to main bar as requested) */}
         {cameraKeyframes.length > 0 && !liveRecording && (
           <button
             onClick={() => { stopPlayback(); clearCameraKeyframes(); setActiveKfId(null); }}
@@ -1436,51 +1312,187 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
           </button>
         )}
 
-        {/* Audio controls */}
+        {/* Options dropdown (Presets, Audio, Clear All) */}
         {!liveRecording && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <input ref={audioFileRef} type="file" accept="audio/*" style={{ display: 'none' }} onChange={handleAudioFile} />
-            {state.audioUrl ? (
-              <>
-                <button
-                  onClick={() => updateState({ audioUrl: null })}
-                  title="Quitar audio"
-                  style={{
-                    background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)',
-                    borderRadius: 6, height: 28, padding: '0 8px', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 4,
-                    color: '#4ade80', fontSize: 11, fontWeight: 600,
-                  }}
-                >
-                  <Music size={11} />
-                  <VolumeX size={10} />
-                </button>
-                <input
-                  type="range" min={0} max={100} step={5}
-                  value={state.audioVolume ?? 80}
-                  onChange={e => updateState({ audioVolume: Number(e.target.value) })}
-                  title={`Volumen: ${state.audioVolume ?? 80}%`}
-                  style={{ width: 48, height: 3, accentColor: '#4ade80', cursor: 'pointer' }}
-                />
-              </>
-            ) : (
-              <button
-                onClick={() => audioFileRef.current?.click()}
-                title="Añadir audio/soundtrack"
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={e => { e.stopPropagation(); setShowMenu(v => !v); }}
+              title="Opciones de animación y audio"
+              style={{
+                background: showMenu ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${showMenu ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'}`,
+                borderRadius: 6, height: 28, width: 36, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2,
+                color: 'rgba(255,255,255,0.7)', transition: 'all 0.15s',
+              }}
+            >
+              <List size={14} />
+              <ChevronDown size={10} style={{ transform: showMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s', opacity: 0.5 }} />
+            </button>
+
+            {showMenu && (
+              <div
+                onClick={e => e.stopPropagation()}
                 style={{
-                  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 6, height: 28, padding: '0 8px', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 4,
-                  color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 600,
+                  position: 'absolute', bottom: '100%', left: 0, marginBottom: 8,
+                  background: '#1a1c1e', border: '1px solid rgba(255,255,255,0.14)',
+                  borderRadius: 12, overflow: 'hidden', zIndex: 100,
+                  boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
+                  width: 'min(360px, calc(100vw - 32px))',
+                  maxHeight: 'min(500px, 70vh)',
+                  display: 'flex', flexDirection: 'column',
                 }}
               >
-                <Music size={11} />
-                Audio
-              </button>
+                {/* ── Actions & Audio ── */}
+                <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: 10, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Configuración de Audio
+                  </span>
+
+                  {/* Audio Controls inside menu */}
+                  <div style={{ 
+                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                    borderRadius: 8, padding: '10px'
+                  }}>
+                    <input ref={audioFileRef} type="file" accept="audio/*" style={{ display: 'none' }} onChange={handleAudioFile} />
+                    {state.audioUrl ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#4ade80' }}>
+                            <Music size={12} />
+                            <span style={{ fontSize: 11, fontWeight: 600 }}>Audio activo</span>
+                          </div>
+                          <button
+                            onClick={() => updateState({ audioUrl: null })}
+                            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 2 }}
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <VolumeX size={10} style={{ color: 'rgba(255,255,255,0.3)' }} />
+                          <input
+                            type="range" min={0} max={100} step={5}
+                            value={state.audioVolume ?? 80}
+                            onChange={e => updateState({ audioVolume: Number(e.target.value) })}
+                            style={{ flex: 1, height: 4, accentColor: '#4ade80', cursor: 'pointer' }}
+                          />
+                          <Volume2 size={10} style={{ color: 'rgba(255,255,255,0.3)' }} />
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => audioFileRef.current?.click()}
+                        style={{
+                          width: '100%', background: 'none', border: '1px dashed rgba(255,255,255,0.15)',
+                          borderRadius: 6, height: 32, cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                          color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 600,
+                        }}
+                      >
+                        <Music size={12} />
+                        Añadir Soundtrack
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ overflowY: 'auto', flex: 1 }}>
+                  <div style={{ padding: '8px 12px 4px' }}>
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Presets de animación
+                    </span>
+                  </div>
+                  {ANIMATION_PRESETS.map(preset => (
+                    <button
+                      key={preset.id}
+                      onClick={() => handleApplyPreset(preset.id)}
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '10px 12px', background: 'none', border: 'none', cursor: 'pointer',
+                        borderBottom: '1px solid rgba(255,255,255,0.04)',
+                        transition: 'background 0.12s', textAlign: 'left',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(139,92,246,0.15)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                    >
+                      <PresetPreview presetId={preset.id} />
+                      <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.88)', fontWeight: 700, lineHeight: 1.2 }}>{preset.label}</span>
+                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', lineHeight: 1.35 }}>{preset.desc}</span>
+                        <span style={{ fontSize: 9, color: 'rgba(167,139,250,0.9)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginTop: 3 }}>
+                          Vista previa
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: '50%',
+                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: 'rgba(255,255,255,0.14)',
+                          color: 'rgba(255,255,255,0.7)',
+                        }}
+                      >
+                        <Plus size={18} />
+                      </div>
+                    </button>
+                  ))}
+
+                  {/* Templates section */}
+                  <div style={{ padding: '6px 10px 4px', borderTop: '1px solid rgba(255,255,255,0.07)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                    <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
+                      Templates completos
+                    </span>
+                  </div>
+                  {ANIMATION_TEMPLATES.map(tpl => (
+                    <button
+                      key={tpl.id}
+                      onClick={() => handleApplyTemplate(tpl.id)}
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '10px 12px', background: 'none', border: 'none', cursor: 'pointer',
+                        borderBottom: '1px solid rgba(255,255,255,0.04)',
+                        transition: 'background 0.12s', textAlign: 'left',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.15)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                    >
+                      <TemplatePreview templateId={tpl.id} />
+                      <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.88)', fontWeight: 700, lineHeight: 1.2 }}>{tpl.label}</span>
+                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', lineHeight: 1.35 }}>{tpl.desc}</span>
+                        <span style={{ fontSize: 9, color: 'rgba(59,130,246,0.9)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginTop: 3 }}>
+                          {tpl.duration}s · Template
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: '50%',
+                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: 'rgba(255,255,255,0.14)',
+                          color: 'rgba(255,255,255,0.7)',
+                        }}
+                      >
+                        <Plus size={18} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
-            {state.audioUrl && <audio ref={audioRef} src={state.audioUrl} preload="auto" />}
           </div>
         )}
+
+        {state.audioUrl && <audio ref={audioRef} src={state.audioUrl} preload="auto" />}
 
         <div style={{ flex: 1 }} />
 
@@ -1948,6 +1960,26 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
               }}
             >
               {activeKf.label || '+ Nombre'}
+            </button>
+          )}
+
+          {/* New Add Keyframe button location (Groups with Rename) */}
+          {!liveRecording && !hideManualKeyframeButton && (
+            <button
+              onClick={handleAddKeyframe}
+              title="Añadir nueva escena/keyframe"
+              style={{
+                background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)',
+                borderRadius: 4, padding: '2px 10px', height: 24, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 5,
+                color: '#93c5fd', fontSize: 11, fontWeight: 700,
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.2)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.12)')}
+            >
+              <Plus size={11} />
+              Keyframe
             </button>
           )}
 
