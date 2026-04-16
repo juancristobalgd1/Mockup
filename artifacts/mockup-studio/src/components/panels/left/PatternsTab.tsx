@@ -27,13 +27,9 @@ export const PatternsTab = () => {
   });
 
   const selectPattern = (patternId: string) => {
-    // If bgColor is currently a gradient ID (not starting with #), reset to a neutral dark color
-    const currentIsColor = state.bgColor && (state.bgColor.startsWith('#') || state.bgColor.startsWith('rgb'));
-    
     updateState({ 
-      bgType: 'pattern', 
-      bgPattern: patternId,
-      bgColor: currentIsColor ? state.bgColor : '#1a1c2e'
+      bgPatternEnabled: true,
+      bgPattern: patternId
     });
   };
 
@@ -42,8 +38,8 @@ export const PatternsTab = () => {
       <Section label="Seleccionar Patrón">
         <div className="ps-responsive-list" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
           <button 
-            onClick={() => updateState({ bgType: 'solid' })} 
-            style={SWATCH_BTN(state.bgType === 'solid')}
+            onClick={() => updateState({ bgPatternEnabled: false })} 
+            style={SWATCH_BTN(!state.bgPatternEnabled)}
           >
             <div style={{ 
               ...THUMB, 
@@ -57,15 +53,14 @@ export const PatternsTab = () => {
                 <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
               </svg>
             </div>
-            <span style={SWATCH_LABEL(state.bgType === 'solid')}>Ninguno</span>
+            <span style={SWATCH_LABEL(!state.bgPatternEnabled)}>Ninguno</span>
           </button>
 
           {PATTERNS.map(p => {
-            const active = state.bgType === 'pattern' && state.bgPattern === p.id;
-            const previewColor = (state.bgType === 'pattern' && state.bgColor.startsWith('#')) ? state.bgColor : '#1a1c2e';
+            const active = state.bgPatternEnabled && state.bgPattern === p.id;
             return (
               <button key={p.id} onClick={() => selectPattern(p.id)} style={SWATCH_BTN(active)}>
-                <div style={{ ...THUMB, ...p.bgStyle(previewColor) }} />
+                <div style={{ ...THUMB, ...p.bgStyle('#1a1c2e') }} />
                 <span style={SWATCH_LABEL(active)}>{p.label}</span>
               </button>
             );

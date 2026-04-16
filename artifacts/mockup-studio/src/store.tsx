@@ -115,6 +115,7 @@ export interface AppState {
   bgImage: string | null;
   bgVideo: string | null;
   bgPattern: string;
+  bgPatternEnabled: boolean;
   bgPatternScale: number;
   bgAnimated: string;
   bgOpacity: number;
@@ -230,6 +231,7 @@ export const defaultState: AppState = {
   bgImage: null,
   bgVideo: null,
   bgPattern: "dots",
+  bgPatternEnabled: false,
   bgPatternScale: 1,
   bgAnimated: "3d-aura",
   bgOpacity: 100,

@@ -250,6 +250,26 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
           />
         )}
 
+        {/* Pattern layer (independent) */}
+        {state.bgPatternEnabled && (() => {
+          const p = PATTERNS.find(pat => pat.id === state.bgPattern);
+          if (!p) return null;
+          const style = p.bgStyle('transparent'); // We use transparent base because background is underneath
+          if (style.backgroundSize && typeof style.backgroundSize === 'string') {
+            const scale = state.bgPatternScale ?? 1;
+            style.backgroundSize = style.backgroundSize.replace(/(\d+)(px|%|em|rem)/g, (match, val, unit) => {
+              return `${parseFloat(val) * scale}${unit}`;
+            });
+          }
+          return (
+            <div style={{
+              position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', borderRadius,
+              ...style,
+              opacity: state.bgOpacity / 100
+            }} />
+          );
+        })()}
+
         {/* Vignette overlay */}
         {state.bgVignette && (
           <div style={{

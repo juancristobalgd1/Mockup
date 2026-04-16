@@ -1461,7 +1461,7 @@ function Editor() {
                           }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                {patternsProperty === 'color' ? 'Color de Fondo' : patternsProperty === 'opacity' ? 'Opacidad' : patternsProperty === 'scale' ? 'Escala' : 'Ajustes'}
+                                {patternsProperty === 'color' ? 'Color de Patrón' : patternsProperty === 'opacity' ? 'Opacidad' : patternsProperty === 'scale' ? 'Escala' : 'Ajustes'}
                               </span>
                               <button onClick={() => setPatternsProperty(null)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18, padding: 0, cursor: 'pointer' }}>×</button>
                             </div>
@@ -1471,28 +1471,41 @@ function Editor() {
                                 <div style={{ position: 'relative', width: 44, height: 44, borderRadius: 12, background: state.bgColor, border: '1px solid rgba(255,255,255,0.2)' }}>
                                   <input 
                                     type="color" 
-                                    value={state.bgColor.startsWith('#') ? state.bgColor : '#000000'} 
-                                    onChange={e => updateState({ bgType: 'pattern', bgColor: e.target.value })}
+                                    value={state.bgColor.startsWith('#') ? state.bgColor : '#ffffff'} 
+                                    onChange={e => updateState({ bgColor: e.target.value })}
                                     style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
                                   />
                                 </div>
                                 <input 
                                   type="text" 
                                   value={state.bgColor} 
-                                  onChange={e => updateState({ bgType: 'pattern', bgColor: e.target.value })}
+                                  onChange={e => updateState({ bgColor: e.target.value })}
                                   className="rt-input" 
                                   style={{ flex: 1, height: 44, fontFamily: 'monospace', fontSize: 14 }}
                                 />
                               </div>
                             ) : patternsProperty === 'more' ? (
                               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                                <button onClick={() => updateState({ bgType: 'solid' })}
+                                <button onClick={() => updateState({ bgPatternEnabled: false })}
                                   style={{
                                     padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700,
                                     background: 'rgba(255,100,100,0.1)',
                                     color: 'rgba(255,150,150,1)',
                                     border: '1px solid rgba(255,100,100,0.2)'
                                   }}>Eliminar Patrón</button>
+                                <button onClick={() => {
+                                  updateState({ 
+                                    bgPatternEnabled: true,
+                                    bgPatternOpacity: 100,
+                                    bgPatternScale: 1
+                                  });
+                                }}
+                                  style={{
+                                    padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700,
+                                    background: 'rgba(255,255,255,0.05)',
+                                    color: '#fff',
+                                    border: '1px solid rgba(255,255,255,0.1)'
+                                  }}>Resetear Ajustes</button>
                               </div>
                             ) : (
                               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -1533,7 +1546,8 @@ function Editor() {
                         borderRadius: 22,
                         boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
                         position: 'relative',
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        opacity: state.bgPatternEnabled ? 1 : 0.5
                       }}
                     >
                       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1555,6 +1569,8 @@ function Editor() {
                         borderRadius: 30,
                         padding: 4,
                         boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                        opacity: state.bgPatternEnabled ? 1 : 0.5,
+                        pointerEvents: state.bgPatternEnabled ? 'auto' : 'none'
                       }}
                     >
                       <button
