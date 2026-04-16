@@ -313,19 +313,59 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
 
         {state.bgType === 'image' && (
           <Section label="Imagen Personalizada">
-            {state.bgImage && (
-              <div style={{ width: '100%', height: 120, borderRadius: 16, overflow: 'hidden', marginBottom: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
-                <img src={state.bgImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="bg" />
-              </div>
-            )}
-            <button onClick={() => bgFileRef.current?.click()}
-              style={{
-                width: '100%', padding: '14px 0', borderRadius: 12, fontSize: 13, fontWeight: 700,
-                background: 'rgba(255,255,255,0.08)', border: '1px dashed rgba(255,255,255,0.2)',
-                color: '#fff', cursor: 'pointer',
-              }}>
-              {state.bgImage ? 'Cambiar Imagen' : '+ Subir Imagen'}
-            </button>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              {state.bgImage && (
+                <div style={{ 
+                  width: 50, 
+                  height: 50, 
+                  borderRadius: 10, 
+                  overflow: 'hidden', 
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  flexShrink: 0,
+                  background: 'rgba(255,255,255,0.05)'
+                }}>
+                  <img src={state.bgImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="bg" />
+                </div>
+              )}
+              <button onClick={() => bgFileRef.current?.click()}
+                style={{
+                  flex: 1, 
+                  height: 50,
+                  borderRadius: 12, 
+                  fontSize: 12, 
+                  fontWeight: 700,
+                  background: 'rgba(255,255,255,0.06)', 
+                  border: '1px dashed rgba(255,255,255,0.15)',
+                  color: 'rgba(255,255,255,0.9)', 
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8
+                }}>
+                <ImageIcon size={14} />
+                {state.bgImage ? 'Cambiar Imagen' : 'Subir Imagen'}
+              </button>
+              {state.bgImage && (
+                <button 
+                  onClick={() => updateState({ bgImage: null })}
+                  style={{
+                    width: 32,
+                    height: 50,
+                    borderRadius: 10,
+                    background: 'rgba(255,100,100,0.1)',
+                    border: '1px solid rgba(255,100,100,0.2)',
+                    color: 'rgba(255,150,150,0.8)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              )}
+            </div>
             <input ref={bgFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleBgImage} />
           </Section>
         )}
