@@ -29,6 +29,8 @@ export interface LeftPanelProps {
   mobileContentOnly?: 'presets' | 'template' | 'device' | 'background' | 'overlay' | 'annotate' | 'canvas' | 'labels';
   activeTab: string;
   setActiveTab: (tab: any) => void;
+  backgroundPanelView?: 'hub' | 'content';
+  setBackgroundPanelView?: (view: 'hub' | 'content') => void;
 }
 
 export function LeftPanel({
@@ -36,6 +38,8 @@ export function LeftPanel({
   mobileContentOnly,
   activeTab,
   setActiveTab,
+  backgroundPanelView,
+  setBackgroundPanelView,
 }: LeftPanelProps) {
   // ── Mobile content-only mode (rendered inside a floating sheet) ──
   if (mobile && mobileContentOnly !== undefined) {
@@ -44,7 +48,7 @@ export function LeftPanel({
         {mobileContentOnly === 'presets'    && <PresetsTab />}
         {mobileContentOnly === 'template'   && <TemplateTab />}
         {mobileContentOnly === 'device'     && <DeviceTab />}
-        {mobileContentOnly === 'background' && <BackgroundTab />}
+        {mobileContentOnly === 'background' && <BackgroundTab mobileView={backgroundPanelView} setMobileView={setBackgroundPanelView} />}
         {mobileContentOnly === 'overlay'    && <OverlayTab />}
         {mobileContentOnly === 'annotate'   && <AnnotateTab />}
         {mobileContentOnly === 'canvas'     && <SceneTab />}

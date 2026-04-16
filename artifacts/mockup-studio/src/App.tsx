@@ -122,10 +122,19 @@ function Editor() {
   const [moviePlaying, setMoviePlaying] = useState(false);
   const [mobileTab, setMobileTab] = useState<Tab | "export" | null>(null);
   const [activeTab, setActiveTab] = useState<string>("template");
+  const [backgroundPanelView, setBackgroundPanelView] = useState<'hub' | 'content'>('hub');
+  const [devicePanelView, setDevicePanelView] = useState<'hub' | 'content'>('hub');
+  const [scenePanelView, setScenePanelView] = useState<'hub' | 'content'>('hub');
   const [timelineCollapsed, setTimelineCollapsed] = useState(false);
 
   const currentModel = getModelById(state.deviceModel);
   const deviceLabel = currentModel.label;
+
+  useEffect(() => {
+    if (mobileTab === "background") setBackgroundPanelView('hub');
+    if (mobileTab === "device") setDevicePanelView('hub');
+    if (mobileTab === "canvas") setScenePanelView('hub');
+  }, [mobileTab]);
 
   const TOOLBAR_ACTIONS = [
     {
@@ -901,7 +910,7 @@ function Editor() {
                     );
                   })}
 
-                {mobileTab === "device" && (
+                {mobileTab === "device" && devicePanelView === 'hub' && (
                   <>
                     {DEVICE_GROUPS.map((group) => {
                       const repModel = DEVICE_MODELS.find(
@@ -913,9 +922,9 @@ function Editor() {
                       return (
                         <div key={group} className="ps-tool-thumb-box">
                           <button
-                            className={`ps-tool-thumb btn-press ${isActive ? "active" : ""}`}
+                            className="ps-tool-thumb btn-press"
                             onClick={() => {
-                              if (repModel)
+                              if (repModel) {
                                 updateState({
                                   deviceModel: repModel.id,
                                   deviceType: repModel.storeType,
@@ -924,12 +933,14 @@ function Editor() {
                                     : "titanium",
                                   deviceSubTab: "models",
                                 });
+                                setDevicePanelView('content');
+                              }
                             }}
                           >
                             <div style={{ transform: "scale(1.3)" }}>
                               <DeviceThumbnail
                                 modelId={repModel?.id || ""}
-                                isSelected={isActive}
+                                isSelected={false}
                               />
                             </div>
                           </button>
@@ -950,8 +961,11 @@ function Editor() {
 
                     <div className="ps-tool-thumb-box">
                       <button
-                        className={`ps-tool-thumb btn-press ${state.deviceSubTab === "colors" ? "active" : ""}`}
-                        onClick={() => updateState({ deviceSubTab: "colors" })}
+                        className="ps-tool-thumb btn-press"
+                        onClick={() => {
+                          updateState({ deviceSubTab: "colors" });
+                          setDevicePanelView('content');
+                        }}
                       >
                         <Palette size={24} />
                       </button>
@@ -960,15 +974,16 @@ function Editor() {
 
                     <div className="ps-tool-thumb-box">
                       <button
-                        className={`ps-tool-thumb btn-press ${state.deviceSubTab === "orientation" || state.deviceSubTab === "browser-theme" ? "active" : ""}`}
-                        onClick={() =>
+                        className="ps-tool-thumb btn-press"
+                        onClick={() => {
                           updateState({
                             deviceSubTab:
                               state.deviceType === "browser"
                                 ? "browser-theme"
                                 : "orientation",
-                          })
-                        }
+                          });
+                          setDevicePanelView('content');
+                        }}
                       >
                         <RotateCw size={24} />
                       </button>
@@ -1064,7 +1079,7 @@ function Editor() {
                     </div>
                   ))}
 
-                {mobileTab === "background" && (
+                {mobileTab === "background" && backgroundPanelView === 'hub' && (
                   <>
                     {[
                       {
@@ -1090,13 +1105,14 @@ function Editor() {
                     ].map((tool) => (
                       <div key={tool.id} className="ps-tool-thumb-box">
                         <button
-                          className={`ps-tool-thumb btn-press ${state.bgType === tool.id && !state.showBgSettings ? "active" : ""}`}
-                          onClick={() =>
+                          className="ps-tool-thumb btn-press"
+                          onClick={() => {
                             updateState({
                               bgType: tool.id as any,
                               showBgSettings: false,
-                            })
-                          }
+                            });
+                            setBackgroundPanelView('content');
+                          }}
                         >
                           {tool.icon}
                         </button>
@@ -1116,10 +1132,11 @@ function Editor() {
 
                     <div className="ps-tool-thumb-box">
                       <button
-                        className={`ps-tool-thumb btn-press ${state.showBgSettings ? "active" : ""}`}
-                        onClick={() =>
-                          updateState({ showBgSettings: !state.showBgSettings })
-                        }
+                        className="ps-tool-thumb btn-press"
+                        onClick={() => {
+                          updateState({ showBgSettings: true });
+                          setBackgroundPanelView('content');
+                        }}
                       >
                         <Settings2 size={24} />
                       </button>
@@ -1128,7 +1145,7 @@ function Editor() {
                   </>
                 )}
 
-                {mobileTab === "canvas" && (
+                {mobileTab === "canvas" && scenePanelView === 'hub' && (
                   <>
                     {[
                       {
@@ -1140,10 +1157,11 @@ function Editor() {
                     ].map((tool) => (
                       <div key={tool.id} className="ps-tool-thumb-box">
                         <button
-                          className={`ps-tool-thumb btn-press ${state.sceneSubTab === tool.id ? "active" : ""}`}
-                          onClick={() =>
-                            updateState({ sceneSubTab: tool.id as any })
-                          }
+                          className="ps-tool-thumb btn-press"
+                          onClick={() => {
+                            updateState({ sceneSubTab: tool.id as any });
+                            setScenePanelView('content');
+                          }}
                         >
                           {tool.icon}
                         </button>
@@ -1175,10 +1193,11 @@ function Editor() {
                     ].map((tool) => (
                       <div key={tool.id} className="ps-tool-thumb-box">
                         <button
-                          className={`ps-tool-thumb btn-press ${state.sceneSubTab === tool.id ? "active" : ""}`}
-                          onClick={() =>
-                            updateState({ sceneSubTab: tool.id as any })
-                          }
+                          className="ps-tool-thumb btn-press"
+                          onClick={() => {
+                            updateState({ sceneSubTab: tool.id as any });
+                            setScenePanelView('content');
+                          }}
                         >
                           {tool.icon}
                         </button>
@@ -1210,10 +1229,11 @@ function Editor() {
                     ].map((tool) => (
                       <div key={tool.id} className="ps-tool-thumb-box">
                         <button
-                          className={`ps-tool-thumb btn-press ${state.sceneSubTab === tool.id ? "active" : ""}`}
-                          onClick={() =>
-                            updateState({ sceneSubTab: tool.id as any })
-                          }
+                          className="ps-tool-thumb btn-press"
+                          onClick={() => {
+                            updateState({ sceneSubTab: tool.id as any });
+                            setScenePanelView('content');
+                          }}
                         >
                           {tool.icon}
                         </button>
@@ -1339,7 +1359,10 @@ function Editor() {
 
               {/* Tier 2.5: Inline Panel Settings (Replaces Float Modal) */}
               {(mobileTab !== "annotate" || state.annotateMode) &&
-                mobileTab !== "presets" && (
+                mobileTab !== "presets" &&
+                (mobileTab !== "background" || backgroundPanelView === 'content') &&
+                (mobileTab !== "device" || devicePanelView === 'content') &&
+                (mobileTab !== "canvas" || scenePanelView === 'content') && (
                   <div
                     style={{
                       width: "100%",
@@ -1357,6 +1380,8 @@ function Editor() {
                       mobileContentOnly={mobileTab as any}
                       activeTab={activeTab}
                       setActiveTab={setActiveTab}
+                      backgroundPanelView={backgroundPanelView}
+                      setBackgroundPanelView={setBackgroundPanelView}
                     />
                   </div>
                 )}
@@ -1373,7 +1398,17 @@ function Editor() {
               >
                 <button
                   className="ps-back-btn btn-press"
-                  onClick={() => setMobileTab(null)}
+                  onClick={() => {
+                    if (mobileTab === 'background' && backgroundPanelView === 'content') {
+                      setBackgroundPanelView('hub');
+                    } else if (mobileTab === 'device' && devicePanelView === 'content') {
+                      setDevicePanelView('hub');
+                    } else if (mobileTab === 'canvas' && scenePanelView === 'content') {
+                      setScenePanelView('hub');
+                    } else {
+                      setMobileTab(null);
+                    }
+                  }}
                   style={{
                     background: "none",
                     border: "none",
@@ -1391,16 +1426,34 @@ function Editor() {
                       : mobileTab === "template"
                         ? "Plantillas"
                         : mobileTab === "device"
-                          ? "Dispositivo"
-                          : mobileTab === "background"
-                            ? "Fondo"
-                            : mobileTab === "overlay"
-                              ? "Efectos"
-                              : mobileTab === "labels"
-                                ? "Etiquetas"
-                                : mobileTab === "canvas"
-                                  ? "Escena"
-                                  : "Modelos"}
+                          ? (devicePanelView === 'content' ? (
+                              state.deviceSubTab === 'colors' ? "Color del Dispositivo" :
+                              state.deviceSubTab === 'orientation' || state.deviceSubTab === 'browser-theme' ? "Orientación" :
+                              (getModelById(state.deviceModel)?.group || "Modelos")
+                            ) : "Dispositivo")
+                        : mobileTab === "background"
+                          ? (backgroundPanelView === 'content' ? (
+                              state.showBgSettings ? "Ajustes Globales" : (
+                                state.bgType === 'solid' ? "Color Sólido" :
+                                state.bgType === 'gradient' ? "Degradado" :
+                                state.bgType === 'image' ? "Imagen" :
+                                state.bgType === 'color' ? "Gotero" : "Fondo"
+                              )
+                            ) : "Fondo")
+                        : mobileTab === "overlay"
+                          ? "Efectos"
+                          : mobileTab === "labels"
+                            ? "Etiquetas"
+                            : mobileTab === "canvas"
+                              ? (scenePanelView === 'content' ? (
+                                  state.sceneSubTab === 'estudio' ? "Entorno" :
+                                  state.sceneSubTab === 'luz' ? "Iluminación" :
+                                  state.sceneSubTab === 'camera' ? "Cámara" :
+                                  state.sceneSubTab === 'motion' ? "Movimiento" :
+                                  state.sceneSubTab === 'effects' ? "Efectos Visuales" :
+                                  state.sceneSubTab === 'shadow' ? "Sombras" : "Escena"
+                                ) : "Escena")
+                              : "Modelos"}
                 </span>
               </div>
             </motion.div>
