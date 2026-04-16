@@ -84,7 +84,11 @@ function Editor() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: "60px 20px 140px",
+          paddingTop: 60,
+          paddingLeft: 20,
+          paddingRight: 20,
+          paddingBottom: state.movieMode ? 320 : (nav.mobileTab ? 360 : 140),
+          transition: "padding-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       >
         <div

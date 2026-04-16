@@ -164,10 +164,11 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
     ? {
       position: 'relative',
       aspectRatio: `${ratioValue}`,
-      maxWidth: 'calc(100% - 48px)',
-      maxHeight: 'calc(100% - 48px)',
-      width: ratioValue >= 1 ? 'calc(100% - 48px)' : 'auto',
-      height: ratioValue < 1 ? 'calc(100% - 48px)' : 'auto',
+      maxWidth: 'calc(100% - 64px)',
+      maxHeight: 'calc(100% - 64px)',
+      width: ratioValue >= 1 ? 'calc(100% - 64px)' : 'auto',
+      height: ratioValue < 1 ? 'calc(100% - 64px)' : 'auto',
+      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
     }
     : {
       position: 'relative',
