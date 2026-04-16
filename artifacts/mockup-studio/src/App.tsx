@@ -970,20 +970,48 @@ function Editor() {
                                 ))}
                               </div>
                             ) : overlayProperty === 'more' ? (
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                {(['multiply', 'screen', 'overlay', 'soft-light'] as const).map(mode => (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                  {(['multiply', 'screen', 'overlay', 'soft-light'] as const).map(mode => (
+                                    <button
+                                      key={mode}
+                                      onClick={() => updateState({ lightOverlayBlend: mode })}
+                                      style={{
+                                        padding: '8px 12px', borderRadius: 10, border: 'none', fontSize: 11, fontWeight: 700,
+                                        background: state.lightOverlayBlend === mode ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)',
+                                        color: state.lightOverlayBlend === mode ? '#000' : '#fff'
+                                      }}
+                                    >
+                                      {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                                    </button>
+                                  ))}
+                                </div>
+                                <div style={{
+                                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                  paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.08)',
+                                }}>
+                                  <div>
+                                    <div style={{ fontSize: 11, fontWeight: 600, color: state.lightOverlayBgOnly ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)' }}>
+                                      Solo al fondo
+                                    </div>
+                                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 1 }}>
+                                      El efecto no cubre el dispositivo
+                                    </div>
+                                  </div>
                                   <button
-                                    key={mode}
-                                    onClick={() => updateState({ lightOverlayBlend: mode })}
+                                    onClick={() => updateState({ lightOverlayBgOnly: !state.lightOverlayBgOnly })}
                                     style={{
-                                      padding: '8px 12px', borderRadius: 10, border: 'none', fontSize: 11, fontWeight: 700,
-                                      background: state.lightOverlayBlend === mode ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)',
-                                      color: state.lightOverlayBlend === mode ? '#000' : '#fff'
-                                    }}
-                                  >
-                                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                                      width: 38, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer',
+                                      background: state.lightOverlayBgOnly ? '#3498db' : 'rgba(255,255,255,0.12)',
+                                      position: 'relative', transition: 'all 0.18s', flexShrink: 0,
+                                    }}>
+                                    <div style={{
+                                      position: 'absolute', top: 3, left: state.lightOverlayBgOnly ? 19 : 3, width: 16, height: 16,
+                                      borderRadius: '50%', background: '#fff', transition: 'left 0.18s',
+                                      boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                                    }} />
                                   </button>
-                                ))}
+                                </div>
                               </div>
                             ) : (
                               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

@@ -238,7 +238,7 @@ export const defaultState: AppState = {
   lightOverlay: null,
   lightOverlayOpacity: 60,
   lightOverlayBlend: 'multiply',
-  lightOverlayBgOnly: false,
+  lightOverlayBgOnly: true,
 
   annotateMode: false,
   annotateTool: null,
