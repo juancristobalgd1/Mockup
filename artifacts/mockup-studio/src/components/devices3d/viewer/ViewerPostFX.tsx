@@ -33,38 +33,46 @@ export function PostFX({
   const vignInt = state.bgVignette ? (state.bgVignetteIntensity || 50) / 100 : 0;
   const grainInt = state.grain ? (state.grainIntensity || 35) / 1000 : 0;
 
+  const effects = [
+    <SMAA key="smaa" />,
+    <SSAO 
+      key="ssao"
+      intensity={15}
+      radius={0.05}
+      luminanceInfluence={0.5}
+      bias={0.02}
+    />,
+    <Bloom
+      key="bloom"
+      luminanceThreshold={0.92}
+      luminanceSmoothing={0.15}
+      intensity={scaled}
+      mipmapBlur
+    />
+  ];
+
+  if (dofEnabled) {
+    effects.push(
+      <DepthOfField
+        key="dof"
+        focusDistance={dofFocusDistance}
+        focalLength={dofFocalLength}
+        bokehScale={dofBokehScale}
+      />
+    );
+  }
+
+  if (vignInt > 0) {
+    effects.push(<Vignette key="vignette" eskil={false} offset={0.1} darkness={vignInt * 1.2} />);
+  }
+  
+  if (grainInt > 0) {
+    effects.push(<Noise key="noise" opacity={grainInt} />);
+  }
+
   return (
     <EffectComposer multisampling={4}>
-      <SMAA />
-      
-      {/* 1. Grounding: SSAO adds shadows in small crevices */}
-      <SSAO 
-        intensity={15}
-        radius={0.05}
-        luminanceInfluence={0.5}
-        bias={0.02}
-      />
-
-      {/* 2. Light: Bloom for the "glow" of the screen and lights */}
-      <Bloom
-        luminanceThreshold={0.92}
-        luminanceSmoothing={0.15}
-        intensity={scaled}
-        mipmapBlur
-      />
-
-      {/* 3. Focus: DSLR-style Focus Blur */}
-      {dofEnabled && (
-        <DepthOfField
-          focusDistance={dofFocusDistance}
-          focalLength={dofFocalLength}
-          bokehScale={dofBokehScale}
-        />
-      )}
-
-      {/* 4. Atmosphere: Vignette and Grain */}
-      {vignInt > 0 && <Vignette eskil={false} offset={0.1} darkness={vignInt * 1.2} />}
-      {grainInt > 0 && <Noise opacity={grainInt} />}
+      {effects}
     </EffectComposer>
   );
 }
