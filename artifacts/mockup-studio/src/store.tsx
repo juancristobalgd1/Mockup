@@ -117,6 +117,7 @@ export interface AppState {
   bgImage: string | null;
   bgVideo: string | null;
   bgPattern: string;
+  bgPatternColor: string;
   bgPatternEnabled: boolean;
   bgPatternScale: number;
   bgPatternOpacity: number;
@@ -234,6 +235,7 @@ export const defaultState: AppState = {
   bgImage: null,
   bgVideo: null,
   bgPattern: "dots",
+  bgPatternColor: "#ffffff",
   bgPatternEnabled: false,
   bgPatternScale: 1,
   bgPatternOpacity: 100,

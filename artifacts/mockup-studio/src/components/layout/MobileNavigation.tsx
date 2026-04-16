@@ -870,15 +870,15 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   >
                     {patternsProperty === 'color' ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ position: 'relative', width: 44, height: 44, borderRadius: 12, background: state.bgColor, border: '1px solid rgba(255,255,255,0.2)' }}>
-                          <input type="color" value={state.bgColor.startsWith('#') ? state.bgColor : '#ffffff'} onChange={e => updateState({ bgColor: e.target.value })} style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
+                        <div style={{ position: 'relative', width: 44, height: 44, borderRadius: 12, background: state.bgPatternColor, border: '1px solid rgba(255,255,255,0.2)' }}>
+                          <input type="color" value={state.bgPatternColor.startsWith('#') ? state.bgPatternColor : '#ffffff'} onChange={e => updateState({ bgPatternColor: e.target.value })} style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
                         </div>
-                        <input type="text" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })} className="rt-input" style={{ flex: 1, height: 44, fontFamily: 'monospace', fontSize: 14 }} />
+                        <input type="text" value={state.bgPatternColor} onChange={e => updateState({ bgPatternColor: e.target.value })} className="rt-input" style={{ flex: 1, height: 44, fontFamily: 'monospace', fontSize: 14 }} />
                       </div>
                     ) : patternsProperty === 'more' ? (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                         <button onClick={() => updateState({ bgPatternEnabled: false })} style={{ padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: 'rgba(255,100,100,0.1)', color: 'rgba(255,150,150,1)', border: '1px solid rgba(255,100,100,0.2)' }}>Eliminar Patrón</button>
-                        <button onClick={() => { updateState({ bgPatternEnabled: true, bgPatternOpacity: 100, bgPatternScale: 1 }); }} style={{ padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }}>Resetear Ajustes</button>
+                        <button onClick={() => { updateState({ bgPatternEnabled: true, bgPatternOpacity: 100, bgPatternScale: 1, bgPatternColor: '#ffffff' }); }} style={{ padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }}>Resetear Ajustes</button>
                       </div>
                     ) : (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -889,7 +889,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   </PropertyTooltip>
                   <button className="ps-tool-icon-btn btn-press" onClick={() => setPatternsProperty(patternsProperty === 'color' ? null : 'color')} style={{ pointerEvents: "auto", background: patternsProperty === 'color' ? "#fff" : "#1c1c1e", color: patternsProperty === 'color' ? "#000" : "#fff", border: "none", width: 44, height: 44, borderRadius: 22, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", position: 'relative', overflow: 'hidden', opacity: state.bgPatternEnabled ? 1 : 0.5 }}>
                     <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <div style={{ width: 22, height: 22, borderRadius: '50%', background: state.bgColor, border: '2px solid rgba(255,255,255,0.8)', opacity: 0.8 }} />
+                      <div style={{ width: 22, height: 22, borderRadius: '50%', background: state.bgPatternColor, border: '2px solid rgba(255,255,255,0.8)', opacity: 0.8 }} />
                     </div>
                   </button>
                   <div style={{ display: "flex", background: "#1c1c1e", borderRadius: 30, padding: 4, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", opacity: state.bgPatternEnabled ? 1 : 0.5, pointerEvents: state.bgPatternEnabled ? 'auto' : 'none' }}>

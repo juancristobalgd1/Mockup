@@ -554,46 +554,56 @@ export const MESH_GRADIENTS: MeshGradient[] = [
   },
 ];
 
+const hexToRgba = (hex: string, alpha: number) => {
+  if (!hex || hex === 'transparent' || !hex.startsWith('#')) return `rgba(255,255,255,${alpha})`;
+  let h = hex.slice(1);
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+};
+
 export interface PatternOption {
   id: string;
   label: string;
-  bgStyle: (color: string) => React.CSSProperties;
+  bgStyle: (bgColor: string, patternColor: string) => React.CSSProperties;
 }
 
 export const PATTERNS: PatternOption[] = [
   {
     id: 'dots',
     label: 'Dots',
-    bgStyle: (color: string) => ({
-      backgroundColor: color,
-      backgroundImage: 'radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px)',
+    bgStyle: (bgColor: string, patternColor: string) => ({
+      backgroundColor: bgColor,
+      backgroundImage: `radial-gradient(${hexToRgba(patternColor, 0.25)} 1px, transparent 1px)`,
       backgroundSize: '20px 20px',
     })
   },
   {
     id: 'grid',
     label: 'Grid',
-    bgStyle: (color: string) => ({
-      backgroundColor: color,
-      backgroundImage: `linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px)`,
+    bgStyle: (bgColor: string, patternColor: string) => ({
+      backgroundColor: bgColor,
+      backgroundImage: `linear-gradient(${hexToRgba(patternColor, 0.12)} 1px, transparent 1px), linear-gradient(90deg, ${hexToRgba(patternColor, 0.12)} 1px, transparent 1px)`,
       backgroundSize: '24px 24px',
     })
   },
   {
     id: 'lines',
     label: 'Lines',
-    bgStyle: (color: string) => ({
-      backgroundColor: color,
-      backgroundImage: 'repeating-linear-gradient(-45deg, rgba(255,255,255,0.05), rgba(255,255,255,0.05) 1px, transparent 0, transparent 50%)',
+    bgStyle: (bgColor: string, patternColor: string) => ({
+      backgroundColor: bgColor,
+      backgroundImage: `repeating-linear-gradient(-45deg, ${hexToRgba(patternColor, 0.08)}, ${hexToRgba(patternColor, 0.08)} 1px, transparent 0, transparent 50%)`,
       backgroundSize: '16px 16px',
     })
   },
   {
     id: 'cross',
     label: 'Cross',
-    bgStyle: (color: string) => ({
-      backgroundColor: color,
-      backgroundImage: `linear-gradient(rgba(255,255,255,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.10) 1px, transparent 1px)`,
+    bgStyle: (bgColor: string, patternColor: string) => ({
+      backgroundColor: bgColor,
+      backgroundImage: `linear-gradient(${hexToRgba(patternColor, 0.15)} 1px, transparent 1px), linear-gradient(90deg, ${hexToRgba(patternColor, 0.15)} 1px, transparent 1px)`,
       backgroundSize: '32px 32px',
       backgroundPosition: '-1px -1px',
     })
@@ -601,18 +611,18 @@ export const PATTERNS: PatternOption[] = [
   {
     id: 'dots-lg',
     label: 'Circles',
-    bgStyle: (color: string) => ({
-      backgroundColor: color,
-      backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.12) 3px, transparent 3px)',
+    bgStyle: (bgColor: string, patternColor: string) => ({
+      backgroundColor: bgColor,
+      backgroundImage: `radial-gradient(circle, ${hexToRgba(patternColor, 0.18)} 3px, transparent 3px)`,
       backgroundSize: '28px 28px',
     })
   },
   {
     id: 'checker',
     label: 'Checker',
-    bgStyle: (color: string) => ({
-      backgroundColor: color,
-      backgroundImage: `linear-gradient(45deg, rgba(255,255,255,0.06) 25%, transparent 25%), linear-gradient(-45deg, rgba(255,255,255,0.06) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.06) 75%), linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.06) 75%)`,
+    bgStyle: (bgColor: string, patternColor: string) => ({
+      backgroundColor: bgColor,
+      backgroundImage: `linear-gradient(45deg, ${hexToRgba(patternColor, 0.10)} 25%, transparent 25%), linear-gradient(-45deg, ${hexToRgba(patternColor, 0.10)} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${hexToRgba(patternColor, 0.10)} 75%), linear-gradient(-45deg, transparent 75%, ${hexToRgba(patternColor, 0.10)} 75%)`,
       backgroundSize: '20px 20px',
       backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
     })
@@ -620,27 +630,27 @@ export const PATTERNS: PatternOption[] = [
   {
     id: 'zigzag',
     label: 'Zigzag',
-    bgStyle: (color: string) => ({
-      backgroundColor: color,
-      backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0.07) 25%, transparent 25%) -10px 0, linear-gradient(225deg, rgba(255,255,255,0.07) 25%, transparent 25%) -10px 0, linear-gradient(315deg, rgba(255,255,255,0.07) 25%, transparent 25%), linear-gradient(45deg, rgba(255,255,255,0.07) 25%, transparent 25%)`,
+    bgStyle: (bgColor: string, patternColor: string) => ({
+      backgroundColor: bgColor,
+      backgroundImage: `linear-gradient(135deg, ${hexToRgba(patternColor, 0.11)} 25%, transparent 25%) -10px 0, linear-gradient(225deg, ${hexToRgba(patternColor, 0.11)} 25%, transparent 25%) -10px 0, linear-gradient(315deg, ${hexToRgba(patternColor, 0.11)} 25%, transparent 25%), linear-gradient(45deg, ${hexToRgba(patternColor, 0.11)} 25%, transparent 25%)`,
       backgroundSize: '20px 20px',
     })
   },
   {
     id: 'waves',
     label: 'Waves',
-    bgStyle: (color: string) => ({
-      backgroundColor: color,
-      backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 18px, rgba(255,255,255,0.06) 18px, rgba(255,255,255,0.06) 20px)`,
+    bgStyle: (bgColor: string, patternColor: string) => ({
+      backgroundColor: bgColor,
+      backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 18px, ${hexToRgba(patternColor, 0.10)} 18px, ${hexToRgba(patternColor, 0.10)} 20px)`,
       backgroundSize: '100% 20px',
     })
   },
   {
     id: 'diamond',
     label: 'Diamond',
-    bgStyle: (color: string) => ({
-      backgroundColor: color,
-      backgroundImage: `linear-gradient(45deg, rgba(255,255,255,0.08) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.08) 75%), linear-gradient(45deg, rgba(255,255,255,0.08) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.08) 75%)`,
+    bgStyle: (bgColor: string, patternColor: string) => ({
+      backgroundColor: bgColor,
+      backgroundImage: `linear-gradient(45deg, ${hexToRgba(patternColor, 0.12)} 25%, transparent 25%, transparent 75%, ${hexToRgba(patternColor, 0.12)} 75%), linear-gradient(45deg, ${hexToRgba(patternColor, 0.12)} 25%, transparent 25%, transparent 75%, ${hexToRgba(patternColor, 0.12)} 75%)`,
       backgroundSize: '24px 24px',
       backgroundPosition: '0 0, 12px 12px',
     })
@@ -648,31 +658,32 @@ export const PATTERNS: PatternOption[] = [
   {
     id: 'noise',
     label: 'Noise',
-    bgStyle: (color: string) => ({
-      backgroundColor: color,
-      backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`,
+    bgStyle: (bgColor: string, patternColor: string) => ({
+      backgroundColor: bgColor,
+      backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08' fill='${patternColor}'/%3E%3C/svg%3E")`,
       backgroundSize: '200px 200px',
     })
   },
   {
     id: 'hexagon',
     label: 'Hex',
-    bgStyle: (color: string) => ({
-      backgroundColor: color,
-      backgroundImage: `radial-gradient(circle farthest-side at 0% 50%, transparent 23%, rgba(255,255,255,0.07) 24%, rgba(255,255,255,0.07) 34%, transparent 35%), radial-gradient(circle farthest-side at 100% 50%, transparent 23%, rgba(255,255,255,0.07) 24%, rgba(255,255,255,0.07) 34%, transparent 35%)`,
+    bgStyle: (bgColor: string, patternColor: string) => ({
+      backgroundColor: bgColor,
+      backgroundImage: `radial-gradient(circle farthest-side at 0% 50%, transparent 23%, ${hexToRgba(patternColor, 0.11)} 24%, ${hexToRgba(patternColor, 0.11)} 34%, transparent 35%), radial-gradient(circle farthest-side at 100% 50%, transparent 23%, ${hexToRgba(patternColor, 0.11)} 24%, ${hexToRgba(patternColor, 0.11)} 34%, transparent 35%)`,
       backgroundSize: '30px 18px',
     })
   },
   {
     id: 'triangle',
     label: 'Triangles',
-    bgStyle: (color: string) => ({
-      backgroundColor: color,
-      backgroundImage: `linear-gradient(60deg, rgba(255,255,255,0.07) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.07) 75%), linear-gradient(120deg, rgba(255,255,255,0.07) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.07) 75%)`,
+    bgStyle: (bgColor: string, patternColor: string) => ({
+      backgroundColor: bgColor,
+      backgroundImage: `linear-gradient(60deg, ${hexToRgba(patternColor, 0.10)} 25%, transparent 25%, transparent 75%, ${hexToRgba(patternColor, 0.10)} 75%), linear-gradient(120deg, ${hexToRgba(patternColor, 0.10)} 25%, transparent 25%, transparent 75%, ${hexToRgba(patternColor, 0.10)} 75%)`,
       backgroundSize: '24px 42px',
     })
   },
 ];
+
 
 export interface WallpaperOption {
   id: string;

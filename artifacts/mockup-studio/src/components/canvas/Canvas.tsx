@@ -101,7 +101,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
     if (state.bgType === 'pattern') {
       const p = PATTERNS.find(p => p.id === state.bgPattern);
       if (p) {
-        const style = p.bgStyle(state.bgColor);
+        const style = p.bgStyle(state.bgColor, state.bgPatternColor);
         if (style.backgroundSize && typeof style.backgroundSize === 'string') {
           // Multiply numeric values in backgroundSize by bgPatternScale
           const scale = state.bgPatternScale ?? 1;
@@ -255,7 +255,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
         {state.bgPatternEnabled && (() => {
           const p = PATTERNS.find(pat => pat.id === state.bgPattern);
           if (!p) return null;
-          const style = p.bgStyle('transparent'); // We use transparent base because background is underneath
+          const style = p.bgStyle('transparent', state.bgPatternColor); // We use transparent base because background is underneath
           if (style.backgroundSize && typeof style.backgroundSize === 'string') {
             const scale = state.bgPatternScale ?? 1;
             style.backgroundSize = style.backgroundSize.replace(/(\d+)(px|%|em|rem)/g, (match, val, unit) => {

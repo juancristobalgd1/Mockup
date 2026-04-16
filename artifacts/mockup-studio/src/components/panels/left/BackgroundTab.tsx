@@ -235,7 +235,7 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
                 const active = state.bgPattern === p.id;
                 return (
                   <button key={p.id} onClick={() => updateState({ bgPattern: p.id })} style={SWATCH_BTN(active)}>
-                    <div style={{ ...THUMB, ...p.bgStyle('#1a1c2e'), width: '100%', height: 50 }} />
+                    <div style={{ ...THUMB, ...p.bgStyle('#1a1c2e', state.bgPatternColor), width: '100%', height: 50 }} />
                     <span style={SWATCH_LABEL(active)}>{p.label}</span>
                   </button>
                 );

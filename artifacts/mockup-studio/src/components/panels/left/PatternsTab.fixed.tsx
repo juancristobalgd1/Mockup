@@ -60,7 +60,7 @@ export const PatternsTab = () => {
             const active = state.bgPatternEnabled && state.bgPattern === p.id;
             return (
               <button key={p.id} onClick={() => selectPattern(p.id)} style={SWATCH_BTN(active)}>
-                <div style={{ ...THUMB, ...p.bgStyle('#1a1c2e') }} />
+                <div style={{ ...THUMB, ...p.bgStyle('#1a1c2e', '#ffffff') }} />
                 <span style={SWATCH_LABEL(active)}>{p.label}</span>
               </button>
             );
