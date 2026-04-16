@@ -1,38 +1,35 @@
 import { Component, type ReactNode } from 'react';
-import { PhoneDevice } from '../devices/PhoneDevice';
-import { TabletDevice } from '../devices/TabletDevice';
-import { MacBookDevice } from '../devices/MacBookDevice';
-import { Browser } from '../devices/Browser';
-import { AppleWatch } from '../devices/AppleWatch';
 import { useApp } from '../../store';
 
 function CSSDeviceFallback() {
   const { state } = useApp();
-  const getDevice = () => {
-    switch (state.deviceType) {
-      case 'iphone':
-      case 'android': return <PhoneDevice />;
-      case 'ipad': return <TabletDevice />;
-      case 'macbook': return <MacBookDevice />;
-      case 'browser': return <Browser />;
-      case 'watch': return <AppleWatch />;
-      default: return <PhoneDevice />;
-    }
-  };
-
+  
   return (
     <div style={{
       position: 'absolute', inset: 0,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 2,
+      color: 'white',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      backdropFilter: 'blur(10px)',
+      textAlign: 'center',
+      padding: '2rem'
     }}>
-      <div style={{ padding: state.canvasPadding ?? 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{
-          transform: `scale(${state.scale ?? 1}) rotate(${state.rotation ?? 0}deg)`,
-          filter: `drop-shadow(0 20px 60px rgba(0,0,0,0.5))`,
-          transition: 'transform 0.3s ease',
+      <div>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>WebGL Not Supported</h2>
+        <p style={{ opacity: 0.8 }}>This tool requires WebGL to render 3D mockups. Please try a different browser or enable hardware acceleration.</p>
+        <div style={{ 
+          marginTop: '2rem', 
+          width: '200px', 
+          height: '300px', 
+          border: '2px dashed rgba(255,255,255,0.2)', 
+          borderRadius: '20px',
+          margin: '2rem auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}>
-          {getDevice()}
+          <span style={{ opacity: 0.3 }}>{state.deviceType.toUpperCase()}</span>
         </div>
       </div>
     </div>
