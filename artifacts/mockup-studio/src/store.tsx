@@ -124,7 +124,7 @@ export interface AppState {
   lightOverlayBgOnly: boolean;
 
   annotateMode: boolean;
-  annotateTool: 'select' | 'pen' | 'marker' | 'eraser' | 'arrow' | 'rect' | 'text';
+  annotateTool: 'select' | 'pen' | 'marker' | 'eraser' | 'arrow' | 'rect' | 'text' | null;
   annotateColor: string;
   annotateSize: 'S' | 'M' | 'L' | 'XL';
   annotateOpacity: number;
@@ -241,7 +241,7 @@ export const defaultState: AppState = {
   lightOverlayBgOnly: false,
 
   annotateMode: false,
-  annotateTool: 'pen',
+  annotateTool: null,
   annotateColor: '#ef4444',
   annotateSize: 'M',
   annotateOpacity: 1,
