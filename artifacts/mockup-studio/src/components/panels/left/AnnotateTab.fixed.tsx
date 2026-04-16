@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../../../store';
 import { clampL, clampT, safeW } from '../../../utils/panelUtils';
+import { Eraser } from 'lucide-react';
 
 type AnnotateShapeId = 'arrow' | 'rect' | 'circle' | 'ellipse' | 'triangle' | 'diamond' | 'star' | 'hexagon' | 'spiral' | 'wave';
 

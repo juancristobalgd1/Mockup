@@ -64,6 +64,7 @@ import {
   Maximize,
   Activity,
   Trash2,
+  Eraser,
 } from "lucide-react";
 import { GridOverlay } from "./components/ui/GridOverlay";
 import { getModelById, DEVICE_MODELS, DEVICE_GROUPS } from "./data/devices";
@@ -126,6 +127,8 @@ function Editor() {
   const [devicePanelView, setDevicePanelView] = useState<'hub' | 'content'>('hub');
   const [scenePanelView, setScenePanelView] = useState<'hub' | 'content'>('hub');
   const [labelsPanelView, setLabelsPanelView] = useState<'hub' | 'content'>('hub');
+  const [annotatePanelView, setAnnotatePanelView] = useState<'hub' | 'shapes'>('hub');
+  const [annotateProperty, setAnnotateProperty] = useState<'size' | 'opacity' | 'color' | 'hardness' | null>(null);
   const [timelineCollapsed, setTimelineCollapsed] = useState(false);
 
   const currentModel = getModelById(state.deviceModel);
@@ -136,6 +139,7 @@ function Editor() {
     if (mobileTab === "device") setDevicePanelView('hub');
     if (mobileTab === "canvas") setScenePanelView('hub');
     if (mobileTab === "labels") setLabelsPanelView('hub');
+    if (mobileTab === "annotate") setAnnotatePanelView('hub');
   }, [mobileTab]);
 
   const TOOLBAR_ACTIONS = [
@@ -543,11 +547,11 @@ function Editor() {
                   }}
                   className={`ps-nav-item ${activeTab === "annotate" ? "active" : ""}`}
                 >
-                  <Pencil
+                  <PenLine
                     size={22}
                     strokeWidth={activeTab === "annotate" ? 2.5 : 1.8}
                   />
-                  <span>Máscara</span>
+                  <span>ANNOTATE</span>
                 </button>
               </nav>
 
@@ -709,7 +713,7 @@ function Editor() {
               className="ps-tiered-nav"
             >
               {/* Floating Action Circles (Above tiers) */}
-              <div
+                <div
                 style={{
                   display: "flex",
                   justifyContent: "center",
@@ -723,13 +727,88 @@ function Editor() {
               >
                 {mobileTab === "annotate" && (
                   <>
-                    {/* View Mask Button (Left) */}
+                    {/* Tooltips Layer */}
+                    <AnimatePresence>
+                      {annotateProperty && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          style={{
+                            position: "absolute",
+                            bottom: 60,
+                            left: 0,
+                            right: 0,
+                            zIndex: 200,
+                            display: "flex",
+                            justifyContent: "center",
+                            pointerEvents: "auto"
+                          }}
+                        >
+                          <div style={{
+                            background: "rgba(30,30,32,0.95)",
+                            backdropFilter: "blur(20px)",
+                            borderRadius: 20,
+                            padding: "16px 20px",
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            boxShadow: "0 10px 40px rgba(0,0,0,0.6)",
+                            minWidth: 260,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 12
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                {annotateProperty === 'size' ? 'Grosor' : annotateProperty === 'opacity' ? 'Opacidad' : 'Color'}
+                              </span>
+                              <button onClick={() => setAnnotateProperty(null)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18, padding: 0, cursor: 'pointer' }}>×</button>
+                            </div>
+
+                            {annotateProperty === 'color' ? (
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+                                {['#ffffff', '#aaaaaa', '#333333', '#000000', '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7'].map(c => (
+                                  <button
+                                    key={c}
+                                    onClick={() => updateState({ annotateColor: c })}
+                                    style={{
+                                      width: 38, height: 38, borderRadius: '50%', background: c, border: state.annotateColor === c ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)', cursor: 'pointer'
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <input
+                                  type="range"
+                                  min={annotateProperty === 'size' ? 1 : 5}
+                                  max={annotateProperty === 'size' ? 100 : 100}
+                                  step={1}
+                                  value={annotateProperty === 'size' ? (state.annotateLineWidth ?? 5) : Math.round((state.annotateOpacity ?? 1) * 100)}
+                                  onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    if (annotateProperty === 'size') updateState({ annotateLineWidth: val });
+                                    else updateState({ annotateOpacity: val / 100 });
+                                  }}
+                                  style={{ flex: 1, accentColor: '#3498db', height: 4 }}
+                                />
+                                <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', minWidth: 36, textAlign: 'right' }}>
+                                  {annotateProperty === 'size' ? `${state.annotateLineWidth ?? 5}px` : `${Math.round((state.annotateOpacity ?? 1) * 100)}%`}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* View Mask/Color Button (Left) */}
                     <button
                       className="ps-tool-icon-btn btn-press"
+                      onClick={() => setAnnotateProperty(annotateProperty === 'color' ? null : 'color')}
                       style={{
                         pointerEvents: "auto",
-                        background: "#1c1c1e",
-                        color: "#fff",
+                        background: annotateProperty === 'color' ? "#fff" : "#1c1c1e",
+                        color: annotateProperty === 'color' ? "#000" : "#fff",
                         border: "none",
                         width: 44,
                         height: 44,
@@ -748,6 +827,7 @@ function Editor() {
                             "linear-gradient(45deg, #444 25%, transparent 25%), linear-gradient(-45deg, #444 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #444 75%), linear-gradient(-45deg, transparent 75%, #444 75%)",
                           backgroundSize: "8px 8px",
                           backgroundColor: "#222",
+                          opacity: 0.4
                         }}
                       />
                       <div
@@ -759,26 +839,11 @@ function Editor() {
                           justifyContent: "center",
                         }}
                       >
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          style={{
-                            filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.8))",
-                          }}
-                        >
-                          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                          <circle cx="12" cy="12" r="3" />
-                        </svg>
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: state.annotateColor, border: '2px solid rgba(255,255,255,0.8)', boxShadow: '0 2px 4px rgba(0,0,0,0.4)' }} />
                       </div>
                     </button>
 
-                    {/* Add/Subtract Pill (Center) */}
+                    {/* Property Pill (Center) */}
                     <div
                       style={{
                         pointerEvents: "auto",
@@ -791,78 +856,51 @@ function Editor() {
                     >
                       <button
                         className="btn-press"
+                        onClick={() => setAnnotateProperty(annotateProperty === 'size' ? null : 'size')}
                         style={{
                           width: 40,
                           height: 40,
                           borderRadius: 20,
-                          background: "#f5f5f7",
-                          color: "#000",
+                          background: annotateProperty === 'size' ? "#f5f5f7" : "transparent",
+                          color: annotateProperty === 'size' ? "#000" : "#fff",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           border: "none",
                         }}
                       >
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <circle
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            strokeDasharray="4 4"
-                            strokeWidth="1.5"
-                          />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" />
                           <path d="M8 12h8" />
                           <path d="M12 8v8" />
                         </svg>
                       </button>
                       <button
                         className="btn-press"
+                        onClick={() => setAnnotateProperty(annotateProperty === 'opacity' ? null : 'opacity')}
                         style={{
                           width: 40,
                           height: 40,
                           borderRadius: 20,
-                          background: "transparent",
-                          color: "rgba(255,255,255,0.4)",
+                          background: annotateProperty === 'opacity' ? "#f5f5f7" : "transparent",
+                          color: annotateProperty === 'opacity' ? "#000" : "rgba(255,255,255,0.4)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           border: "none",
                         }}
                       >
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <circle
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            strokeDasharray="4 4"
-                            strokeWidth="1.5"
-                          />
+                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" />
                           <path d="M8 12h8" />
                         </svg>
                       </button>
                     </div>
 
-                    {/* More Options Button (Right) */}
+                    {/* Clear/More Button (Right) */}
                     <button
                       className="ps-tool-icon-btn btn-press"
+                      onClick={() => updateState({ annotateStrokes: [], annotateClearKey: (state.annotateClearKey ?? 0) + 1 })}
                       style={{
                         pointerEvents: "auto",
                         background: "#1c1c1e",
@@ -1004,88 +1042,141 @@ function Editor() {
                   </>
                 )}
 
-                {mobileTab === "annotate" &&
+                {mobileTab === "annotate" && annotatePanelView === 'hub' &&
                   [
                     {
+                      id: "pen",
+                      label: "Pincel",
+                      icon: <Pencil size={24} />,
+                      action: () => updateState({ annotateTool: 'pen', annotateMode: true }),
+                    },
+                    {
+                      id: "shapes",
+                      label: "Formas",
+                      icon: <Box size={24} />,
+                      action: () => setAnnotatePanelView('shapes'),
+                    },
+                    {
+                      id: "text",
+                      label: "Texto",
+                      icon: <Type size={24} />,
+                      action: () => updateState({ annotateTool: 'text', annotateMode: true }),
+                    },
+                    {
+                      id: "eraser",
+                      label: "Borrador",
+                      icon: <Eraser size={24} />,
+                      action: () => updateState({ annotateTool: 'eraser', annotateMode: true }),
+                    },
+                    {
+                      id: "clear",
+                      label: "Limpiar",
+                      icon: <Trash2 size={24} style={{ color: '#f87171' }} />,
+                      action: () => updateState({ annotateStrokes: [], annotateClearKey: (state.annotateClearKey ?? 0) + 1 }),
+                    },
+                    {
                       id: "subject",
-                      label: "Sujeto: Preciso",
+                      label: "Sujeto",
                       icon: (
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="#fff"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                           <circle cx="12" cy="7" r="4" />
-                          <path
-                            d="M5 3v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3"
-                            strokeDasharray="3 3"
-                          />
+                          <path d="M5 3v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3" strokeDasharray="3 3" />
                         </svg>
                       ),
-                    },
-                    {
-                      id: "bg",
-                      label: "Fondo: Preciso",
-                      icon: (
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="#fff"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path
-                            d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"
-                            strokeDasharray="3 3"
-                          />
-                          <circle cx="12" cy="7" r="4" strokeDasharray="3 3" />
-                          <rect x="3" y="3" width="18" height="18" rx="2" />
-                        </svg>
-                      ),
-                    },
-                    {
-                      id: "brush",
-                      label: "Pincel: Suave",
-                      icon: <MaskThumbnail active />,
+                      action: () => updateState({ annotateMode: true }),
                     },
                     {
                       id: "mask",
                       label: "Máscara",
                       icon: <MaskThumbnail type="horizontal" />,
+                      action: () => updateState({ annotateMode: true }),
                     },
-                  ].map((tool, idx) => (
-                    <div key={tool.id} className="ps-tool-thumb-box">
+                  ].map((tool) => {
+                    const isActive = state.annotateTool === tool.id || (tool.id === 'shapes' && ['rect', 'arrow', 'circle'].includes(state.annotateTool));
+                    return (
+                      <div key={tool.id} className="ps-tool-thumb-box">
+                        <button
+                          className={`ps-tool-thumb btn-press ${isActive ? "active" : ""}`}
+                          onClick={tool.action}
+                          style={{
+                            padding: 0,
+                            width: 60,
+                            height: 60,
+                            borderRadius: 12,
+                            background: "#1c1c1e",
+                            border: isActive ? "2px solid #3498db" : "1px solid rgba(255,255,255,0.1)",
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: isActive ? '#3498db' : '#fff'
+                          }}
+                        >
+                          {tool.icon}
+                        </button>
+                        <span className="ps-tool-label" style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.4)' }}>{tool.label}</span>
+                      </div>
+                    );
+                  })}
+
+                {mobileTab === "annotate" && annotatePanelView === 'shapes' && (
+                  <>
+                    <div className="ps-tool-thumb-box" style={{ paddingRight: 12, marginRight: 12, borderRight: '1px solid rgba(255,255,255,0.1)' }}>
                       <button
-                        className={`ps-tool-thumb btn-press ${idx === 2 ? "active" : ""}`}
-                        onClick={() =>
-                          idx === 2 && updateState({ annotateMode: true })
-                        }
+                        className="ps-tool-thumb btn-press"
+                        onClick={() => setAnnotatePanelView('hub')}
                         style={{
-                          padding: 0,
                           width: 60,
                           height: 60,
-                          borderRadius: 8,
-                          background: "#1c1c1e",
-                          border:
-                            idx === 2
-                              ? "2px solid #3498db"
-                              : "1px solid transparent",
+                          borderRadius: 12,
+                          background: "rgba(255,255,255,0.05)",
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#fff'
                         }}
                       >
-                        {tool.icon}
+                        <ArrowLeft size={24} />
                       </button>
-                      <span className="ps-tool-label">{tool.label}</span>
+                      <span className="ps-tool-label">Volver</span>
                     </div>
-                  ))}
+                    {[
+                      { id: 'arrow', label: 'Flecha', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></svg> },
+                      { id: 'rect', label: 'Rect', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> },
+                      { id: 'circle', label: 'Círculo', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/></svg> },
+                      { id: 'ellipse', label: 'Elipse', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6"/></svg> },
+                      { id: 'triangle', label: 'Triáng.', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,2 22,22 2,22"/></svg> },
+                      { id: 'diamond', label: 'Rombo', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,1 23,12 12,23 1,12"/></svg> },
+                      { id: 'star', label: 'Estrella', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,1 15.09,8.26 23,9.27 17.5,14.63 18.18,22.54 12,19.27 5.82,22.54 6.5,14.63 1,9.27 8.91,8.26"/></svg> },
+                      { id: 'hexagon', label: 'Hexág.', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,1 21.66,6.5 21.66,17.5 12,23 2.34,17.5 2.34,6.5"/></svg> },
+                    ].map((sh) => {
+                      const isActive = state.annotateTool === sh.id || (state.annotateTool === 'rect' && state.annotateShape === sh.id);
+                      return (
+                        <div key={sh.id} className="ps-tool-thumb-box">
+                          <button
+                            className={`ps-tool-thumb btn-press ${isActive ? "active" : ""}`}
+                            onClick={() => updateState({ annotateTool: sh.id === 'arrow' ? 'arrow' : 'rect', annotateShape: sh.id, annotateMode: true })}
+                            style={{
+                              padding: 0,
+                              width: 60,
+                              height: 60,
+                              borderRadius: 12,
+                              background: "#1c1c1e",
+                              border: isActive ? "2px solid #3498db" : "1px solid rgba(255,255,255,0.1)",
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: isActive ? '#3498db' : '#fff'
+                            }}
+                          >
+                            {sh.icon}
+                          </button>
+                          <span className="ps-tool-label" style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.4)' }}>{sh.label}</span>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
 
                 {mobileTab === "background" && backgroundPanelView === 'hub' && (
                   <>
@@ -1296,87 +1387,10 @@ function Editor() {
               </div>
               )}
 
-              {/* Tier 2: Action Pill (Photoshop Style Primary Action) */}
-              {mobileTab === "annotate" && (
-                <div
-                  className="ps-tier-info"
-                  style={{
-                    padding: "4px 20px 10px",
-                    justifyContent: "space-between",
-                    gap: 16,
-                  }}
-                >
-                  <button
-                    className="ps-active-tool-pill btn-press"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      background: "#e0e0e0",
-                      color: "#111",
-                      padding: "10px 18px",
-                      borderRadius: 8,
-                      flex: 1,
-                      justifyContent: "center",
-                    }}
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <rect
-                        x="3"
-                        y="3"
-                        width="18"
-                        height="18"
-                        rx="2"
-                        strokeDasharray="4 4"
-                      />
-                      <path d="M10 10l8.5 4.5L14 16l-4-6z" />
-                    </svg>
-                    <span style={{ fontSize: 13 }}>Pulse seleccionar</span>
-                  </button>
-                  <button
-                    style={{
-                      color: "#fff",
-                      fontSize: 13,
-                      fontWeight: 500,
-                      border: "none",
-                      background: "none",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      flex: 1,
-                      justifyContent: "center",
-                    }}
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M12 19V5" />
-                      <path d="M5 12h14" strokeDasharray="2 4" />
-                      <path d="M18 10l3-5c-2-2-5-3-5-3l-7 13" />
-                    </svg>
-                    Pincel de sel. rápida
-                  </button>
-                </div>
-              )}
+
 
               {/* Tier 2.5: Inline Panel Settings (Replaces Float Modal) */}
-              {(mobileTab !== "annotate" || state.annotateMode) &&
+              {mobileTab !== "annotate" &&
                 mobileTab !== "presets" &&
                 (mobileTab !== "background" || backgroundPanelView === 'content') &&
                 (mobileTab !== "device" || devicePanelView === 'content') &&
@@ -1470,7 +1484,7 @@ function Editor() {
                   </div>
                 ) : (
                   <span className="ps-context-title" style={{ flex: 1, textAlign: 'center', marginRight: 40 }}>
-                    {mobileTab === "annotate" ? "Selecciona el área" :
+                    {mobileTab === "annotate" ? "Annotate" :
                      mobileTab === "presets" ? "Preajustes" :
                      mobileTab === "template" ? "Plantillas" :
                      mobileTab === "device" ? (devicePanelView === 'content' ? "Modelo" : "Dispositivo") :

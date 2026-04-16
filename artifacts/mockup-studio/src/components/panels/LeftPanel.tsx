@@ -19,7 +19,7 @@ const TAB_ICONS = [
   { id: 'device'     as const, icon: Box,          label: 'Dispositivo' },
   { id: 'background' as const, icon: ImageIcon,    label: 'Fondo'       },
   { id: 'overlay'    as const, icon: Palette,      label: 'Efectos'     },
-  { id: 'annotate'   as const, icon: Pencil,       label: 'Anotar'      },
+  { id: 'annotate'   as const, icon: Pencil,       label: 'Annotate'      },
   { id: 'canvas'     as const, icon: Settings2,    label: 'Escena'      },
   { id: 'labels'     as const, icon: MousePointer2, label: 'Etiquetas'   },
 ] as const;

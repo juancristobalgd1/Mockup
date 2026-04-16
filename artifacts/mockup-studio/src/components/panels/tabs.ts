@@ -10,7 +10,7 @@ export const TAB_ICONS: { id: Tab; icon: React.ComponentType<LucideProps>; label
   { id: 'device',     icon: Smartphone, label: 'Dispositivo'},
   { id: 'background', icon: ImageIcon,  label: 'Fondo'      },
   { id: 'overlay',    icon: Blend,      label: 'Efectos'    },
-  { id: 'annotate',   icon: PenLine,    label: 'Anotar'     },
+  { id: 'annotate',   icon: PenLine,    label: 'Annotate'     },
   { id: 'canvas',     icon: Sliders,    label: 'Escena'     },
   { id: 'labels',     icon: Tags,       label: 'Etiquetas'  },
 ];
