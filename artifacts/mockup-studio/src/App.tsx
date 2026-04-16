@@ -5,7 +5,6 @@ import { AppProvider, useApp } from "./store";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Canvas } from "./components/canvas/Canvas";
-import { MovieTimeline } from "./components/timeline/MovieTimeline";
 import type { MovieTimelineHandle } from "./components/timeline/MovieTimeline";
 import { GridOverlay } from "./components/ui/GridOverlay";
 import { FloatingToolbar } from "./components/ui/FloatingToolbar";
