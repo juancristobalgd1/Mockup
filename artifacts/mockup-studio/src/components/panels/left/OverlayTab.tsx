@@ -241,7 +241,7 @@ export const OverlayTab = () => {
       )}
 
       {/* Combined Overlay row */}
-      <Section label="Efectos">
+      <Section label="Overlay">
         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
 
           {/* Scrollable light preset thumbnails */}

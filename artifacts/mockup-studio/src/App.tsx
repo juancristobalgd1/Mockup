@@ -76,7 +76,6 @@ import { PRESENT_POSES } from "./data/panelConstants";
 import {
   DeviceThumbnail,
   PoseThumbnail,
-  MaskThumbnail,
 } from "./components/ui/DeviceThumbnails";
 import type { Device3DViewerHandle } from "./components/devices3d/Device3DViewer";
 
@@ -131,11 +130,12 @@ function Editor() {
   const [scenePanelView, setScenePanelView] = useState<'hub' | 'content'>('hub');
   const [labelsPanelView, setLabelsPanelView] = useState<'hub' | 'content'>('hub');
   const [annotatePanelView, setAnnotatePanelView] = useState<'hub' | 'shapes'>('hub');
-  const [annotateProperty, setAnnotateProperty] = useState<'size' | 'opacity' | 'color' | 'hardness' | null>(null);
+  const [annotateProperty, setAnnotateProperty] = useState<'size' | 'opacity' | 'color' | 'hardness' | 'more' | null>(null);
   const [overlayProperty, setOverlayProperty] = useState<'color' | 'opacity' | 'light' | 'more' | null>(null);
   const [backgroundProperty, setBackgroundProperty] = useState<'color' | 'opacity' | 'blur' | 'more' | null>(null);
   const [deviceProperty, setDeviceProperty] = useState<'color' | 'reflection' | 'shadow' | 'more' | null>(null);
   const [timelineCollapsed, setTimelineCollapsed] = useState(false);
+  const [showGlobalMenu, setShowGlobalMenu] = useState(false);
 
   const currentModel = getModelById(state.deviceModel);
   const deviceLabel = currentModel.label;
@@ -147,6 +147,15 @@ function Editor() {
     if (mobileTab === "labels") setLabelsPanelView('hub');
     if (mobileTab === "annotate") setAnnotatePanelView('hub');
   }, [mobileTab]);
+
+  useEffect(() => {
+    if (!showGlobalMenu) return;
+    const handleClick = () => {
+      setShowGlobalMenu(false);
+    };
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, [showGlobalMenu]);
 
   const TOOLBAR_ACTIONS = [
     {
@@ -387,17 +396,71 @@ function Editor() {
           >
             <Download size={18} />
           </button>
-          <button
-            className="btn-press"
-            style={{
-              padding: "8px 12px",
-              color: "#fff",
-              border: "none",
-              background: "none",
-            }}
-          >
-            <MoreHorizontal size={18} />
-          </button>
+          <div style={{ position: 'relative' }}>
+            <button
+              className="btn-press"
+              onClick={() => setShowGlobalMenu(!showGlobalMenu)}
+              style={{
+                padding: "8px 12px",
+                color: showGlobalMenu ? "var(--ps-accent-blue)" : "#fff",
+                border: "none",
+                background: "none",
+              }}
+            >
+              <MoreHorizontal size={18} />
+            </button>
+            <AnimatePresence>
+              {showGlobalMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: 15, scale: 0.95, filter: 'blur(10px)' }}
+                  animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95, filter: 'blur(10px)' }}
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    marginTop: 10,
+                    background: 'rgba(28,28,30,0.95)',
+                    backdropFilter: 'blur(25px)',
+                    borderRadius: 16,
+                    padding: 6,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05)',
+                    zIndex: 2000,
+                    minWidth: 180
+                  }}
+                >
+                  <label style={{ display: 'block', fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '8px 12px 4px' }}>Annotate</label>
+                  <button
+                    onClick={() => {
+                      updateState({ annotateStrokes: [], annotateClearKey: (state.annotateClearKey ?? 0) + 1 });
+                      setShowGlobalMenu(false);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: 10,
+                      border: 'none',
+                      background: 'none',
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'background 0.2s'
+                    }}
+                    className="btn-hover-bg"
+                  >
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(248,113,113,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Trash2 size={16} style={{ color: '#f87171' }} />
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>Limpiar Lienzo</span>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </header>
 
@@ -514,11 +577,11 @@ function Editor() {
                   }}
                   className={`ps-nav-item ${activeTab === "overlay" ? "active" : ""}`}
                 >
-                  <LayoutGrid
+                  <Layers
                     size={22}
                     strokeWidth={activeTab === "overlay" ? 2.5 : 1.8}
                   />
-                  <span>Capa</span>
+                  <span>Overlay</span>
                 </button>
                 <button
                   onClick={() => {
@@ -765,7 +828,7 @@ function Editor() {
                           }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                {annotateProperty === 'size' ? 'Grosor' : annotateProperty === 'opacity' ? 'Opacidad' : 'Color'}
+                                {annotateProperty === 'size' ? 'Grosor' : annotateProperty === 'opacity' ? 'Opacidad' : annotateProperty === 'more' ? 'Ajustes' : 'Color'}
                               </span>
                               <button onClick={() => setAnnotateProperty(null)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18, padding: 0, cursor: 'pointer' }}>×</button>
                             </div>
@@ -781,6 +844,23 @@ function Editor() {
                                     }}
                                   />
                                 ))}
+                              </div>
+                            ) : annotateProperty === 'more' ? (
+                              <div style={{ display: 'flex', gap: 8 }}>
+                                <button
+                                  onClick={() => {
+                                    updateState({ annotateStrokes: [], annotateClearKey: (state.annotateClearKey ?? 0) + 1 });
+                                    setAnnotateProperty(null);
+                                  }}
+                                  style={{
+                                    flex: 1, padding: '12px', borderRadius: 12, background: 'rgba(255,255,255,0.05)',
+                                    color: '#fff', border: '1px solid rgba(255,255,255,0.1)', fontSize: 13, fontWeight: 700,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+                                  }}
+                                  className="btn-press"
+                                >
+                                  <Trash2 size={16} style={{ color: '#f87171' }} /> Limpiar Lienzo
+                                </button>
                               </div>
                             ) : (
                               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -807,7 +887,7 @@ function Editor() {
                       )}
                     </AnimatePresence>
 
-                    {/* View Mask/Color Button (Left) */}
+                    {/* Color Button (Left) */}
                     <button
                       className="ps-tool-icon-btn btn-press"
                       onClick={() => setAnnotateProperty(annotateProperty === 'color' ? null : 'color')}
@@ -902,15 +982,15 @@ function Editor() {
                         </svg>
                       </button>
                     </div>
-
-                    {/* Clear/More Button (Right) */}
+ 
+                    {/* Annotate More Options (Right) */}
                     <button
                       className="ps-tool-icon-btn btn-press"
-                      onClick={() => updateState({ annotateStrokes: [], annotateClearKey: (state.annotateClearKey ?? 0) + 1 })}
+                      onClick={() => setAnnotateProperty(annotateProperty === 'more' ? null : 'more')}
                       style={{
                         pointerEvents: "auto",
-                        background: "#1c1c1e",
-                        color: "#fff",
+                        background: annotateProperty === 'more' ? "#fff" : "#1c1c1e",
+                        color: annotateProperty === 'more' ? "#000" : "#fff",
                         border: "none",
                         width: 44,
                         height: 44,
@@ -1674,6 +1754,12 @@ function Editor() {
                 {mobileTab === "annotate" && annotatePanelView === 'hub' &&
                   [
                     {
+                      id: "select",
+                      label: "Seleccionar",
+                      icon: <MousePointer2 size={24} />,
+                      action: () => updateState({ annotateTool: 'select', annotateMode: true }),
+                    },
+                    {
                       id: "pen",
                       label: "Pincel",
                       icon: <Pencil size={24} />,
@@ -1696,30 +1782,6 @@ function Editor() {
                       label: "Borrador",
                       icon: <Eraser size={24} />,
                       action: () => updateState({ annotateTool: 'eraser', annotateMode: true }),
-                    },
-                    {
-                      id: "clear",
-                      label: "Limpiar",
-                      icon: <Trash2 size={24} style={{ color: '#f87171' }} />,
-                      action: () => updateState({ annotateStrokes: [], annotateClearKey: (state.annotateClearKey ?? 0) + 1 }),
-                    },
-                    {
-                      id: "subject",
-                      label: "Sujeto",
-                      icon: (
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                          <circle cx="12" cy="7" r="4" />
-                          <path d="M5 3v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3" strokeDasharray="3 3" />
-                        </svg>
-                      ),
-                      action: () => updateState({ annotateMode: true }),
-                    },
-                    {
-                      id: "mask",
-                      label: "Máscara",
-                      icon: <MaskThumbnail type="horizontal" />,
-                      action: () => updateState({ annotateMode: true }),
                     },
                   ].map((tool) => {
                     const isActive = state.annotateTool === tool.id || (tool.id === 'shapes' && (state.annotateTool as any) && ['rect', 'arrow', 'circle'].includes(state.annotateTool as any));
@@ -2117,7 +2179,7 @@ function Editor() {
                      mobileTab === "template" ? "Plantillas" :
                      mobileTab === "device" ? (devicePanelView === 'content' ? "Modelo" : "Dispositivo") :
                      mobileTab === "background" ? (backgroundPanelView === 'content' ? "Fondo" : "Fondo") :
-                     mobileTab === "overlay" ? "Efectos" :
+                     mobileTab === "overlay" ? "Overlay" :
                      mobileTab === "labels" ? (labelsPanelView === 'content' ? (
                         state.labelsSubTab === 'view' ? "Gestionar Etiquetas" :
                         state.labelsSubTab === 'add' ? "Anclar Nueva" :
