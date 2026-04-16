@@ -59,6 +59,8 @@ export interface Device3DViewerHandle {
   } | null;
   /** Synchronously drive camera to keyframe position at `time` seconds and re-render to glEl. */
   renderAt: (time: number) => void;
+  /** Set the current playback time without necessarily rendering immediately. */
+  setMovieTime: (time: number) => void;
 }
 
 export type InteractionMode = "none" | "drag" | "zoom";
@@ -623,6 +625,9 @@ export const Device3DViewer = forwardRef<
         }
       }
       gl.render(scene, camera);
+    },
+    setMovieTime: (time: number) => {
+      movieTimeRef.current = time;
     },
   }));
 
