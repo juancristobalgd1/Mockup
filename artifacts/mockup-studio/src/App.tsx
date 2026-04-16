@@ -67,6 +67,7 @@ import {
   Eraser,
   LayoutList,
   MoreVertical,
+  Shuffle,
 } from "lucide-react";
 import { GridOverlay } from "./components/ui/GridOverlay";
 import { getModelById, DEVICE_MODELS, DEVICE_GROUPS } from "./data/devices";
@@ -132,6 +133,7 @@ function Editor() {
   const [annotatePanelView, setAnnotatePanelView] = useState<'hub' | 'shapes'>('hub');
   const [annotateProperty, setAnnotateProperty] = useState<'size' | 'opacity' | 'color' | 'hardness' | null>(null);
   const [overlayProperty, setOverlayProperty] = useState<'color' | 'opacity' | 'light' | 'more' | null>(null);
+  const [backgroundProperty, setBackgroundProperty] = useState<'color' | 'opacity' | 'blur' | 'more' | null>(null);
   const [timelineCollapsed, setTimelineCollapsed] = useState(false);
 
   const currentModel = getModelById(state.deviceModel);
@@ -1126,6 +1128,199 @@ function Editor() {
                         pointerEvents: "auto",
                         background: overlayProperty === 'more' ? "#fff" : "#1c1c1e",
                         color: overlayProperty === 'more' ? "#000" : "#fff",
+                        border: "none",
+                        width: 44,
+                        height: 44,
+                        borderRadius: 22,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                      }}
+                    >
+                      <MoreHorizontal size={20} />
+                    </button>
+                  </>
+                )}
+
+                {mobileTab === "background" && (
+                  <>
+                    {/* Tooltips Layer */}
+                    <AnimatePresence>
+                      {backgroundProperty && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          style={{
+                            position: "absolute",
+                            bottom: 60,
+                            left: 0,
+                            right: 0,
+                            zIndex: 200,
+                            display: "flex",
+                            justifyContent: "center",
+                            pointerEvents: "auto"
+                          }}
+                        >
+                          <div style={{
+                            background: "rgba(30,30,32,0.95)",
+                            backdropFilter: "blur(20px)",
+                            borderRadius: 20,
+                            padding: "16px 20px",
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            boxShadow: "0 10px 40px rgba(0,0,0,0.6)",
+                            minWidth: 260,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 12
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                {backgroundProperty === 'opacity' ? 'Opacidad' : backgroundProperty === 'blur' ? 'Desenfoque' : 'Efectos'}
+                              </span>
+                              <button onClick={() => setBackgroundProperty(null)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18, padding: 0, cursor: 'pointer' }}>×</button>
+                            </div>
+
+                            {backgroundProperty === 'more' ? (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                <button onClick={() => updateState({ grain: !state.grain })}
+                                  style={{
+                                    padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700,
+                                    background: state.grain ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)',
+                                    color: state.grain ? '#000' : '#fff'
+                                  }}>Ruido</button>
+                                <button onClick={() => updateState({ bgVignette: !state.bgVignette })}
+                                  style={{
+                                    padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700,
+                                    background: state.bgVignette ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)',
+                                    color: state.bgVignette ? '#000' : '#fff'
+                                  }}>Viñeta</button>
+                                <button onClick={() => updateState({ grainBgOnly: !state.grainBgOnly })}
+                                  style={{
+                                    padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700,
+                                    background: state.grainBgOnly ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)',
+                                    color: state.grainBgOnly ? '#000' : '#fff'
+                                  }}>Solo Fondo (Ruido)</button>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <input
+                                  type="range"
+                                  min={0}
+                                  max={backgroundProperty === 'opacity' ? 100 : 20}
+                                  step={backgroundProperty === 'opacity' ? 1 : 1}
+                                  value={backgroundProperty === 'opacity' ? state.bgOpacity : state.bgBlur}
+                                  onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    if (backgroundProperty === 'opacity') updateState({ bgOpacity: val });
+                                    else updateState({ bgBlur: val });
+                                  }}
+                                  style={{ flex: 1, accentColor: '#3498db', height: 4 }}
+                                />
+                                <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', minWidth: 36, textAlign: 'right' }}>
+                                  {backgroundProperty === 'opacity' ? `${state.bgOpacity}%` : `${state.bgBlur}px`}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* BG Shuffle Button (Left) */}
+                    <button
+                      className="ps-tool-icon-btn btn-press"
+                      onClick={() => {
+                        const pool = [
+                          { bgType: 'solid', bgColor: '#ffffff' },
+                          { bgType: 'solid', bgColor: '#1c1c1e' },
+                          { bgType: 'solid', bgColor: '#ef4444' },
+                          { bgType: 'gradient', bgColor: 'sky' },
+                          { bgType: 'gradient', bgColor: 'fire' },
+                          { bgType: 'mesh', bgColor: 'aurora' },
+                          { bgType: 'mesh', bgColor: 'ocean' },
+                          { bgType: 'wallpaper', bgColor: 'nature-1' },
+                        ];
+                        const pick = pool[Math.floor(Math.random() * pool.length)];
+                        updateState(pick as any);
+                      }}
+                      style={{
+                        pointerEvents: "auto",
+                        background: "#1c1c1e",
+                        color: "#fff",
+                        border: "none",
+                        width: 44,
+                        height: 44,
+                        borderRadius: 22,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Shuffle size={20} />
+                    </button>
+
+                    {/* Property Pill (Center) */}
+                    <div
+                      style={{
+                        pointerEvents: "auto",
+                        display: "flex",
+                        background: "#1c1c1e",
+                        borderRadius: 30,
+                        padding: 4,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                      }}
+                    >
+                      <button
+                        className="btn-press"
+                        onClick={() => setBackgroundProperty(backgroundProperty === 'opacity' ? null : 'opacity')}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          background: backgroundProperty === 'opacity' ? "#f5f5f7" : "transparent",
+                          color: backgroundProperty === 'opacity' ? "#000" : "rgba(255,255,255,0.4)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "none",
+                        }}
+                      >
+                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" />
+                          <path d="M8 12h8" />
+                        </svg>
+                      </button>
+                      <button
+                        className="btn-press"
+                        onClick={() => setBackgroundProperty(backgroundProperty === 'blur' ? null : 'blur')}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          background: backgroundProperty === 'blur' ? "#f5f5f7" : "transparent",
+                          color: backgroundProperty === 'blur' ? "#000" : (state.bgBlur > 0 ? "#fff" : "rgba(255,255,255,0.4)"),
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "none",
+                        }}
+                      >
+                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" />
+                          <path d="M8 12h8" />
+                          <path d="M12 8v8" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* More Options (Right) */}
+                    <button
+                      className="ps-tool-icon-btn btn-press"
+                      onClick={() => setBackgroundProperty(backgroundProperty === 'more' ? null : 'more')}
+                      style={{
+                        pointerEvents: "auto",
+                        background: backgroundProperty === 'more' ? "#fff" : "#1c1c1e",
+                        color: backgroundProperty === 'more' ? "#000" : "#fff",
                         border: "none",
                         width: 44,
                         height: 44,
