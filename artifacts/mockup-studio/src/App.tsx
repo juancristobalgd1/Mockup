@@ -65,6 +65,8 @@ import {
   Activity,
   Trash2,
   Eraser,
+  LayoutList,
+  MoreVertical,
 } from "lucide-react";
 import { GridOverlay } from "./components/ui/GridOverlay";
 import { getModelById, DEVICE_MODELS, DEVICE_GROUPS } from "./data/devices";
@@ -1312,7 +1314,7 @@ function Editor() {
                       action: () => updateState({ annotateMode: true }),
                     },
                   ].map((tool) => {
-                    const isActive = state.annotateTool === tool.id || (tool.id === 'shapes' && ['rect', 'arrow', 'circle'].includes(state.annotateTool));
+                    const isActive = state.annotateTool === tool.id || (tool.id === 'shapes' && (state.annotateTool as any) && ['rect', 'arrow', 'circle'].includes(state.annotateTool as any));
                     return (
                       <div key={tool.id} className="ps-tool-thumb-box">
                         <button
@@ -1376,7 +1378,7 @@ function Editor() {
                         <div key={sh.id} className="ps-tool-thumb-box">
                           <button
                             className={`ps-tool-thumb btn-press ${isActive ? "active" : ""}`}
-                            onClick={() => updateState({ annotateTool: sh.id === 'arrow' ? 'arrow' : 'rect', annotateShape: sh.id, annotateMode: true })}
+                            onClick={() => updateState({ annotateTool: sh.id === 'arrow' ? 'arrow' : 'rect', annotateShape: sh.id as any, annotateMode: true })}
                             style={{
                               padding: 0,
                               width: 60,
@@ -1422,15 +1424,34 @@ function Editor() {
                         icon: <Pipette size={24} />,
                         label: "Gotero",
                       },
+                      {
+                        id: "transparent",
+                        icon: <div style={{ width: 24, height: 24, borderRadius: 4, backgroundImage: 'linear-gradient(45deg, #444 25%, transparent 25%), linear-gradient(-45deg, #444 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #444 75%), linear-gradient(-45deg, transparent 75%, #444 75%)', backgroundSize: '8px 8px', backgroundColor: '#222' }} />,
+                        label: "Transp.",
+                      },
+                      {
+                        id: "mesh",
+                        icon: <Sparkles size={24} />,
+                        label: "Mesh",
+                      },
+                      {
+                        id: "wallpaper",
+                        icon: <LayoutList size={24} />,
+                        label: "Walls",
+                      },
                     ].map((tool) => (
                       <div key={tool.id} className="ps-tool-thumb-box">
                         <button
                           className="ps-tool-thumb btn-press"
                           onClick={() => {
-                            updateState({
-                              bgType: tool.id as any,
-                              showBgSettings: false,
-                            });
+                            if (tool.id === 'transparent') {
+                              updateState({ bgType: 'transparent', bgColor: 'transparent', bgImage: null, bgVideo: null });
+                            } else {
+                              updateState({
+                                bgType: tool.id as any,
+                                showBgSettings: false,
+                              });
+                            }
                             setBackgroundPanelView('content');
                           }}
                         >
