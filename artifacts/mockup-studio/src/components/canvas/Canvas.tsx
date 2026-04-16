@@ -82,7 +82,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
   const getBackground = (): React.CSSProperties => {
     if (state.bgType === 'animated') return {};
     if (state.bgType === 'video') return { background: '#090b10' };
-    if (state.bgType === 'none') return { background: '#111113' };
+    if (state.bgType === 'none') return { background: '#ffffff' };
     if (state.bgType === 'transparent') return {
       backgroundImage: 'linear-gradient(45deg, #2a2a2a 25%, transparent 25%), linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #2a2a2a 75%), linear-gradient(-45deg, transparent 75%, #2a2a2a 75%)',
       backgroundSize: '16px 16px',
@@ -92,11 +92,11 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
     if (state.bgType === 'solid') return { background: state.bgColor };
     if (state.bgType === 'gradient') {
       const g = GRADIENTS.find(g => g.id === state.bgColor);
-      return { background: g ? g.css : GRADIENTS[0].css };
+      return { background: g ? g.css : '#ffffff' };
     }
     if (state.bgType === 'mesh') {
       const m = MESH_GRADIENTS.find(m => m.id === state.bgColor);
-      return { background: m ? m.css : MESH_GRADIENTS[0].css };
+      return { background: m ? m.css : '#ffffff' };
     }
     if (state.bgType === 'pattern') {
       const p = PATTERNS.find(p => p.id === state.bgPattern);
@@ -115,7 +115,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
     }
     if (state.bgType === 'wallpaper') {
       const w = WALLPAPERS.find(w => w.id === state.bgColor);
-      return { background: w ? w.css : GRADIENTS[0].css };
+      return { background: w ? w.css : '#ffffff' };
     }
     if (state.bgType === 'image' && state.bgImage) {
       return {
@@ -124,7 +124,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
         backgroundPosition: 'center',
       };
     }
-    return { background: GRADIENTS[0].css };
+    return { background: '#ffffff' };
   };
 
   const handleTextDrag = (id: string, e: React.MouseEvent) => {

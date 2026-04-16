@@ -974,7 +974,27 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                     {[{ id: 'heart', label: 'Corazón', icon: '❤️' }, { id: 'star_s', label: 'Estrella', icon: '⭐' }, { id: 'fire', label: 'Fuego', icon: '🔥' }, { id: 'rocket', label: 'Cohete', icon: '🚀' }, { id: 'crown_s', label: 'Corona', icon: '👑' },].map((tool) => (<div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { const newSticker: any = { id: Math.random().toString(36).substr(2, 9), kind: 'sticker', stickerId: tool.id, icon: tool.icon, position: { x: 50, y: 50 }, size: 40 }; updateState({ annotateStrokes: [...state.annotateStrokes, newSticker] }); setAnnotatePanelView('hub'); }} style={{ padding: 0, width: 60, height: 60, borderRadius: 12, background: "#1c1c1e", border: "1px solid rgba(255,255,255,0.1)", display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div>))}
                   </>
                 )}
-                {mobileTab === "background" && backgroundPanelView === 'hub' && [{ id: "solid", icon: <Palette size={24} />, label: "Sólido" }, { id: "gradient", icon: <Blend size={24} />, label: "Degradado" }, { id: "image", icon: <ImageIcon size={24} />, label: "Imagen" }, { id: "color", icon: <Pipette size={24} />, label: "Gotero" }, { id: "transparent", icon: <div style={{ width: 24, height: 24, borderRadius: 4, backgroundImage: 'linear-gradient(45deg, #444 25%, transparent 25%), linear-gradient(-45deg, #444 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #444 75%), linear-gradient(-45deg, transparent 75%, #444 75%)', backgroundSize: '8px 8px', backgroundColor: '#222' }} />, label: "Transp." }, { id: "mesh", icon: <Sparkles size={24} />, label: "Mesh" }, { id: "wallpaper", icon: <LayoutList size={24} />, label: "Walls" },].map((tool) => (<div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { if (tool.id === 'transparent') { updateState({ bgType: 'transparent', bgColor: 'transparent', bgImage: null, bgVideo: null }); } else { updateState({ bgType: tool.id as any, showBgSettings: false }); } setBackgroundPanelView('content'); }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div>))}
+                {mobileTab === "background" && backgroundPanelView === 'hub' && [
+                  { id: "none", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>, label: "Ninguno" },
+                  { id: "solid", icon: <Palette size={24} />, label: "Sólido" }, 
+                  { id: "gradient", icon: <Blend size={24} />, label: "Degradado" }, 
+                  { id: "image", icon: <ImageIcon size={24} />, label: "Imagen" }, 
+                  { id: "color", icon: <Pipette size={24} />, label: "Gotero" }, 
+                  { id: "transparent", icon: <div style={{ width: 24, height: 24, borderRadius: 4, backgroundImage: 'linear-gradient(45deg, #444 25%, transparent 25%), linear-gradient(-45deg, #444 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #444 75%), linear-gradient(-45deg, transparent 75%, #444 75%)', backgroundSize: '8px 8px', backgroundColor: '#222' }} />, label: "Transp." }, 
+                  { id: "mesh", icon: <Sparkles size={24} />, label: "Mesh" }, 
+                  { id: "wallpaper", icon: <LayoutList size={24} />, label: "Walls" },
+                ].map((tool) => (<div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { 
+                  if (tool.id === 'none') {
+                    updateState({ bgType: 'none', bgImage: null, bgVideo: null });
+                    setMobileTab(null);
+                  } else if (tool.id === 'transparent') { 
+                    updateState({ bgType: 'transparent', bgColor: 'transparent', bgImage: null, bgVideo: null }); 
+                    setBackgroundPanelView('content');
+                  } else { 
+                    updateState({ bgType: tool.id as any, showBgSettings: false }); 
+                    setBackgroundPanelView('content');
+                  } 
+                }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div>))}
                 {mobileTab === "canvas" && scenePanelView === 'hub' && (
                   <>
                     {[{ id: "estudio", icon: <Sun size={24} />, label: "Estudio" }, { id: "luz", icon: <Lamp size={24} />, label: "Luz" },].map((tool) => (<div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { updateState({ sceneSubTab: tool.id as any }); setScenePanelView('content'); }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div>))}

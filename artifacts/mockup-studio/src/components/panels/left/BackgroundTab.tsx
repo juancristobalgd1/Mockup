@@ -98,10 +98,10 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
 
   const NO_POPUP_TYPES = new Set(['none', 'transparent']);
   const bgTypeCards = [
-    { id: 'none', label: 'Ninguno', preview: { background: '#111113' }, icon:
+    { id: 'none', label: 'Ninguno', preview: { background: '#ffffff' }, icon:
         <svg width="16" height="16" viewBox="0 0 22 22" fill="none">
-          <circle cx="11" cy="11" r="9" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5"/>
-          <line x1="4" y1="4" x2="18" y2="18" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" strokeLinecap="round"/>
+          <circle cx="11" cy="11" r="9" stroke="rgba(0,0,0,0.2)" strokeWidth="1.5"/>
+          <line x1="4" y1="4" x2="18" y2="18" stroke="rgba(0,0,0,0.2)" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
     },
     { id: 'solid', label: 'Sólido', preview: { background: state.bgType === 'solid' ? state.bgColor : '#374151' } },
@@ -152,8 +152,53 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
     <div className="panel-text-contrast">
       <style>{ANIMATED_BG_KEYFRAMES}</style>
 
+      {(!isMobile || mobileView === 'hub') && (
+        <Section label="Tipo de Fondo">
+          <div 
+            style={{ 
+              display: 'flex', 
+              gap: 10, 
+              overflowX: 'auto', 
+              paddingBottom: 12,
+              marginBottom: 4,
+              scrollSnapType: 'x mandatory'
+            }} 
+            className="hide-scrollbars"
+          >
+            {bgTypeCards.map((card) => {
+              const active = state.bgType === card.id;
+              return (
+                <button
+                  key={card.id}
+                  onClick={() => updateState({ bgType: card.id as any, bgImage: card.id !== 'image' ? state.bgImage : state.bgImage, bgVideo: card.id !== 'video' ? state.bgVideo : state.bgVideo })}
+                  style={{
+                    ...SWATCH_BTN(active),
+                    scrollSnapAlign: 'start',
+                    minWidth: 70
+                  }}
+                >
+                  <div style={{ 
+                    ...THUMB, 
+                    ...(card.preview || {}),
+                    background: card.preview ? card.preview.background : (card.id === 'image' ? (state.bgImage ? `url(${state.bgImage})` : '#333') : (card.id === 'video' ? '#000' : 'transparent')),
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    {card.icon}
+                  </div>
+                  <span style={SWATCH_LABEL(active)}>{card.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </Section>
+      )}
+
       {/* Primary Contextual Options based on state.bgType */}
-      {(!isMobile || !state.showBgSettings) && (
+      {(!isMobile || mobileView === 'content') && (
         <div style={{ marginBottom: 20 }}>
         {state.bgType === 'solid' && (
           <Section label="Color Sólido">
