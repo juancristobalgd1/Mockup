@@ -134,6 +134,7 @@ function Editor() {
   const [annotateProperty, setAnnotateProperty] = useState<'size' | 'opacity' | 'color' | 'hardness' | null>(null);
   const [overlayProperty, setOverlayProperty] = useState<'color' | 'opacity' | 'light' | 'more' | null>(null);
   const [backgroundProperty, setBackgroundProperty] = useState<'color' | 'opacity' | 'blur' | 'more' | null>(null);
+  const [deviceProperty, setDeviceProperty] = useState<'color' | 'reflection' | 'shadow' | 'more' | null>(null);
   const [timelineCollapsed, setTimelineCollapsed] = useState(false);
 
   const currentModel = getModelById(state.deviceModel);
@@ -1332,6 +1333,218 @@ function Editor() {
                     </button>
                   </>
                 )}
+                {mobileTab === "device" && (
+                  <>
+                    {/* Tooltips Layer */}
+                    <AnimatePresence>
+                      {deviceProperty && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          style={{
+                            position: "absolute",
+                            bottom: 60,
+                            left: 0,
+                            right: 0,
+                            zIndex: 200,
+                            display: "flex",
+                            justifyContent: "center",
+                            pointerEvents: "auto"
+                          }}
+                        >
+                          <div style={{
+                            background: "rgba(30,30,32,0.95)",
+                            backdropFilter: "blur(20px)",
+                            borderRadius: 20,
+                            padding: "16px 20px",
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            boxShadow: "0 10px 40px rgba(0,0,0,0.6)",
+                            minWidth: 260,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 12
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                {deviceProperty === 'color' ? 'Material / Color' : deviceProperty === 'reflection' ? 'Reflexión' : deviceProperty === 'shadow' ? 'Sombra' : 'Ajustes'}
+                              </span>
+                              <button onClick={() => setDeviceProperty(null)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18, padding: 0, cursor: 'pointer' }}>×</button>
+                            </div>
+
+                            {deviceProperty === 'color' ? (
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+                                <button
+                                  onClick={() => {
+                                    const modelOrig = currentModel.frame === 'aluminum' ? 'silver' : 
+                                                     currentModel.frame === 'glass' ? 'spaceblack' : 
+                                                     'titanium';
+                                    updateState({ clayMode: false, deviceColor: modelOrig });
+                                  }}
+                                  style={{
+                                    width: 38, height: 38, borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #a7a7a1 0%, #2e2e2e 100%)',
+                                    border: !state.clayMode ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)',
+                                    cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                  }}
+                                  title="Original"
+                                >
+                                  <Smartphone size={14} color="#fff" />
+                                </button>
+                                {['titanium', 'spaceblack', 'silver', 'gold', 'blue'].map(c => (
+                                  <button
+                                    key={c}
+                                    onClick={() => updateState({ deviceColor: c, clayMode: state.clayMode })}
+                                    style={{
+                                      width: 38, height: 38, borderRadius: '50%', background: c === 'titanium' ? '#a7a7a1' : c === 'spaceblack' ? '#2e2e2e' : c === 'silver' ? '#e3e3e3' : c === 'gold' ? '#f5e1c4' : '#4b5e7a',
+                                      border: state.deviceColor === c && state.clayMode ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)', cursor: 'pointer'
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            ) : deviceProperty === 'more' ? (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                <button onClick={() => updateState({ clayMode: !state.clayMode })}
+                                  style={{
+                                    padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700,
+                                    background: state.clayMode ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)',
+                                    color: state.clayMode ? '#000' : '#fff'
+                                  }}>Modo Clay</button>
+                                <button onClick={() => updateState({ deviceLandscape: !state.deviceLandscape })}
+                                  style={{
+                                    padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700,
+                                    background: state.deviceLandscape ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)',
+                                    color: state.deviceLandscape ? '#000' : '#fff'
+                                  }}>Horizontal</button>
+                                <button onClick={() => updateState({ reflection: !state.reflection })}
+                                  style={{
+                                    padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700,
+                                    background: state.reflection ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)',
+                                    color: state.reflection ? '#000' : '#fff'
+                                  }}>Reflexión</button>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <input
+                                  type="range"
+                                  min={0}
+                                  max={100}
+                                  step={1}
+                                  value={deviceProperty === 'reflection' ? state.reflectionOpacity * 100 : state.contactShadowOpacity * 100}
+                                  onChange={(e) => {
+                                    const val = Number(e.target.value) / 100;
+                                    if (deviceProperty === 'reflection') updateState({ reflectionOpacity: val, reflection: true });
+                                    else updateState({ contactShadowOpacity: val });
+                                  }}
+                                  style={{ flex: 1, accentColor: '#3498db', height: 4 }}
+                                />
+                                <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', minWidth: 36, textAlign: 'right' }}>
+                                  {deviceProperty === 'reflection' ? `${Math.round(state.reflectionOpacity * 100)}%` : `${Math.round(state.contactShadowOpacity * 100)}%`}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Device Material Button (Left) */}
+                    <button
+                      className="ps-tool-icon-btn btn-press"
+                      onClick={() => setDeviceProperty(deviceProperty === 'color' ? null : 'color')}
+                      style={{
+                        pointerEvents: "auto",
+                        background: deviceProperty === 'color' ? "#fff" : "#1c1c1e",
+                        color: deviceProperty === 'color' ? "#000" : "#fff",
+                        border: "none",
+                        width: 44,
+                        height: 44,
+                        borderRadius: 22,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                        position: "relative",
+                        overflow: "hidden",
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Palette size={20} />
+                    </button>
+
+                    {/* Property Pill (Center) */}
+                    <div
+                      style={{
+                        pointerEvents: "auto",
+                        display: "flex",
+                        background: "#1c1c1e",
+                        borderRadius: 30,
+                        padding: 4,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                      }}
+                    >
+                      <button
+                        className="btn-press"
+                        onClick={() => setDeviceProperty(deviceProperty === 'reflection' ? null : 'reflection')}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          background: deviceProperty === 'reflection' ? "#f5f5f7" : "transparent",
+                          color: deviceProperty === 'reflection' ? "#000" : (state.reflection ? "#fff" : "rgba(255,255,255,0.4)"),
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "none",
+                        }}
+                      >
+                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" />
+                          <path d="M8 12h8" />
+                        </svg>
+                      </button>
+                      <button
+                        className="btn-press"
+                        onClick={() => setDeviceProperty(deviceProperty === 'shadow' ? null : 'shadow')}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          background: deviceProperty === 'shadow' ? "#f5f5f7" : "transparent",
+                          color: deviceProperty === 'shadow' ? "#000" : (state.contactShadowOpacity > 0 ? "#fff" : "rgba(255,255,255,0.4)"),
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "none",
+                        }}
+                      >
+                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" />
+                          <path d="M8 12h8" />
+                          <path d="M12 8v8" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* More Options (Right) */}
+                    <button
+                      className="ps-tool-icon-btn btn-press"
+                      onClick={() => setDeviceProperty(deviceProperty === 'more' ? null : 'more')}
+                      style={{
+                        pointerEvents: "auto",
+                        background: deviceProperty === 'more' ? "#fff" : "#1c1c1e",
+                        color: deviceProperty === 'more' ? "#000" : "#fff",
+                        border: "none",
+                        width: 44,
+                        height: 44,
+                        borderRadius: 22,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                      }}
+                    >
+                      <MoreHorizontal size={20} />
+                    </button>
+                  </>
+                )}
               </div>
 
               {/* Tier 1: Contextual Tools (icons with labels) */}
@@ -1656,28 +1869,6 @@ function Editor() {
                       </div>
                     ))}
 
-                    <div
-                      style={{
-                        width: 1,
-                        background: "rgba(255,255,255,0.12)",
-                        height: 64,
-                        margin: "0 4px",
-                        borderRadius: 2,
-                      }}
-                    />
-
-                    <div className="ps-tool-thumb-box">
-                      <button
-                        className="ps-tool-thumb btn-press"
-                        onClick={() => {
-                          updateState({ showBgSettings: true });
-                          setBackgroundPanelView('content');
-                        }}
-                      >
-                        <Settings2 size={24} />
-                      </button>
-                      <span className="ps-tool-label">Ajustes</span>
-                    </div>
                   </>
                 )}
 
