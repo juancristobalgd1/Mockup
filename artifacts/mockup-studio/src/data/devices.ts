@@ -156,6 +156,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     screenMeshName: 'Object_55',
     useOriginalMaterials: true,
   },
+
   {
     id: 'iphone-16-pro-max',
     label: 'iPhone 16 Pro Max',
@@ -170,7 +171,10 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     hasActionButton: true, hasCameraControl: true,
     hasColors: true, hasOrientation: true,
     accent: '#8c7c6e',
-  
+    glbUrl: '/models/iphone16promax.glb',
+    skipOverlay: true,
+    screenMeshName: 'Object_55',
+    useOriginalMaterials: true,
   },
   // ── Android ───────────────────────────────────────────────────────
   {
