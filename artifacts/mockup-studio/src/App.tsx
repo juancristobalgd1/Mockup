@@ -881,10 +881,16 @@ function Editor() {
               </div>
 
               {/* Tier 1: Contextual Tools (icons with labels) */}
-              <div
-                className="ps-tier-tools"
-                style={{ padding: "20px 20px 10px" }}
-              >
+              {((mobileTab === 'presets') ||
+                (mobileTab === 'device' && devicePanelView === 'hub') ||
+                (mobileTab === 'annotate') ||
+                (mobileTab === 'background' && backgroundPanelView === 'hub') ||
+                (mobileTab === 'canvas' && scenePanelView === 'hub') ||
+                (mobileTab === 'labels' && labelsPanelView === 'hub')) && (
+                <div
+                  className="ps-tier-tools"
+                  style={{ padding: "20px 20px 10px" }}
+                >
                 {mobileTab === "presets" &&
                   PRESENT_POSES.map((pose) => {
                     const active = state.cameraAngle === pose.id;
@@ -1288,6 +1294,7 @@ function Editor() {
                   </>
                 )}
               </div>
+              )}
 
               {/* Tier 2: Action Pill (Photoshop Style Primary Action) */}
               {mobileTab === "annotate" && (
