@@ -88,7 +88,16 @@ export interface AnnotateTextStroke {
   position: AnnotatePoint;
 }
 
-export type AnyAnnotateStroke = AnnotateFreeStroke | AnnotateShapeStroke | AnnotateTextStroke;
+export interface AnnotateStickerStroke {
+  id: string;
+  kind: 'sticker';
+  stickerId: string;
+  icon: string;
+  position: AnnotatePoint;
+  size: number;
+}
+
+export type AnyAnnotateStroke = AnnotateFreeStroke | AnnotateShapeStroke | AnnotateTextStroke | AnnotateStickerStroke;
 
 export interface AppState {
   deviceModel: string;

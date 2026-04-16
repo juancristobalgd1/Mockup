@@ -129,7 +129,7 @@ function Editor() {
   const [devicePanelView, setDevicePanelView] = useState<'hub' | 'content'>('hub');
   const [scenePanelView, setScenePanelView] = useState<'hub' | 'content'>('hub');
   const [labelsPanelView, setLabelsPanelView] = useState<'hub' | 'content'>('hub');
-  const [annotatePanelView, setAnnotatePanelView] = useState<'hub' | 'shapes'>('hub');
+  const [annotatePanelView, setAnnotatePanelView] = useState<'hub' | 'shapes' | 'stickers'>('hub');
   const [annotateProperty, setAnnotateProperty] = useState<'size' | 'opacity' | 'color' | 'hardness' | 'more' | null>(null);
   const [overlayProperty, setOverlayProperty] = useState<'color' | 'opacity' | 'light' | 'more' | null>(null);
   const [backgroundProperty, setBackgroundProperty] = useState<'color' | 'opacity' | 'blur' | 'more' | null>(null);
@@ -1783,6 +1783,12 @@ function Editor() {
                       icon: <Eraser size={24} />,
                       action: () => updateState({ annotateTool: 'eraser', annotateMode: true }),
                     },
+                    {
+                      id: "stickers",
+                      label: "Stickers",
+                      icon: <Sparkles size={24} />,
+                      action: () => setAnnotatePanelView('stickers'),
+                    },
                   ].map((tool) => {
                     const isActive = state.annotateTool === tool.id || (tool.id === 'shapes' && (state.annotateTool as any) && ['rect', 'arrow', 'circle'].includes(state.annotateTool as any));
                     return (
@@ -1865,6 +1871,74 @@ function Editor() {
                             {sh.icon}
                           </button>
                           <span className="ps-tool-label" style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.4)' }}>{sh.label}</span>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+ 
+                {mobileTab === "annotate" && annotatePanelView === 'stickers' && (
+                  <>
+                    <div className="ps-tool-thumb-box" style={{ paddingRight: 12, marginRight: 12, borderRight: '1px solid rgba(255,255,255,0.1)' }}>
+                      <button
+                        className="ps-tool-thumb btn-press"
+                        onClick={() => setAnnotatePanelView('hub')}
+                        style={{
+                          width: 60,
+                          height: 60,
+                          borderRadius: 12,
+                          background: "rgba(255,255,255,0.05)",
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#fff'
+                        }}
+                      >
+                        <ArrowLeft size={24} />
+                      </button>
+                      <span className="ps-tool-label">Volver</span>
+                    </div>
+                    {[
+                      { id: 'heart', label: 'Corazón', icon: '❤️' },
+                      { id: 'star_s', label: 'Estrella', icon: '⭐' },
+                      { id: 'fire', label: 'Fuego', icon: '🔥' },
+                      { id: 'rocket', label: 'Cohete', icon: '🚀' },
+                      { id: 'crown_s', label: 'Corona', icon: '👑' },
+                    ].map((tool) => {
+                      return (
+                        <div key={tool.id} className="ps-tool-thumb-box">
+                          <button
+                            className="ps-tool-thumb btn-press"
+                            onClick={() => {
+                                const newSticker: any = {
+                                  id: Math.random().toString(36).substr(2, 9),
+                                  kind: 'sticker',
+                                  stickerId: tool.id,
+                                  icon: tool.icon,
+                                  position: { x: 50, y: 50 },
+                                  size: 40
+                                };
+                                updateState({
+                                  annotateStrokes: [...state.annotateStrokes, newSticker]
+                                });
+                                setAnnotatePanelView('hub');
+                            }}
+                            style={{
+                              padding: 0,
+                              width: 60,
+                              height: 60,
+                              borderRadius: 12,
+                              background: "#1c1c1e",
+                              border: "1px solid rgba(255,255,255,0.1)",
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 24
+                            }}
+                          >
+                            {tool.icon}
+                          </button>
+                          <span className="ps-tool-label">{tool.label}</span>
                         </div>
                       );
                     })}

@@ -52,21 +52,30 @@ function getBBox(s: AnyStroke): BBox {
     const y2 = Math.max(s.start.y, s.end.y) + pad;
     return { x, y, w: Math.max(x2 - x, 4), h: Math.max(y2 - y, 4) };
   }
-  // text — use measureText for accurate width
-  const ctx = getMeasureCtx();
-  let textWidth = s.text.length * s.fontSize * 0.6; // fallback
-  if (ctx) {
-    const fontStr = [s.italic ? 'italic' : '', s.bold !== false ? 'bold' : ''].filter(Boolean).join(' ');
-    ctx.font = `${fontStr} ${s.fontSize}px Inter, sans-serif`;
-    const m = ctx.measureText(s.text);
-    textWidth = m.width;
+  if (s.kind === 'text') {
+    // text — use measureText for accurate width
+    const ctx = getMeasureCtx();
+    let textWidth = s.text.length * s.fontSize * 0.6; // fallback
+    if (ctx) {
+      const fontStr = [s.italic ? 'italic' : '', s.bold !== false ? 'bold' : ''].filter(Boolean).join(' ');
+      ctx.font = `${fontStr} ${s.fontSize}px Inter, sans-serif`;
+      const m = ctx.measureText(s.text);
+      textWidth = m.width;
+    }
+    const textHeight = s.fontSize * 1.4;
+    const align = s.align ?? 'left';
+    const bboxX = align === 'center' ? s.position.x - textWidth / 2
+                : align === 'right'  ? s.position.x - textWidth
+                : s.position.x;
+    return { x: bboxX, y: s.position.y - s.fontSize, w: Math.max(textWidth, 4), h: Math.max(textHeight, 4) };
   }
-  const textHeight = s.fontSize * 1.4;
-  const align = s.align ?? 'left';
-  const bboxX = align === 'center' ? s.position.x - textWidth / 2
-              : align === 'right'  ? s.position.x - textWidth
-              : s.position.x;
-  return { x: bboxX, y: s.position.y - s.fontSize, w: Math.max(textWidth, 4), h: Math.max(textHeight, 4) };
+  // sticker
+  return { 
+    x: s.position.x - s.size / 2, 
+    y: s.position.y - s.size / 2, 
+    w: s.size, 
+    h: s.size 
+  };
 }
 
 function hitTest(s: AnyStroke, p: Point): boolean {
@@ -98,7 +107,10 @@ function translateStroke(s: AnyStroke, dx: number, dy: number): AnyStroke {
   if (s.kind === 'shape') {
     return { ...s, start: { x: s.start.x + dx, y: s.start.y + dy }, end: { x: s.end.x + dx, y: s.end.y + dy } };
   }
-  return { ...s, position: { x: s.position.x + dx, y: s.position.y + dy } };
+  if (s.kind === 'text' || s.kind === 'sticker') {
+    return { ...s, position: { x: s.position.x + dx, y: s.position.y + dy } };
+  }
+  return s;
 }
 
 // Resize: use linear bbox transform for all stroke kinds to preserve direction/shape
@@ -116,8 +128,15 @@ function resizeStroke(s: AnyStroke, oldBB: BBox, newBB: BBox): AnyStroke {
       end:   { x: mapX(s.end.x),   y: mapY(s.end.y)   },
     };
   }
-  // text: map position
-  return { ...s, position: { x: mapX(s.position.x), y: mapY(s.position.y) } };
+  if (s.kind === 'text' || s.kind === 'sticker') {
+    const nextSize = s.kind === 'sticker' ? Math.max(newBB.w, newBB.h) : (s as TextStroke).fontSize;
+    return { 
+      ...s, 
+      position: { x: mapX(s.position.x), y: mapY(s.position.y) },
+      ...(s.kind === 'sticker' ? { size: nextSize } : {})
+    } as AnyStroke;
+  }
+  return s;
 }
 
 function applyHandle(handle: HandleName, oldBB: BBox, delta: Point): BBox {
@@ -296,6 +315,12 @@ function redrawStrokes(ctx: CanvasRenderingContext2D, strokes: AnyStroke[]) {
         ctx.restore();
       }
       ctx.textAlign = 'left'; // reset
+    } else if (s.kind === 'sticker') {
+      ctx.globalAlpha = 1;
+      ctx.font = `${s.size}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(s.icon, s.position.x, s.position.y);
     }
     ctx.restore();
   }
