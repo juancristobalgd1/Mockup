@@ -4,6 +4,7 @@ import { Section } from '../../ui/PanelUI';
 import { DeviceThumbnail } from '../../ui/DeviceThumbnails';
 import { DEVICE_MODELS, getModelById } from '../../../data/devices';
 import { IPHONE_COLORS } from '../../../data/panelConstants';
+import { Smartphone } from 'lucide-react';
 
 export const DeviceTab = () => {
   const { state, updateState } = useApp();
@@ -66,8 +67,11 @@ export const DeviceTab = () => {
                     width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
                     background: 'conic-gradient(from 0deg, #ff4d4d, #f9cb28, #7cfc00, #00ffff, #4d4dff, #ff00ff, #ff4d4d)',
                     border: state.deviceColor === 'original' ? '2.5px solid #fff' : '2px solid rgba(255,255,255,0.2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}
-                />
+                >
+                  <Smartphone size={14} color="#fff" />
+                </button>
                 {IPHONE_COLORS.filter(c => c.id !== 'original').map(c => {
                   const isActive = state.deviceColor === c.id;
                   return (

@@ -1456,15 +1456,12 @@ function Editor() {
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
                                 <button
                                   onClick={() => {
-                                    const modelOrig = currentModel.frame === 'aluminum' ? 'silver' : 
-                                                     currentModel.frame === 'glass' ? 'spaceblack' : 
-                                                     'titanium';
-                                    updateState({ clayMode: false, deviceColor: modelOrig });
+                                    updateState({ clayMode: false, deviceColor: 'original' });
                                   }}
                                   style={{
                                     width: 38, height: 38, borderRadius: '50%',
-                                    background: 'linear-gradient(135deg, #a7a7a1 0%, #2e2e2e 100%)',
-                                    border: !state.clayMode ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)',
+                                    background: 'conic-gradient(from 0deg, #ff4d4d, #f9cb28, #7cfc00, #00ffff, #4d4dff, #ff00ff, #ff4d4d)',
+                                    border: state.deviceColor === 'original' && !state.clayMode ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)',
                                     cursor: 'pointer',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                                   }}
@@ -1703,51 +1700,6 @@ function Editor() {
                         </div>
                       );
                     })}
-
-                    <div
-                      style={{
-                        width: 1,
-                        background: "rgba(255,255,255,0.12)",
-                        height: 64,
-                        margin: "0 4px",
-                        borderRadius: 2,
-                      }}
-                    />
-
-                    <div className="ps-tool-thumb-box">
-                      <button
-                        className="ps-tool-thumb btn-press"
-                        onClick={() => {
-                          updateState({ deviceSubTab: "colors" });
-                          setDevicePanelView('content');
-                        }}
-                      >
-                        <Palette size={24} />
-                      </button>
-                      <span className="ps-tool-label">Color</span>
-                    </div>
-
-                    <div className="ps-tool-thumb-box">
-                      <button
-                        className="ps-tool-thumb btn-press"
-                        onClick={() => {
-                          updateState({
-                            deviceSubTab:
-                              state.deviceType === "browser"
-                                ? "browser-theme"
-                                : "orientation",
-                          });
-                          setDevicePanelView('content');
-                        }}
-                      >
-                        <RotateCw size={24} />
-                      </button>
-                      <span className="ps-tool-label">
-                        {state.deviceType === "browser"
-                          ? "Tema"
-                          : "Orientación"}
-                      </span>
-                    </div>
                   </>
                 )}
 
