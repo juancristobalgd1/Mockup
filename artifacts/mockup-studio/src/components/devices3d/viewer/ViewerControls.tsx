@@ -1,0 +1,342 @@
+import React, { useRef, useMemo, useEffect, useCallback } from "react";
+import * as THREE from "three";
+import { useThree, useFrame } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
+import { useApp, CameraKeyframe } from "../../../store";
+
+// ── Zoom logic constants/helpers ────────────────────────────────────
+const ZOOM_SLIDER_MIN = 0;
+const ZOOM_SLIDER_MAX = 100;
+
+export function clampZoomSlider(value: number) {
+  return Math.min(ZOOM_SLIDER_MAX, Math.max(ZOOM_SLIDER_MIN, value));
+}
+
+export function distanceToZoomValue(
+  distance: number,
+  minDistance: number,
+  maxDistance: number,
+) {
+  const span = Math.max(0.0001, maxDistance - minDistance);
+  const normalized = (distance - minDistance) / span;
+  return clampZoomSlider((1 - normalized) * 100);
+}
+
+export function zoomValueToDistance(
+  value: number,
+  minDistance: number,
+  maxDistance: number,
+) {
+  const zoomValue = clampZoomSlider(value);
+  const normalized = 1 - zoomValue / 100;
+  return minDistance + (maxDistance - minDistance) * normalized;
+}
+
+// ── Spline-style Camera Interpolation (Spherical) ────────────────
+interface InterpolationResult {
+  position: THREE.Vector3;
+  target: THREE.Vector3;
+}
+
+export function interpolateKeyframes(
+  keyframes: CameraKeyframe[],
+  time: number,
+  curveTension: number = 0.45,
+): InterpolationResult | null {
+  if (keyframes.length === 0) return null;
+  const sorted = [...keyframes].sort((a, b) => a.time - b.time);
+
+  // Before first or after last
+  if (time <= sorted[0].time) {
+    return {
+      position: new THREE.Vector3(...sorted[0].position),
+      target: new THREE.Vector3(...sorted[0].target),
+    };
+  }
+  if (time >= sorted[sorted.length - 1].time) {
+    const last = sorted[sorted.length - 1];
+    return {
+      position: new THREE.Vector3(...last.position),
+      target: new THREE.Vector3(...last.target),
+    };
+  }
+
+  // Find the segment
+  let i = 0;
+  while (i < sorted.length - 1 && sorted[i + 1].time < time) i++;
+  const k0 = sorted[i];
+  const k1 = sorted[i + 1];
+  const t = (time - k0.time) / (k1.time - k0.time);
+
+  // Easing
+  const ease = (v: number) => {
+    const e = k1.easing || "smooth";
+    if (e === "linear") return v;
+    if (e === "ease-in") return v * v;
+    if (e === "ease-out") return v * (2 - v);
+    return v * v * (3 - 2 * v); // smooth
+  };
+  const et = ease(t);
+
+  const pos = new THREE.Vector3();
+  const tar = new THREE.Vector3();
+
+  // Basic lerp (can be expanded to Catmull-Rom for smoother paths)
+  pos.lerpVectors(
+    new THREE.Vector3(...k0.position),
+    new THREE.Vector3(...k1.position),
+    et,
+  );
+  tar.lerpVectors(
+    new THREE.Vector3(...k0.target),
+    new THREE.Vector3(...k1.target),
+    et,
+  );
+
+  return { position: pos, target: tar };
+}
+
+
+
+// ── Per-preset HDR environment intensity ───────────────────────────
+// Kept in the 1.0–1.6 range: enough for realistic reflections without
+// compounding with the direct lights to create overexposure.
+export const ENV_INTENSITY: Record<string, number> = {
+  studio: 1.0,
+  warehouse: 1.12,
+  city: 0.96,
+  sunset: 1.04,
+  forest: 0.9,
+  night: 0.72,
+};
+
+interface HeroOrbitControlsProps {
+  deviceType: string;
+  autoRotate?: boolean;
+  autoRotateSpeed?: number;
+  cameraAngle: string;
+  cameraResetKey: number;
+  moviePlaying: boolean;
+  movieTimeRef: React.MutableRefObject<number>;
+  movieKeyframes: CameraKeyframe[];
+  movieCurveTension: number;
+  cameraStateRef: React.MutableRefObject<{
+    position: [number, number, number];
+    target: [number, number, number];
+  } | null>;
+  liftedControlsRef?: React.MutableRefObject<any>;
+}
+
+export function HeroOrbitControls({
+  deviceType,
+  autoRotate,
+  autoRotateSpeed,
+  cameraAngle,
+  cameraResetKey,
+  moviePlaying,
+  movieTimeRef,
+  movieKeyframes,
+  movieCurveTension,
+  cameraStateRef,
+  liftedControlsRef,
+}: HeroOrbitControlsProps) {
+  const { state, updateState } = useApp();
+  const { camera } = useThree();
+  const controlsRef = useRef<any>(null);
+  const isInteractingRef = useRef(false);
+  const zoomValue = state.zoomValue;
+  const zoomValueRef = useRef(zoomValue);
+  const isFirstMount = useRef(true);
+  const interactionMode = state.interactionMode;
+
+  const isLaptop = deviceType === "macbook";
+  const zoomRange = useMemo(
+    () => ({
+      minDistance: isLaptop ? 1.5 : 0.8,
+      maxDistance: isLaptop ? 14 : 10,
+    }),
+    [isLaptop],
+  );
+
+  const prevDeviceType = useRef(deviceType);
+
+  const animationStateRef = useRef({
+    active: false,
+    pos: new THREE.Vector3(),
+    target: new THREE.Vector3(),
+  });
+
+  const applyPreset = useCallback(
+    (angle: string, isLaptop: boolean) => {
+      const pos = new THREE.Vector3();
+      const tar = new THREE.Vector3();
+      const dist = isLaptop ? 6.2 : 5.6;
+
+      switch (angle) {
+        case "front":
+          pos.set(0, 0, dist);
+          break;
+        case "back":
+          pos.set(0, 0, -dist);
+          break;
+        case "top":
+          pos.set(0, dist, 0.01);
+          break;
+        case "bottom":
+          pos.set(0, -dist, 0.01);
+          break;
+        case "left":
+          pos.set(-dist, 0, 0);
+          break;
+        case "side":
+          pos.set(dist, 0, 0);
+          break;
+        case "hero":
+        default:
+          pos.set(isLaptop ? 1.2 : 1.6, isLaptop ? 0.5 : 0.4, dist);
+          break;
+      }
+
+      animationStateRef.current = { active: true, pos, target: tar };
+      return 0;
+    },
+    [],
+  );
+
+  const mouseButtons = useMemo(
+    () => ({
+      LEFT: interactionMode === "none" ? THREE.MOUSE.ROTATE : -1,
+      MIDDLE: THREE.MOUSE.DOLLY,
+      RIGHT: THREE.MOUSE.ROTATE,
+    }),
+    [interactionMode],
+  );
+
+  const touches = useMemo(
+    () => ({
+      ONE: interactionMode === "none" ? THREE.TOUCH.ROTATE : -1,
+      TWO: THREE.TOUCH.DOLLY_PAN,
+    }),
+    [interactionMode],
+  );
+
+  useEffect(() => {
+    const controls = controlsRef.current;
+    if (!controls || moviePlaying || isInteractingRef.current) return;
+
+    const currentDirection = camera.position.clone().sub(controls.target);
+    const targetDist = zoomValueToDistance(
+      zoomValue,
+      zoomRange.minDistance,
+      zoomRange.maxDistance,
+    );
+    const currentDist = camera.position.distanceTo(controls.target);
+
+    if (Math.abs(targetDist - currentDist) > 0.01) {
+      currentDirection.setLength(targetDist);
+      camera.position.copy(controls.target).add(currentDirection);
+      controls.update();
+    }
+  }, [
+    camera,
+    moviePlaying,
+    zoomRange.maxDistance,
+    zoomRange.minDistance,
+    zoomValue,
+  ]);
+
+  useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+    applyPreset(cameraAngle, isLaptop);
+  }, [cameraResetKey, cameraAngle, isLaptop, applyPreset]);
+
+  useEffect(() => {
+    if (prevDeviceType.current === deviceType) return;
+    prevDeviceType.current = deviceType;
+    applyPreset("hero", deviceType === "macbook");
+  }, [deviceType, applyPreset]);
+
+  useFrame(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    if (liftedControlsRef) liftedControlsRef.current = controls;
+
+    if (
+      moviePlaying &&
+      movieKeyframes.length >= 2 &&
+      !isInteractingRef.current
+    ) {
+      const result = interpolateKeyframes(
+        movieKeyframes,
+        movieTimeRef.current,
+        movieCurveTension,
+      );
+      if (result) {
+        camera.position.copy(result.position);
+        controls.target.copy(result.target);
+      }
+    } else if (animationStateRef.current.active && !isInteractingRef.current) {
+      const target = animationStateRef.current;
+      camera.position.lerp(target.pos, 0.08);
+      controls.target.lerp(target.target, 0.08);
+      controls.update();
+
+      if (
+        camera.position.distanceTo(target.pos) < 0.01 &&
+        controls.target.distanceTo(target.target) < 0.01
+      ) {
+        target.active = false;
+        camera.position.copy(target.pos);
+        controls.target.copy(target.target);
+        controls.update();
+      }
+    }
+
+    cameraStateRef.current = {
+      position: [camera.position.x, camera.position.y, camera.position.z],
+      target: [controls.target.x, controls.target.y, controls.target.z],
+    };
+
+    const nextZoomValue = distanceToZoomValue(
+      camera.position.distanceTo(controls.target),
+      zoomRange.minDistance,
+      zoomRange.maxDistance,
+    );
+    if (Math.abs(nextZoomValue - zoomValueRef.current) > 0.35) {
+      zoomValueRef.current = nextZoomValue;
+      updateState({ zoomValue: nextZoomValue }, true);
+    }
+  }, -2);
+
+  return (
+    <OrbitControls
+      ref={controlsRef}
+      makeDefault
+      enablePan={false}
+      enableZoom={true}
+      enableRotate={interactionMode !== "drag"}
+      minDistance={zoomRange.minDistance}
+      maxDistance={zoomRange.maxDistance}
+      minPolarAngle={Math.PI * 0.05}
+      maxPolarAngle={Math.PI * 0.92}
+      dampingFactor={0.05}
+      enableDamping={true}
+      rotateSpeed={0.7}
+      panSpeed={0.9}
+      zoomSpeed={0.75}
+      mouseButtons={mouseButtons}
+      touches={touches}
+      autoRotate={autoRotate}
+      autoRotateSpeed={autoRotateSpeed}
+      onStart={() => {
+        isInteractingRef.current = true;
+      }}
+      onEnd={() => {
+        isInteractingRef.current = false;
+      }}
+    />
+  );
+}
