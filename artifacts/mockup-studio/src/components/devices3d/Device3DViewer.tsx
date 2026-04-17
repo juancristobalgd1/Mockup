@@ -933,10 +933,15 @@ export const Device3DViewer = forwardRef<
 
   // Device screen aspect (width / height), flipped when the device is in
   // landscape. Used by the texture hook to fit the media responsively.
+  // NOTE: `def` / `isLandscape` live in the inner render component; this
+  // outer component only has `state`, so we resolve them from there.
+  const outerDef = getModelById(state.deviceModel);
+  const outerIsLandscape = state.deviceLandscape;
   const screenAspectForTexture = (() => {
-    const sw = def.w - def.insetSide * 2;
-    const sh = def.h - def.insetTop - def.insetBottom;
-    return isLandscape ? sh / sw : sw / sh;
+    if (!outerDef) return 9 / 19.5;
+    const sw = outerDef.w - outerDef.insetSide * 2;
+    const sh = outerDef.h - outerDef.insetTop - outerDef.insetBottom;
+    return outerIsLandscape ? sh / sw : sw / sh;
   })();
 
   const screenTexture = useScreenTexture(
