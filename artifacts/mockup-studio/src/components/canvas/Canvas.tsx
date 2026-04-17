@@ -117,14 +117,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
       const w = WALLPAPERS.find(w => w.id === state.bgColor);
       return { background: w ? w.css : '#ffffff' };
     }
-    if (state.bgType === 'image' && state.bgImage) {
-      return {
-        backgroundImage: `url(${state.bgImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      };
-    }
-    if ((state.bgType === 'gradient-custom' || state.bgType === 'texture') && state.bgImage) {
+    if ((state.bgType === 'image' || state.bgType === 'gradient-custom' || state.bgType === 'texture' || state.bgType === 'wallpaper-custom') && state.bgImage) {
       return {
         backgroundImage: `url(${state.bgImage})`,
         backgroundSize: 'cover',

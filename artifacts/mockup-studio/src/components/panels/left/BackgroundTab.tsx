@@ -12,7 +12,7 @@ import {
   ANIMATED_BG_KEYFRAMES,
   SOLIDS
 } from '../../../data/backgrounds';
-import { GRADIENT_ASSETS, TEXTURE_ASSETS } from '../../../data/backgroundAssets';
+import { GRADIENT_ASSETS, TEXTURE_ASSETS, WALLPAPER_ASSETS } from '../../../data/backgroundAssets';
 import { extractColorsFromImage, clampL, safeW } from '../../../utils/panelUtils';
 
 interface BackgroundTabProps {
@@ -50,10 +50,13 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
   };
 
   const handleShuffle = () => {
-    const pool = [
+    const pool: any[] = [
       ...GRADIENTS.map(g => ({ bgType: 'gradient' as const, bgColor: g.id })),
       ...MESH_GRADIENTS.filter(m => m.id !== '__auto__').map(m => ({ bgType: 'mesh' as const, bgColor: m.id })),
       ...WALLPAPERS.map(w => ({ bgType: 'wallpaper' as const, bgColor: w.id })),
+      ...GRADIENT_ASSETS.map(g => ({ bgType: 'gradient-custom' as const, bgImage: g.url, bgVideo: null })),
+      ...TEXTURE_ASSETS.map(t => ({ bgType: 'texture' as const, bgImage: t.url, bgVideo: null })),
+      ...WALLPAPER_ASSETS.map(w => ({ bgType: 'wallpaper-custom' as const, bgImage: w.url, bgVideo: null })),
     ];
     const pick = pool[Math.floor(Math.random() * pool.length)];
     updateState(pick);
@@ -120,8 +123,9 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
     { id: 'solid', label: 'Sólido', preview: { background: state.bgType === 'solid' ? state.bgColor : '#374151' } },
     { id: 'gradient', label: 'Degradado', preview: { background: 'linear-gradient(135deg, #3b82f6 0%, #ec4899 100%)' } },
     { id: 'mesh', label: 'Malla', preview: { background: 'radial-gradient(at 30% 20%, #0ea5e9 0px, transparent 55%), radial-gradient(at 80% 70%, #ec4899 0px, transparent 55%), #03111e' } },
-    { id: 'gradient-custom', label: 'Gradientes', preview: { background: 'url(/assets/backgrounds/gradients/gradient-1.webp)' } },
-    { id: 'texture', label: 'Texturas', preview: { background: 'url(/assets/backgrounds/textures/texture-1.webp)' } },
+    { id: 'gradient-custom', label: 'Gradientes', preview: { background: GRADIENT_ASSETS.length > 0 ? `url(${GRADIENT_ASSETS[0].url})` : 'transparent' } },
+    { id: 'wallpaper-custom', label: 'Wallpapers', preview: { background: WALLPAPER_ASSETS.length > 0 ? `url(${WALLPAPER_ASSETS[0].url})` : 'transparent' } },
+    { id: 'texture', label: 'Texturas', preview: { background: TEXTURE_ASSETS.length > 0 ? `url(${TEXTURE_ASSETS[0].url})` : 'transparent' } },
     { id: 'wallpaper', label: 'Fondo de Pantalla', preview: { background: 'radial-gradient(ellipse at 50% 0%, #bfdbfe 0%, #60a5fa 60%, #dbeafe 100%)' } },
     { id: 'pattern', label: 'Patrón', preview: { backgroundColor: '#1a1c2e', backgroundImage: 'radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1px)', backgroundSize: '10px 10px' } },
     { id: 'video', label: 'Video', preview: null, icon: <Video size={16} color="rgba(255,255,255,0.40)" /> },
@@ -346,6 +350,22 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
                     <button key={t.id} onClick={() => updateState({ bgImage: t.url, bgVideo: null })} style={SWATCH_BTN(active)}>
                       <div style={{ ...THUMB, backgroundImage: `url(${t.url})`, backgroundSize: 'cover', width: '100%', height: 60 }} />
                       <span style={SWATCH_LABEL(active)}>{t.id}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Section>
+          )}
+
+          {state.bgType === 'wallpaper-custom' && (
+            <Section label="Pack de Wallpapers">
+              <div className="ps-responsive-list">
+                {WALLPAPER_ASSETS.map(w => {
+                  const active = state.bgImage === w.url;
+                  return (
+                    <button key={w.id} onClick={() => updateState({ bgImage: w.url, bgVideo: null })} style={SWATCH_BTN(active)}>
+                      <div style={{ ...THUMB, backgroundImage: `url(${w.url})`, backgroundSize: 'cover', width: '100%', height: 60 }} />
+                      <span style={SWATCH_LABEL(active)}>{w.id}</span>
                     </button>
                   );
                 })}

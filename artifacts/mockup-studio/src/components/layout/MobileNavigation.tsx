@@ -37,7 +37,8 @@ import {
   Moon,
   RotateCcw,
   RefreshCw,
-  Frame
+  Frame,
+  GalleryHorizontal
 } from "lucide-react";
 import { PropertyTooltip } from "../ui/PropertyTooltip";
 import { getModelById, DEVICE_MODELS, DEVICE_GROUPS } from "../../data/devices";
@@ -1317,6 +1318,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   { id: "gradient", icon: <Blend size={24} />, label: "Degradado" }, 
                   { id: "mesh", icon: <Sparkles size={24} />, label: "Mesh" }, 
                   { id: "gradient-custom", icon: <Pipette size={24} />, label: "Gradientes" },
+                  { id: "wallpaper-custom", icon: <GalleryHorizontal size={24} />, label: "Wallpapers" },
                   { id: "texture", icon: <Grid3X3 size={24} />, label: "Texturas" },
                   { id: "wallpaper", icon: <LayoutList size={24} />, label: "Walls" },
                   { id: "image", icon: <ImageIcon size={24} />, label: "Imagen" }, 

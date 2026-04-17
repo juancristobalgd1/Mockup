@@ -1,28 +1,39 @@
+/**
+ * Dynamic background asset registry.
+ * Uses Vite's glob import to automatically detect all .webp files in the assets directories.
+ * Adding a new .webp file to these folders will automatically make it available in the UI.
+ */
 
-export const GRADIENT_ASSETS = [
-  { id: 'gradient-1',  url: '/assets/backgrounds/gradients/gradient-1.webp' },
-  { id: 'gradient-2',  url: '/assets/backgrounds/gradients/gradient-2.webp' },
-  { id: 'gradient-3',  url: '/assets/backgrounds/gradients/gradient-3.webp' },
-  { id: 'gradient-4',  url: '/assets/backgrounds/gradients/gradient-4.webp' },
-  { id: 'gradient-5',  url: '/assets/backgrounds/gradients/gradient-5.webp' },
-  { id: 'gradient-6',  url: '/assets/backgrounds/gradients/gradient-6.webp' },
-  { id: 'gradient-7',  url: '/assets/backgrounds/gradients/gradient-7.webp' },
-  { id: 'gradient-8',  url: '/assets/backgrounds/gradients/gradient-8.webp' },
-  { id: 'gradient-9',  url: '/assets/backgrounds/gradients/gradient-9.webp' },
-  { id: 'gradient-10', url: '/assets/backgrounds/gradients/gradient-10.webp' },
-  { id: 'gradient-11', url: '/assets/backgrounds/gradients/gradient-11.webp' },
-  { id: 'gradient-12', url: '/assets/backgrounds/gradients/gradient-12.webp' },
-  { id: 'gradient-13', url: '/assets/backgrounds/gradients/gradient-13.webp' },
-  { id: 'gradient-14', url: '/assets/backgrounds/gradients/gradient-14.webp' },
-  { id: 'gradient-15', url: '/assets/backgrounds/gradients/gradient-15.webp' },
-  { id: 'gradient-16', url: '/assets/backgrounds/gradients/gradient-16.webp' },
-  { id: 'gradient-17', url: '/assets/backgrounds/gradients/gradient-17.webp' },
-];
+const gradientModules = import.meta.glob('../assets/backgrounds/gradients/*.webp', { eager: true });
+const textureModules = import.meta.glob('../assets/backgrounds/textures/*.webp', { eager: true });
+const wallpaperModules = import.meta.glob('../assets/backgrounds/wallpapers/*.webp', { eager: true });
 
-export const TEXTURE_ASSETS = [
-  { id: 'texture-1', url: '/assets/backgrounds/textures/texture-1.webp' },
-  { id: 'texture-2', url: '/assets/backgrounds/textures/texture-2.webp' },
-  { id: 'texture-3', url: '/assets/backgrounds/textures/texture-3.webp' },
-  { id: 'texture-4', url: '/assets/backgrounds/textures/texture-4.webp' },
-  { id: 'texture-5', url: '/assets/backgrounds/textures/texture-5.webp' },
-];
+export const GRADIENT_ASSETS = Object.entries(gradientModules)
+  .map(([path, module]: any) => {
+    const filename = path.split('/').pop()?.replace('.webp', '') || '';
+    return { 
+      id: filename, 
+      url: module.default 
+    };
+  })
+  .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
+
+export const TEXTURE_ASSETS = Object.entries(textureModules)
+  .map(([path, module]: any) => {
+    const filename = path.split('/').pop()?.replace('.webp', '') || '';
+    return { 
+      id: filename, 
+      url: module.default 
+    };
+  })
+  .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
+
+export const WALLPAPER_ASSETS = Object.entries(wallpaperModules)
+  .map(([path, module]: any) => {
+    const filename = path.split('/').pop()?.replace('.webp', '') || '';
+    return { 
+      id: filename, 
+      url: module.default 
+    };
+  })
+  .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
