@@ -12,6 +12,7 @@ import {
   ANIMATED_BG_KEYFRAMES,
   SOLIDS
 } from '../../../data/backgrounds';
+import { GRADIENT_ASSETS, TEXTURE_ASSETS } from '../../../data/backgroundAssets';
 import { extractColorsFromImage, clampL, safeW } from '../../../utils/panelUtils';
 
 interface BackgroundTabProps {
@@ -106,8 +107,7 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
           <line x1="4" y1="4" x2="18" y2="18" stroke="rgba(0,0,0,0.2)" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
     },
-    {
-      id: 'transparent', label: 'Alfa', preview: null, icon:
+    { id: 'transparent', label: 'Alfa', preview: null, icon:
         <div style={{
           width: '100%', height: '100%', borderRadius: 10,
           backgroundImage: 'linear-gradient(45deg, #3a3a3a 25%, transparent 25%), linear-gradient(-45deg, #3a3a3a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #3a3a3a 75%), linear-gradient(-45deg, transparent 75%, #3a3a3a 75%)',
@@ -120,6 +120,8 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
     { id: 'solid', label: 'Sólido', preview: { background: state.bgType === 'solid' ? state.bgColor : '#374151' } },
     { id: 'gradient', label: 'Degradado', preview: { background: 'linear-gradient(135deg, #3b82f6 0%, #ec4899 100%)' } },
     { id: 'mesh', label: 'Malla', preview: { background: 'radial-gradient(at 30% 20%, #0ea5e9 0px, transparent 55%), radial-gradient(at 80% 70%, #ec4899 0px, transparent 55%), #03111e' } },
+    { id: 'gradient-custom', label: 'Gradientes', preview: { background: 'url(/assets/backgrounds/gradients/gradient-1.webp)' } },
+    { id: 'texture', label: 'Texturas', preview: { background: 'url(/assets/backgrounds/textures/texture-1.webp)' } },
     { id: 'wallpaper', label: 'Fondo de Pantalla', preview: { background: 'radial-gradient(ellipse at 50% 0%, #bfdbfe 0%, #60a5fa 60%, #dbeafe 100%)' } },
     { id: 'pattern', label: 'Patrón', preview: { backgroundColor: '#1a1c2e', backgroundImage: 'radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1px)', backgroundSize: '10px 10px' } },
     { id: 'video', label: 'Video', preview: null, icon: <Video size={16} color="rgba(255,255,255,0.40)" /> },
@@ -312,6 +314,38 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
                     <button key={w.id} onClick={() => updateState({ bgColor: w.id })} style={SWATCH_BTN(active)}>
                       <div style={{ ...THUMB, background: w.css, width: '100%', height: 50 }} />
                       <span style={SWATCH_LABEL(active)}>{w.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Section>
+          )}
+
+          {state.bgType === 'gradient-custom' && (
+            <Section label="Pack de Gradientes">
+              <div className="ps-responsive-list">
+                {GRADIENT_ASSETS.map(g => {
+                  const active = state.bgImage === g.url;
+                  return (
+                    <button key={g.id} onClick={() => updateState({ bgImage: g.url, bgVideo: null })} style={SWATCH_BTN(active)}>
+                      <div style={{ ...THUMB, backgroundImage: `url(${g.url})`, backgroundSize: 'cover', width: '100%', height: 60 }} />
+                      <span style={SWATCH_LABEL(active)}>{g.id}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Section>
+          )}
+
+          {state.bgType === 'texture' && (
+            <Section label="Pack de Texturas">
+              <div className="ps-responsive-list">
+                {TEXTURE_ASSETS.map(t => {
+                  const active = state.bgImage === t.url;
+                  return (
+                    <button key={t.id} onClick={() => updateState({ bgImage: t.url, bgVideo: null })} style={SWATCH_BTN(active)}>
+                      <div style={{ ...THUMB, backgroundImage: `url(${t.url})`, backgroundSize: 'cover', width: '100%', height: 60 }} />
+                      <span style={SWATCH_LABEL(active)}>{t.id}</span>
                     </button>
                   );
                 })}

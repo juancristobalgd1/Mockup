@@ -41,7 +41,7 @@ import {
 } from "lucide-react";
 import { PropertyTooltip } from "../ui/PropertyTooltip";
 import { getModelById, DEVICE_MODELS, DEVICE_GROUPS } from "../../data/devices";
-import { PRESENT_POSES, CANVAS_RATIOS, ENV_PRESETS } from "../../data/panelConstants";
+import { PRESENT_POSES, CANVAS_RATIOS, ENV_PRESETS, IPHONE_COLORS } from "../../data/panelConstants";
 import { ENV_ICON } from "../../data/envIcons";
 import { Section, Chip, Slider, MiniSlider, Toggle } from "../ui/PanelUI";
 import { DeviceThumbnail, PoseThumbnail } from "../ui/DeviceThumbnails";
@@ -987,10 +987,67 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   >
                     {deviceProperty === 'color' ? (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
-                        <button onClick={() => updateState({ clayMode: false, deviceColor: 'original' })} style={{ width: 38, height: 38, borderRadius: '50%', background: 'conic-gradient(from 0deg, #ff4d4d, #f9cb28, #7cfc00, #00ffff, #4d4dff, #ff00ff, #ff4d4d)', border: state.deviceColor === 'original' && !state.clayMode ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Original"><Smartphone size={14} color="#fff" /></button>
-                        {['titanium', 'spaceblack', 'silver', 'gold', 'blue'].map(c => (
-                          <button key={c} onClick={() => updateState({ deviceColor: c, clayMode: state.clayMode })} style={{ width: 38, height: 38, borderRadius: '50%', background: c === 'titanium' ? '#a7a7a1' : c === 'spaceblack' ? '#2e2e2e' : c === 'silver' ? '#e3e3e3' : c === 'gold' ? '#f5e1c4' : '#4b5e7a', border: state.deviceColor === c && state.clayMode ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }} />
-                        ))}
+                        {/* 1. Original Materials */}
+                        <button 
+                          onClick={() => updateState({ clayMode: false, deviceColor: 'original' })} 
+                          style={{ 
+                            width: 38, height: 38, borderRadius: '50%', 
+                            background: 'conic-gradient(from 0deg, #ff4d4d, #f9cb28, #7cfc00, #00ffff, #4d4dff, #ff00ff, #ff4d4d)', 
+                            border: state.deviceColor === 'original' && !state.clayMode ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)', 
+                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                          }} 
+                          title="Original"
+                        >
+                          <Smartphone size={14} color="#fff" />
+                        </button>
+
+                        {/* 2. Custom Color Picker */}
+                        {(() => {
+                           const isPreset = ['original', 'titanium', 'black', 'white', 'blue', 'naturallight', 'desert', 'sierra', 'clay'].includes(state.deviceColor);
+                           const displayColor = isPreset ? '#71717a' : state.deviceColor;
+                           const isActive = !isPreset;
+                           
+                           return (
+                             <div style={{ position: 'relative', width: 38, height: 38 }}>
+                               <button 
+                                 style={{ 
+                                   width: 38, height: 38, borderRadius: '50%', 
+                                   background: isActive ? state.deviceColor : 'conic-gradient(#ff0000, #ff7f00, #ffff00, #00ff00, #00ffff, #0000ff, #8b00ff, #ff00ff, #ff0000)',
+                                   border: isActive ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)', 
+                                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                   overflow: 'hidden'
+                                 }}
+                                 title="Color Personalizado"
+                               >
+                                 <Plus size={16} color={isActive ? '#fff' : '#fff'} style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
+                                 <input 
+                                   type="color" 
+                                   value={isActive ? state.deviceColor : '#71717a'} 
+                                   onChange={(e) => updateState({ deviceColor: e.target.value, clayMode: false })}
+                                   style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
+                                 />
+                               </button>
+                             </div>
+                           );
+                        })()}
+
+                        {/* 3+. Preset Colors */}
+                        {IPHONE_COLORS.filter(c => c.id !== 'original').map(c => {
+                          const isActive = state.deviceColor === c.id;
+                          return (
+                            <button 
+                              key={c.id} 
+                              onClick={() => updateState({ deviceColor: c.id, clayMode: false })} 
+                              style={{ 
+                                width: 38, height: 38, borderRadius: '50%', 
+                                background: c.bg, 
+                                border: isActive ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)', 
+                                cursor: 'pointer' 
+                              }} 
+                              title={c.label}
+                            />
+                          );
+                        })}
                       </div>
                     ) : deviceProperty === 'more' ? (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -1158,7 +1215,42 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                     )}
                   </PropertyTooltip>
                   <div style={{ pointerEvents: "auto", display: "flex", gap: 6, alignItems: "center" }}>
-                    <button className="ps-tool-icon-btn btn-press" onClick={() => setDeviceProperty(deviceProperty === 'color' ? null : 'color')} style={{ background: deviceProperty === 'color' ? "#fff" : "#1c1c1e", color: deviceProperty === 'color' ? "#000" : "#fff", border: "none", width: 44, height: 44, borderRadius: 22, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Color"><Palette size={20} /></button>
+                    <button 
+                      className="ps-tool-icon-btn btn-press" 
+                      onClick={() => setDeviceProperty(deviceProperty === 'color' ? null : 'color')} 
+                      style={{ 
+                        background: deviceProperty === 'color' ? "#fff" : "#1c1c1e", 
+                        color: deviceProperty === 'color' ? "#000" : "#fff", 
+                        border: "none", 
+                        width: 44, height: 44, borderRadius: 22, 
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.4)", 
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }} 
+                      title="Color"
+                    >
+                      {deviceProperty !== 'color' && (
+                        <div style={{ 
+                          position: 'absolute', inset: 0, 
+                          background: state.deviceColor === 'original' 
+                            ? 'conic-gradient(from 0deg, #ff4040, #ffba00, #40ff40, #00f0ff, #4040ff, #f000ff, #ff4040)'
+                            : (['titanium', 'black', 'white', 'blue', 'naturallight', 'desert', 'sierra', 'clay'].includes(state.deviceColor)
+                                ? IPHONE_COLORS.find(c => c.id === state.deviceColor)?.bg ?? '#333'
+                                : state.deviceColor),
+                          opacity: 0.15 
+                        }} />
+                      )}
+                      {/* Small indicator dot */}
+                      <div style={{
+                        position: 'absolute', top: 4, right: 4, width: 8, height: 8, borderRadius: 4,
+                        background: state.deviceColor === 'original' ? '#fff' : (['titanium', 'black', 'white', 'blue', 'naturallight', 'desert', 'sierra', 'clay'].includes(state.deviceColor) ? IPHONE_COLORS.find(c => c.id === state.deviceColor)?.bg : state.deviceColor),
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                        display: state.deviceColor === 'original' ? 'none' : 'block'
+                      }} />
+                      <Palette size={20} style={{ position: 'relative', zIndex: 1 }} />
+                    </button>
                     
                     <div style={{ display: "flex", background: "#1c1c1e", borderRadius: 30, padding: 4, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", gap: 2 }}>
                       <button className="btn-press" onClick={() => updateState({ deviceLandscape: false })} style={{ width: 40, height: 40, borderRadius: 20, background: !state.deviceLandscape ? "#f5f5f7" : "transparent", color: !state.deviceLandscape ? "#000" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "none" }} title="Vertical"><Smartphone size={18} strokeWidth={2.5} /></button>
@@ -1186,7 +1278,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
             {/* Tier 1: Contextual Tools */}
             {((mobileTab === 'presets') || (mobileTab === 'device' && devicePanelView === 'hub') || (mobileTab === 'annotate') || (mobileTab === 'background' && backgroundPanelView === 'hub') || (mobileTab === 'labels' && labelsPanelView === 'hub')) && (
               <div className="ps-tier-tools" style={{ padding: "20px 20px 10px" }}>
-                {mobileTab === "presets" && PRESENT_POSES.map((pose) => { const active = state.cameraAngle === pose.id; return (<div key={pose.id} className="ps-tool-thumb-box"> <button className={`ps-tool-thumb btn-press ${active ? "active" : ""}`} onClick={() => updateState({ cameraAngle: pose.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}> <PoseThumbnail ry={pose.ry} rx={pose.rx} rz={pose.rz} active={active} mini /> </button> <span className="ps-tool-label">{pose.label}</span> </div>) })}
+                {mobileTab === "presets" && PRESENT_POSES.map((pose) => { const active = state.cameraAngle === pose.id; return (<div key={pose.id} className="ps-tool-thumb-box"> <button className={`ps-tool-thumb btn-press ${active ? "active" : ""}`} onClick={() => updateState({ cameraAngle: pose.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}> <PoseThumbnail ry={pose.ry} rx={pose.rx} rz={pose.rz} active={active} deviceColor={state.deviceColor} mini /> </button> <span className="ps-tool-label">{pose.label}</span> </div>) })}
                 {mobileTab === "device" && devicePanelView === 'hub' && DEVICE_GROUPS.map((group) => { const repModel = DEVICE_MODELS.find((m) => m.group === group); return (<div key={group} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { if (repModel) { updateState({ deviceModel: repModel.id, deviceType: repModel.storeType, deviceColor: repModel.useOriginalMaterials ? "original" : "titanium", deviceSubTab: "models" }); setDevicePanelView('content'); } }}> <div style={{ transform: "scale(1.3)" }}><DeviceThumbnail modelId={repModel?.id || ""} isSelected={false} /></div> </button> <span className="ps-tool-label">{group}</span> </div>) })}
                 {mobileTab === "annotate" && annotatePanelView === 'hub' && [{ id: "select", label: "Seleccionar", icon: <MousePointer2 size={24} />, action: () => updateState({ annotateTool: 'select', annotateMode: true }) }, { id: "pen", label: "Pincel", icon: <Pencil size={24} />, action: () => updateState({ annotateTool: 'pen', annotateMode: true }) }, { id: "shapes", label: "Formas", icon: <Box size={24} />, action: () => setAnnotatePanelView('shapes') }, { id: "text", label: "Texto", icon: <Type size={24} />, action: () => updateState({ annotateTool: 'text', annotateMode: true }) }, { id: "eraser", label: "Borrador", icon: <Eraser size={24} />, action: () => updateState({ annotateTool: 'eraser', annotateMode: true }) }, { id: "stickers", label: "Stickers", icon: <Sparkles size={24} />, action: () => setAnnotatePanelView('stickers') },].map((tool) => { const isActive = state.annotateTool === tool.id || (tool.id === 'shapes' && (state.annotateTool as any) && ['rect', 'arrow', 'circle'].includes(state.annotateTool as any)); return (<div key={tool.id} className="ps-tool-thumb-box"> <button className={`ps-tool-thumb btn-press ${isActive ? "active" : ""}`} onClick={tool.action} style={{ padding: 0, width: 60, height: 60, borderRadius: 12, background: "#1c1c1e", border: isActive ? "2px solid #3498db" : "1px solid rgba(255,255,255,0.1)", display: 'flex', alignItems: 'center', justifyContent: 'center', color: isActive ? '#3498db' : '#fff' }}> {tool.icon} </button> <span className="ps-tool-label" style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.4)' }}>{tool.label}</span> </div>) })}
                 {mobileTab === "annotate" && annotatePanelView === 'shapes' && (
@@ -1224,6 +1316,8 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   { id: "solid", icon: <Palette size={24} />, label: "Sólido" }, 
                   { id: "gradient", icon: <Blend size={24} />, label: "Degradado" }, 
                   { id: "mesh", icon: <Sparkles size={24} />, label: "Mesh" }, 
+                  { id: "gradient-custom", icon: <Pipette size={24} />, label: "Gradientes" },
+                  { id: "texture", icon: <Grid3X3 size={24} />, label: "Texturas" },
                   { id: "wallpaper", icon: <LayoutList size={24} />, label: "Walls" },
                   { id: "image", icon: <ImageIcon size={24} />, label: "Imagen" }, 
                 ].map((tool: any) => tool.type === 'separator' ? <div key={tool.id} style={{ width: 1.5, height: 40, background: 'rgba(255,255,255,0.2)', margin: '0 12px', alignSelf: 'center' }} /> : (<div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { 

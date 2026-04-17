@@ -71,10 +71,25 @@ export function DeviceThumbnail({ modelId, isSelected }: { modelId: string; isSe
 }
 
 // ── Rotato pose thumbnail ──────────────────────────────────────────
-export function PoseThumbnail({ ry, rx, rz, active, mini }: {
-  ry: number; rx: number; rz: number; active: boolean; mini?: boolean;
+export function PoseThumbnail({ ry, rx, rz, active, mini, deviceColor = 'titanium' }: {
+  ry: number; rx: number; rz: number; active: boolean; mini?: boolean; deviceColor?: string;
 }) {
-  const bodyColor   = active ? '#d0d0d0' : '#484848';
+  const isOriginal = deviceColor === 'original';
+  
+  // Basic resolution for thumbnail representation
+  const resolveThumbColor = (c: string) => {
+    if (c === 'original' || c === 'titanium') return '#d0d0d0';
+    if (c === 'black' || c === 'spaceblack') return '#1c1c1e';
+    if (c === 'white' || c === 'silver') return '#e8e8ea';
+    if (c === 'blue') return '#2c4a6e';
+    if (c === 'naturallight' || c === 'clay') return '#d8d1c5';
+    if (c === 'desert') return '#9c8878';
+    if (c === 'sierra') return '#7a9ab0';
+    return c; // Hex
+  };
+
+  const resolved = resolveThumbColor(deviceColor);
+  const bodyColor   = active ? resolved : (isOriginal ? '#484848' : resolved);
   const screenColor = active ? '#ffffff' : '#111111';
   const frameColor  = active ? '#b0b0b0' : '#333333';
 

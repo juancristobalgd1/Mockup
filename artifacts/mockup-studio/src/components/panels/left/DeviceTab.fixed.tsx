@@ -4,7 +4,7 @@ import { Section } from '../../ui/PanelUI';
 import { DeviceThumbnail } from '../../ui/DeviceThumbnails';
 import { DEVICE_MODELS, getModelById } from '../../../data/devices';
 import { IPHONE_COLORS } from '../../../data/panelConstants';
-import { Smartphone } from 'lucide-react';
+import { Smartphone, Plus } from 'lucide-react';
 
 export const DeviceTab = () => {
   const { state, updateState } = useApp();
@@ -61,24 +61,58 @@ export const DeviceTab = () => {
         <div style={{ borderTop: isMobile ? 'none' : '1px solid rgba(255,255,255,0.08)', marginTop: isMobile ? 0 : 24, paddingTop: isMobile ? 0 : 20 }}>
           <Section label="Color del Marco">
               <div className="hide-scrollbars" style={{ display: 'flex', gap: 10, overflowX: 'auto', flexWrap: 'nowrap', alignItems: 'center', minWidth: 0, paddingBottom: 4 }}>
+                {/* 1. Original Materials */}
                 <button
-                  onClick={() => updateState({ deviceColor: 'original' })}
+                  onClick={() => updateState({ deviceColor: 'original', clayMode: false })}
                   style={{
                     width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
                     background: 'conic-gradient(from 0deg, #ff4d4d, #f9cb28, #7cfc00, #00ffff, #4d4dff, #ff00ff, #ff4d4d)',
-                    border: state.deviceColor === 'original' ? '2.5px solid #fff' : '2px solid rgba(255,255,255,0.2)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    border: (state.deviceColor === 'original' && !state.clayMode) ? '2.5px solid #fff' : '2px solid rgba(255,255,255,0.2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
                   }}
+                  title="Original"
                 >
                   <Smartphone size={14} color="#fff" />
                 </button>
+
+                {/* 2. Custom Color Picker */}
+                {(() => {
+                   const isPreset = ['original', 'titanium', 'black', 'white', 'blue', 'naturallight', 'desert', 'sierra', 'clay'].includes(state.deviceColor);
+                   const isActive = !isPreset;
+                   
+                   return (
+                     <div style={{ position: 'relative', width: 34, height: 34, flexShrink: 0 }}>
+                       <button 
+                         style={{ 
+                           width: 34, height: 34, borderRadius: '50%', 
+                           background: isActive ? state.deviceColor : 'conic-gradient(#ff0000, #ff7f00, #ffff00, #00ff00, #00ffff, #0000ff, #8b00ff, #ff00ff, #ff0000)',
+                           border: isActive ? '2px solid #fff' : '1px solid rgba(255,255,255,0.2)', 
+                           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                           overflow: 'hidden'
+                         }}
+                         title="Color Personalizado"
+                       >
+                         <Plus size={14} color="#fff" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
+                         <input 
+                           type="color" 
+                           value={isActive ? state.deviceColor : '#71717a'} 
+                           onChange={(e) => updateState({ deviceColor: e.target.value, clayMode: false })}
+                           style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
+                         />
+                       </button>
+                     </div>
+                   );
+                })()}
+
+                {/* 3+. Preset Colors */}
                 {IPHONE_COLORS.filter(c => c.id !== 'original').map(c => {
                   const isActive = state.deviceColor === c.id;
                   return (
-                    <button key={c.id} title={c.label} onClick={() => updateState({ deviceColor: c.id })}
+                    <button key={c.id} title={c.label} onClick={() => updateState({ deviceColor: c.id, clayMode: false })}
                       style={{
-                        width: 34, height: 34, borderRadius: '50%', background: c.bg,
+                        width: 34, height: 34, borderRadius: '50%', background: c.bg, flexShrink: 0,
                         border: isActive ? '2.5px solid #fff' : `1.5px solid ${c.border}`,
+                        cursor: 'pointer'
                       }} />
                   );
                 })}

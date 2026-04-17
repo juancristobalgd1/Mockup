@@ -124,6 +124,13 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
         backgroundPosition: 'center',
       };
     }
+    if ((state.bgType === 'gradient-custom' || state.bgType === 'texture') && state.bgImage) {
+      return {
+        backgroundImage: `url(${state.bgImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      };
+    }
     return { background: '#ffffff' };
   };
 
