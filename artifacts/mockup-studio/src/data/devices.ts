@@ -1,4 +1,4 @@
-export type DeviceGroup = 'iPhone' | 'Android' | 'Tablet' | 'Desktop' | 'Browser' | 'Watch';
+export type DeviceGroup = 'iPhone' | 'Android' | 'Tablet' | 'Desktop' | 'Watch';
 
 /** Back camera layout configuration */
 export type CameraLayout =
@@ -12,7 +12,7 @@ export type CameraLayout =
 
 /** All possible device store/category types. This is the single source of truth.
  *  Import this type wherever DeviceType is needed (e.g. store.tsx). */
-export type DeviceStoreType = 'iphone' | 'android' | 'ipad' | 'macbook' | 'browser' | 'watch';
+export type DeviceStoreType = 'iphone' | 'android' | 'ipad' | 'macbook' | 'watch';
 
 export interface DeviceModelDef {
   id: string;
@@ -265,33 +265,6 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     skipOverlay: true,
     useOriginalMaterials: true,
   },
-  // ── Browser ───────────────────────────────────────────────────────
-  {
-    id: 'browser-dark',
-    label: 'Browser Dark',
-    group: 'Browser',
-    storeType: 'browser',
-    w: 540, h: 360,
-    insetTop: 46, insetBottom: 0, insetSide: 0,
-    br: '0.625rem', screenBr: '0',
-    camera: 'none',
-    cameraLayout: 'none',
-    frame: 'glass',
-    accent: '#374151',
-  },
-  {
-    id: 'browser-light',
-    label: 'Browser Light',
-    group: 'Browser',
-    storeType: 'browser',
-    w: 540, h: 360,
-    insetTop: 46, insetBottom: 0, insetSide: 0,
-    br: '0.625rem', screenBr: '0',
-    camera: 'none',
-    cameraLayout: 'none',
-    frame: 'light',
-    accent: '#d1d5db',
-  },
   // ── Watch ─────────────────────────────────────────────────────────
   {
     id: 'apple-watch-s4',
@@ -313,14 +286,13 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
   },
 ];
 
-export const DEVICE_GROUPS: DeviceGroup[] = ['iPhone', 'Android', 'Tablet', 'Desktop', 'Browser', 'Watch'];
+export const DEVICE_GROUPS: DeviceGroup[] = ['iPhone', 'Android', 'Tablet', 'Desktop', 'Watch'];
 
 export const GROUP_ICONS: Record<DeviceGroup, string> = {
   iPhone: '📱',
   Android: '🤖',
   Tablet: '⬛',
   Desktop: '💻',
-  Browser: '🌐',
   Watch: '⌚',
 };
 
