@@ -4,16 +4,14 @@ import { setGlobalScreenTexture } from './textureGlobal';
 
 export type ScreenFitMode = 'cover' | 'contain' | 'fill';
 
-/** Output canvas long side: balances retina-quality sharpness with GPU memory. */
-const CANVAS_LONG_SIDE = 2048;
-
-/** Aspect difference below which auto-rotation is skipped. */
+/** Aspect delta below which portrait/landscape auto-rotation is skipped. */
 const ORIENTATION_TOLERANCE = 0.05;
 
 /**
- * Returns true if the source's orientation is opposite to the device screen's
- * (landscape photo on a portrait phone, or vice versa). In that case we
- * rotate the source 90° so it fills the screen without heavy cropping.
+ * Returns true if source orientation (portrait/landscape) is opposite to the
+ * device screen's. In that case we rotate the texture 90° so a horizontal
+ * photo dropped on a vertical phone fills the screen instead of being shown
+ * at a tiny letterboxed width.
  */
 function shouldAutoRotate(srcAspect: number, screenAspect: number): boolean {
   const srcLandscape = srcAspect > 1 + ORIENTATION_TOLERANCE;
@@ -24,138 +22,93 @@ function shouldAutoRotate(srcAspect: number, screenAspect: number): boolean {
 }
 
 /**
- * Compose the loaded image into a canvas that already matches the device
- * screen's aspect ratio. This is equivalent to CSS object-fit applied at the
- * pixel level so that when the canvas is uploaded as a texture it maps 1:1
- * onto the device's screen plane with no stretching.
+ * Apply CSS-object-fit semantics to a THREE texture via UV transform. The
+ * screen meshes have UVs normalized to [0,1]×[0,1] (see normalizeScreenUVs),
+ * so repeat/offset sample a sub-rect, and rotation spins around center.
+ *
+ *  • cover   — fills the screen, crops overflow (default)
+ *  • contain — fits entirely, ClampToEdge makes the overflow rows/columns
+ *              repeat the edge pixel row (visually similar to a letterbox
+ *              in the edge color, which for a PNG screenshot is usually the
+ *              page background).
+ *  • fill    — stretches to fill, may distort.
+ *
+ * Auto-rotates 90° when the media and screen have opposite orientations.
  */
-function composeImageOnCanvas(
-  img: HTMLImageElement,
-  screenAspect: number,
-  fitMode: ScreenFitMode,
-): HTMLCanvasElement | null {
-  const srcW = img.naturalWidth;
-  const srcH = img.naturalHeight;
-  if (!srcW || !srcH) return null;
-
-  const rotate = shouldAutoRotate(srcW / srcH, screenAspect);
-  const effSrcW = rotate ? srcH : srcW;
-  const effSrcH = rotate ? srcW : srcH;
-
-  // Output canvas at the exact device aspect so UV = identity gives us
-  // a pixel-accurate mapping on the screen mesh.
-  let outW: number;
-  let outH: number;
-  if (screenAspect >= 1) {
-    outW = CANVAS_LONG_SIDE;
-    outH = Math.max(2, Math.round(outW / screenAspect));
-  } else {
-    outH = CANVAS_LONG_SIDE;
-    outW = Math.max(2, Math.round(outH * screenAspect));
-  }
-
-  const canvas = document.createElement('canvas');
-  canvas.width = outW;
-  canvas.height = outH;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return null;
-
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-
-  // Letterbox fill for `contain` so unused area is a solid color, not edge smear.
-  if (fitMode === 'contain') {
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, outW, outH);
-  }
-
-  // Draw rect expressed in output-canvas coordinates, in the *effective*
-  // (post-rotation) orientation.
-  let dw: number;
-  let dh: number;
-  if (fitMode === 'fill') {
-    dw = outW;
-    dh = outH;
-  } else {
-    const scale =
-      fitMode === 'cover'
-        ? Math.max(outW / effSrcW, outH / effSrcH)
-        : Math.min(outW / effSrcW, outH / effSrcH);
-    dw = effSrcW * scale;
-    dh = effSrcH * scale;
-  }
-  const dx = (outW - dw) / 2;
-  const dy = (outH - dh) / 2;
-
-  if (rotate) {
-    // Rotate 90° CW around the draw rect center. In the rotated frame, the
-    // output rectangle (dw × dh) corresponds to drawing the source image
-    // at (-dh/2, -dw/2) with size (dh, dw) — swapping dimensions is intentional.
-    ctx.save();
-    ctx.translate(dx + dw / 2, dy + dh / 2);
-    ctx.rotate(Math.PI / 2);
-    ctx.drawImage(img, -dh / 2, -dw / 2, dh, dw);
-    ctx.restore();
-  } else {
-    ctx.drawImage(img, dx, dy, dw, dh);
-  }
-
-  return canvas;
-}
-
-/**
- * Apply CSS-like fit to a video texture via UV transform. Composing each
- * frame on a canvas would work too but costs a draw per frame; UV repeat/
- * offset is GPU-native and free.
- */
-function applyVideoFit(
-  tex: THREE.VideoTexture,
-  vid: HTMLVideoElement,
+function applyFit(
+  tex: THREE.Texture,
+  srcW: number,
+  srcH: number,
   screenAspect: number,
   fitMode: ScreenFitMode,
 ) {
-  const vw = vid.videoWidth;
-  const vh = vid.videoHeight;
   tex.center.set(0.5, 0.5);
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
 
-  if (!vw || !vh) {
+  if (!srcW || !srcH) {
     tex.repeat.set(1, 1);
     tex.offset.set(0, 0);
     tex.rotation = 0;
+    tex.needsUpdate = true;
     return;
   }
 
-  const rotate = shouldAutoRotate(vw / vh, screenAspect);
+  const rawAspect = srcW / srcH;
+  const rotate = shouldAutoRotate(rawAspect, screenAspect);
   tex.rotation = rotate ? Math.PI / 2 : 0;
-  const effAspect = rotate ? vh / vw : vw / vh;
+  // After rotation the effective aspect flips.
+  const effAspect = rotate ? 1 / rawAspect : rawAspect;
 
-  if (fitMode === 'fill' || fitMode === 'contain') {
-    // `contain` on video would need real letterbox bars (can't do via UV
-    // without stretching edge pixels), so for video we degrade contain to
-    // fill — avoids visual artifacts and keeps the full frame visible.
+  if (fitMode === 'fill') {
     tex.repeat.set(1, 1);
     tex.offset.set(0, 0);
+    tex.needsUpdate = true;
     return;
   }
 
-  // cover: sample a centered sub-rect of the texture so the plane fills.
+  if (fitMode === 'cover') {
+    // Sample a centered sub-rect whose aspect matches the screen, so the
+    // whole screen is covered without distortion (edges get cropped).
+    if (effAspect > screenAspect) {
+      const r = screenAspect / effAspect;
+      tex.repeat.set(r, 1);
+      tex.offset.set((1 - r) / 2, 0);
+    } else {
+      const r = effAspect / screenAspect;
+      tex.repeat.set(1, r);
+      tex.offset.set(0, (1 - r) / 2);
+    }
+    tex.needsUpdate = true;
+    return;
+  }
+
+  // contain — scale down so the whole media fits, then offset so the empty
+  // area is filled by edge clamping (effectively a letterbox in the source
+  // edge color).
   if (effAspect > screenAspect) {
-    const r = screenAspect / effAspect;
-    tex.repeat.set(r, 1);
-    tex.offset.set((1 - r) / 2, 0);
-  } else {
-    const r = effAspect / screenAspect;
+    // Media is wider than screen → fit width, bars on top/bottom.
+    const r = effAspect / screenAspect; // > 1
     tex.repeat.set(1, r);
     tex.offset.set(0, (1 - r) / 2);
+  } else {
+    const r = screenAspect / effAspect; // > 1
+    tex.repeat.set(r, 1);
+    tex.offset.set((1 - r) / 2, 0);
   }
+  tex.needsUpdate = true;
 }
 
 /**
- * Returns a THREE texture ref for the current screen content (image or
- * video), automatically adapted to the device's screen size and orientation.
+ * Loads the current screen content (image or video) as a THREE texture and
+ * keeps it in the global singleton that the 3D device models consume every
+ * frame.
  *
- * `screenAspect` is the device screen's width/height ratio (including the
- * landscape flip). `fitMode` mirrors CSS object-fit semantics.
+ * `screenAspect` is the device screen's width/height ratio (post-landscape
+ * flip). `fitMode` mirrors CSS object-fit semantics.
+ *
+ * Returns a ref so the calling component's prop shape stays compatible with
+ * the older API, but consumers actually read from the global texture.
  */
 export function useScreenTexture(
   screenshotUrl: string | null,
@@ -167,8 +120,26 @@ export function useScreenTexture(
   const textureRef = useRef<THREE.Texture | null>(null);
   const videoElRef = useRef<HTMLVideoElement | null>(null);
 
+  // Update fit on the CURRENT texture whenever aspect or mode changes,
+  // without reloading the image.
   useEffect(() => {
-    // Dispose previous image texture (VideoTexture is tied to the element lifecycle).
+    const tex = textureRef.current;
+    if (!tex) return;
+    if (tex instanceof THREE.VideoTexture) {
+      const vid = videoElRef.current;
+      if (vid && vid.videoWidth && vid.videoHeight) {
+        applyFit(tex, vid.videoWidth, vid.videoHeight, screenAspect, fitMode);
+      }
+    } else if (tex.image) {
+      const img = tex.image as HTMLImageElement;
+      applyFit(tex, img.naturalWidth || img.width, img.naturalHeight || img.height, screenAspect, fitMode);
+    }
+  }, [screenAspect, fitMode]);
+
+  // Load / reload texture when the URL or content type changes.
+  useEffect(() => {
+    // Dispose previous image texture. VideoTexture lifetime is tied to the
+    // element, which we clean up explicitly below.
     if (
       textureRef.current &&
       !(textureRef.current instanceof THREE.VideoTexture)
@@ -198,56 +169,51 @@ export function useScreenTexture(
       tex.colorSpace = THREE.SRGBColorSpace;
       textureRef.current = tex;
 
-      const applyFit = () => {
+      const onMeta = () => {
         if (cancelled) return;
-        applyVideoFit(tex, vid, screenAspect, fitMode);
+        applyFit(tex, vid.videoWidth, vid.videoHeight, screenAspect, fitMode);
       };
-      if (vid.readyState >= 1) applyFit();
-      else vid.addEventListener('loadedmetadata', applyFit, { once: true });
+      if (vid.readyState >= 1) onMeta();
+      else vid.addEventListener('loadedmetadata', onMeta, { once: true });
 
       setGlobalScreenTexture(tex);
     } else if (contentType === 'image' && screenshotUrl) {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.decoding = 'async';
-
-      const fallbackRaw = () => {
-        // Last-resort path when the canvas route is unusable (CORS taint,
-        // decode error, etc). The image still shows, just stretched onto
-        // the plane without CSS-style fitting.
-        const loader = new THREE.TextureLoader();
-        loader.crossOrigin = 'anonymous';
-        loader.load(screenshotUrl, (tex) => {
+      const loader = new THREE.TextureLoader();
+      // Same-origin blob/object URLs don't need CORS; cross-origin ones
+      // (e.g. thum.io) will fail silently if the server omits CORS — in that
+      // case the browser still shows the image, it just can't be read back
+      // as pixels, which is fine since we never call toDataURL on it.
+      loader.setCrossOrigin('anonymous');
+      loader.load(
+        screenshotUrl,
+        (tex) => {
           if (cancelled) {
             tex.dispose();
             return;
           }
           tex.colorSpace = THREE.SRGBColorSpace;
-          textureRef.current = tex;
-          setGlobalScreenTexture(tex);
-        });
-      };
-
-      img.onload = () => {
-        if (cancelled) return;
-        const canvas = composeImageOnCanvas(img, screenAspect, fitMode);
-        if (!canvas) {
-          fallbackRaw();
-          return;
-        }
-        try {
-          const tex = new THREE.CanvasTexture(canvas);
-          tex.colorSpace = THREE.SRGBColorSpace;
           tex.anisotropy = 8;
-          tex.needsUpdate = true;
+          tex.minFilter = THREE.LinearMipmapLinearFilter;
+          tex.magFilter = THREE.LinearFilter;
+          tex.generateMipmaps = true;
+          const img = tex.image as HTMLImageElement;
+          applyFit(
+            tex,
+            img?.naturalWidth || img?.width || 0,
+            img?.naturalHeight || img?.height || 0,
+            screenAspect,
+            fitMode,
+          );
           textureRef.current = tex;
           setGlobalScreenTexture(tex);
-        } catch {
-          fallbackRaw();
-        }
-      };
-      img.onerror = fallbackRaw;
-      img.src = screenshotUrl;
+        },
+        undefined,
+        () => {
+          // Loader failed — usually a bad URL. Clear so we don't show stale.
+          textureRef.current = null;
+          setGlobalScreenTexture(null);
+        },
+      );
     } else {
       textureRef.current = null;
       setGlobalScreenTexture(null);
@@ -260,7 +226,10 @@ export function useScreenTexture(
         videoElRef.current = null;
       }
     };
-  }, [screenshotUrl, videoUrl, contentType, screenAspect, fitMode]);
+    // screenAspect / fitMode are intentionally excluded: the other effect
+    // applies them without forcing a re-download.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screenshotUrl, videoUrl, contentType]);
 
   return textureRef;
 }
