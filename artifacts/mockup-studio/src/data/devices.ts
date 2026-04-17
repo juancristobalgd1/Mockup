@@ -134,7 +134,6 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     glbUrl: '/models/iphone_17_pro_max.glb',
     skipOverlay: true,
     screenMeshName: 'Object_55',
-    screenFacesBack: true,
     useOriginalMaterials: true,
   },
   
@@ -175,10 +174,9 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     glbUrl: '/models/iphone16promax.glb',
     skipOverlay: true,
     screenMeshName: 'Object_55',
-    screenFacesBack: true,
     useOriginalMaterials: true,
   },
-  // ── Android ───────────────────────────────────────────────────────
+  // ── Android ─────────────────────────────────────────���─────────────
   {
     id: 'samsung-s25-ultra',
     label: 'Galaxy S25 Ultra',
