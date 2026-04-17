@@ -1032,26 +1032,14 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                         )}
 
                         {deviceProperty === 'shadow' && (
-                          <div>
-                            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
-                              Intensidad
-                            </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                              <input
-                                type="range"
-                                min={0}
-                                max={100}
-                                step={1}
-                                value={state.contactShadowOpacity}
-                                onChange={(e) => {
-                                  updateState({ contactShadowOpacity: Number(e.target.value) }, true);
-                                }}
-                                style={{ flex: 1, accentColor: "#3498db", height: 4 }}
-                              />
-                              <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", minWidth: 36, textAlign: "right" }}>
-                                {`${Math.round(state.contactShadowOpacity)}%`}
-                              </span>
-                            </div>
+                          <div style={{ padding: '4px 0' }}>
+                            <Slider 
+                              label="Intensidad" 
+                              value={state.contactShadowOpacity} 
+                              min={0} max={100} 
+                              onChange={v => updateState({ contactShadowOpacity: v }, true)} 
+                              unit="%" 
+                            />
                           </div>
                         )}
 
