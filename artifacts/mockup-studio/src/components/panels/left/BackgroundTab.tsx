@@ -321,16 +321,64 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
 
           {state.bgType === 'pattern' && (
             <Section label="Patrones">
-              <div className="ps-responsive-list">
+              <div className="ps-responsive-list" style={{ marginBottom: 20 }}>
                 {PATTERNS.map(p => {
                   const active = state.bgPattern === p.id;
                   return (
                     <button key={p.id} onClick={() => updateState({ bgPattern: p.id })} style={SWATCH_BTN(active)}>
-                      <div style={{ ...THUMB, ...p.bgStyle('#1a1c2e', state.bgPatternColor), width: '100%', height: 50 }} />
+                      <div style={{ ...THUMB, ...p.bgStyle('#1a1c2e', state.bgPatternColor), width: '100%', height: 50, filter: state.bgPatternBlur > 0 ? `blur(${state.bgPatternBlur / 4}px)` : 'none' }} />
                       <span style={SWATCH_LABEL(active)}>{p.label}</span>
                     </button>
                   );
                 })}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {/* Pattern Color */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Color del Patrón</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <div style={{ position: 'relative', width: 32, height: 32, borderRadius: 8, background: state.bgPatternColor, border: '1px solid rgba(255,255,255,0.2)' }}>
+                      <input type="color" value={state.bgPatternColor.startsWith('#') ? state.bgPatternColor : '#ffffff'} onChange={e => updateState({ bgPatternColor: e.target.value })} style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
+                    </div>
+                    <input type="text" value={state.bgPatternColor} onChange={e => updateState({ bgPatternColor: e.target.value })} className="rt-input" style={{ flex: 1, height: 32, fontSize: 11, fontFamily: 'monospace' }} />
+                  </div>
+                </div>
+
+                {/* Pattern Scale */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Escala</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#fff' }}>{Math.round(state.bgPatternScale * 100)}%</span>
+                  </div>
+                  <input type="range" min={0.1} max={4} step={0.1} value={state.bgPatternScale}
+                    onChange={e => updateState({ bgPatternScale: Number(e.target.value) })}
+                    className="ms-range" />
+                </div>
+
+                {/* Pattern Opacity */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Opacidad</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#fff' }}>{state.bgPatternOpacity}%</span>
+                  </div>
+                  <input type="range" min={0} max={100} step={1} value={state.bgPatternOpacity}
+                    onChange={e => updateState({ bgPatternOpacity: Number(e.target.value) })}
+                    className="ms-range" />
+                </div>
+
+                {/* Pattern Blur (The new addition) */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Desenfoque (Blur)</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#fff' }}>{state.bgPatternBlur}px</span>
+                  </div>
+                  <input type="range" min={0} max={40} step={1} value={state.bgPatternBlur}
+                    onChange={e => updateState({ bgPatternBlur: Number(e.target.value) })}
+                    className="ms-range" />
+                </div>
               </div>
             </Section>
           )}
@@ -465,7 +513,11 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
               {/* Effects Hub (Toggles) */}
               <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                 {[
-                  { id: 'noise', label: 'Ruido', icon: <Sparkles size={14} />, active: state.grain, toggle: () => updateState({ grain: !state.grain, grainIntensity: state.grain ? 0 : 20, grainBgOnly: true }) },
+                  { id: 'noise', label: 'Ruido', icon: (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 4h.01M9 4h.01M14 4h.01M19 4h.01M4 9h.01M9 9h.01M14 9h.01M19 9h.01M4 14h.01M9 14h.01M14 14h.01M19 14h.01M4 19h.01M9 19h.01 M14 19h.01M19 19h.01" />
+                    </svg>
+                  ), active: state.grain, toggle: () => updateState({ grain: !state.grain, grainIntensity: state.grain ? 0 : 20, grainBgOnly: true }) },
                   { id: 'blur', label: 'Desenfoque', icon: <Droplet size={14} />, active: state.bgBlur > 0, toggle: () => updateState({ bgBlur: state.bgBlur > 0 ? 0 : 8 }) },
                   { id: 'vignette', label: 'Viñeta', icon: <Contrast size={14} />, active: state.bgVignette, toggle: () => updateState({ bgVignette: !state.bgVignette, bgVignetteIntensity: state.bgVignette ? 0 : 50 }) },
                 ].map(effect => (

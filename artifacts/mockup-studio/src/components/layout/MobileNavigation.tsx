@@ -887,7 +887,9 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                     </button>
                     {/* Noise */}
                     <button className="btn-press" onClick={() => setBackgroundProperty(backgroundProperty === 'noise' ? null : 'noise')} style={{ width: 40, height: 40, borderRadius: 20, background: backgroundProperty === 'noise' ? "#f5f5f7" : "transparent", color: backgroundProperty === 'noise' ? "#000" : (state.grainIntensity > 0 ? "#fff" : "rgba(255,255,255,0.4)"), display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}>
-                      <Sparkles size={18} strokeWidth={2.5} />
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 4h.01M9 4h.01M14 4h.01M19 4h.01M4 9h.01M9 9h.01M14 9h.01M19 9h.01M4 14h.01M9 14h.01M14 14h.01M19 14h.01M4 19h.01M9 19h.01M14 19h.01M19 19h.01" />
+                      </svg>
                     </button>
                     {/* Vignette */}
                     <button className="btn-press" onClick={() => setBackgroundProperty(backgroundProperty === 'vignette' ? null : 'vignette')} style={{ width: 40, height: 40, borderRadius: 20, background: backgroundProperty === 'vignette' ? "#f5f5f7" : "transparent", color: backgroundProperty === 'vignette' ? "#000" : (state.bgVignette ? "#fff" : "rgba(255,255,255,0.4)"), display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}>
@@ -903,7 +905,12 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                     isOpen={!!patternsProperty}
                     onClose={() => setPatternsProperty(null)}
                     id="patterns-tooltip"
-                    label={patternsProperty === 'color' ? 'Color de Patrón' : patternsProperty === 'opacity' ? 'Opacidad' : patternsProperty === 'scale' ? 'Escala' : 'Ajustes'}
+                    label={
+                      patternsProperty === 'color' ? 'Color de Patrón' : 
+                      patternsProperty === 'opacity' ? 'Opacidad' : 
+                      patternsProperty === 'scale' ? 'Escala' : 
+                      patternsProperty === 'blur' ? 'Desenfoque' : 'Ajustes'
+                    }
                   >
                     {patternsProperty === 'color' ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -919,8 +926,26 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                       </div>
                     ) : (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <input type="range" min={0} max={100} step={1} value={patternsProperty === 'opacity' ? state.bgOpacity : (state.bgPatternScale * 25)} onChange={(e) => { const val = Number(e.target.value); if (patternsProperty === 'opacity') updateState({ bgOpacity: val }); else updateState({ bgPatternScale: val / 25 }); }} style={{ flex: 1, accentColor: '#fff', height: 4 }} />
-                        <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', minWidth: 36, textAlign: 'right' }}> {patternsProperty === 'opacity' ? `${state.bgOpacity}%` : `${Math.round(state.bgPatternScale * 100)}%`} </span>
+                        <input type="range" 
+                          min={0} 
+                          max={patternsProperty === 'blur' ? 40 : 100} 
+                          step={1} 
+                          value={
+                            patternsProperty === 'opacity' ? state.bgPatternOpacity : 
+                            patternsProperty === 'scale' ? (state.bgPatternScale * 25) : 
+                            state.bgPatternBlur
+                          } 
+                          onChange={(e) => { 
+                            const val = Number(e.target.value); 
+                            if (patternsProperty === 'opacity') updateState({ bgPatternOpacity: val }); 
+                            else if (patternsProperty === 'scale') updateState({ bgPatternScale: val / 25 }); 
+                            else updateState({ bgPatternBlur: val });
+                          }} 
+                          style={{ flex: 1, accentColor: '#fff', height: 4 }} 
+                        />
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', minWidth: 36, textAlign: 'right' }}> 
+                          {patternsProperty === 'opacity' ? `${state.bgPatternOpacity}%` : patternsProperty === 'scale' ? `${Math.round(state.bgPatternScale * 100)}%` : `${state.bgPatternBlur}px`} 
+                        </span>
                       </div>
                     )}
                   </PropertyTooltip>
@@ -930,8 +955,9 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                     </div>
                   </button>
                   <div style={{ display: "flex", background: "#1c1c1e", borderRadius: 30, padding: 4, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", opacity: state.bgPatternEnabled ? 1 : 0.5, pointerEvents: state.bgPatternEnabled ? 'auto' : 'none' }}>
-                    <button className="btn-press" onClick={() => setPatternsProperty(patternsProperty === 'opacity' ? null : 'opacity')} style={{ width: 40, height: 40, borderRadius: 20, background: patternsProperty === 'opacity' ? "#f5f5f7" : "transparent", color: patternsProperty === 'opacity' ? "#000" : "rgba(255,255,255,0.4)", display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" /><path d="M8 12h8" /></svg></button>
-                    <button className="btn-press" onClick={() => setPatternsProperty(patternsProperty === 'scale' ? null : 'scale')} style={{ width: 40, height: 40, borderRadius: 20, background: patternsProperty === 'scale' ? "#f5f5f7" : "transparent", color: patternsProperty === 'scale' ? "#000" : "rgba(255,255,255,0.4)", display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" /><path d="M8 12h8" /><path d="M12 8v8" /></svg></button>
+                    <button className="btn-press" onClick={() => setPatternsProperty(patternsProperty === 'opacity' ? null : 'opacity')} style={{ width: 40, height: 40, borderRadius: 20, background: patternsProperty === 'opacity' ? "#f5f5f7" : "transparent", color: patternsProperty === 'opacity' ? "#000" : "rgba(255,255,255,0.4)", display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}><Contrast size={18} strokeWidth={2.5} /></button>
+                    <button className="btn-press" onClick={() => setPatternsProperty(patternsProperty === 'scale' ? null : 'scale')} style={{ width: 40, height: 40, borderRadius: 20, background: patternsProperty === 'scale' ? "#f5f5f7" : "transparent", color: patternsProperty === 'scale' ? "#000" : "rgba(255,255,255,0.4)", display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}><Maximize size={18} strokeWidth={2.5} /></button>
+                    <button className="btn-press" onClick={() => setPatternsProperty(patternsProperty === 'blur' ? null : 'blur')} style={{ width: 40, height: 40, borderRadius: 20, background: patternsProperty === 'blur' ? "#f5f5f7" : "transparent", color: patternsProperty === 'blur' ? "#000" : "rgba(255,255,255,0.4)", display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}><Droplet size={18} strokeWidth={2.5} /></button>
                   </div>
                   <button className="ps-tool-icon-btn btn-press" onClick={() => setPatternsProperty(patternsProperty === 'more' ? null : 'more')} style={{ pointerEvents: "auto", background: patternsProperty === 'more' ? "#fff" : "#1c1c1e", color: patternsProperty === 'more' ? "#000" : "#fff", border: "none", width: 44, height: 44, borderRadius: 22, boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}>
                     <MoreHorizontal size={20} />

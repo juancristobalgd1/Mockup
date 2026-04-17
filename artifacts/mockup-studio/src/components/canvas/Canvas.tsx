@@ -266,7 +266,8 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
             <div style={{
               position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', borderRadius,
               ...style,
-              opacity: state.bgOpacity / 100
+              opacity: (state.bgPatternOpacity ?? 100) / 100,
+              ...(state.bgPatternBlur > 0 ? { filter: `blur(${state.bgPatternBlur}px)`, transform: 'scale(1.02)' } : {})
             }} />
           );
         })()}

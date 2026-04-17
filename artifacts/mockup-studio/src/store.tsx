@@ -121,6 +121,7 @@ export interface AppState {
   bgPatternEnabled: boolean;
   bgPatternScale: number;
   bgPatternOpacity: number;
+  bgPatternBlur: number;
   bgAnimated: string;
   bgOpacity: number;
   showBgSettings?: boolean;
@@ -239,6 +240,7 @@ export const defaultState: AppState = {
   bgPatternEnabled: false,
   bgPatternScale: 1,
   bgPatternOpacity: 100,
+  bgPatternBlur: 0,
   bgAnimated: "3d-aura",
   bgOpacity: 100,
   showBgSettings: false,
