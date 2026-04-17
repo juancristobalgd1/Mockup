@@ -29,20 +29,20 @@ export function OrientationGimbal({
         <ambientLight intensity={2.5} />
         <pointLight position={[5, 5, 5]} intensity={2} />
 
-        {/* Professional Spline-style circular background */}
+        {/* Professional Spline-style circular background - now transparent */}
         <mesh raycast={() => null}>
           <circleGeometry args={[1.5, 40]} />
-          <meshBasicMaterial color="#ffffff" opacity={0.96} transparent />
+          <meshBasicMaterial color="#ffffff" opacity={0} transparent />
         </mesh>
-        {/* Soft outer border ring */}
+        {/* Soft outer border ring - now transparent */}
         <mesh position={[0, 0, -0.05]} raycast={() => null}>
           <circleGeometry args={[1.54, 40]} />
-          <meshBasicMaterial color="#e2e8f0" />
+          <meshBasicMaterial color="#e2e8f0" opacity={0} transparent />
         </mesh>
-        {/* Depth shadow for the pill */}
+        {/* Depth shadow for the pill - now transparent */}
         <mesh position={[0, 0, -0.1]} raycast={() => null}>
           <circleGeometry args={[1.58, 40]} />
-          <meshBasicMaterial color="#000" opacity={0.03} transparent />
+          <meshBasicMaterial color="#000" opacity={0} transparent />
         </mesh>
 
         <GimbalContent mainCamera={mainCamera} />

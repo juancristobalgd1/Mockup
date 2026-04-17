@@ -36,7 +36,8 @@ import {
   Droplet,
   Moon,
   RotateCcw,
-  RefreshCw
+  RefreshCw,
+  Frame
 } from "lucide-react";
 import { PropertyTooltip } from "../ui/PropertyTooltip";
 import { getModelById, DEVICE_MODELS, DEVICE_GROUPS } from "../../data/devices";
@@ -824,7 +825,8 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                       backgroundProperty === 'opacity' ? 'Opacidad' : 
                       backgroundProperty === 'blur' ? 'Desenfoque' : 
                       backgroundProperty === 'noise' ? 'Ruido' :
-                      backgroundProperty === 'vignette' ? 'Viñeta' : 'Efectos'
+                      backgroundProperty === 'vignette' ? 'Viñeta' : 
+                      backgroundProperty === 'radius' ? 'Borde del Lienzo' : 'Efectos'
                     }
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -847,6 +849,11 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                         <>
                           <input type="range" min={0} max={100} step={1} value={state.bgVignetteIntensity} onChange={(e) => updateState({ bgVignette: Number(e.target.value) > 0, bgVignetteIntensity: Number(e.target.value) })} style={{ flex: 1, accentColor: '#fff', height: 4 }} className="ms-range" />
                           <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{state.bgVignetteIntensity}%</span>
+                        </>
+                      ) : backgroundProperty === 'radius' ? (
+                        <>
+                          <input type="range" min={0} max={80} step={1} value={state.canvasRadius ?? 0} onChange={(e) => updateState({ canvasRadius: Number(e.target.value) })} style={{ flex: 1, accentColor: '#fff', height: 4 }} className="ms-range" />
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{state.canvasRadius ?? 0}px</span>
                         </>
                       ) : null}
                     </div>
@@ -887,6 +894,10 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                     {/* Vignette */}
                     <button className="btn-press" onClick={() => setBackgroundProperty(backgroundProperty === 'vignette' ? null : 'vignette')} style={{ width: 40, height: 40, borderRadius: 20, background: backgroundProperty === 'vignette' ? "#f5f5f7" : "transparent", color: backgroundProperty === 'vignette' ? "#000" : (state.bgVignette ? "#fff" : "rgba(255,255,255,0.4)"), display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeWidth="2"/><circle cx="12" cy="12" r="6" strokeWidth="1.5" strokeDasharray="2 2"/></svg>
+                    </button>
+                    {/* Radius/Border */}
+                    <button className="btn-press" onClick={() => setBackgroundProperty(backgroundProperty === 'radius' ? null : 'radius')} style={{ width: 40, height: 40, borderRadius: 20, background: backgroundProperty === 'radius' ? "#f5f5f7" : "transparent", color: backgroundProperty === 'radius' ? "#000" : ((state.canvasRadius ?? 0) > 0 ? "#fff" : "rgba(255,255,255,0.4)"), display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}>
+                      <Frame size={18} strokeWidth={2.5} />
                     </button>
                   </div>
                 </>
@@ -966,11 +977,9 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                     id="device-tooltip"
                     label={
                       deviceProperty === 'color' ? 'Material / Color' : 
-                      deviceProperty === 'reflection' ? 'Reflexión' : 
                       deviceProperty === 'shadow' ? 'Sombra' : 
                       deviceProperty === 'estudio' ? 'Entorno' :
                       deviceProperty === 'luz' ? 'Iluminación Pro' :
-                      deviceProperty === 'camera' ? 'Lienzo y Cámara' :
                       deviceProperty === 'motion' ? 'Movimiento' :
                       deviceProperty === 'effects' ? 'Efectos de Escena' :
                       'Configuración General'
@@ -987,12 +996,6 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                         <button onClick={() => updateState({ clayMode: !state.clayMode })} style={{ padding: '8px 12px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: state.clayMode ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)', color: state.clayMode ? '#000' : '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
                           <Box size={14} /> Modo Clay
-                        </button>
-                        <button onClick={() => updateState({ deviceLandscape: !state.deviceLandscape })} style={{ padding: '8px 12px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: state.deviceLandscape ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)', color: state.deviceLandscape ? '#000' : '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <RotateCcw size={14} style={{ transform: state.deviceLandscape ? 'rotate(90deg)' : 'none' }} /> Horizontal
-                        </button>
-                        <button onClick={() => updateState({ reflection: !state.reflection })} style={{ padding: '8px 12px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: state.reflection ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)', color: state.reflection ? '#000' : '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <Sun size={14} /> Reflexión
                         </button>
                       </div>
                     ) : (
@@ -1028,49 +1031,31 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                           </div>
                         )}
 
-                        {(deviceProperty === 'shadow' || deviceProperty === 'reflection') && (
+                        {deviceProperty === 'shadow' && (
                           <div>
-                            {deviceProperty === 'shadow' && (
-                              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
-                                Intensidad
-                              </div>
-                            )}
+                            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
+                              Intensidad
+                            </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                               <input
                                 type="range"
                                 min={0}
                                 max={100}
                                 step={1}
-                                value={deviceProperty === 'reflection' ? state.reflectionOpacity : state.contactShadowOpacity}
+                                value={state.contactShadowOpacity}
                                 onChange={(e) => {
-                                  const val = Number(e.target.value);
-                                  if (deviceProperty === 'reflection') updateState({ reflectionOpacity: val, reflection: true }, true);
-                                  else updateState({ contactShadowOpacity: val }, true);
+                                  updateState({ contactShadowOpacity: Number(e.target.value) }, true);
                                 }}
                                 style={{ flex: 1, accentColor: "#3498db", height: 4 }}
                               />
                               <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", minWidth: 36, textAlign: "right" }}>
-                                {deviceProperty === 'reflection' ? `${Math.round(state.reflectionOpacity)}%` : `${Math.round(state.contactShadowOpacity)}%`}
+                                {`${Math.round(state.contactShadowOpacity)}%`}
                               </span>
                             </div>
                           </div>
                         )}
 
-                        {deviceProperty === 'camera' && (
-                          <>
-                            <div style={{ marginBottom: 16 }}>
-                              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>Proporción del Lienzo</div>
-                              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-                                {CANVAS_RATIOS.map(r => (
-                                  <Chip key={r.id} active={state.canvasRatio === r.id}
-                                    onClick={() => updateState({ canvasRatio: r.id })}>{r.label}</Chip>
-                                ))}
-                              </div>
-                            </div>
-                            <Slider label="Redondeado" value={state.canvasRadius ?? 0} min={0} max={80} step={2}
-                              onChange={v => updateState({ canvasRadius: v })} unit="px" />
-                          </>
-                        )}
+
                         {deviceProperty === 'motion' && (
                           <>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0' }}>
@@ -1188,15 +1173,15 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                     <button className="ps-tool-icon-btn btn-press" onClick={() => setDeviceProperty(deviceProperty === 'color' ? null : 'color')} style={{ background: deviceProperty === 'color' ? "#fff" : "#1c1c1e", color: deviceProperty === 'color' ? "#000" : "#fff", border: "none", width: 44, height: 44, borderRadius: 22, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Color"><Palette size={20} /></button>
                     
                     <div style={{ display: "flex", background: "#1c1c1e", borderRadius: 30, padding: 4, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", gap: 2 }}>
-                      <button className="btn-press" onClick={() => setDeviceProperty(deviceProperty === 'reflection' ? null : 'reflection')} disabled={!state.reflection} style={{ width: 40, height: 40, borderRadius: 20, background: deviceProperty === 'reflection' ? "#f5f5f7" : "transparent", color: deviceProperty === 'reflection' ? "#000" : (state.reflection ? "#fff" : "rgba(255,255,255,0.2)"), display: "flex", alignItems: "center", justifyContent: "center", border: "none", opacity: state.reflection ? 1 : 0.4 }} title="Reflexión"><Sun size={18} strokeWidth={2.5} /></button>
-                      <button className="btn-press" onClick={() => setDeviceProperty(deviceProperty === 'shadow' ? null : 'shadow')} style={{ width: 40, height: 40, borderRadius: 20, background: deviceProperty === 'shadow' ? "#f5f5f7" : "transparent", color: deviceProperty === 'shadow' ? "#000" : (state.contactShadowOpacity > 0 ? "#fff" : "rgba(255,255,255,0.4)"), display: "flex", alignItems: "center", justifyContent: "center", border: "none" }} title="Sombra"><Moon size={18} strokeWidth={2.5} /></button>
+                      <button className="btn-press" onClick={() => updateState({ deviceLandscape: false })} style={{ width: 40, height: 40, borderRadius: 20, background: !state.deviceLandscape ? "#f5f5f7" : "transparent", color: !state.deviceLandscape ? "#000" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "none" }} title="Vertical"><Smartphone size={18} strokeWidth={2.5} /></button>
+                      <button className="btn-press" onClick={() => updateState({ deviceLandscape: true })} style={{ width: 40, height: 40, borderRadius: 20, background: state.deviceLandscape ? "#f5f5f7" : "transparent", color: state.deviceLandscape ? "#000" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "none" }} title="Horizontal"><Smartphone size={18} strokeWidth={2.5} style={{ transform: 'rotate(90deg)' }} /></button>
                     </div>
 
                     <div style={{ display: "flex", background: "#1c1c1e", borderRadius: 30, padding: 4, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", gap: 2, overflowX: "auto", maxWidth: "40vw", scrollbarWidth: "none" }}>
                       {[
                         { id: 'estudio', icon: <Lamp size={18} />, label: 'Entorno' },
+                        { id: 'shadow', icon: <Moon size={18} />, label: 'Sombra' },
                         { id: 'luz', icon: <Sun size={18} />, label: 'Luz' },
-                        { id: 'camera', icon: <Maximize size={18} />, label: 'Cámara' },
                         { id: 'motion', icon: <Activity size={18} />, label: 'Movimiento' },
                         { id: 'effects', icon: <Sparkles size={18} />, label: 'Efectos' }
                       ].map(tool => (
