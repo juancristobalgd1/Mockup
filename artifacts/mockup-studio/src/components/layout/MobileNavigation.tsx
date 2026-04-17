@@ -31,7 +31,9 @@ import {
   Lamp,
   Pipette,
   LayoutList,
-  ChevronLeft
+  ChevronLeft,
+  Contrast,
+  Droplet
 } from "lucide-react";
 import { PropertyTooltip } from "../ui/PropertyTooltip";
 import { getModelById, DEVICE_MODELS, DEVICE_GROUPS } from "../../data/devices";
@@ -825,38 +827,73 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                     isOpen={!!backgroundProperty}
                     onClose={() => setBackgroundProperty(null)}
                     id="background-tooltip"
-                    label={backgroundProperty === 'opacity' ? 'Opacidad' : backgroundProperty === 'blur' ? 'Desenfoque' : 'Efectos'}
+                    label={
+                      backgroundProperty === 'opacity' ? 'Opacidad' : 
+                      backgroundProperty === 'blur' ? 'Desenfoque' : 
+                      backgroundProperty === 'noise' ? 'Ruido' :
+                      backgroundProperty === 'vignette' ? 'Viñeta' : 'Efectos'
+                    }
                   >
-                    {backgroundProperty === 'more' ? (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                        <button onClick={() => updateState({ grain: !state.grain })} style={{ padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: state.grain ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)', color: state.grain ? '#000' : '#fff' }}>Ruido</button>
-                        <button onClick={() => updateState({ bgVignette: !state.bgVignette })} style={{ padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: state.bgVignette ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)', color: state.bgVignette ? '#000' : '#fff' }}>Viñeta</button>
-                        <button onClick={() => updateState({ grainBgOnly: !state.grainBgOnly })} style={{ padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: state.grainBgOnly ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)', color: state.grainBgOnly ? '#000' : '#fff' }}>Solo Fondo (Ruido)</button>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <input type="range" min={0} max={backgroundProperty === 'opacity' ? 100 : 20} step={1} value={backgroundProperty === 'opacity' ? state.bgOpacity : state.bgBlur} onChange={(e) => { const val = Number(e.target.value); if (backgroundProperty === 'opacity') updateState({ bgOpacity: val }); else updateState({ bgBlur: val }); }} style={{ flex: 1, accentColor: '#3498db', height: 4 }} />
-                        <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', minWidth: 36, textAlign: 'right' }}> {backgroundProperty === 'opacity' ? `${state.bgOpacity}%` : `${state.bgBlur}px`} </span>
-                      </div>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      {backgroundProperty === 'opacity' ? (
+                        <>
+                          <input type="range" min={0} max={100} step={1} value={state.bgOpacity} onChange={(e) => updateState({ bgOpacity: Number(e.target.value) })} style={{ flex: 1, accentColor: '#fff', height: 4 }} className="ms-range" />
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{state.bgOpacity}%</span>
+                        </>
+                      ) : backgroundProperty === 'blur' ? (
+                        <>
+                          <input type="range" min={0} max={40} step={1} value={state.bgBlur} onChange={(e) => updateState({ bgBlur: Number(e.target.value) })} style={{ flex: 1, accentColor: '#fff', height: 4 }} className="ms-range" />
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{state.bgBlur}px</span>
+                        </>
+                      ) : backgroundProperty === 'noise' ? (
+                        <>
+                          <input type="range" min={0} max={100} step={1} value={state.grainIntensity} onChange={(e) => updateState({ grain: Number(e.target.value) > 0, grainIntensity: Number(e.target.value), grainBgOnly: true })} style={{ flex: 1, accentColor: '#fff', height: 4 }} className="ms-range" />
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{state.grainIntensity}%</span>
+                        </>
+                      ) : backgroundProperty === 'vignette' ? (
+                        <>
+                          <input type="range" min={0} max={100} step={1} value={state.bgVignetteIntensity} onChange={(e) => updateState({ bgVignette: Number(e.target.value) > 0, bgVignetteIntensity: Number(e.target.value) })} style={{ flex: 1, accentColor: '#fff', height: 4 }} className="ms-range" />
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{state.bgVignetteIntensity}%</span>
+                        </>
+                      ) : null}
+                    </div>
                   </PropertyTooltip>
 
-                  <button className="ps-tool-icon-btn btn-press" onClick={() => { const pool = [{ bgType: 'solid', bgColor: '#ffffff' }, { bgType: 'solid', bgColor: '#1c1c1e' }, { bgType: 'solid', bgColor: '#ef4444' }, { bgType: 'gradient', bgColor: 'sky' }, { bgType: 'gradient', bgColor: 'fire' }, { bgType: 'mesh', bgColor: 'aurora' }, { bgType: 'mesh', bgColor: 'ocean' }, { bgType: 'wallpaper', bgColor: 'nature-1' },]; const pick = pool[Math.floor(Math.random() * pool.length)]; updateState(pick as any); }} style={{ pointerEvents: "auto", background: "#1c1c1e", color: "#fff", border: "none", width: 44, height: 44, borderRadius: 22, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <button className="ps-tool-icon-btn btn-press" onClick={() => { 
+                    const pool = [
+                      { bgType: 'solid', bgColor: '#ffffff' }, 
+                      { bgType: 'solid', bgColor: '#1c1c1e' }, 
+                      { bgType: 'solid', bgColor: '#ef4444' }, 
+                      { bgType: 'gradient', bgColor: 'sky' }, 
+                      { bgType: 'gradient', bgColor: 'fire' }, 
+                      { bgType: 'mesh', bgColor: 'aurora' }, 
+                      { bgType: 'mesh', bgColor: 'ocean' }, 
+                      { bgType: 'wallpaper', bgColor: 'nature-1' }
+                    ]; 
+                    const pick = pool[Math.floor(Math.random() * pool.length)]; 
+                    updateState(pick as any); 
+                  }} style={{ pointerEvents: "auto", background: "#1c1c1e", color: "#fff", border: "none", width: 44, height: 44, borderRadius: 22, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Shuffle size={20} />
                   </button>
 
                   <div style={{ pointerEvents: "auto", display: "flex", background: "#1c1c1e", borderRadius: 30, padding: 4, boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}>
+                    {/* Opacity */}
                     <button className="btn-press" onClick={() => setBackgroundProperty(backgroundProperty === 'opacity' ? null : 'opacity')} style={{ width: 40, height: 40, borderRadius: 20, background: backgroundProperty === 'opacity' ? "#f5f5f7" : "transparent", color: backgroundProperty === 'opacity' ? "#000" : "rgba(255,255,255,0.4)", display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" /><path d="M8 12h8" /></svg>
+                      <Contrast size={18} strokeWidth={2.5} />
                     </button>
+                    {/* Blur */}
                     <button className="btn-press" onClick={() => setBackgroundProperty(backgroundProperty === 'blur' ? null : 'blur')} style={{ width: 40, height: 40, borderRadius: 20, background: backgroundProperty === 'blur' ? "#f5f5f7" : "transparent", color: backgroundProperty === 'blur' ? "#000" : (state.bgBlur > 0 ? "#fff" : "rgba(255,255,255,0.4)"), display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" /><path d="M8 12h8" /><path d="M12 8v8" /></svg>
+                      <Droplet size={18} strokeWidth={2.5} />
+                    </button>
+                    {/* Noise */}
+                    <button className="btn-press" onClick={() => setBackgroundProperty(backgroundProperty === 'noise' ? null : 'noise')} style={{ width: 40, height: 40, borderRadius: 20, background: backgroundProperty === 'noise' ? "#f5f5f7" : "transparent", color: backgroundProperty === 'noise' ? "#000" : (state.grainIntensity > 0 ? "#fff" : "rgba(255,255,255,0.4)"), display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}>
+                      <Sparkles size={18} strokeWidth={2.5} />
+                    </button>
+                    {/* Vignette */}
+                    <button className="btn-press" onClick={() => setBackgroundProperty(backgroundProperty === 'vignette' ? null : 'vignette')} style={{ width: 40, height: 40, borderRadius: 20, background: backgroundProperty === 'vignette' ? "#f5f5f7" : "transparent", color: backgroundProperty === 'vignette' ? "#000" : (state.bgVignette ? "#fff" : "rgba(255,255,255,0.4)"), display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeWidth="2"/><circle cx="12" cy="12" r="6" strokeWidth="1.5" strokeDasharray="2 2"/></svg>
                     </button>
                   </div>
-
-                  <button className="ps-tool-icon-btn btn-press" onClick={() => setBackgroundProperty(backgroundProperty === 'more' ? null : 'more')} style={{ pointerEvents: "auto", background: backgroundProperty === 'more' ? "#fff" : "#1c1c1e", color: backgroundProperty === 'more' ? "#000" : "#fff", border: "none", width: 44, height: 44, borderRadius: 22, boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}>
-                    <MoreHorizontal size={20} />
-                  </button>
                 </>
               )}
 

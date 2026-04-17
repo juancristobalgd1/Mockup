@@ -1,14 +1,14 @@
 import * as React from 'react';
 import { useState, useRef, useEffect } from 'react';
-import { Shuffle, Wand2, Image as ImageIcon, Video, Sparkles, Pipette } from 'lucide-react';
+import { Shuffle, Wand2, Image as ImageIcon, Video, Sparkles, Pipette, Contrast, Droplet } from 'lucide-react';
 import { useApp } from '../../../store';
 import { Section } from '../../ui/PanelUI';
-import { 
-  GRADIENTS, 
-  MESH_GRADIENTS, 
-  PATTERNS, 
-  WALLPAPERS, 
-  ANIMATED_BACKGROUNDS, 
+import {
+  GRADIENTS,
+  MESH_GRADIENTS,
+  PATTERNS,
+  WALLPAPERS,
+  ANIMATED_BACKGROUNDS,
   ANIMATED_BG_KEYFRAMES,
   SOLIDS
 } from '../../../data/backgrounds';
@@ -99,13 +99,15 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
 
   const NO_POPUP_TYPES = new Set(['none', 'transparent']);
   const bgTypeCards = [
-    { id: 'none', label: 'Ninguno', preview: { background: '#ffffff' }, icon:
+    {
+      id: 'none', label: 'Ninguno', preview: { background: '#ffffff' }, icon:
         <svg width="16" height="16" viewBox="0 0 22 22" fill="none">
-          <circle cx="11" cy="11" r="9" stroke="rgba(0,0,0,0.2)" strokeWidth="1.5"/>
-          <line x1="4" y1="4" x2="18" y2="18" stroke="rgba(0,0,0,0.2)" strokeWidth="1.5" strokeLinecap="round"/>
+          <circle cx="11" cy="11" r="9" stroke="rgba(0,0,0,0.2)" strokeWidth="1.5" />
+          <line x1="4" y1="4" x2="18" y2="18" stroke="rgba(0,0,0,0.2)" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
     },
-    { id: 'transparent', label: 'Alfa', preview: null, icon:
+    {
+      id: 'transparent', label: 'Alfa', preview: null, icon:
         <div style={{
           width: '100%', height: '100%', borderRadius: 10,
           backgroundImage: 'linear-gradient(45deg, #3a3a3a 25%, transparent 25%), linear-gradient(-45deg, #3a3a3a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #3a3a3a 75%), linear-gradient(-45deg, transparent 75%, #3a3a3a 75%)',
@@ -121,7 +123,8 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
     { id: 'wallpaper', label: 'Fondo de Pantalla', preview: { background: 'radial-gradient(ellipse at 50% 0%, #bfdbfe 0%, #60a5fa 60%, #dbeafe 100%)' } },
     { id: 'pattern', label: 'Patrón', preview: { backgroundColor: '#1a1c2e', backgroundImage: 'radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1px)', backgroundSize: '10px 10px' } },
     { id: 'video', label: 'Video', preview: null, icon: <Video size={16} color="rgba(255,255,255,0.40)" /> },
-    { id: 'animated', label: 'Animado', preview: null, icon:
+    {
+      id: 'animated', label: 'Animado', preview: null, icon:
         <div style={{
           width: '100%', height: '100%', borderRadius: 10,
           background: 'linear-gradient(-45deg, #7e22ce, #0ea5e9, #ec4899, #f59e0b)',
@@ -156,15 +159,15 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
 
       {(!isMobile || mobileView === 'hub') && (
         <Section label="Tipo de Fondo">
-          <div 
-            style={{ 
-              display: 'flex', 
-              gap: 10, 
-              overflowX: 'auto', 
+          <div
+            style={{
+              display: 'flex',
+              gap: 10,
+              overflowX: 'auto',
               paddingBottom: 12,
               marginBottom: 4,
               scrollSnapType: 'x mandatory'
-            }} 
+            }}
             className="hide-scrollbars"
           >
             {bgTypeCards.map((card: any) => {
@@ -186,8 +189,8 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
                     minWidth: 70
                   }}
                 >
-                  <div style={{ 
-                    ...THUMB, 
+                  <div style={{
+                    ...THUMB,
                     ...(card.preview || {}),
                     background: card.preview ? card.preview.background : (card.id === 'image' ? (state.bgImage ? `url(${state.bgImage})` : '#333') : (card.id === 'video' ? '#000' : 'transparent')),
                     backgroundSize: 'cover',
@@ -209,228 +212,228 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
       {/* Primary Contextual Options based on state.bgType */}
       {(!isMobile || mobileView === 'content') && (
         <div style={{ marginBottom: 20 }}>
-        {state.bgType === 'solid' && (
-          <Section label="Color Sólido">
-            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6 }} className="hide-scrollbars">
-              {/* Custom Color Picker */}
-              <div style={{ 
-                flexShrink: 0, 
-                position: 'relative', 
-                width: 44, 
-                height: 44, 
-                borderRadius: '50%', 
-                background: 'conic-gradient(#ff0000, #ff7f00, #ffff00, #00ff00, #00ffff, #0000ff, #8b00ff, #ff00ff, #ff0000)',
-                border: '2px solid rgba(255,255,255,0.3)', 
-                boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                cursor: 'pointer', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                overflow: 'hidden',
-                transition: 'transform 0.15s ease'
-              }} className="btn-press">
-                <Pipette size={20} color="#fff" strokeWidth={2.5} style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />
-                <input type="color" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
-                  style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
-              </div>
-
-              {/* Sample Colors */}
-              {SOLIDS.map(color => (
-                <button
-                  key={color}
-                  onClick={() => updateState({ bgColor: color })}
-                  style={{
-                    flexShrink: 0,
-                    width: 44,
-                    height: 44,
-                    borderRadius: '50%',
-                    background: color,
-                    border: state.bgColor === color ? '2px solid #fff' : '2px solid rgba(255,255,255,0.08)',
-                    boxShadow: state.bgColor === color ? '0 0 10px rgba(255,255,255,0.4)' : 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
-                  className="btn-press"
-                />
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {state.bgType === 'gradient' && (
-          <Section label="Degradados">
-            <div className="ps-responsive-list">
-              {GRADIENTS.map(g => {
-                const active = state.bgColor === g.id;
-                return (
-                  <button key={g.id} onClick={() => updateState({ bgColor: g.id })} style={SWATCH_BTN(active)}>
-                    <div style={{ ...THUMB, background: g.css, width: '100%', height: 50 }} />
-                    <span style={SWATCH_LABEL(active)}>{g.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </Section>
-        )}
-
-        {state.bgType === 'mesh' && (
-          <Section label="Degradados de Malla" action={
-            state.screenshotUrl && (
-              <button onClick={handleAutoBackground} disabled={extracting}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 8,
-                  fontSize: 10, fontWeight: 700, background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.65)', cursor: 'pointer',
-                }}>
-                <Wand2 size={12} /> {extracting ? '...' : 'Auto'}
-              </button>
-            )
-          }>
-            <div className="ps-responsive-list">
-              {MESH_GRADIENTS.map(m => {
-                const active = state.bgColor === m.id;
-                return (
-                  <button key={m.id} onClick={() => updateState({ bgColor: m.id })} style={SWATCH_BTN(active)}>
-                    <div style={{ ...THUMB, background: m.css, width: '100%', height: 50 }} />
-                    <span style={SWATCH_LABEL(active)}>{m.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </Section>
-        )}
-
-        {state.bgType === 'wallpaper' && (
-          <Section label="Fondos de Pantalla">
-            <div className="ps-responsive-list">
-              {WALLPAPERS.map(w => {
-                const active = state.bgColor === w.id;
-                return (
-                  <button key={w.id} onClick={() => updateState({ bgColor: w.id })} style={SWATCH_BTN(active)}>
-                    <div style={{ ...THUMB, background: w.css, width: '100%', height: 50 }} />
-                    <span style={SWATCH_LABEL(active)}>{w.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </Section>
-        )}
-
-        {state.bgType === 'pattern' && (
-          <Section label="Patrones">
-            <div className="ps-responsive-list">
-              {PATTERNS.map(p => {
-                const active = state.bgPattern === p.id;
-                return (
-                  <button key={p.id} onClick={() => updateState({ bgPattern: p.id })} style={SWATCH_BTN(active)}>
-                    <div style={{ ...THUMB, ...p.bgStyle('#1a1c2e', state.bgPatternColor), width: '100%', height: 50 }} />
-                    <span style={SWATCH_LABEL(active)}>{p.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </Section>
-        )}
-
-        {state.bgType === 'animated' && (
-          <Section label="Animados">
-            <div className="ps-responsive-list">
-              {ANIMATED_BACKGROUNDS.map(bg => {
-                const active = state.bgAnimated === bg.id;
-                return (
-                  <button key={bg.id} onClick={() => updateState({ bgAnimated: bg.id })}
-                    style={{
-                      position: 'relative', border: 'none', padding: 0, borderRadius: 14, overflow: 'hidden', cursor: 'pointer',
-                      outline: active ? '2.5px solid rgba(167,139,250,0.9)' : '1px solid rgba(255,255,255,0.1)',
-                    }}>
-                    <div style={{ width: '100%', aspectRatio: '16/10', ...bg.thumb }} />
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', padding: '6px', fontSize: 10, fontWeight: 700, color: '#fff' }}>
-                      {bg.label}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </Section>
-        )}
-
-        {state.bgType === 'image' && (
-          <Section label="Imagen Personalizada">
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              {state.bgImage && (
-                <div style={{ 
-                  width: 50, 
-                  height: 50, 
-                  borderRadius: 10, 
-                  overflow: 'hidden', 
-                  border: '1px solid rgba(255,255,255,0.12)',
+          {state.bgType === 'solid' && (
+            <Section label="Color Sólido">
+              <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6 }} className="hide-scrollbars">
+                {/* Custom Color Picker */}
+                <div style={{
                   flexShrink: 0,
-                  background: 'rgba(255,255,255,0.05)'
-                }}>
-                  <img src={state.bgImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="bg" />
-                </div>
-              )}
-              <button onClick={() => bgFileRef.current?.click()}
-                style={{
-                  flex: 1, 
-                  height: 50,
-                  borderRadius: 12, 
-                  fontSize: 12, 
-                  fontWeight: 700,
-                  background: 'rgba(255,255,255,0.06)', 
-                  border: '1px dashed rgba(255,255,255,0.15)',
-                  color: 'rgba(255,255,255,0.9)', 
+                  position: 'relative',
+                  width: 44,
+                  height: 44,
+                  borderRadius: '50%',
+                  background: 'conic-gradient(#ff0000, #ff7f00, #ffff00, #00ff00, #00ffff, #0000ff, #8b00ff, #ff00ff, #ff0000)',
+                  border: '2px solid rgba(255,255,255,0.3)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: 8
-                }}>
-                <ImageIcon size={14} />
-                {state.bgImage ? 'Cambiar Imagen' : 'Subir Imagen'}
-              </button>
-              {state.bgImage && (
-                <button 
-                  onClick={() => updateState({ bgImage: null })}
+                  overflow: 'hidden',
+                  transition: 'transform 0.15s ease'
+                }} className="btn-press">
+                  <Pipette size={20} color="#fff" strokeWidth={2.5} style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />
+                  <input type="color" value={state.bgColor} onChange={e => updateState({ bgColor: e.target.value })}
+                    style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
+                </div>
+
+                {/* Sample Colors */}
+                {SOLIDS.map(color => (
+                  <button
+                    key={color}
+                    onClick={() => updateState({ bgColor: color })}
+                    style={{
+                      flexShrink: 0,
+                      width: 44,
+                      height: 44,
+                      borderRadius: '50%',
+                      background: color,
+                      border: state.bgColor === color ? '2px solid #fff' : '2px solid rgba(255,255,255,0.08)',
+                      boxShadow: state.bgColor === color ? '0 0 10px rgba(255,255,255,0.4)' : 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                    className="btn-press"
+                  />
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {state.bgType === 'gradient' && (
+            <Section label="Degradados">
+              <div className="ps-responsive-list">
+                {GRADIENTS.map(g => {
+                  const active = state.bgColor === g.id;
+                  return (
+                    <button key={g.id} onClick={() => updateState({ bgColor: g.id })} style={SWATCH_BTN(active)}>
+                      <div style={{ ...THUMB, background: g.css, width: '100%', height: 50 }} />
+                      <span style={SWATCH_LABEL(active)}>{g.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Section>
+          )}
+
+          {state.bgType === 'mesh' && (
+            <Section label="Degradados de Malla" action={
+              state.screenshotUrl && (
+                <button onClick={handleAutoBackground} disabled={extracting}
                   style={{
-                    width: 32,
+                    display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 8,
+                    fontSize: 10, fontWeight: 700, background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.65)', cursor: 'pointer',
+                  }}>
+                  <Wand2 size={12} /> {extracting ? '...' : 'Auto'}
+                </button>
+              )
+            }>
+              <div className="ps-responsive-list">
+                {MESH_GRADIENTS.map(m => {
+                  const active = state.bgColor === m.id;
+                  return (
+                    <button key={m.id} onClick={() => updateState({ bgColor: m.id })} style={SWATCH_BTN(active)}>
+                      <div style={{ ...THUMB, background: m.css, width: '100%', height: 50 }} />
+                      <span style={SWATCH_LABEL(active)}>{m.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Section>
+          )}
+
+          {state.bgType === 'wallpaper' && (
+            <Section label="Fondos de Pantalla">
+              <div className="ps-responsive-list">
+                {WALLPAPERS.map(w => {
+                  const active = state.bgColor === w.id;
+                  return (
+                    <button key={w.id} onClick={() => updateState({ bgColor: w.id })} style={SWATCH_BTN(active)}>
+                      <div style={{ ...THUMB, background: w.css, width: '100%', height: 50 }} />
+                      <span style={SWATCH_LABEL(active)}>{w.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Section>
+          )}
+
+          {state.bgType === 'pattern' && (
+            <Section label="Patrones">
+              <div className="ps-responsive-list">
+                {PATTERNS.map(p => {
+                  const active = state.bgPattern === p.id;
+                  return (
+                    <button key={p.id} onClick={() => updateState({ bgPattern: p.id })} style={SWATCH_BTN(active)}>
+                      <div style={{ ...THUMB, ...p.bgStyle('#1a1c2e', state.bgPatternColor), width: '100%', height: 50 }} />
+                      <span style={SWATCH_LABEL(active)}>{p.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Section>
+          )}
+
+          {state.bgType === 'animated' && (
+            <Section label="Animados">
+              <div className="ps-responsive-list">
+                {ANIMATED_BACKGROUNDS.map(bg => {
+                  const active = state.bgAnimated === bg.id;
+                  return (
+                    <button key={bg.id} onClick={() => updateState({ bgAnimated: bg.id })}
+                      style={{
+                        position: 'relative', border: 'none', padding: 0, borderRadius: 14, overflow: 'hidden', cursor: 'pointer',
+                        outline: active ? '2.5px solid rgba(167,139,250,0.9)' : '1px solid rgba(255,255,255,0.1)',
+                      }}>
+                      <div style={{ width: '100%', aspectRatio: '16/10', ...bg.thumb }} />
+                      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', padding: '6px', fontSize: 10, fontWeight: 700, color: '#fff' }}>
+                        {bg.label}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </Section>
+          )}
+
+          {state.bgType === 'image' && (
+            <Section label="Imagen Personalizada">
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                {state.bgImage && (
+                  <div style={{
+                    width: 50,
                     height: 50,
                     borderRadius: 10,
-                    background: 'rgba(255,100,100,0.1)',
-                    border: '1px solid rgba(255,100,100,0.2)',
-                    color: 'rgba(255,150,150,0.8)',
+                    overflow: 'hidden',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    flexShrink: 0,
+                    background: 'rgba(255,255,255,0.05)'
+                  }}>
+                    <img src={state.bgImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="bg" />
+                  </div>
+                )}
+                <button onClick={() => bgFileRef.current?.click()}
+                  style={{
+                    flex: 1,
+                    height: 50,
+                    borderRadius: 12,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px dashed rgba(255,255,255,0.15)',
+                    color: 'rgba(255,255,255,0.9)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    justifyContent: 'center',
+                    gap: 8
+                  }}>
+                  <ImageIcon size={14} />
+                  {state.bgImage ? 'Cambiar Imagen' : 'Subir Imagen'}
                 </button>
-              )}
-            </div>
-            <input ref={bgFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleBgImage} />
-          </Section>
-        )}
-
-        {state.bgType === 'video' && (
-          <Section label="Video Personalizado">
-            {state.bgVideo && (
-              <div style={{ width: '100%', height: 120, borderRadius: 16, overflow: 'hidden', marginBottom: 12, border: '1px solid rgba(255,255,255,0.1)', background: '#000' }}>
-                <video src={state.bgVideo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted autoPlay loop playsInline />
+                {state.bgImage && (
+                  <button
+                    onClick={() => updateState({ bgImage: null })}
+                    style={{
+                      width: 32,
+                      height: 50,
+                      borderRadius: 10,
+                      background: 'rgba(255,100,100,0.1)',
+                      border: '1px solid rgba(255,100,100,0.2)',
+                      color: 'rgba(255,150,150,0.8)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  </button>
+                )}
               </div>
-            )}
-            <button onClick={() => bgVideoFileRef.current?.click()}
-              style={{
-                width: '100%', padding: '14px 0', borderRadius: 12, fontSize: 13, fontWeight: 700,
-                background: 'rgba(255,255,255,0.08)', border: '1px dashed rgba(255,255,255,0.2)',
-                color: '#fff', cursor: 'pointer',
-              }}>
-              {state.bgVideo ? 'Cambiar Video' : '+ Subir Video'}
-            </button>
-            <input ref={bgVideoFileRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={handleBgVideo} />
-          </Section>
-        )}
+              <input ref={bgFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleBgImage} />
+            </Section>
+          )}
+
+          {state.bgType === 'video' && (
+            <Section label="Video Personalizado">
+              {state.bgVideo && (
+                <div style={{ width: '100%', height: 120, borderRadius: 16, overflow: 'hidden', marginBottom: 12, border: '1px solid rgba(255,255,255,0.1)', background: '#000' }}>
+                  <video src={state.bgVideo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted autoPlay loop playsInline />
+                </div>
+              )}
+              <button onClick={() => bgVideoFileRef.current?.click()}
+                style={{
+                  width: '100%', padding: '14px 0', borderRadius: 12, fontSize: 13, fontWeight: 700,
+                  background: 'rgba(255,255,255,0.08)', border: '1px dashed rgba(255,255,255,0.2)',
+                  color: '#fff', cursor: 'pointer',
+                }}>
+                {state.bgVideo ? 'Cambiar Video' : '+ Subir Video'}
+              </button>
+              <input ref={bgVideoFileRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={handleBgVideo} />
+            </Section>
+          )}
         </div>
       )}
 
@@ -446,40 +449,86 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
               <Shuffle size={12} /> Mix
             </button>
           }>
-            {/* Opacity slider info */}
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)' }}>Opacidad</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{state.bgOpacity}%</span>
+            {/* Global Sliders Container */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* Opacity (Persistent) */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Opacidad Global</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{state.bgOpacity}%</span>
+                </div>
+                <input type="range" min={0} max={100} step={1} value={state.bgOpacity}
+                  onChange={e => updateState({ bgOpacity: Number(e.target.value) })}
+                  className="ms-range" />
               </div>
-              <input type="range" min={0} max={100} step={1} value={state.bgOpacity}
-                onChange={e => updateState({ bgOpacity: Number(e.target.value) })}
-                className="ms-range" />
-            </div>
 
-            {/* Effects info */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              <button onClick={() => updateState({ bgBlur: state.bgBlur > 0 ? 0 : 8 })}
-                style={{
-                  padding: '8px 14px', borderRadius: 10, fontSize: 11, fontWeight: 700,
-                  background: state.bgBlur > 0 ? 'rgba(167,139,250,0.2)' : 'rgba(255,255,255,0.06)',
-                  color: state.bgBlur > 0 ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.4)',
-                  border: state.bgBlur > 0 ? '1px solid rgba(167,139,250,0.4)' : '1px solid rgba(255,255,255,0.08)',
-                }}>Desenfoque</button>
-              <button onClick={() => updateState({ grain: !state.grain })}
-                style={{
-                  padding: '8px 14px', borderRadius: 10, fontSize: 11, fontWeight: 700,
-                  background: state.grain ? 'rgba(167,139,250,0.2)' : 'rgba(255,255,255,0.06)',
-                  color: state.grain ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.4)',
-                  border: state.grain ? '1px solid rgba(167,139,250,0.4)' : '1px solid rgba(255,255,255,0.08)',
-                }}>Ruido</button>
-              <button onClick={() => updateState({ bgVignette: !state.bgVignette })}
-                style={{
-                  padding: '8px 14px', borderRadius: 10, fontSize: 11, fontWeight: 700,
-                  background: state.bgVignette ? 'rgba(167,139,250,0.2)' : 'rgba(255,255,255,0.06)',
-                  color: state.bgVignette ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.4)',
-                  border: state.bgVignette ? '1px solid rgba(167,139,250,0.4)' : '1px solid rgba(255,255,255,0.08)',
-                }}>Viñeta</button>
+              {/* Effects Hub (Toggles) */}
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                {[
+                  { id: 'noise', label: 'Ruido', icon: <Sparkles size={14} />, active: state.grain, toggle: () => updateState({ grain: !state.grain, grainIntensity: state.grain ? 0 : 20, grainBgOnly: true }) },
+                  { id: 'blur', label: 'Desenfoque', icon: <Droplet size={14} />, active: state.bgBlur > 0, toggle: () => updateState({ bgBlur: state.bgBlur > 0 ? 0 : 8 }) },
+                  { id: 'vignette', label: 'Viñeta', icon: <Contrast size={14} />, active: state.bgVignette, toggle: () => updateState({ bgVignette: !state.bgVignette, bgVignetteIntensity: state.bgVignette ? 0 : 50 }) },
+                ].map(effect => (
+                  <button
+                    key={effect.id}
+                    onClick={effect.toggle}
+                    style={{
+                      flex: 1, padding: '10px 0', borderRadius: 10, fontSize: 11, fontWeight: 700,
+                      background: effect.active ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)',
+                      color: effect.active ? '#fff' : 'rgba(255,255,255,0.4)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      transition: 'all 0.15s ease',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 4
+                    }}
+                    className="btn-press"
+                  >
+                    {effect.icon}
+                    {effect.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Dynamic Adjustments (Revealed on Toggle) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {state.grain && (
+                  <div style={{ padding: '4px 0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Ruido</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: '#fff' }}>{state.grainIntensity}%</span>
+                    </div>
+                    <input type="range" min={1} max={100} step={1} value={state.grainIntensity}
+                      onChange={e => updateState({ grainIntensity: Number(e.target.value) })}
+                      className="ms-range" />
+                  </div>
+                )}
+
+                {state.bgBlur > 0 && (
+                  <div style={{ padding: '4px 0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Desenfoque</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: '#fff' }}>{state.bgBlur}px</span>
+                    </div>
+                    <input type="range" min={1} max={40} step={1} value={state.bgBlur}
+                      onChange={e => updateState({ bgBlur: Number(e.target.value) })}
+                      className="ms-range" />
+                  </div>
+                )}
+
+                {state.bgVignette && (
+                  <div style={{ padding: '4px 0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Viñeta</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: '#fff' }}>{state.bgVignetteIntensity}%</span>
+                    </div>
+                    <input type="range" min={0} max={100} step={1} value={state.bgVignetteIntensity}
+                      onChange={e => updateState({ bgVignetteIntensity: Number(e.target.value) })}
+                      className="ms-range" />
+                  </div>
+                )}
+              </div>
             </div>
           </Section>
         </div>

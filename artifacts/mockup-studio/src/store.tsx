@@ -294,7 +294,7 @@ export const defaultState: AppState = {
   bgBlur: 0,
   bgVignette: false,
   bgVignetteIntensity: 50,
-  grainBgOnly: false,
+  grainBgOnly: true,
 
   texts: [],
   labelDraftMode: 'follow',
@@ -437,8 +437,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         levitation: prev.labelDraftLevitation,
         fontFamily: prev.labelDraftFont,
       };
-      return { 
-        ...prev, 
+      return {
+        ...prev,
         texts: [...prev.texts, newLabel],
         activeLabelId: newLabel.id
       };
