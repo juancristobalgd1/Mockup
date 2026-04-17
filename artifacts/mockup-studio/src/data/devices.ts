@@ -176,7 +176,7 @@ export const DEVICE_MODELS: DeviceModelDef[] = [
     screenMeshName: 'Object_55',
     useOriginalMaterials: true,
   },
-  // ── Android ───────────────────────────────────────────────────────
+  // ── Android ─────────────────────────────────────────���─────────────
   {
     id: 'samsung-s25-ultra',
     label: 'Galaxy S25 Ultra',

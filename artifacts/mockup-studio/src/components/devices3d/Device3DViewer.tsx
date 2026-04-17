@@ -91,6 +91,9 @@ function DeviceScene({
   const [capturing, setCapturing] = useState(false);
   const [captureError, setCaptureError] = useState("");
   const [captureDelay, setCaptureDelay] = useState(0);
+  const [captureViewport, setCaptureViewport] = useState<"desktop" | "mobile">(
+    () => (def.storeType === "iphone" || def.storeType === "watch" ? "mobile" : "desktop"),
+  );
 
   const applyFile = (file: File) => {
     const url = URL.createObjectURL(file);
@@ -107,18 +110,41 @@ function DeviceScene({
     setCaptureError("");
     setCapturing(true);
 
+    // Compute target aspect ratio (matches the device screen) so the preview
+    // maps 1:1 onto the mesh without extra letterboxing.
     const screenW = def.w - def.insetSide * 2;
     const screenH = def.h - def.insetTop - def.insetBottom;
     const physW = isLandscape ? screenH : screenW;
     const physH = isLandscape ? screenW : screenH;
-    const thumW = 1400;
-    const thumH = Math.max(200, Math.round(thumW * (physH / physW)));
+
+    // Viewport width the remote browser uses to render the page.
+    // Desktop = standard laptop width; Mobile = iPhone-class width so sites
+    // serve their responsive layout instead of a shrunk desktop version.
+    const viewportWidth = captureViewport === "mobile" ? 390 : 1280;
+    // Output width for the captured image. thum.io's free tier caps around
+    // 1600px; going higher returns an error instead of an image.
+    const outputWidth = Math.min(1600, Math.round(viewportWidth * 1.25));
+    const outputHeight = Math.max(
+      400,
+      Math.round(outputWidth * (physH / physW)),
+    );
 
     let url = menuUrl.trim();
     if (!url.startsWith("http")) url = "https://" + url;
-    const delaySegment =
-      captureDelay > 0 ? `delay/${captureDelay * 1000}/` : "";
-    const thumUrl = `https://image.thum.io/get/width/${thumW}/crop/${thumH}/noanimate/${delaySegment}${url}`;
+
+    // Build thum.io path segments. `noanimate` freezes CSS animations for a
+    // clean shot, `viewportWidth` drives the responsive breakpoint, and
+    // `delay` waits before capture. We intentionally keep the default JPEG
+    // output (instead of `/png/`) because PNG requires a paid plan and would
+    // otherwise return an error image, hiding the preview.
+    const segments: string[] = [
+      `width/${outputWidth}`,
+      `crop/${outputHeight}`,
+      `viewportWidth/${viewportWidth}`,
+      "noanimate",
+    ];
+    if (captureDelay > 0) segments.push(`delay/${captureDelay * 1000}`);
+    const thumUrl = `https://image.thum.io/get/${segments.join("/")}/${url}`;
 
     const closeDelay = captureDelay * 1000;
     setTimeout(() => {
@@ -389,14 +415,183 @@ function DeviceScene({
                         style={{ flex: 1, background: "transparent", fontSize: "0.85em", outline: "none", color: "rgba(255,255,255,0.85)", border: "none", minWidth: 0 }}
                       />
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.4em", padding: "0.45em 0.7em", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-                      <span style={{ fontSize: "0.72em", color: "rgba(255,255,255,0.38)", whiteSpace: "nowrap", fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>Wait</span>
-                      <div style={{ display: "flex", gap: 4, flex: 1 }}>
-                        {[0, 1, 2, 3, 5, 8].map((s) => (
-                          <button key={s} onClick={() => setCaptureDelay(s)} style={{ flex: 1, padding: "0.2em 0", fontSize: "0.75em", fontWeight: 700, borderRadius: 5, border: "none", cursor: "pointer", background: captureDelay === s ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.06)", color: captureDelay === s ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)", outline: captureDelay === s ? "1.5px solid rgba(255,255,255,0.5)" : "1px solid rgba(255,255,255,0.1)", transition: "all 0.1s" }}>
-                            {s === 0 ? "0s" : `${s}s`}
-                          </button>
-                        ))}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.4em",
+                        padding: "0.45em 0.7em",
+                        borderTop: "1px solid rgba(255,255,255,0.07)",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "0.72em",
+                          color: "rgba(255,255,255,0.38)",
+                          whiteSpace: "nowrap",
+                          fontWeight: 600,
+                          letterSpacing: "0.04em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        View
+                      </span>
+                      <div
+                        role="radiogroup"
+                        aria-label="Capture viewport"
+                        style={{ display: "flex", gap: 4, flex: 1 }}
+                      >
+                        {(
+                          [
+                            { id: "desktop", label: "Desktop" },
+                            { id: "mobile", label: "Mobile" },
+                          ] as const
+                        ).map((opt) => {
+                          const active = captureViewport === opt.id;
+                          return (
+                            <button
+                              key={opt.id}
+                              role="radio"
+                              aria-checked={active}
+                              onClick={() => setCaptureViewport(opt.id)}
+                              style={{
+                                flex: 1,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: "0.35em",
+                                padding: "0.28em 0",
+                                fontSize: "0.75em",
+                                fontWeight: 700,
+                                borderRadius: 5,
+                                border: "none",
+                                cursor: "pointer",
+                                background: active
+                                  ? "rgba(255,255,255,0.2)"
+                                  : "rgba(255,255,255,0.06)",
+                                color: active
+                                  ? "rgba(255,255,255,0.9)"
+                                  : "rgba(255,255,255,0.45)",
+                                outline: active
+                                  ? "1.5px solid rgba(255,255,255,0.5)"
+                                  : "1px solid rgba(255,255,255,0.1)",
+                                transition: "all 0.1s",
+                              }}
+                            >
+                              {opt.id === "desktop" ? (
+                                <svg
+                                  width="0.85em"
+                                  height="0.85em"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  aria-hidden="true"
+                                >
+                                  <rect
+                                    x="2"
+                                    y="4"
+                                    width="20"
+                                    height="13"
+                                    rx="2"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                  />
+                                  <path
+                                    d="M8 21h8M12 17v4"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                  />
+                                </svg>
+                              ) : (
+                                <svg
+                                  width="0.85em"
+                                  height="0.85em"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  aria-hidden="true"
+                                >
+                                  <rect
+                                    x="6"
+                                    y="2"
+                                    width="12"
+                                    height="20"
+                                    rx="2.5"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                  />
+                                  <path
+                                    d="M11 18h2"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                  />
+                                </svg>
+                              )}
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.4em",
+                        padding: "0.45em 0.7em",
+                        borderTop: "1px solid rgba(255,255,255,0.07)",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "0.72em",
+                          color: "rgba(255,255,255,0.38)",
+                          whiteSpace: "nowrap",
+                          fontWeight: 600,
+                          letterSpacing: "0.04em",
+                          textTransform: "uppercase",
+                        }}
+                        title="Wait before taking the screenshot. Useful for sites with animations, splash screens, or lazy-loaded content."
+                      >
+                        Wait
+                      </span>
+                      <div
+                        role="radiogroup"
+                        aria-label="Capture delay"
+                        style={{ display: "flex", gap: 4, flex: 1 }}
+                      >
+                        {[0, 1, 2, 3, 5, 8].map((s) => {
+                          const active = captureDelay === s;
+                          return (
+                            <button
+                              key={s}
+                              role="radio"
+                              aria-checked={active}
+                              onClick={() => setCaptureDelay(s)}
+                              style={{
+                                flex: 1,
+                                padding: "0.2em 0",
+                                fontSize: "0.75em",
+                                fontWeight: 700,
+                                borderRadius: 5,
+                                border: "none",
+                                cursor: "pointer",
+                                background: active
+                                  ? "rgba(255,255,255,0.2)"
+                                  : "rgba(255,255,255,0.06)",
+                                color: active
+                                  ? "rgba(255,255,255,0.9)"
+                                  : "rgba(255,255,255,0.35)",
+                                outline: active
+                                  ? "1.5px solid rgba(255,255,255,0.5)"
+                                  : "1px solid rgba(255,255,255,0.1)",
+                                transition: "all 0.1s",
+                              }}
+                            >
+                              {s === 0 ? "0s" : `${s}s`}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                     <button
@@ -424,7 +619,179 @@ function DeviceScene({
                   </div>
                 </div>
                 {hasContent && (
-                  <button onClick={() => { updateState({ screenshotUrl: null, videoUrl: null, contentType: null }); setMenuOpen(false); onHidePencil(); }} style={{ width: "100%", padding: "0.55em 0", borderRadius: "0.65em", fontSize: "0.85em", fontWeight: 600, background: "rgba(255,69,58,0.10)", border: "1px solid rgba(255,69,58,0.25)", color: "#ff453a", cursor: "pointer" }}>✕ Remove media</button>
+                  <>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.4em",
+                        padding: "0.45em 0.7em",
+                        borderRadius: "0.6em",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        background: "rgba(255,255,255,0.03)",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "0.72em",
+                          color: "rgba(255,255,255,0.38)",
+                          whiteSpace: "nowrap",
+                          fontWeight: 600,
+                          letterSpacing: "0.04em",
+                          textTransform: "uppercase",
+                        }}
+                        title="How the media adapts to the device screen. Auto-rotates portrait/landscape mismatches."
+                      >
+                        Fit
+                      </span>
+                      <div
+                        role="radiogroup"
+                        aria-label="Screen fit mode"
+                        style={{ display: "flex", gap: 4, flex: 1 }}
+                      >
+                        {(
+                          [
+                            {
+                              id: "cover",
+                              label: "Cover",
+                              title:
+                                "Fills the screen without distortion. Crops edges if needed.",
+                              icon: (
+                                <svg
+                                  width="0.85em"
+                                  height="0.85em"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  aria-hidden="true"
+                                >
+                                  <rect
+                                    x="3"
+                                    y="3"
+                                    width="18"
+                                    height="18"
+                                    rx="2"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                  />
+                                  <rect
+                                    x="6"
+                                    y="6"
+                                    width="12"
+                                    height="12"
+                                    fill="currentColor"
+                                    opacity="0.35"
+                                  />
+                                </svg>
+                              ),
+                            },
+                            {
+                              id: "contain",
+                              label: "Contain",
+                              title:
+                                "Shows the entire media. Adds letterbox bars if aspect ratios differ.",
+                              icon: (
+                                <svg
+                                  width="0.85em"
+                                  height="0.85em"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  aria-hidden="true"
+                                >
+                                  <rect
+                                    x="3"
+                                    y="3"
+                                    width="18"
+                                    height="18"
+                                    rx="2"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                  />
+                                  <rect
+                                    x="3"
+                                    y="8"
+                                    width="18"
+                                    height="8"
+                                    fill="currentColor"
+                                    opacity="0.35"
+                                  />
+                                </svg>
+                              ),
+                            },
+                            {
+                              id: "fill",
+                              label: "Fill",
+                              title:
+                                "Stretches the media to fill the screen. May distort the aspect ratio.",
+                              icon: (
+                                <svg
+                                  width="0.85em"
+                                  height="0.85em"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  aria-hidden="true"
+                                >
+                                  <rect
+                                    x="3"
+                                    y="3"
+                                    width="18"
+                                    height="18"
+                                    rx="2"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                  />
+                                  <path
+                                    d="M7 12h10M7 12l2-2M7 12l2 2M17 12l-2-2M17 12l-2 2"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                              ),
+                            },
+                          ] as const
+                        ).map((opt) => {
+                          const active = state.screenFit === opt.id;
+                          return (
+                            <button
+                              key={opt.id}
+                              role="radio"
+                              aria-checked={active}
+                              title={opt.title}
+                              onClick={() => updateState({ screenFit: opt.id })}
+                              style={{
+                                flex: 1,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: "0.3em",
+                                padding: "0.28em 0",
+                                fontSize: "0.72em",
+                                fontWeight: 700,
+                                borderRadius: 5,
+                                border: "none",
+                                cursor: "pointer",
+                                background: active
+                                  ? "rgba(255,255,255,0.2)"
+                                  : "rgba(255,255,255,0.06)",
+                                color: active
+                                  ? "rgba(255,255,255,0.9)"
+                                  : "rgba(255,255,255,0.45)",
+                                outline: active
+                                  ? "1.5px solid rgba(255,255,255,0.5)"
+                                  : "1px solid rgba(255,255,255,0.1)",
+                                transition: "all 0.1s",
+                              }}
+                            >
+                              {opt.icon}
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <button onClick={() => { updateState({ screenshotUrl: null, videoUrl: null, contentType: null }); setMenuOpen(false); onHidePencil(); }} style={{ width: "100%", padding: "0.55em 0", borderRadius: "0.65em", fontSize: "0.85em", fontWeight: 600, background: "rgba(255,69,58,0.10)", border: "1px solid rgba(255,69,58,0.25)", color: "#ff453a", cursor: "pointer" }}>✕ Remove media</button>
+                  </>
                 )}
               </div>
             </>
@@ -564,10 +931,25 @@ export const Device3DViewer = forwardRef<
     }
   };
 
+  // Device screen aspect (width / height), flipped when the device is in
+  // landscape. Used by the texture hook to fit the media responsively.
+  // NOTE: `def` / `isLandscape` live in the inner render component; this
+  // outer component only has `state`, so we resolve them from there.
+  const outerDef = getModelById(state.deviceModel);
+  const outerIsLandscape = state.deviceLandscape;
+  const screenAspectForTexture = (() => {
+    if (!outerDef) return 9 / 19.5;
+    const sw = outerDef.w - outerDef.insetSide * 2;
+    const sh = outerDef.h - outerDef.insetTop - outerDef.insetBottom;
+    return outerIsLandscape ? sh / sw : sw / sh;
+  })();
+
   const screenTexture = useScreenTexture(
     state.screenshotUrl,
     state.videoUrl,
     state.contentType,
+    screenAspectForTexture,
+    state.screenFit,
   );
 
   useEffect(() => {
