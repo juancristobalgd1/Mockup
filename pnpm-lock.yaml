@@ -65,12 +65,21 @@ importers:
       '@radix-ui/react-slot':
         specifier: ^1.2.4
         version: 1.2.4(@types/react@19.2.14)(react@19.1.0)
+      '@react-three/drei':
+        specifier: ^10.7.7
+        version: 10.7.7(@react-three/fiber@9.5.0(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.183.2))(@types/react@19.2.14)(@types/three@0.183.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.183.2)
+      '@react-three/fiber':
+        specifier: ^9.5.0
+        version: 9.5.0(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.183.2)
       class-variance-authority:
         specifier: 'catalog:'
         version: 0.7.1
       react:
         specifier: 'catalog:'
         version: 19.1.0
+      three:
+        specifier: ^0.183.2
+        version: 0.183.2
     devDependencies:
       prettier:
         specifier: ^3.8.1
@@ -2241,7 +2250,6 @@ packages:
   stats-gl@2.4.2:
     resolution: {integrity: sha512-g5O9B0hm9CvnM36+v7SFl39T7hmAlv541tU81ME8YeSb3i1CIP5/QdDeSB3A0la0bKNHpxpwxOVRo2wFTYEosQ==}
     peerDependencies:
-      '@types/three': '*'
       three: '*'
 
   stats.js@0.17.0:
@@ -3415,7 +3423,7 @@ snapshots:
       maath: 0.10.8(@types/three@0.183.1)(three@0.183.2)
       meshline: 3.3.1(three@0.183.2)
       react: 19.1.0
-      stats-gl: 2.4.2(@types/three@0.183.1)(three@0.183.2)
+      stats-gl: 2.4.2(three@0.183.2)
       stats.js: 0.17.0
       suspend-react: 0.1.3(react@19.1.0)
       three: 0.183.2
@@ -4286,7 +4294,7 @@ snapshots:
 
   source-map-js@1.2.1: {}
 
-  stats-gl@2.4.2(@types/three@0.183.1)(three@0.183.2):
+  stats-gl@2.4.2(three@0.183.2):
     dependencies:
       '@types/three': 0.183.1
       three: 0.183.2

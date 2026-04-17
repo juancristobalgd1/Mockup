@@ -246,6 +246,7 @@ export function HeroOrbitControls({
   );
 
   const prevDeviceType = useRef(deviceType);
+  const prevDeviceModel = useRef(state.deviceModel);
 
   const animationStateRef = useRef({
     active: false,
@@ -345,6 +346,16 @@ export function HeroOrbitControls({
     prevDeviceType.current = deviceType;
     applyPreset("hero", deviceType === "macbook");
   }, [deviceType, applyPreset]);
+
+  // Reset camera to front-facing "hero" preset whenever the user selects a
+  // different device model (even within the same device type, e.g. switching
+  // from iPhone 17 Pro to iPhone 16 Pro Max). This guarantees every newly
+  // inserted device appears facing the user.
+  useEffect(() => {
+    if (prevDeviceModel.current === state.deviceModel) return;
+    prevDeviceModel.current = state.deviceModel;
+    applyPreset("hero", deviceType === "macbook");
+  }, [state.deviceModel, deviceType, applyPreset]);
 
   useFrame(() => {
     const controls = controlsRef.current;
