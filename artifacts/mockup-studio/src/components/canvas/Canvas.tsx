@@ -338,6 +338,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
             ref={viewerRef}
             style={{ position: 'absolute', inset: 0, zIndex: 2 }}
             movieTimeRef={movieTimeRef}
+            moviePlaying={moviePlaying}
           />
         ) : null /* loading – will resolve synchronously */}
 

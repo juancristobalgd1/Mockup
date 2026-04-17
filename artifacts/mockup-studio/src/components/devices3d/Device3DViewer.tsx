@@ -495,17 +495,18 @@ interface Device3DViewerProps {
   style?: React.CSSProperties;
   className?: string;
   movieTimeRef?: React.MutableRefObject<number>;
+  moviePlaying?: boolean;
 }
 
 export const Device3DViewer = forwardRef<
   Device3DViewerHandle,
   Device3DViewerProps
 >(function Device3DViewer(
-  { style, className, movieTimeRef: externalMovieTimeRef },
+  { style, className, movieTimeRef: externalMovieTimeRef, moviePlaying = false },
   ref,
 ) {
   const { state, updateState } = useApp();
-  const moviePlaying = state.movieMode;
+  // moviePlaying is now passed as a prop from App -> Canvas -> here
   const glRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.Camera | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
