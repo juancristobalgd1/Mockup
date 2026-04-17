@@ -187,7 +187,18 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
                 <button
                   key={card.id}
                   onClick={() => {
-                    updateState({ bgType: card.id as any, bgImage: card.id !== 'image' ? state.bgImage : state.bgImage, bgVideo: card.id !== 'video' ? state.bgVideo : state.bgVideo });
+                    const updates: any = { bgType: card.id as any };
+                    
+                    // Auto-select first asset if switching to a custom category and nothing is selected
+                    if (card.id === 'gradient-custom' && (!state.bgImage || !state.bgImage.includes('gradients'))) {
+                      if (GRADIENT_ASSETS.length > 0) updates.bgImage = GRADIENT_ASSETS[0].url;
+                    } else if (card.id === 'wallpaper-custom' && (!state.bgImage || (!state.bgImage.includes('wallpapers') && !state.bgImage.includes('images')))) {
+                      if (WALLPAPER_ASSETS.length > 0) updates.bgImage = WALLPAPER_ASSETS[0].url;
+                    } else if (card.id === 'texture' && (!state.bgImage || !state.bgImage.includes('textures'))) {
+                      if (TEXTURE_ASSETS.length > 0) updates.bgImage = TEXTURE_ASSETS[0].url;
+                    }
+
+                    updateState(updates);
                   }}
                   style={{
                     ...SWATCH_BTN(active),
