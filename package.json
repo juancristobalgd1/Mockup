@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-    "dev": "pnpm --filter @workspace/mockup-studio dev",
+    "dev": "pnpm -C artifacts/mockup-studio exec vite",
     "start": "pnpm run dev",
     "build": "pnpm --filter @workspace/mockup-studio build",
     "typecheck": "pnpm --filter @workspace/mockup-studio typecheck"
@@ -12,5 +12,10 @@
   "devDependencies": {
     "prettier": "^3.8.1",
     "typescript": "~5.9.2"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.2.4",
+    "class-variance-authority": "catalog:",
+    "react": "catalog:"
   }
 }
