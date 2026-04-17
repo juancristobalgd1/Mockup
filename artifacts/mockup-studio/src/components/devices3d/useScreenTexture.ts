@@ -4,36 +4,23 @@ import { setGlobalScreenTexture } from './textureGlobal';
 
 export type ScreenFitMode = 'cover' | 'contain' | 'fill';
 
-/** Aspect delta below which portrait/landscape auto-rotation is skipped. */
-const ORIENTATION_TOLERANCE = 0.05;
-
 /**
- * Returns true if source orientation (portrait/landscape) is opposite to the
- * device screen's. In that case we rotate the texture 90° so a horizontal
- * photo dropped on a vertical phone fills the screen instead of being shown
- * at a tiny letterboxed width.
+ * Aspect delta under which cover/contain act as the identity. Keeps the
+ * default "no-op" behaviour byte-for-byte identical to a stock
+ * TextureLoader.load(), so the mesh UVs drive the mapping untouched.
  */
-function shouldAutoRotate(srcAspect: number, screenAspect: number): boolean {
-  const srcLandscape = srcAspect > 1 + ORIENTATION_TOLERANCE;
-  const srcPortrait = srcAspect < 1 - ORIENTATION_TOLERANCE;
-  const scrLandscape = screenAspect > 1 + ORIENTATION_TOLERANCE;
-  const scrPortrait = screenAspect < 1 - ORIENTATION_TOLERANCE;
-  return (srcLandscape && scrPortrait) || (srcPortrait && scrLandscape);
-}
+const ASPECT_MATCH_TOLERANCE = 0.02;
 
 /**
  * Apply CSS-object-fit semantics to a THREE texture via UV transform. The
- * screen meshes have UVs normalized to [0,1]×[0,1] (see normalizeScreenUVs),
- * so repeat/offset sample a sub-rect, and rotation spins around center.
+ * screen meshes already have UVs normalised to [0,1] (see normalizeScreenUVs
+ * in GLBDeviceModel), so nudging repeat/offset samples a sub-rect of the
+ * texture without changing wrap mode, pivot, or rotation — which are things
+ * the mesh pipeline may rely on elsewhere.
  *
- *  • cover   — fills the screen, crops overflow (default)
- *  • contain — fits entirely, ClampToEdge makes the overflow rows/columns
- *              repeat the edge pixel row (visually similar to a letterbox
- *              in the edge color, which for a PNG screenshot is usually the
- *              page background).
- *  • fill    — stretches to fill, may distort.
- *
- * Auto-rotates 90° when the media and screen have opposite orientations.
+ *  • cover   — crops overflow so the screen is fully covered (default).
+ *  • contain — scales down so the whole media fits, letterboxed at edges.
+ *  • fill    — stretches to the full screen (may distort).
  */
 function applyFit(
   tex: THREE.Texture,
@@ -42,40 +29,32 @@ function applyFit(
   screenAspect: number,
   fitMode: ScreenFitMode,
 ) {
-  tex.center.set(0.5, 0.5);
-  tex.wrapS = THREE.ClampToEdgeWrapping;
-  tex.wrapT = THREE.ClampToEdgeWrapping;
+  // Reset to identity — never touch rotation/center/wrap so we don't
+  // fight with the screen mesh's own UV layout.
+  tex.repeat.set(1, 1);
+  tex.offset.set(0, 0);
 
-  if (!srcW || !srcH) {
-    tex.repeat.set(1, 1);
-    tex.offset.set(0, 0);
-    tex.rotation = 0;
+  if (!srcW || !srcH || fitMode === 'fill') {
     tex.needsUpdate = true;
     return;
   }
 
-  const rawAspect = srcW / srcH;
-  const rotate = shouldAutoRotate(rawAspect, screenAspect);
-  tex.rotation = rotate ? Math.PI / 2 : 0;
-  // After rotation the effective aspect flips.
-  const effAspect = rotate ? 1 / rawAspect : rawAspect;
-
-  if (fitMode === 'fill') {
-    tex.repeat.set(1, 1);
-    tex.offset.set(0, 0);
+  const srcAspect = srcW / srcH;
+  if (Math.abs(srcAspect - screenAspect) < ASPECT_MATCH_TOLERANCE) {
+    // Aspects already match — identity mapping, same as no hook.
     tex.needsUpdate = true;
     return;
   }
 
   if (fitMode === 'cover') {
-    // Sample a centered sub-rect whose aspect matches the screen, so the
-    // whole screen is covered without distortion (edges get cropped).
-    if (effAspect > screenAspect) {
-      const r = screenAspect / effAspect;
+    if (srcAspect > screenAspect) {
+      // Source is wider than the screen → crop left/right bands.
+      const r = screenAspect / srcAspect;
       tex.repeat.set(r, 1);
       tex.offset.set((1 - r) / 2, 0);
     } else {
-      const r = effAspect / screenAspect;
+      // Source is taller than the screen → crop top/bottom bands.
+      const r = srcAspect / screenAspect;
       tex.repeat.set(1, r);
       tex.offset.set(0, (1 - r) / 2);
     }
@@ -83,16 +62,15 @@ function applyFit(
     return;
   }
 
-  // contain — scale down so the whole media fits, then offset so the empty
-  // area is filled by edge clamping (effectively a letterbox in the source
-  // edge color).
-  if (effAspect > screenAspect) {
-    // Media is wider than screen → fit width, bars on top/bottom.
-    const r = effAspect / screenAspect; // > 1
+  // contain — scale the UV window up so the full media is visible inside a
+  // letterboxed area. ClampToEdge (mesh default) repeats the edge pixel,
+  // which for most screenshots matches the page background.
+  if (srcAspect > screenAspect) {
+    const r = srcAspect / screenAspect; // > 1 → bars on top/bottom
     tex.repeat.set(1, r);
     tex.offset.set(0, (1 - r) / 2);
   } else {
-    const r = screenAspect / effAspect; // > 1
+    const r = screenAspect / srcAspect; // > 1 → bars on left/right
     tex.repeat.set(r, 1);
     tex.offset.set((1 - r) / 2, 0);
   }
