@@ -4,7 +4,7 @@ export type AnnotateProp = 'size' | 'opacity' | 'color' | 'hardness' | 'more' | 
 export type OverlayProp = 'color' | 'opacity' | 'light' | 'more' | null;
 export type BackgroundProp = 'color' | 'opacity' | 'blur' | 'more' | null;
 export type PatternsProp = 'color' | 'opacity' | 'scale' | 'more' | null;
-export type DeviceProp = 'color' | 'reflection' | 'shadow' | 'more' | null;
+export type DeviceProp = 'color' | 'reflection' | 'shadow' | 'more' | 'estudio' | 'luz' | 'camera' | 'motion' | 'effects' | null;
 
 export function usePropertyEditor() {
   const [annotateProperty, setAnnotateProperty] = useState<AnnotateProp>(null);

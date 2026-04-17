@@ -221,30 +221,7 @@ export const SceneTab = () => {
             </Section>
           )}
 
-          {state.sceneSubTab === 'shadow' && (
-            <Section label="Sombra de Contacto">
-              <div style={{ marginBottom: 16 }}>
-                <span style={POP_LABEL}>Dirección de la Sombra</span>
-                <div style={{ display: 'flex', gap: 6, background: 'rgba(255,255,255,0.05)', padding: 4, borderRadius: 10, marginTop: 8 }}>
-                  {(['abajo', 'atras', 'izquierda', 'derecha'] as const).map(dir => (
-                    <button key={dir}
-                      onClick={() => updateState({ contactShadowDirection: dir })}
-                      style={{
-                        flex: 1, padding: '8px 0', fontSize: 10, fontWeight: 700,
-                        textTransform: 'capitalize',
-                        borderRadius: 7, border: 'none', cursor: 'pointer',
-                        background: (state.contactShadowDirection || 'atras') === dir ? 'rgba(255,255,255,0.12)' : 'transparent',
-                        color: (state.contactShadowDirection || 'atras') === dir ? '#fff' : 'rgba(255,255,255,0.4)',
-                      }}>
-                      {dir}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <Slider label="Intensidad de Sombra" value={state.contactShadowOpacity} min={0} max={100}
-                onChange={v => updateState({ contactShadowOpacity: v })} unit="%" />
-            </Section>
-          )}
+
 
           {state.sceneSubTab === 'luz' && (
             <Section label="Iluminación Pro">
@@ -382,32 +359,6 @@ export const SceneTab = () => {
                   )}
                 </>
               )}
-
-              {scenePopup === 'shadow' && (
-                <>
-                  <div style={POP_LABEL}>Sombra</div>
-                  <div style={{ marginBottom: 12 }}>
-                    <div style={{ display: 'flex', gap: 4, background: 'rgba(0,0,0,0.2)', padding: 3, borderRadius: 8 }}>
-                      {(['abajo', 'atras', 'izquierda', 'derecha'] as const).map(dir => (
-                        <button key={dir}
-                          onClick={() => updateState({ contactShadowDirection: dir })}
-                          style={{
-                            flex: 1, height: 24, fontSize: 10, fontWeight: 700,
-                            textTransform: 'capitalize',
-                            borderRadius: 6, border: 'none', cursor: 'pointer',
-                            background: (state.contactShadowDirection || 'atras') === dir ? 'rgba(255,255,255,0.15)' : 'transparent',
-                            color: (state.contactShadowDirection || 'atras') === dir ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)',
-                            transition: 'all 0.15s'
-                          }}>
-                          {dir}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <Slider label="Intensidad" value={state.contactShadowOpacity} min={0} max={100}
-                    onChange={v => updateState({ contactShadowOpacity: v })} unit="%" />
-                </>
-              )}
             </div>
           )}
 
@@ -485,8 +436,6 @@ export const SceneTab = () => {
                   icon={<Activity size={15} strokeWidth={2.2} />} />
                 <SceneBtn id="effects" label="Efectos" sublabel="FX" active={effectsOn} accent="rgba(244,114,182,1)"
                   icon={<Sparkles size={15} strokeWidth={2.2} />} />
-                <SceneBtn id="shadow" label="Sombra" sublabel="Sombra" active={(shadowPct ?? 0) > 0} accent="rgba(99,102,241,1)"
-                  icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 11.5c0-2.8 2.2-5 5-5 1.9 0 3.6 1 4.5 2.6"/><path d="M6 16.5c1.8-1.2 3.9-1.8 6-1.8 2.4 0 4.5.6 6.4 1.8" opacity="0.95"/><ellipse cx="12" cy="18.3" rx="7" ry="2.2" opacity="0.7"/></svg>} />
               </div>
 
               <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(255,255,255,0.12)', flexShrink: 0, margin: '0 1px' }} />

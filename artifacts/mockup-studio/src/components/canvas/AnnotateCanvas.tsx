@@ -128,12 +128,20 @@ function resizeStroke(s: AnyStroke, oldBB: BBox, newBB: BBox): AnyStroke {
       end:   { x: mapX(s.end.x),   y: mapY(s.end.y)   },
     };
   }
-  if (s.kind === 'text' || s.kind === 'sticker') {
-    const nextSize = s.kind === 'sticker' ? Math.max(newBB.w, newBB.h) : (s as TextStroke).fontSize;
+  if (s.kind === 'text') {
+    const scale = oldBB.h > 0 ? newBB.h / oldBB.h : 1;
     return { 
       ...s, 
       position: { x: mapX(s.position.x), y: mapY(s.position.y) },
-      ...(s.kind === 'sticker' ? { size: nextSize } : {})
+      fontSize: Math.max(4, (s as TextStroke).fontSize * scale)
+    } as AnyStroke;
+  }
+  if (s.kind === 'sticker') {
+    const nextSize = Math.max(newBB.w, newBB.h);
+    return { 
+      ...s, 
+      position: { x: mapX(s.position.x), y: mapY(s.position.y) },
+      size: nextSize
     } as AnyStroke;
   }
   return s;

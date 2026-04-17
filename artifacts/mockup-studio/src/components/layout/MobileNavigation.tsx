@@ -33,11 +33,16 @@ import {
   LayoutList,
   ChevronLeft,
   Contrast,
-  Droplet
+  Droplet,
+  Moon,
+  RotateCcw,
+  RefreshCw
 } from "lucide-react";
 import { PropertyTooltip } from "../ui/PropertyTooltip";
 import { getModelById, DEVICE_MODELS, DEVICE_GROUPS } from "../../data/devices";
-import { PRESENT_POSES } from "../../data/panelConstants";
+import { PRESENT_POSES, CANVAS_RATIOS, ENV_PRESETS } from "../../data/panelConstants";
+import { ENV_ICON } from "../../data/envIcons";
+import { Section, Chip, Slider, MiniSlider, Toggle } from "../ui/PanelUI";
 import { DeviceThumbnail, PoseThumbnail } from "../ui/DeviceThumbnails";
 import { MovieTimeline } from "../timeline/MovieTimeline";
 import { LeftPanel } from "../panels/LeftPanel";
@@ -176,19 +181,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                 />
                 <span>Etiquetas</span>
               </button>
-              <button
-                onClick={() => {
-                  setActiveTab("canvas");
-                  setMobileTab("canvas");
-                }}
-                className={`ps-nav-item ${activeTab === "canvas" ? "active" : ""}`}
-              >
-                <Sliders
-                  size={22}
-                  strokeWidth={activeTab === "canvas" ? 2.5 : 1.8}
-                />
-                <span>Escena</span>
-              </button>
+
               <button
                 onClick={() => {
                   setActiveTab("annotate");
@@ -971,7 +964,17 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                     isOpen={!!deviceProperty}
                     onClose={() => setDeviceProperty(null)}
                     id="device-tooltip"
-                    label={deviceProperty === 'color' ? 'Material / Color' : deviceProperty === 'reflection' ? 'Reflexión' : deviceProperty === 'shadow' ? 'Sombra' : 'Ajustes'}
+                    label={
+                      deviceProperty === 'color' ? 'Material / Color' : 
+                      deviceProperty === 'reflection' ? 'Reflexión' : 
+                      deviceProperty === 'shadow' ? 'Sombra' : 
+                      deviceProperty === 'estudio' ? 'Entorno' :
+                      deviceProperty === 'luz' ? 'Iluminación Pro' :
+                      deviceProperty === 'camera' ? 'Lienzo y Cámara' :
+                      deviceProperty === 'motion' ? 'Movimiento' :
+                      deviceProperty === 'effects' ? 'Efectos de Escena' :
+                      'Configuración General'
+                    }
                   >
                     {deviceProperty === 'color' ? (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
@@ -982,29 +985,233 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                       </div>
                     ) : deviceProperty === 'more' ? (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                        <button onClick={() => updateState({ clayMode: !state.clayMode })} style={{ padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: state.clayMode ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)', color: state.clayMode ? '#000' : '#fff' }}>Modo Clay</button>
-                        <button onClick={() => updateState({ deviceLandscape: !state.deviceLandscape })} style={{ padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: state.deviceLandscape ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)', color: state.deviceLandscape ? '#000' : '#fff' }}>Horizontal</button>
-                        <button onClick={() => updateState({ reflection: !state.reflection })} style={{ padding: '10px 16px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: state.reflection ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)', color: state.reflection ? '#000' : '#fff' }}>Reflexión</button>
+                        <button onClick={() => updateState({ clayMode: !state.clayMode })} style={{ padding: '8px 12px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: state.clayMode ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)', color: state.clayMode ? '#000' : '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Box size={14} /> Modo Clay
+                        </button>
+                        <button onClick={() => updateState({ deviceLandscape: !state.deviceLandscape })} style={{ padding: '8px 12px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: state.deviceLandscape ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)', color: state.deviceLandscape ? '#000' : '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <RotateCcw size={14} style={{ transform: state.deviceLandscape ? 'rotate(90deg)' : 'none' }} /> Horizontal
+                        </button>
+                        <button onClick={() => updateState({ reflection: !state.reflection })} style={{ padding: '8px 12px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: state.reflection ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.05)', color: state.reflection ? '#000' : '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Sun size={14} /> Reflexión
+                        </button>
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <input type="range" min={0} max={100} step={1} value={deviceProperty === 'reflection' ? state.reflectionOpacity * 100 : state.contactShadowOpacity * 100} onChange={(e) => { const val = Number(e.target.value) / 100; if (deviceProperty === 'reflection') updateState({ reflectionOpacity: val, reflection: true }); else updateState({ contactShadowOpacity: val }); }} style={{ flex: 1, accentColor: '#3498db', height: 4 }} />
-                        <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', minWidth: 36, textAlign: 'right' }}>{deviceProperty === 'reflection' ? `${Math.round(state.reflectionOpacity * 100)}%` : `${Math.round(state.contactShadowOpacity * 100)}%`}</span>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", minWidth: 200 }}>
+                        {deviceProperty === 'shadow' && (
+                          <div style={{ marginBottom: 4 }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
+                              Dirección
+                            </div>
+                            <div style={{ display: "flex", gap: 6, background: "rgba(255,255,255,0.05)", padding: 4, borderRadius: 10 }}>
+                              {(["abajo", "atras", "izquierda", "derecha"] as const).map((dir) => (
+                                <button
+                                  key={dir}
+                                  onClick={() => updateState({ contactShadowDirection: dir })}
+                                  style={{
+                                    flex: 1,
+                                    padding: "8px 0",
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    textTransform: "capitalize",
+                                    borderRadius: 7,
+                                    border: "none",
+                                    cursor: "pointer",
+                                    background: (state.contactShadowDirection || "atras") === dir ? "rgba(255,255,255,0.12)" : "transparent",
+                                    color: (state.contactShadowDirection || "atras") === dir ? "#fff" : "rgba(255,255,255,0.4)",
+                                    transition: "all 0.15s",
+                                  }}
+                                >
+                                  {dir}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {(deviceProperty === 'shadow' || deviceProperty === 'reflection') && (
+                          <div>
+                            {deviceProperty === 'shadow' && (
+                              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
+                                Intensidad
+                              </div>
+                            )}
+                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                              <input
+                                type="range"
+                                min={0}
+                                max={100}
+                                step={1}
+                                value={deviceProperty === 'reflection' ? state.reflectionOpacity : state.contactShadowOpacity}
+                                onChange={(e) => {
+                                  const val = Number(e.target.value);
+                                  if (deviceProperty === 'reflection') updateState({ reflectionOpacity: val, reflection: true }, true);
+                                  else updateState({ contactShadowOpacity: val }, true);
+                                }}
+                                style={{ flex: 1, accentColor: "#3498db", height: 4 }}
+                              />
+                              <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", minWidth: 36, textAlign: "right" }}>
+                                {deviceProperty === 'reflection' ? `${Math.round(state.reflectionOpacity)}%` : `${Math.round(state.contactShadowOpacity)}%`}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {deviceProperty === 'camera' && (
+                          <>
+                            <div style={{ marginBottom: 16 }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>Proporción del Lienzo</div>
+                              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                                {CANVAS_RATIOS.map(r => (
+                                  <Chip key={r.id} active={state.canvasRatio === r.id}
+                                    onClick={() => updateState({ canvasRatio: r.id })}>{r.label}</Chip>
+                                ))}
+                              </div>
+                            </div>
+                            <Slider label="Redondeado" value={state.canvasRadius ?? 0} min={0} max={80} step={2}
+                              onChange={v => updateState({ canvasRadius: v })} unit="px" />
+                          </>
+                        )}
+                        {deviceProperty === 'motion' && (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                                <RefreshCw size={14} style={{ color: 'rgba(255,255,255,0.35)' }} />
+                                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>Rotación Automática</span>
+                              </div>
+                              <Toggle enabled={state.autoRotate} onToggle={() => updateState({ autoRotate: !state.autoRotate })} />
+                            </div>
+                            {state.autoRotate && (
+                              <div style={{ marginTop: 6, marginBottom: 12 }}>
+                                <Slider label="Velocidad de Giro" value={Math.round(state.autoRotateSpeed * 10) / 10}
+                                  min={0.5} max={8} step={0.5} onChange={v => updateState({ autoRotateSpeed: v })} />
+                              </div>
+                            )}
+                            <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', margin: '8px 0' }} />
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                                <RotateCcw size={14} style={{ color: 'rgba(255,255,255,0.35)' }} />
+                                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>Efecto Flotación</span>
+                              </div>
+                              <Toggle enabled={state.animation === 'float'}
+                                onToggle={() => updateState({ animation: state.animation === 'float' ? 'none' : 'float' })} />
+                            </div>
+                          </>
+                        )}
+                        {deviceProperty === 'effects' && (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0' }}>
+                              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>Reflejo de Cristal</span>
+                              <Toggle enabled={state.glassReflection ?? true}
+                                onToggle={() => updateState({ glassReflection: !(state.glassReflection ?? true) })} />
+                            </div>
+                            <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', margin: '8px 0' }} />
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0' }}>
+                              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>Reflejo de Suelo</span>
+                              <Toggle enabled={state.reflection ?? false}
+                                onToggle={() => updateState({ reflection: !(state.reflection ?? false) })} />
+                            </div>
+                            {(state.reflection ?? false) && (
+                              <div style={{ marginTop: 6, marginBottom: 12 }}>
+                                <Slider label="Opacidad Reflejo" value={state.reflectionOpacity ?? 50} min={0} max={100}
+                                  onChange={v => updateState({ reflectionOpacity: v })} unit="%" />
+                              </div>
+                            )}
+                            <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', margin: '8px 0' }} />
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0' }}>
+                              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>Ruido / Grano Cine</span>
+                              <Toggle enabled={state.grain ?? false}
+                                onToggle={() => updateState({ grain: !(state.grain ?? false) })} />
+                            </div>
+                            {(state.grain ?? false) && (
+                              <div style={{ marginTop: 6 }}>
+                                <Slider label="Grano" value={state.grainIntensity ?? 35} min={5} max={100}
+                                  onChange={v => updateState({ grainIntensity: v })} unit="%" />
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {deviceProperty === 'luz' && (
+                          <>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 12 }}>
+                              <MiniSlider label="Brillo" value={state.lightBrightness ?? 40} min={0} max={100} step={1} unit="%" onChange={v => updateState({ lightBrightness: v })} />
+                              <MiniSlider label="Ambiente" value={state.lightAmbient ?? 45} min={0} max={100} step={1} unit="%" onChange={v => updateState({ lightAmbient: v })} />
+                              <MiniSlider label="Calidez" value={state.lightWarmth ?? 0} min={-50} max={50} step={1} onChange={v => updateState({ lightWarmth: v })} />
+                              <MiniSlider label="Reflejos" value={state.lightIBL ?? 40} min={0} max={100} step={1} unit="%" onChange={v => updateState({ lightIBL: v })} />
+                              <MiniSlider label="Exposición" value={Math.round((state.lightExposure ?? 1.0) * 100) / 100} min={0.4} max={2.0} step={0.05} onChange={v => updateState({ lightExposure: v })} />
+                              <MiniSlider label="Vignette" value={state.bloomIntensity ?? 22} min={0} max={100} step={1} unit="%" onChange={v => updateState({ bloomIntensity: v })} />
+                            </div>
+                            <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Lente DSLR (Profundidad)</div>
+                                <Toggle enabled={state.dofEnabled ?? false} onToggle={() => updateState({ dofEnabled: !(state.dofEnabled ?? false) })} />
+                              </div>
+                              {state.dofEnabled && (
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 12 }}>
+                                  <MiniSlider label="Enfoque" value={state.dofFocus ?? 10} min={0} max={20} step={1} unit="m" onChange={v => updateState({ dofFocus: v })} />
+                                  <MiniSlider label="Bokeh" value={(state.dofAperture ?? 0.02) * 1000} min={1} max={100} step={1} onChange={v => updateState({ dofAperture: v / 1000 })} />
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
+                        {deviceProperty === 'estudio' && (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Usar Iluminación IBL</div>
+                              <Toggle enabled={state.envEnabled !== false} onToggle={() => updateState({ envEnabled: state.envEnabled === false })} />
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                              {ENV_PRESETS.map(env => {
+                                const active = state.envPreset === env.id;
+                                return (
+                                  <button key={env.id} onClick={() => updateState({ envPreset: env.id })}
+                                    style={{
+                                      padding: '8px 4px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                                      background: active ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.4)',
+                                      outline: active ? '2px solid rgba(255,255,255,0.8)' : '1px solid rgba(255,255,255,0.1)',
+                                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                                    }}>
+                                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#fff' : 'rgba(255,255,255,0.3)' }}>
+                                      {ENV_ICON[env.id as keyof typeof ENV_ICON] || <Sun size={16} />}
+                                    </div>
+                                    <span style={{ fontSize: 8, fontWeight: 700, color: active ? '#fff' : 'rgba(255,255,255,0.4)', textAlign: 'center' }}>{env.label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
                   </PropertyTooltip>
-                  <button className="ps-tool-icon-btn btn-press" onClick={() => setDeviceProperty(deviceProperty === 'color' ? null : 'color')} style={{ pointerEvents: "auto", background: deviceProperty === 'color' ? "#fff" : "#1c1c1e", color: deviceProperty === 'color' ? "#000" : "#fff", border: "none", width: 44, height: 44, borderRadius: 22, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", position: "relative", overflow: "hidden", display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Palette size={20} /></button>
-                  <div style={{ pointerEvents: "auto", display: "flex", background: "#1c1c1e", borderRadius: 30, padding: 4, boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}>
-                    <button className="btn-press" onClick={() => setDeviceProperty(deviceProperty === 'reflection' ? null : 'reflection')} style={{ width: 40, height: 40, borderRadius: 20, background: deviceProperty === 'reflection' ? "#f5f5f7" : "transparent", color: deviceProperty === 'reflection' ? "#000" : (state.reflection ? "#fff" : "rgba(255,255,255,0.4)"), display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" /><path d="M8 12h8" /></svg></button>
-                    <button className="btn-press" onClick={() => setDeviceProperty(deviceProperty === 'shadow' ? null : 'shadow')} style={{ width: 40, height: 40, borderRadius: 20, background: deviceProperty === 'shadow' ? "#f5f5f7" : "transparent", color: deviceProperty === 'shadow' ? "#000" : (state.contactShadowOpacity > 0 ? "#fff" : "rgba(255,255,255,0.4)"), display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" strokeDasharray="4 4" strokeWidth="1.5" /><path d="M8 12h8" /><path d="M12 8v8" /></svg></button>
+                  <div style={{ pointerEvents: "auto", display: "flex", gap: 6, alignItems: "center" }}>
+                    <button className="ps-tool-icon-btn btn-press" onClick={() => setDeviceProperty(deviceProperty === 'color' ? null : 'color')} style={{ background: deviceProperty === 'color' ? "#fff" : "#1c1c1e", color: deviceProperty === 'color' ? "#000" : "#fff", border: "none", width: 44, height: 44, borderRadius: 22, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Color"><Palette size={20} /></button>
+                    
+                    <div style={{ display: "flex", background: "#1c1c1e", borderRadius: 30, padding: 4, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", gap: 2 }}>
+                      <button className="btn-press" onClick={() => setDeviceProperty(deviceProperty === 'reflection' ? null : 'reflection')} disabled={!state.reflection} style={{ width: 40, height: 40, borderRadius: 20, background: deviceProperty === 'reflection' ? "#f5f5f7" : "transparent", color: deviceProperty === 'reflection' ? "#000" : (state.reflection ? "#fff" : "rgba(255,255,255,0.2)"), display: "flex", alignItems: "center", justifyContent: "center", border: "none", opacity: state.reflection ? 1 : 0.4 }} title="Reflexión"><Sun size={18} strokeWidth={2.5} /></button>
+                      <button className="btn-press" onClick={() => setDeviceProperty(deviceProperty === 'shadow' ? null : 'shadow')} style={{ width: 40, height: 40, borderRadius: 20, background: deviceProperty === 'shadow' ? "#f5f5f7" : "transparent", color: deviceProperty === 'shadow' ? "#000" : (state.contactShadowOpacity > 0 ? "#fff" : "rgba(255,255,255,0.4)"), display: "flex", alignItems: "center", justifyContent: "center", border: "none" }} title="Sombra"><Moon size={18} strokeWidth={2.5} /></button>
+                    </div>
+
+                    <div style={{ display: "flex", background: "#1c1c1e", borderRadius: 30, padding: 4, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", gap: 2, overflowX: "auto", maxWidth: "40vw", scrollbarWidth: "none" }}>
+                      {[
+                        { id: 'estudio', icon: <Lamp size={18} />, label: 'Entorno' },
+                        { id: 'luz', icon: <Sun size={18} />, label: 'Luz' },
+                        { id: 'camera', icon: <Maximize size={18} />, label: 'Cámara' },
+                        { id: 'motion', icon: <Activity size={18} />, label: 'Movimiento' },
+                        { id: 'effects', icon: <Sparkles size={18} />, label: 'Efectos' }
+                      ].map(tool => (
+                        <button key={tool.id} className="btn-press" onClick={() => setDeviceProperty(deviceProperty === tool.id ? null : tool.id as any)} style={{ width: 40, height: 40, borderRadius: 20, background: deviceProperty === tool.id ? "#f5f5f7" : "transparent", color: deviceProperty === tool.id ? "#000" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "none" }} title={tool.label}>{tool.icon}</button>
+                      ))}
+                    </div>
+
+                    <button className="ps-tool-icon-btn btn-press" onClick={() => setDeviceProperty(deviceProperty === 'more' ? null : 'more')} style={{ background: deviceProperty === 'more' ? "#fff" : "#1c1c1e", color: deviceProperty === 'more' ? "#000" : "#fff", border: "none", width: 44, height: 44, borderRadius: 22, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Más"><MoreHorizontal size={20} /></button>
                   </div>
-                  <button className="ps-tool-icon-btn btn-press" onClick={() => setDeviceProperty(deviceProperty === 'more' ? null : 'more')} style={{ pointerEvents: "auto", background: deviceProperty === 'more' ? "#fff" : "#1c1c1e", color: deviceProperty === 'more' ? "#000" : "#fff", border: "none", width: 44, height: 44, borderRadius: 22, boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}><MoreHorizontal size={20} /></button>
                 </>
               )}
             </div>
 
             {/* Tier 1: Contextual Tools */}
-            {((mobileTab === 'presets') || (mobileTab === 'device' && devicePanelView === 'hub') || (mobileTab === 'annotate') || (mobileTab === 'background' && backgroundPanelView === 'hub') || (mobileTab === 'canvas' && scenePanelView === 'hub') || (mobileTab === 'labels' && labelsPanelView === 'hub')) && (
+            {((mobileTab === 'presets') || (mobileTab === 'device' && devicePanelView === 'hub') || (mobileTab === 'annotate') || (mobileTab === 'background' && backgroundPanelView === 'hub') || (mobileTab === 'labels' && labelsPanelView === 'hub')) && (
               <div className="ps-tier-tools" style={{ padding: "20px 20px 10px" }}>
                 {mobileTab === "presets" && PRESENT_POSES.map((pose) => { const active = state.cameraAngle === pose.id; return (<div key={pose.id} className="ps-tool-thumb-box"> <button className={`ps-tool-thumb btn-press ${active ? "active" : ""}`} onClick={() => updateState({ cameraAngle: pose.id, cameraResetKey: (state.cameraResetKey ?? 0) + 1 })}> <PoseThumbnail ry={pose.ry} rx={pose.rx} rz={pose.rz} active={active} mini /> </button> <span className="ps-tool-label">{pose.label}</span> </div>) })}
                 {mobileTab === "device" && devicePanelView === 'hub' && DEVICE_GROUPS.map((group) => { const repModel = DEVICE_MODELS.find((m) => m.group === group); return (<div key={group} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { if (repModel) { updateState({ deviceModel: repModel.id, deviceType: repModel.storeType, deviceColor: repModel.useOriginalMaterials ? "original" : "titanium", deviceSubTab: "models" }); setDevicePanelView('content'); } }}> <div style={{ transform: "scale(1.3)" }}><DeviceThumbnail modelId={repModel?.id || ""} isSelected={false} /></div> </button> <span className="ps-tool-label">{group}</span> </div>) })}
@@ -1058,21 +1265,13 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                     setBackgroundPanelView('content');
                   } 
                 }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div>))}
-                {mobileTab === "canvas" && scenePanelView === 'hub' && (
-                  <>
-                    {[{ id: "estudio", icon: <Sun size={24} />, label: "Estudio" }, { id: "luz", icon: <Lamp size={24} />, label: "Luz" },].map((tool) => (<div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { updateState({ sceneSubTab: tool.id as any }); setScenePanelView('content'); }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div>))}
-                    <div style={{ width: 1, background: "rgba(255,255,255,0.12)", height: 64, margin: "0 4px", borderRadius: 2 }} />
-                    {[{ id: "camera", icon: <Maximize size={24} />, label: "Cámara" }, { id: "motion", icon: <Activity size={24} />, label: "Movimiento" },].map((tool) => (<div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { updateState({ sceneSubTab: tool.id as any }); setScenePanelView('content'); }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div>))}
-                    <div style={{ width: 1, background: "rgba(255,255,255,0.12)", height: 64, margin: "0 4px", borderRadius: 2 }} />
-                    {[{ id: "effects", icon: <Sparkles size={24} />, label: "Efectos" }, { id: "shadow", icon: <Layers size={24} />, label: "Sombras" },].map((tool) => (<div key={tool.id} className="ps-tool-thumb-box"> <button className="ps-tool-thumb btn-press" onClick={() => { updateState({ sceneSubTab: tool.id as any }); setScenePanelView('content'); }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div>))}
-                  </>
-                )}
+
                 {mobileTab === "labels" && labelsPanelView === 'hub' && [{ id: "add", icon: <PlusCircle size={24} />, label: "Anclar", disabled: false }, { id: "view", icon: <MousePointer2 size={24} />, label: "Gestionar", disabled: state.texts.filter((t: any) => t.kind === 'label').length === 0 }, { id: "subtract", icon: <Trash2 size={24} />, label: "Limpiar", disabled: state.texts.filter((t: any) => t.kind === 'label').length === 0 },].map((tool) => (<div key={tool.id} className="ps-tool-thumb-box" style={{ opacity: tool.disabled ? 0.35 : 1, pointerEvents: tool.disabled ? 'none' : 'auto' }}> <button className="ps-tool-thumb btn-press" disabled={tool.disabled} onClick={() => { updateState({ labelsSubTab: tool.id as any }); setLabelsPanelView('content'); }}> {tool.icon} </button> <span className="ps-tool-label">{tool.label}</span> </div>))}
               </div>
             )}
 
             {/* Tier 2.5: Inline Panel Settings */}
-            {mobileTab !== "annotate" && mobileTab !== "presets" && (mobileTab !== "background" || backgroundPanelView === 'content') && (mobileTab !== "device" || devicePanelView === 'content') && (mobileTab !== "canvas" || scenePanelView === 'content') && (mobileTab !== "labels" || labelsPanelView === 'content') && (
+            {mobileTab !== "annotate" && mobileTab !== "presets" && (mobileTab !== "background" || backgroundPanelView === 'content') && (mobileTab !== "device" || devicePanelView === 'content') && (mobileTab !== "labels" || labelsPanelView === 'content') && (
               <div style={{ width: "100%", minWidth: 0, overflowX: "hidden", maxHeight: "25vh", overflowY: "auto", padding: "8px 16px", borderTop: "1px solid rgba(255,255,255,0.06)" }} className="styled-scroll hide-scrollbars">
                 <LeftPanel mobile mobileContentOnly={mobileTab as any} activeTab={activeTab} setActiveTab={setActiveTab} backgroundPanelView={backgroundPanelView} setBackgroundPanelView={setBackgroundPanelView} />
               </div>
@@ -1080,7 +1279,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
 
             {/* Tier 3: Context Footer */}
             <div className="ps-tier-footer" style={{ padding: "8px 16px 4px", display: "flex", alignItems: "center", gap: 16 }}>
-              <button className="ps-back-btn btn-press" onClick={() => { if (mobileTab === 'background' && backgroundPanelView === 'content') { setBackgroundPanelView('hub'); } else if (mobileTab === 'device' && devicePanelView === 'content') { setDevicePanelView('hub'); } else if (mobileTab === 'canvas' && scenePanelView === 'content') { setScenePanelView('hub'); } else if (mobileTab === 'labels' && state.activeLabelId) { updateState({ activeLabelId: null }); } else if (mobileTab === 'labels' && labelsPanelView === 'content') { setLabelsPanelView('hub'); } else { setMobileTab(null); } }} style={{ position: "relative", left: "auto", background: "none", border: "none", color: "#fff", padding: 0, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <button className="ps-back-btn btn-press" onClick={() => { if (mobileTab === 'background' && backgroundPanelView === 'content') { setBackgroundPanelView('hub'); } else if (mobileTab === 'device' && devicePanelView === 'content') { setDevicePanelView('hub'); } else if (mobileTab === 'labels' && state.activeLabelId) { updateState({ activeLabelId: null }); } else if (mobileTab === 'labels' && labelsPanelView === 'content') { setLabelsPanelView('hub'); } else { setMobileTab(null); } }} style={{ position: "relative", left: "auto", background: "none", border: "none", color: "#fff", padding: 0, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <ChevronLeft size={28} />
               </button>
               {mobileTab === 'labels' && state.activeLabelId ? (
@@ -1090,7 +1289,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                 </div>
               ) : (
                 <span className="ps-context-title" style={{ flex: 1, textAlign: 'center', marginRight: 40 }}>
-                  {mobileTab === "annotate" ? "Annotate" : mobileTab === "presets" ? "Preajustes" : mobileTab === "template" ? "Plantillas" : mobileTab === "device" ? (devicePanelView === 'content' ? "Modelo" : "Dispositivo") : mobileTab === "background" ? (backgroundPanelView === 'content' ? "Fondo" : "Fondo") : mobileTab === "overlay" ? "Overlay" : mobileTab === "labels" ? (labelsPanelView === 'content' ? (state.labelsSubTab === 'view' ? "Gestionar Etiquetas" : state.labelsSubTab === 'add' ? "Anclar Nueva" : state.labelsSubTab === 'subtract' ? "Limpiar Todo" : "Etiquetas") : "Etiquetas") : mobileTab === "canvas" ? (scenePanelView === 'content' ? "Escena" : "Lienzo") : ""}
+                  {mobileTab === "annotate" ? "Annotate" : mobileTab === "presets" ? "Preajustes" : mobileTab === "template" ? "Plantillas" : mobileTab === "device" ? (devicePanelView === 'content' ? "Modelo" : "Dispositivo") : mobileTab === "background" ? (backgroundPanelView === 'content' ? "Fondo" : "Fondo") : mobileTab === "overlay" ? "Overlay" : mobileTab === "labels" ? (labelsPanelView === 'content' ? (state.labelsSubTab === 'view' ? "Gestionar Etiquetas" : state.labelsSubTab === 'add' ? "Anclar Nueva" : state.labelsSubTab === 'subtract' ? "Limpiar Todo" : "Etiquetas") : "Etiquetas") : ""}
                 </span>
               )}
             </div>
