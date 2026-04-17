@@ -120,9 +120,10 @@ function DeviceScene({
     // Viewport width the remote browser uses to render the page.
     // Desktop = standard laptop width; Mobile = iPhone-class width so sites
     // serve their responsive layout instead of a shrunk desktop version.
-    const viewportWidth = captureViewport === "mobile" ? 390 : 1440;
-    // Render at ~2x DPR so we get a crisp, retina-quality texture.
-    const outputWidth = viewportWidth * 2;
+    const viewportWidth = captureViewport === "mobile" ? 390 : 1280;
+    // Output width for the captured image. thum.io's free tier caps around
+    // 1600px; going higher returns an error instead of an image.
+    const outputWidth = Math.min(1600, Math.round(viewportWidth * 1.25));
     const outputHeight = Math.max(
       400,
       Math.round(outputWidth * (physH / physW)),
@@ -131,14 +132,15 @@ function DeviceScene({
     let url = menuUrl.trim();
     if (!url.startsWith("http")) url = "https://" + url;
 
-    // Build thum.io path segments. `png` returns a lossless PNG, `noanimate`
-    // freezes CSS animations for a clean shot, `viewportWidth` drives the
-    // responsive breakpoint, and `delay` waits before capture.
+    // Build thum.io path segments. `noanimate` freezes CSS animations for a
+    // clean shot, `viewportWidth` drives the responsive breakpoint, and
+    // `delay` waits before capture. We intentionally keep the default JPEG
+    // output (instead of `/png/`) because PNG requires a paid plan and would
+    // otherwise return an error image, hiding the preview.
     const segments: string[] = [
       `width/${outputWidth}`,
       `crop/${outputHeight}`,
       `viewportWidth/${viewportWidth}`,
-      "png",
       "noanimate",
     ];
     if (captureDelay > 0) segments.push(`delay/${captureDelay * 1000}`);
