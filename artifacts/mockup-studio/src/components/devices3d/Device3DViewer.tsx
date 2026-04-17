@@ -40,7 +40,6 @@ import { StudioLights, ENV_LIGHTS } from "./viewer/ViewerLights";
 import { PostFX } from "./viewer/ViewerPostFX";
 import { FloorReflector, ClayOverride } from "./viewer/ViewerEffects";
 import { ScreenDropZoneContent } from "./viewer/ViewerOverlay";
-import { BrowserFrame3D } from "./viewer/ViewerProceduralModels";
 import { OrientationGimbal } from "./viewer/ViewerGimbal";
 import { HeroOrbitControls, interpolateKeyframes, ENV_INTENSITY } from "./viewer/ViewerControls";
 
@@ -147,32 +146,26 @@ function DeviceScene({
   const iconPos: [number, number, number] =
     state.deviceType === "macbook"
       ? [0, 0.28, 0.2]
-      : state.deviceType === "browser"
-        ? [0, -0.3, 0.08]
-        : state.deviceType === "watch"
-          ? [0, 0, 0.06]
-          : [0, 0, 0.1];
+      : state.deviceType === "watch"
+        ? [0, 0, 0.06]
+        : [0, 0, 0.1];
 
   const planeW =
     state.deviceType === "macbook"
       ? 2.2
-      : state.deviceType === "browser"
-        ? 3.2
-        : state.deviceType === "ipad"
-          ? 1.6
-          : state.deviceType === "watch"
-            ? 0.7
-            : 0.85;
+      : state.deviceType === "ipad"
+        ? 1.6
+      : state.deviceType === "watch"
+        ? 0.7
+        : 0.85;
   const planeH =
     state.deviceType === "macbook"
       ? 1.4
-      : state.deviceType === "browser"
-        ? 2.0
-        : state.deviceType === "ipad"
-          ? 2.2
-          : state.deviceType === "watch"
-            ? 0.9
-            : 1.65;
+      : state.deviceType === "ipad"
+        ? 2.2
+      : state.deviceType === "watch"
+        ? 0.9
+        : 1.65;
 
   const faceGroupRef = useRef<THREE.Group>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -219,13 +212,6 @@ function DeviceScene({
     }
 
     switch (state.deviceType) {
-      case "browser":
-        return (
-          <BrowserFrame3D
-            contentType={state.contentType}
-            browserMode={def.id.includes("light") ? "light" : "dark"}
-          />
-        );
       case "ipad":
         return (
           <Tablet3DModel

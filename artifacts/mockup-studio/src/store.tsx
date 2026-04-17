@@ -5,7 +5,6 @@ import type { DeviceStoreType } from "./data/devices";
 // When adding a new device category, update DeviceStoreType there; this stays in sync.
 export type DeviceType = DeviceStoreType;
 export type DeviceColor = "original" | "titanium" | "black" | "white" | "blue" | "naturallight" | "desert" | "sierra" | "clay" | (string & {});
-export type BrowserMode = "dark" | "light";
 export type BackgroundType = "none" | "solid" | "gradient" | "mesh" | "pattern" | "image" | "video" | "wallpaper" | "transparent" | "animated" | "gradient-custom" | "texture" | "wallpaper-custom";
 export type ShadowStyle = "none" | "spread" | "hug";
 export type CanvasRatio = "free" | "1:1" | "4:5" | "16:9" | "9:16" | "4:3" | "3:2" | "2:3" | "3:1" | "5:4";
@@ -106,7 +105,6 @@ export interface AppState {
   deviceType: DeviceType;
   deviceLandscape: boolean;
   deviceColor: DeviceColor;
-  browserMode: BrowserMode;
 
   screenshotUrl: string | null;
   videoUrl: string | null;
@@ -211,7 +209,7 @@ export interface AppState {
   creationMode: CreationMode;
   showGrid?: boolean;
   activeLabelId: string | null;
-  deviceSubTab: 'models' | 'colors' | 'orientation' | 'browser-theme';
+  deviceSubTab: 'models' | 'colors' | 'orientation';
   sceneSubTab: 'estudio' | 'luz' | 'camera' | 'motion' | 'effects' | 'shadow';
   labelsSubTab: 'view' | 'add' | 'subtract';
   interactionMode: InteractionMode;
@@ -225,7 +223,6 @@ export const defaultState: AppState = {
   deviceType: "iphone",
   deviceLandscape: false,
   deviceColor: "titanium",
-  browserMode: "dark",
 
   screenshotUrl: null,
   videoUrl: null,
