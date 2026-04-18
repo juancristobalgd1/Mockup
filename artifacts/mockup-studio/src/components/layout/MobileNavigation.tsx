@@ -51,7 +51,7 @@ import { LeftPanel } from "../panels/LeftPanel";
 
 interface MobileNavigationProps {
   state: any;
-  updateState: (updates: any) => void;
+  updateState: (updates: any, skipHistory?: boolean) => void;
   updateText: (id: string, updates: any) => void;
   removeText: (id: string) => void;
   nav: any;
@@ -1117,6 +1117,11 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                                   min={0.5} max={8} step={0.5} onChange={v => updateState({ autoRotateSpeed: v })} />
                               </div>
                             )}
+                            <div style={{ marginTop: 12, marginBottom: 12 }}>
+                              <Slider label="Giro del Dispositivo" value={state.rotation ?? 0}
+                                min={0} max={360} step={1} unit="°" 
+                                onChange={v => updateState({ rotation: v })} />
+                            </div>
                             <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', margin: '8px 0' }} />
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>

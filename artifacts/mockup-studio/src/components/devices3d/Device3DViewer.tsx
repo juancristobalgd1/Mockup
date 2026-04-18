@@ -453,40 +453,46 @@ function DeviceScene({
 
   if (state.animation === "float") {
     return (
-      <Float speed={1.4} rotationIntensity={0.06} floatIntensity={0.16} floatingRange={[-0.06, 0.06]}>
-        {inner}
-        {screenClickMesh}
-        {overlay}
-      </Float>
+      <group rotation={[0, (state.rotation ?? 0) * (Math.PI / 180), 0]}>
+        <Float speed={1.4} rotationIntensity={0.06} floatIntensity={0.16} floatingRange={[-0.06, 0.06]}>
+          {inner}
+          {screenClickMesh}
+          {overlay}
+        </Float>
+      </group>
     );
   }
 
   if (state.animation === "spin") {
     return (
-      <SpinWrapper>
-        {inner}
-        {screenClickMesh}
-        {overlay}
-      </SpinWrapper>
+      <group rotation={[0, (state.rotation ?? 0) * (Math.PI / 180), 0]}>
+        <SpinWrapper>
+          {inner}
+          {screenClickMesh}
+          {overlay}
+        </SpinWrapper>
+      </group>
     );
   }
 
   if (state.animation === "pulse") {
     return (
-      <PulseWrapper>
-        {inner}
-        {screenClickMesh}
-        {overlay}
-      </PulseWrapper>
+      <group rotation={[0, (state.rotation ?? 0) * (Math.PI / 180), 0]}>
+        <PulseWrapper>
+          {inner}
+          {screenClickMesh}
+          {overlay}
+        </PulseWrapper>
+      </group>
     );
   }
 
   return (
-    <>
+    <group rotation={[0, (state.rotation ?? 0) * (Math.PI / 180), 0]}>
       {inner}
       {screenClickMesh}
       {overlay}
-    </>
+    </group>
   );
 }
 

@@ -417,8 +417,8 @@ export function HeroOrbitControls({
       enableRotate={interactionMode !== "drag"}
       minDistance={zoomRange.minDistance}
       maxDistance={zoomRange.maxDistance}
-      minPolarAngle={Math.PI * 0.05}
-      maxPolarAngle={Math.PI * 0.92}
+      minPolarAngle={0}
+      maxPolarAngle={Math.PI}
       dampingFactor={0.05}
       enableDamping={true}
       rotateSpeed={0.7}

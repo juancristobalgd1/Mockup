@@ -175,6 +175,11 @@ export const SceneTab = () => {
                     min={0.5} max={8} step={0.5} onChange={v => updateState({ autoRotateSpeed: v })} />
                 </div>
               )}
+              <div style={{ marginTop: 12, marginBottom: 12 }}>
+                <Slider label="Giro del Dispositivo" value={state.rotation ?? 0}
+                  min={0} max={360} step={1} unit="°"
+                  onChange={v => updateState({ rotation: v })} />
+              </div>
               <div style={DIVIDER} />
               <div style={ROW}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -313,6 +318,11 @@ export const SceneTab = () => {
                         min={0.5} max={8} step={0.5} onChange={v => updateState({ autoRotateSpeed: v })} />
                     </div>
                   )}
+                  <div style={{ marginTop: 12, marginBottom: 12 }}>
+                    <Slider label="Giro del Dispositivo" value={state.rotation ?? 0}
+                      min={0} max={360} step={1} unit="°"
+                      onChange={v => updateState({ rotation: v })} />
+                  </div>
                   <div style={DIVIDER} />
                   <div style={ROW}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>

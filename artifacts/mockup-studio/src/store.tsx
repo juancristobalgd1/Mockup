@@ -283,6 +283,7 @@ export const defaultState: AppState = {
   cameraResetKey: 0,
 
   deviceScale: 45,
+  rotation: 0,
   reflection: false,
   reflectionOpacity: 50,
   glassReflection: true,

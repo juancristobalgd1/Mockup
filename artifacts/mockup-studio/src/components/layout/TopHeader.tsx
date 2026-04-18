@@ -17,7 +17,7 @@ interface TopHeaderProps {
   canUndo: boolean;
   canRedo: boolean;
   showGrid: boolean;
-  updateState: (updates: any) => void;
+  updateState: (updates: any, skipHistory?: boolean) => void;
   mobileTab: string | null;
   setMobileTab: (tab: string | null) => void;
   showGlobalMenu: boolean;
