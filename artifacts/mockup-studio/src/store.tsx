@@ -9,6 +9,7 @@ export type BackgroundType = "none" | "solid" | "gradient" | "mesh" | "pattern" 
 export type ShadowStyle = "none" | "spread" | "hug";
 export type CanvasRatio = "free" | "1:1" | "4:5" | "16:9" | "9:16" | "4:3" | "3:2" | "2:3" | "3:1" | "5:4";
 export type ContentType = "image" | "video" | null;
+export type ScreenFitMode = "cover" | "contain" | "fill";
 export type CreationMode = "mockup" | "movie" | "screenshot";
 export type InteractionMode = 'none' | 'drag' | 'zoom';
 
@@ -109,6 +110,8 @@ export interface AppState {
   screenshotUrl: string | null;
   videoUrl: string | null;
   contentType: ContentType;
+  /** How the current media adapts to the device screen. */
+  screenFit: ScreenFitMode;
 
   bgType: BackgroundType;
   bgColor: string;
@@ -227,6 +230,7 @@ export const defaultState: AppState = {
   screenshotUrl: null,
   videoUrl: null,
   contentType: null,
+  screenFit: "cover",
 
   bgType: "solid",
   bgColor: "#ffffff",
