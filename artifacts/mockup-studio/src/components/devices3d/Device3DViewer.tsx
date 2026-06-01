@@ -91,8 +91,12 @@ function DeviceScene({
   const [capturing, setCapturing] = useState(false);
   const [captureError, setCaptureError] = useState("");
   const [captureDelay, setCaptureDelay] = useState(0);
+  const [captureViewport, setCaptureViewport] = useState<"mobile" | "desktop">("mobile");
 
   const applyFile = (file: File) => {
+    // Revoke previous blob URLs to prevent memory leaks
+    if (state.screenshotUrl?.startsWith("blob:")) URL.revokeObjectURL(state.screenshotUrl);
+    if (state.videoUrl?.startsWith("blob:")) URL.revokeObjectURL(state.videoUrl);
     const url = URL.createObjectURL(file);
     if (file.type.startsWith("video/")) {
       updateState({ videoUrl: url, screenshotUrl: null, contentType: "video" });
@@ -113,12 +117,13 @@ function DeviceScene({
     const physH = isLandscape ? screenW : screenH;
     const thumW = 1400;
     const thumH = Math.max(200, Math.round(thumW * (physH / physW)));
+    const viewportW = captureViewport === "mobile" ? 390 : 1440;
 
     let url = menuUrl.trim();
     if (!url.startsWith("http")) url = "https://" + url;
     const delaySegment =
       captureDelay > 0 ? `delay/${captureDelay * 1000}/` : "";
-    const thumUrl = `https://image.thum.io/get/width/${thumW}/crop/${thumH}/noanimate/${delaySegment}${url}`;
+    const thumUrl = `https://image.thum.io/get/width/${thumW}/viewportWidth/${viewportW}/crop/${thumH}/noanimate/${delaySegment}${url}`;
 
     const closeDelay = captureDelay * 1000;
     setTimeout(() => {
@@ -130,11 +135,39 @@ function DeviceScene({
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
-      updateState({
-        screenshotUrl: thumUrl,
-        videoUrl: null,
-        contentType: "image",
-      });
+      // Convert to blob URL via offscreen canvas to avoid WebGL CORS issues
+      // (thum.io sends CORS headers on the img load but THREE.TextureLoader
+      //  may re-fetch without them, causing a blank texture)
+      const offscreen = document.createElement("canvas");
+      offscreen.width = img.naturalWidth || thumW;
+      offscreen.height = img.naturalHeight || thumH;
+      const ctx = offscreen.getContext("2d");
+      if (ctx) {
+        try {
+          ctx.drawImage(img, 0, 0);
+          offscreen.toBlob(
+            (blob) => {
+              if (blob) {
+                if (state.screenshotUrl?.startsWith("blob:")) {
+                  URL.revokeObjectURL(state.screenshotUrl);
+                }
+                const blobUrl = URL.createObjectURL(blob);
+                updateState({ screenshotUrl: blobUrl, videoUrl: null, contentType: "image" });
+              } else {
+                setCaptureError("Could not process screenshot.");
+                setCapturing(false);
+              }
+            },
+            "image/jpeg",
+            0.95,
+          );
+        } catch {
+          // Canvas tainted fallback — use URL directly
+          updateState({ screenshotUrl: thumUrl, videoUrl: null, contentType: "image" });
+        }
+      } else {
+        updateState({ screenshotUrl: thumUrl, videoUrl: null, contentType: "image" });
+      }
     };
     img.onerror = () => {
       setCaptureError("Could not capture. Check the URL.");
@@ -390,6 +423,16 @@ function DeviceScene({
                       />
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.4em", padding: "0.45em 0.7em", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+                      <span style={{ fontSize: "0.72em", color: "rgba(255,255,255,0.38)", whiteSpace: "nowrap", fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>View</span>
+                      <div style={{ display: "flex", gap: 4, flex: 1 }}>
+                        {(["mobile", "desktop"] as const).map((v) => (
+                          <button key={v} onClick={() => setCaptureViewport(v)} style={{ flex: 1, padding: "0.2em 0", fontSize: "0.75em", fontWeight: 700, borderRadius: 5, border: "none", cursor: "pointer", background: captureViewport === v ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.06)", color: captureViewport === v ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)", outline: captureViewport === v ? "1.5px solid rgba(255,255,255,0.5)" : "1px solid rgba(255,255,255,0.1)", transition: "all 0.1s" }}>
+                            {v === "mobile" ? "📱 Mobile" : "🖥 Desktop"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.4em", padding: "0.45em 0.7em", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
                       <span style={{ fontSize: "0.72em", color: "rgba(255,255,255,0.38)", whiteSpace: "nowrap", fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>Wait</span>
                       <div style={{ display: "flex", gap: 4, flex: 1 }}>
                         {[0, 1, 2, 3, 5, 8].map((s) => (
@@ -630,6 +673,9 @@ export const Device3DViewer = forwardRef<
       setDragOver(false);
       const file = e.dataTransfer.files?.[0];
       if (!file) return;
+      // Revoke previous blob URLs to prevent memory leaks
+      if (state.screenshotUrl?.startsWith("blob:")) URL.revokeObjectURL(state.screenshotUrl);
+      if (state.videoUrl?.startsWith("blob:")) URL.revokeObjectURL(state.videoUrl);
       const url = URL.createObjectURL(file);
       if (file.type.startsWith("video/")) {
         updateState({ videoUrl: url, screenshotUrl: null, contentType: "video" });
@@ -637,7 +683,7 @@ export const Device3DViewer = forwardRef<
         updateState({ screenshotUrl: url, videoUrl: null, contentType: "image" });
       }
     },
-    [updateState],
+    [state.screenshotUrl, state.videoUrl, updateState],
   );
 
   const isLaptop = state.deviceType === "macbook";

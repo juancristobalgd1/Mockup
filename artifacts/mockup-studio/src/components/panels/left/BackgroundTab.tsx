@@ -41,12 +41,20 @@ export const BackgroundTab = ({ mobileView, setMobileView }: BackgroundTabProps)
 
   const handleBgImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) updateState({ bgType: 'image', bgImage: URL.createObjectURL(file), bgVideo: null });
+    if (file) {
+      if (state.bgImage?.startsWith("blob:")) URL.revokeObjectURL(state.bgImage);
+      if (state.bgVideo?.startsWith("blob:")) URL.revokeObjectURL(state.bgVideo);
+      updateState({ bgType: 'image', bgImage: URL.createObjectURL(file), bgVideo: null });
+    }
   };
 
   const handleBgVideo = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) updateState({ bgType: 'video', bgVideo: URL.createObjectURL(file), bgImage: null });
+    if (file) {
+      if (state.bgImage?.startsWith("blob:")) URL.revokeObjectURL(state.bgImage);
+      if (state.bgVideo?.startsWith("blob:")) URL.revokeObjectURL(state.bgVideo);
+      updateState({ bgType: 'video', bgVideo: URL.createObjectURL(file), bgImage: null });
+    }
   };
 
   const handleShuffle = () => {
