@@ -42,7 +42,7 @@ export function PostFX({
   const vignInt = state.bgVignette ? (state.bgVignetteIntensity || 50) / 100 : 0;
   const grainInt = state.grain ? (state.grainIntensity || 35) / 1000 : 0;
 
-  const effects: React.ReactNode[] = [];
+  const effects: React.ReactElement[] = [];
 
   // SMAA is always enabled for visual quality
   effects.push(<SMAA key="smaa" />);
