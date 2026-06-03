@@ -11,6 +11,7 @@ export function useScreenTexture(
   screenshotUrl: string | null,
   videoUrl: string | null,
   contentType: 'image' | 'video' | null,
+  onVideoCreate?: (vid: HTMLVideoElement) => void,
 ) {
   const textureRef = useRef<THREE.Texture | null>(null);
   const videoElRef = useRef<HTMLVideoElement | null>(null);
@@ -39,6 +40,7 @@ export function useScreenTexture(
       vid.playsInline = true;
       vid.play().catch(() => {});
       videoElRef.current = vid;
+      onVideoCreate?.(vid);
 
       const tex = new THREE.VideoTexture(vid);
       tex.colorSpace = THREE.SRGBColorSpace;
@@ -80,7 +82,7 @@ export function useScreenTexture(
         videoElRef.current = null;
       }
     };
-  }, [screenshotUrl, videoUrl, contentType, perfConfig]);
+  }, [screenshotUrl, videoUrl, contentType, perfConfig, onVideoCreate]);
 
   return textureRef;
 }

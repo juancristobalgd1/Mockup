@@ -42,6 +42,7 @@ import { FloorReflector, ClayOverride } from "./viewer/ViewerEffects";
 import { ScreenDropZoneContent } from "./viewer/ViewerOverlay";
 import { OrientationGimbal } from "./viewer/ViewerGimbal";
 import { HeroOrbitControls, interpolateKeyframes, ENV_INTENSITY } from "./viewer/ViewerControls";
+import { VideoControls } from "./viewer/VideoControls";
 
 import { useGLTF, Html } from "@react-three/drei";
 
@@ -571,6 +572,7 @@ export const Device3DViewer = forwardRef<
   const [hintVisible, setHintVisible] = useState(true);
   const [dragOver, setDragOver] = useState(false);
   const [pencilVisible, setPencilVisible] = useState(false);
+  const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null);
   const interactionMode = state.interactionMode;
 
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -613,11 +615,21 @@ export const Device3DViewer = forwardRef<
     }
   };
 
+  const handleVideoCreate = useCallback((vid: HTMLVideoElement) => {
+    setVideoEl(vid);
+  }, []);
+
   const screenTexture = useScreenTexture(
     state.screenshotUrl,
     state.videoUrl,
     state.contentType,
+    handleVideoCreate,
   );
+
+  // Clear video element when content type changes away from video
+  useEffect(() => {
+    if (state.contentType !== 'video') setVideoEl(null);
+  }, [state.contentType]);
 
   useEffect(() => {
     moviePlayingRef.current = moviePlaying;
@@ -806,6 +818,7 @@ export const Device3DViewer = forwardRef<
       </R3FCanvas>
       <OrientationGimbal mainCamera={cameraRef.current} />
       <RotatoHint visible={hintVisible} />
+      <VideoControls videoEl={videoEl} />
       {dragOver && (
         <div style={{ position: "absolute", inset: 0, zIndex: 10, pointerEvents: "none", border: "2px solid rgba(55,65,81,0.5)", borderRadius: 8, background: "rgba(55,65,81,0.05)", boxShadow: "inset 0 0 40px rgba(55,65,81,0.07)" }} />
       )}
