@@ -13,7 +13,6 @@ export const DeviceTab = () => {
   const activeGroup = activeModel?.group;
   const hasColors = !!activeModel?.hasColors;
   const hasOrientation = !!activeModel?.hasOrientation;
-  const hasBrowserTheme = state.deviceType === 'browser';
 
   const activeGroupModels = DEVICE_MODELS.filter(m => m.group === activeGroup);
 
@@ -121,46 +120,24 @@ export const DeviceTab = () => {
         </div>
       )}
 
-      {(!isMobile || state.deviceSubTab === 'orientation' || state.deviceSubTab === 'browser-theme') && (hasOrientation || hasBrowserTheme) && (
+      {(!isMobile || state.deviceSubTab === 'orientation') && hasOrientation && (
         <div style={{ borderTop: isMobile ? 'none' : '1px solid rgba(255,255,255,0.08)', marginTop: isMobile ? 0 : 24, paddingTop: isMobile ? 0 : 20 }}>
-          <Section label={hasBrowserTheme ? 'Tema Navegador' : 'Orientación'}>
+          <Section label="Orientación">
               <div style={{ display: 'flex', gap: 10 }}>
-                {hasOrientation && (
-                  <>
-                    <button onClick={() => updateState({ deviceLandscape: false })}
-                      style={{
-                        flex: 1, padding: '12px', borderRadius: 12, fontSize: 13, fontWeight: 700,
-                        background: !state.deviceLandscape ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
-                        color: !state.deviceLandscape ? '#fff' : 'rgba(255,255,255,0.4)',
-                        border: !state.deviceLandscape ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.1)',
-                      }}>Vertical</button>
-                    <button onClick={() => updateState({ deviceLandscape: true })}
-                      style={{
-                        flex: 1, padding: '12px', borderRadius: 12, fontSize: 13, fontWeight: 700,
-                        background: state.deviceLandscape ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
-                        color: state.deviceLandscape ? '#fff' : 'rgba(255,255,255,0.4)',
-                        border: state.deviceLandscape ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.1)',
-                      }}>Horizontal</button>
-                  </>
-                )}
-                {hasBrowserTheme && (
-                  <>
-                    <button onClick={() => updateState({ browserMode: 'light' })}
-                      style={{
-                        flex: 1, padding: '12px', borderRadius: 12, fontSize: 13, fontWeight: 700,
-                        background: state.browserMode === 'light' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
-                        color: state.browserMode === 'light' ? '#fff' : 'rgba(255,255,255,0.4)',
-                        border: state.browserMode === 'light' ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.1)',
-                      }}>Claro</button>
-                    <button onClick={() => updateState({ browserMode: 'dark' })}
-                      style={{
-                        flex: 1, padding: '12px', borderRadius: 12, fontSize: 13, fontWeight: 700,
-                        background: state.browserMode === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
-                        color: state.browserMode === 'dark' ? '#fff' : 'rgba(255,255,255,0.4)',
-                        border: state.browserMode === 'dark' ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.1)',
-                      }}>Oscuro</button>
-                  </>
-                )}
+                <button onClick={() => updateState({ deviceLandscape: false })}
+                  style={{
+                   flex: 1, padding: '12px', borderRadius: 12, fontSize: 13, fontWeight: 700,
+                   background: !state.deviceLandscape ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
+                   color: !state.deviceLandscape ? '#fff' : 'rgba(255,255,255,0.4)',
+                   border: !state.deviceLandscape ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.1)',
+                  }}>Vertical</button>
+                <button onClick={() => updateState({ deviceLandscape: true })}
+                  style={{
+                   flex: 1, padding: '12px', borderRadius: 12, fontSize: 13, fontWeight: 700,
+                   background: state.deviceLandscape ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
+                   color: state.deviceLandscape ? '#fff' : 'rgba(255,255,255,0.4)',
+                   border: state.deviceLandscape ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.1)',
+                  }}>Horizontal</button>
               </div>
           </Section>
         </div>

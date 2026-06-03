@@ -24,7 +24,7 @@ function waitFrames(n: number): Promise<void> {
 }
 
 function computeBgStyle(state: AppState): CSSProperties {
-  const { bgType, bgColor, bgPattern, bgImage } = state;
+  const { bgType, bgColor, bgPattern, bgPatternColor, bgImage } = state;
   if (bgType === 'none') return { background: '#111113' };
   if (bgType === 'video') return { background: '#090b10' };
   if (bgType === 'transparent') return {
@@ -35,7 +35,7 @@ function computeBgStyle(state: AppState): CSSProperties {
   if (bgType === 'solid') return { background: bgColor };
   if (bgType === 'gradient') return { background: GRADIENTS.find(g => g.id === bgColor)?.css || GRADIENTS[0].css };
   if (bgType === 'mesh') return { background: MESH_GRADIENTS.find(m => m.id === bgColor)?.css || MESH_GRADIENTS[0].css };
-  if (bgType === 'pattern') return PATTERNS.find(p => p.id === bgPattern)?.bgStyle(bgColor) || { background: bgColor };
+  if (bgType === 'pattern') return PATTERNS.find(p => p.id === bgPattern)?.bgStyle(bgColor, bgPatternColor) || { background: bgColor };
   if (bgType === 'wallpaper') return { background: WALLPAPERS.find(w => w.id === bgColor)?.css || GRADIENTS[0].css };
   if (bgType === 'image' && bgImage) return { backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' };
   return { background: GRADIENTS[0].css };
