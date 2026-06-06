@@ -31,6 +31,7 @@ export function useScreenTexture(
       videoElRef.current = null;
     }
 
+    // Create new texture or video element based on contentType
     if (contentType === 'video' && videoUrl) {
       const vid = document.createElement('video');
       vid.src = videoUrl;
@@ -76,9 +77,15 @@ export function useScreenTexture(
       setGlobalScreenTexture(null);
     }
 
+    // Cleanup function
     return () => {
+      if (textureRef.current) {
+        textureRef.current.dispose();
+        textureRef.current = null;
+      }
       if (videoElRef.current) {
         videoElRef.current.pause();
+        videoElRef.current.src = '';
         videoElRef.current = null;
       }
     };
