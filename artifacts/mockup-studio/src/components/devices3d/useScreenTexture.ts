@@ -21,9 +21,10 @@ export function useScreenTexture(
   const perfConfig = useRef(getOptimizedConfig(detectDeviceProfile())).current;
 
   useEffect(() => {
-    // Dispose previous image texture (VideoTexture is managed by the video element)
-    if (textureRef.current && !(textureRef.current instanceof THREE.VideoTexture)) {
+    // Dispose previous texture (including VideoTexture)
+    if (textureRef.current) {
       textureRef.current.dispose();
+      textureRef.current = null;
     }
     if (videoElRef.current) {
       videoElRef.current.pause();

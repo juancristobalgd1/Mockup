@@ -94,14 +94,22 @@ function DeviceScene({
   const [captureDelay, setCaptureDelay] = useState(0);
   const [captureViewport, setCaptureViewport] = useState<"mobile" | "desktop">("mobile");
 
+  const prevMediaUrls = useRef<{ screenshot?: string; video?: string }>({});
+
   const applyFile = (file: File) => {
     // Revoke previous blob URLs to prevent memory leaks
-    if (state.screenshotUrl?.startsWith("blob:")) URL.revokeObjectURL(state.screenshotUrl);
-    if (state.videoUrl?.startsWith("blob:")) URL.revokeObjectURL(state.videoUrl);
+    if (prevMediaUrls.current.screenshot?.startsWith("blob:")) {
+      URL.revokeObjectURL(prevMediaUrls.current.screenshot);
+    }
+    if (prevMediaUrls.current.video?.startsWith("blob:")) {
+      URL.revokeObjectURL(prevMediaUrls.current.video);
+    }
     const url = URL.createObjectURL(file);
     if (file.type.startsWith("video/")) {
+      prevMediaUrls.current = { video: url };
       updateState({ videoUrl: url, screenshotUrl: null, contentType: "video" });
     } else {
+      prevMediaUrls.current = { screenshot: url };
       updateState({ screenshotUrl: url, videoUrl: null, contentType: "image" });
     }
     setMenuOpen(false);
@@ -126,13 +134,6 @@ function DeviceScene({
       captureDelay > 0 ? `delay/${captureDelay * 1000}/` : "";
     const thumUrl = `https://image.thum.io/get/width/${thumW}/viewportWidth/${viewportW}/crop/${thumH}/noanimate/${delaySegment}${url}`;
 
-    const closeDelay = captureDelay * 1000;
-    setTimeout(() => {
-      setMenuOpen(false);
-      setMenuUrl("");
-      setCapturing(false);
-    }, closeDelay);
-
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
@@ -148,6 +149,9 @@ function DeviceScene({
           ctx.drawImage(img, 0, 0);
           offscreen.toBlob(
             (blob) => {
+              setMenuOpen(false);
+              setMenuUrl("");
+              setCapturing(false);
               if (blob) {
                 if (state.screenshotUrl?.startsWith("blob:")) {
                   URL.revokeObjectURL(state.screenshotUrl);
@@ -156,7 +160,6 @@ function DeviceScene({
                 updateState({ screenshotUrl: blobUrl, videoUrl: null, contentType: "image" });
               } else {
                 setCaptureError("Could not process screenshot.");
-                setCapturing(false);
               }
             },
             "image/jpeg",
@@ -164,9 +167,15 @@ function DeviceScene({
           );
         } catch {
           // Canvas tainted fallback — use URL directly
+          setMenuOpen(false);
+          setMenuUrl("");
+          setCapturing(false);
           updateState({ screenshotUrl: thumUrl, videoUrl: null, contentType: "image" });
         }
       } else {
+        setMenuOpen(false);
+        setMenuUrl("");
+        setCapturing(false);
         updateState({ screenshotUrl: thumUrl, videoUrl: null, contentType: "image" });
       }
     };

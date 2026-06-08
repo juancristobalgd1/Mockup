@@ -25,16 +25,20 @@ export default defineConfig({
   },
   server: {
     port,
-    host: "0.0.0.0",
+    host: "localhost",
     allowedHosts: true,
     fs: {
       strict: true,
       deny: ["**/.*"],
     },
+    hmr: {
+      protocol: "ws",
+      clientPort: 443,
+    },
   },
   preview: {
     port,
-    host: "0.0.0.0",
+    host: "localhost",
     allowedHosts: true,
   },
 });
