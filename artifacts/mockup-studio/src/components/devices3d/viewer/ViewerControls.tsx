@@ -109,15 +109,15 @@ export function interpolateKeyframes(
         const cy = 3.0 * pts[1];
         const by = 3.0 * (pts[3] - pts[1]) - cy;
         const ay = 1.0 - cy - by;
-        
-        let t = v;
-        for (let i = 0; i < 5; i++) {
-          const x = ((ax * t + bx) * t + cx) * t;
-          const dx = (3.0 * ax * t + 2.0 * bx) * t + cx;
+
+        let tBezier = v;
+        for (let bi = 0; bi < 5; bi++) {
+          const x = ((ax * tBezier + bx) * tBezier + cx) * tBezier;
+          const dx = (3.0 * ax * tBezier + 2.0 * bx) * tBezier + cx;
           if (Math.abs(x - v) < 0.001) break;
-          t -= (x - v) / dx;
+          tBezier -= (x - v) / dx;
         }
-        return ((ay * t + by) * t + cy) * t;
+        return ((ay * tBezier + by) * tBezier + cy) * tBezier;
       }
       case "smooth":
       default: return v * v * (3 - 2 * v);

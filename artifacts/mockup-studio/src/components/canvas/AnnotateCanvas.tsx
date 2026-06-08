@@ -475,7 +475,7 @@ export function AnnotateCanvas() {
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  });
+  }, [selectedId, state.annotateTool]);
 
   // ── Actions ───────────────────────────────────────────────────────
   const deleteSelected = useCallback(() => {
