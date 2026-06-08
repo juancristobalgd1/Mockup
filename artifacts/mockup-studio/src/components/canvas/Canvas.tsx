@@ -96,46 +96,54 @@ function testWebGLSupport(): { supported: boolean; error?: string } {
         }) as WebGLRenderingContext | null;
         if (gl) {
           // Verify the context is functional by trying basic operations
+          // (This catches cases where getContext returns something but it's not a real WebGL context)
           (gl as WebGLRenderingContext).enable((gl as WebGLRenderingContext).DEPTH_TEST);
           (gl as WebGLRenderingContext).clearColor(0, 0, 0, 1);
           (gl as WebGLRenderingContext).clear((gl as WebGLRenderingContext).COLOR_BUFFER_BIT | (gl as WebGLRenderingContext).DEPTH_BUFFER_BIT);
 
-          // Additional check: verify the context has the expected properties
-          // This catches cases where getContext returns something but it's not a real WebGL context
+          // Check getError to verify context is functional
           if (typeof (gl as WebGLRenderingContext).getError !== 'function') {
             return { supported: false, error: 'WebGL context is not functional' };
           }
 
-          // Verify we can create a simple shader - this is what Three.js/R3FCanvas does internally
+          // Basic shader test - only check if context is functional
+          // Some browsers (especially on mobile) may restrict shader compilation
+          // but WebGL still works for rendering
           try {
             const vertexShader = (gl as WebGLRenderingContext).createShader((gl as WebGLRenderingContext).VERTEX_SHADER);
             const fragmentShader = (gl as WebGLRenderingContext).createShader((gl as WebGLRenderingContext).FRAGMENT_SHADER);
 
-            if (!vertexShader || !fragmentShader) {
-              return { supported: false, error: 'Failed to create shaders - WebGL not fully supported' };
+            if (vertexShader && fragmentShader) {
+              // Simple shader source for basic verification
+              const vertexSource = `void main() { gl_Position = vec4(0, 0, 0, 1); }`;
+              const fragmentSource = `void main() { gl_FragColor = vec4(1, 0, 0, 1); }`;
+
+              (gl as WebGLRenderingContext).shaderSource(vertexShader, vertexSource);
+              (gl as WebGLRenderingContext).shaderSource(fragmentShader, fragmentSource);
+              (gl as WebGLRenderingContext).compileShader(vertexShader);
+              (gl as WebGLRenderingContext).compileShader(fragmentShader);
+
+              if (!(gl as WebGLRenderingContext).getShaderParameter(vertexShader, (gl as WebGLRenderingContext).COMPILE_STATUS)) {
+                // Shader compilation failed - this is common on iOS with privacy restrictions
+                // Return supported: false to show CSS fallback
+                (gl as WebGLRenderingContext).deleteShader(vertexShader);
+                (gl as WebGLRenderingContext).deleteShader(fragmentShader);
+                return { supported: false, error: 'Shader compilation failed - WebGL not fully supported on this device' };
+              }
+              if (!(gl as WebGLRenderingContext).getShaderParameter(fragmentShader, (gl as WebGLRenderingContext).COMPILE_STATUS)) {
+                // Shader compilation failed
+                (gl as WebGLRenderingContext).deleteShader(vertexShader);
+                (gl as WebGLRenderingContext).deleteShader(fragmentShader);
+                return { supported: false, error: 'Shader compilation failed - WebGL not fully supported on this device' };
+              }
+
+              // Clean up
+              (gl as WebGLRenderingContext).deleteShader(vertexShader);
+              (gl as WebGLRenderingContext).deleteShader(fragmentShader);
             }
-
-            // Test shader compilation with a simple shader
-            const vertexSource = `void main() { gl_Position = vec4(0, 0, 0, 1); }`;
-            const fragmentSource = `void main() { gl_FragColor = vec4(1, 0, 0, 1); }`;
-
-            (gl as WebGLRenderingContext).shaderSource(vertexShader, vertexSource);
-            (gl as WebGLRenderingContext).shaderSource(fragmentShader, fragmentSource);
-            (gl as WebGLRenderingContext).compileShader(vertexShader);
-            (gl as WebGLRenderingContext).compileShader(fragmentShader);
-
-            if (!(gl as WebGLRenderingContext).getShaderParameter(vertexShader, (gl as WebGLRenderingContext).COMPILE_STATUS)) {
-              return { supported: false, error: 'Shader compilation failed - WebGL not fully supported' };
-            }
-            if (!(gl as WebGLRenderingContext).getShaderParameter(fragmentShader, (gl as WebGLRenderingContext).COMPILE_STATUS)) {
-              return { supported: false, error: 'Shader compilation failed - WebGL not fully supported' };
-            }
-
-            // Clean up
-            (gl as WebGLRenderingContext).deleteShader(vertexShader);
-            (gl as WebGLRenderingContext).deleteShader(fragmentShader);
-          } catch (shaderError) {
-            return { supported: false, error: `Shader test failed: ${shaderError instanceof Error ? shaderError.message : 'Unknown error'}` };
+          } catch {
+            // Shader creation failed - show fallback
+            return { supported: false, error: 'Shader creation failed - WebGL not fully supported on this device' };
           }
 
           return { supported: true };
