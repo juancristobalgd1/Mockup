@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { setGlobalScreenTexture } from './textureGlobal';
+import { optimizeTexture } from '../../utils/performance';
+import { detectDeviceProfile, getOptimizedConfig } from '../../utils/performance';
 
 /** Returns a THREE texture ref for the current screen content (image or video).
  *  Also writes the texture into the global singleton so useFrame loops can
@@ -9,9 +11,14 @@ export function useScreenTexture(
   screenshotUrl: string | null,
   videoUrl: string | null,
   contentType: 'image' | 'video' | null,
+  onVideoCreate?: (vid: HTMLVideoElement) => void,
 ) {
   const textureRef = useRef<THREE.Texture | null>(null);
   const videoElRef = useRef<HTMLVideoElement | null>(null);
+  const loaderRef = useRef<THREE.TextureLoader>(new THREE.TextureLoader());
+
+  // Get performance config for texture optimization
+  const perfConfig = useRef(getOptimizedConfig(detectDeviceProfile())).current;
 
   useEffect(() => {
     // Dispose previous image texture (VideoTexture is managed by the video element)
@@ -24,6 +31,7 @@ export function useScreenTexture(
       videoElRef.current = null;
     }
 
+    // Create new texture or video element based on contentType
     if (contentType === 'video' && videoUrl) {
       const vid = document.createElement('video');
       vid.src = videoUrl;
@@ -33,31 +41,55 @@ export function useScreenTexture(
       vid.playsInline = true;
       vid.play().catch(() => {});
       videoElRef.current = vid;
+      onVideoCreate?.(vid);
 
       const tex = new THREE.VideoTexture(vid);
       tex.colorSpace = THREE.SRGBColorSpace;
+
+      // Optimize texture based on device capabilities
+      if (perfConfig.textureResolution === 'low') {
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+      }
+
       textureRef.current = tex;
       setGlobalScreenTexture(tex);
     } else if (contentType === 'image' && screenshotUrl) {
-      const loader = new THREE.TextureLoader();
-      loader.crossOrigin = 'anonymous';
-      loader.load(screenshotUrl, (tex) => {
-        tex.colorSpace = THREE.SRGBColorSpace;
-        textureRef.current = tex;
-        setGlobalScreenTexture(tex);
-      });
+      loaderRef.current.crossOrigin = 'anonymous';
+      loaderRef.current.load(
+        screenshotUrl,
+        (tex) => {
+          tex.colorSpace = THREE.SRGBColorSpace;
+
+          // Optimize loaded texture based on device performance tier
+          optimizeTexture(tex, perfConfig.textureResolution);
+
+          textureRef.current = tex;
+          setGlobalScreenTexture(tex);
+        },
+        undefined,
+        (error) => {
+          console.warn('Failed to load texture:', error);
+        }
+      );
     } else {
       textureRef.current = null;
       setGlobalScreenTexture(null);
     }
 
+    // Cleanup function
     return () => {
+      if (textureRef.current) {
+        textureRef.current.dispose();
+        textureRef.current = null;
+      }
       if (videoElRef.current) {
         videoElRef.current.pause();
+        videoElRef.current.src = '';
         videoElRef.current = null;
       }
     };
-  }, [screenshotUrl, videoUrl, contentType]);
+  }, [screenshotUrl, videoUrl, contentType, perfConfig, onVideoCreate]);
 
   return textureRef;
 }

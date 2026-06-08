@@ -836,7 +836,7 @@ export const PRESETS: Preset[] = [
     label: 'Twitter Banner',
     thumb: 'night',
     state: {
-      deviceType: 'browser',
+      deviceType: 'iphone',
       deviceLandscape: false,
       bgType: 'gradient',
       bgColor: 'night',

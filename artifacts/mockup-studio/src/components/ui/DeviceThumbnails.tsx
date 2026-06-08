@@ -9,7 +9,6 @@ export function DeviceThumbnail({ modelId, isSelected }: { modelId: string; isSe
   const isTablet  = def.storeType === 'ipad';
   const isWatch   = def.storeType === 'watch';
   const isMac     = def.storeType === 'macbook';
-  const isBrowser = def.storeType === 'browser';
 
   const accent = isSelected ? 'rgba(255,255,255,0.85)' : (def.accent ?? 'rgba(255,255,255,0.35)');
   const body   = isSelected ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)';
@@ -53,17 +52,6 @@ export function DeviceThumbnail({ modelId, isSelected }: { modelId: string; isSe
         <rect x="4" y="1" width="36" height="24" rx="2" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
         <rect x="7" y="4" width="30" height="18" rx="1" fill={isSelected ? 'rgba(55,65,81,0.15)' : 'rgba(0,0,0,0.04)'} />
         <rect x="1" y="25" width="42" height="5" rx="1.5" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
-      </svg>
-    );
-  }
-  if (isBrowser) {
-    return (
-      <svg width="40" height="28" viewBox="0 0 44 30" fill="none">
-        <rect x="1" y="1" width="42" height="28" rx="3" fill={body} stroke={accent} strokeWidth={isSelected ? 1.5 : 1} />
-        <rect x="1" y="1" width="42" height="8" rx="3" fill={accent} opacity="0.18" />
-        <rect x="4" y="3.5" width="4" height="3" rx="1.5" fill={accent} opacity="0.5" />
-        <rect x="10" y="3.5" width="4" height="3" rx="1.5" fill={accent} opacity="0.3" />
-        <rect x="4" y="11" width="36" height="16" rx="1" fill={isSelected ? 'rgba(55,65,81,0.12)' : 'rgba(0,0,0,0.03)'} />
       </svg>
     );
   }

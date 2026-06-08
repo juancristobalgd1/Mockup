@@ -7,7 +7,7 @@ import { LIGHT_OVERLAYS } from '../../data/lightOverlays';
 import { AnnotateCanvas } from './AnnotateCanvas';
 import { Device3DViewer } from '../devices3d/Device3DViewer';
 import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
-import { CSSDeviceFallback, checkWebGL } from '../devices3d/WebGLFallback';
+import { CSSDeviceFallback, checkWebGL, WebGLErrorBoundary } from '../devices3d/WebGLFallback';
 
 interface CanvasProps {
   textOverlays: TextOverlay[];
@@ -334,12 +334,14 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
         {webglAvailable === false ? (
           <CSSDeviceFallback />
         ) : webglAvailable === true ? (
-          <Device3DViewer
-            ref={viewerRef}
-            style={{ position: 'absolute', inset: 0, zIndex: 2 }}
-            movieTimeRef={movieTimeRef}
-            moviePlaying={moviePlaying}
-          />
+          <WebGLErrorBoundary fallback={<CSSDeviceFallback />}>
+            <Device3DViewer
+              ref={viewerRef}
+              style={{ position: 'absolute', inset: 0, zIndex: 2 }}
+              movieTimeRef={movieTimeRef}
+              moviePlaying={moviePlaying}
+            />
+          </WebGLErrorBoundary>
         ) : null /* loading – will resolve synchronously */}
 
         {/* Annotation drawing layer */}

@@ -704,10 +704,11 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
   const handleAudioFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (state.audioUrl?.startsWith("blob:")) URL.revokeObjectURL(state.audioUrl);
     const url = URL.createObjectURL(file);
     updateState({ audioUrl: url });
     e.target.value = '';
-  }, [updateState]);
+  }, [state.audioUrl, updateState]);
 
   const [timelineZoom, setTimelineZoom] = useState(1);
   const MIN_ZOOM = 0.5;
