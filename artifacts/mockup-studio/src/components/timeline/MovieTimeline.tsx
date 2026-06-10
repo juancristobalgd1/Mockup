@@ -293,7 +293,7 @@ function buildTimelineScenes(keyframes: CameraKeyframe[]) {
   const scenes: TimelineScene[] = [];
   let sceneNumber = 1;
 
-  for (let i = 0; i < keyframes.length; i += 1) {
+  for (let i = 0; i < keyframes.length; ) {
     const current = keyframes[i];
 
     if (current.sceneId) {
@@ -313,11 +313,13 @@ function buildTimelineScenes(keyframes: CameraKeyframe[]) {
         sceneId: current.sceneId,
       });
       sceneNumber += 1;
-      i = endIndex;
+      i = endIndex + 1;
       continue;
     }
 
-    if (i < keyframes.length - 1) {
+    // Current keyframe has no sceneId
+    if (i < keyframes.length - 1 && !keyframes[i + 1].sceneId) {
+      // Current and next keyframe both lack sceneId, pair them
       const sceneKeyframes = keyframes.slice(i, i + 2);
       scenes.push({
         index: scenes.length,
@@ -328,9 +330,13 @@ function buildTimelineScenes(keyframes: CameraKeyframe[]) {
         keyframes: sceneKeyframes,
         label: current.sceneLabel || current.label || keyframes[i + 1].label || `Animación ${scenes.length + 1}`,
       });
+      i += 2;
       continue;
     }
 
+    // Current keyframe has no sceneId, and either:
+    // - It's the last keyframe, or
+    // - The next keyframe has a sceneId
     scenes.push({
       index: scenes.length,
       startIndex: i,
@@ -342,6 +348,7 @@ function buildTimelineScenes(keyframes: CameraKeyframe[]) {
       sceneId: current.sceneId,
     });
     sceneNumber += 1;
+    i += 1;
   }
 
   return scenes;
