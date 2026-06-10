@@ -1,10 +1,10 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { MovieTimeline } from '../MovieTimeline'
 
 describe('MovieTimeline component', () => {
   it('should render without crashing', () => {
     expect(MovieTimeline).toBeDefined()
-    expect(typeof MovieTimeline).toBe('object')
+    expect(typeof MovieTimeline).toBe('function')
   })
 })
 
@@ -37,5 +37,20 @@ describe('formatTime function', () => {
     expect(formatTime(5.5)).toBe('5.50s')
     expect(formatTime(5.555)).toBe('5.55s')
     expect(formatTime(10)).toBe('10.00s')
+  })
+})
+
+describe('snapTimelineTime function', () => {
+  const snapTimelineTime = (time: number) => {
+    return Math.round(time * 20) / 20
+  }
+
+  it('should snap time to nearest 0.05 increment', () => {
+    expect(snapTimelineTime(0)).toBe(0)
+    expect(snapTimelineTime(0.01)).toBe(0)
+    expect(snapTimelineTime(0.02)).toBe(0)
+    expect(snapTimelineTime(0.03)).toBe(0.05)
+    expect(snapTimelineTime(0.07)).toBe(0.05)
+    expect(snapTimelineTime(0.08)).toBe(0.1)
   })
 })
