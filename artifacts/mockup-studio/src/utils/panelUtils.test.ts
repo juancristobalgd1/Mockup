@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { safeW, clampL, clampT, getModeAccent, getDefaultTab } from "./panelUtils";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { safeW, clampL, clampT, getModeAccent, getDefaultTab, extractColorsFromImage } from "./panelUtils";
 
 describe("safeW", () => {
   it("returns a min() CSS expression", () => {
@@ -97,4 +97,69 @@ describe("getDefaultTab", () => {
   it("returns 'device' for unknown modes", () => {
     expect(getDefaultTab("unknown")).toBe("device");
   });
+});
+
+describe("extractColorsFromImage", () => {
+  let mockImageInstance: { crossOrigin: string; onload: (() => void) | null; onerror: (() => void) | null; src: string }
+
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    mockImageInstance = { crossOrigin: '', onload: null, onerror: null, src: '' }
+
+    // Mock Image constructor using a proper function so `new Image()` works
+    vi.stubGlobal('Image', vi.fn().mockImplementation(function () {
+      return mockImageInstance
+    }))
+
+    // Mock canvas
+    const mockContext = {
+      drawImage: vi.fn(),
+      getImageData: vi.fn(() => ({
+        data: new Uint8ClampedArray([
+          ...Array.from({ length: 200 }, () => [255, 0, 0, 255]).flat(),
+          ...Array.from({ length: 100 }, () => [0, 0, 255, 255]).flat(),
+          ...Array.from({ length: 100 }, () => [0, 255, 0, 128]).flat(),
+        ]).slice(0, 1600),
+      })),
+    }
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      if (tag === 'canvas') {
+        return { width: 20, height: 20, getContext: () => mockContext } as any
+      }
+      return document.createElement(tag)
+    })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("extracts dominant colors from an image", async () => {
+    const promise = extractColorsFromImage('fake-src.png')
+    mockImageInstance.onload!()
+    const colors = await promise
+    expect(colors.length).toBeGreaterThanOrEqual(2)
+    expect(colors[0]).toBe('rgb(255,0,0)')
+    expect(colors[1]).toBe('rgb(0,0,255)')
+  })
+
+  it("returns empty array on image error", async () => {
+    const promise = extractColorsFromImage('bad-src.png')
+    mockImageInstance.onerror!()
+    const colors = await promise
+    expect(colors).toEqual([])
+  })
+
+  it("returns empty array when canvas context is null", async () => {
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      if (tag === 'canvas') {
+        return { width: 20, height: 20, getContext: () => null } as any
+      }
+      return document.createElement(tag)
+    })
+    const promise = extractColorsFromImage('fake-src.png')
+    mockImageInstance.onload!()
+    const colors = await promise
+    expect(colors).toEqual([])
+  })
 });

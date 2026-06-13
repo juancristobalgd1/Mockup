@@ -25,8 +25,7 @@ describe('useGlobalShortcuts', () => {
   })
 
   afterEach(() => {
-    // Cleanup: remove all keydown listeners so they don't leak between tests
-    document.removeEventListener('keydown', () => {})
+    // Cleanup is handled by renderHook unmounting
   })
 
   it('calls undo on Ctrl+Z', () => {
@@ -96,7 +95,9 @@ describe('useGlobalShortcuts', () => {
 
   it('ignores shortcuts when contenteditable is focused', () => {
     const div = document.createElement('div')
-    div.contentEditable = 'true'
+    // jsdom does not implement isContentEditable for dynamically created elements,
+    // so we mock it via the prototype descriptor.
+    Object.defineProperty(div, 'isContentEditable', { value: true, configurable: true })
     document.body.appendChild(div)
     renderHook(() => useGlobalShortcuts({ undo, redo, showGrid: false, updateState }))
 

@@ -21,20 +21,20 @@ interface MovieTimelineProps {
   forceCollapsed?: boolean;
 }
 
-function formatTimer(s: number) {
+export function formatTimer(s: number) {
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
   const cs = Math.floor((s - Math.floor(s)) * 10);
   return `${m > 0 ? `${m}:` : ''}${sec.toString().padStart(2, '0')}.${cs}`;
 }
 
-function formatTime(s: number) {
+export function formatTime(s: number) {
   const sec = Math.floor(s);
   const ms = Math.floor((s - sec) * 100);
   return `${sec}.${ms.toString().padStart(2, '0')}s`;
 }
 
-const EASING_OPTIONS: { value: EasingType; label: string; desc: string }[] = [
+export const EASING_OPTIONS: { value: EasingType; label: string; desc: string }[] = [
   { value: 'smooth',      label: 'Suave',      desc: 'Entrada y salida suave (curva clásica)' },
   { value: 'expo-in-out',  label: 'Exponencial', desc: 'Aceleración y frenada ultra agresiva' },
   { value: 'back-out',     label: 'Overshoot',   desc: 'Efecto elástico que se pasa del destino' },
@@ -47,7 +47,7 @@ const EASING_OPTIONS: { value: EasingType; label: string; desc: string }[] = [
 ];
 
 
-function buildPresetKeyframes(preset: string, getCam: () => { position: [number,number,number]; target: [number,number,number] } | null, duration: number): Omit<CameraKeyframe, 'id'>[] {
+export function buildPresetKeyframes(preset: string, getCam: () => { position: [number,number,number]; target: [number,number,number] } | null, duration: number): Omit<CameraKeyframe, 'id'>[] {
   const cam = getCam();
   if (!cam) return [];
 
@@ -170,7 +170,7 @@ function buildPresetKeyframes(preset: string, getCam: () => { position: [number,
   }
 }
 
-const ANIMATION_PRESETS = [
+export const ANIMATION_PRESETS = [
   { id: 'zoom-in',        label: 'Zoom In',          desc: 'Acercamiento suave' },
   { id: 'zoom-out',       label: 'Zoom Out',          desc: 'Alejamiento suave' },
   { id: 'orbit',          label: 'Órbita 360°',       desc: 'Gira alrededor del dispositivo' },
@@ -188,7 +188,7 @@ const ANIMATION_PRESETS = [
 
 
 // ── Complete animation templates (multi-scene) ────────────────────
-const ANIMATION_TEMPLATES = [
+export const ANIMATION_TEMPLATES = [
   { id: 'product-showcase', label: 'Product Showcase', desc: 'Reveal + spin + zoom hero', icon: '🎬', duration: 8 },
   { id: 'app-store-preview', label: 'App Store Preview', desc: 'Perfecto para App Store videos', icon: '📱', duration: 6 },
   { id: 'social-spin',     label: 'Social Spin',       desc: 'Giro rápido ideal para reels', icon: '🔄', duration: 4 },
@@ -196,7 +196,7 @@ const ANIMATION_TEMPLATES = [
   { id: 'presentation',    label: 'Presentation',      desc: 'Elegante para slides y decks', icon: '📊', duration: 7 },
 ];
 
-function buildTemplateKeyframes(
+export function buildTemplateKeyframes(
   templateId: string,
   getCam: () => { position: [number, number, number]; target: [number, number, number] } | null,
 ): { keyframes: Omit<CameraKeyframe, 'id'>[]; duration: number } {
@@ -268,7 +268,7 @@ function buildTemplateKeyframes(
     default: return { keyframes: [], duration: dur };
   }
 }
-const MIN_SEGMENT_DURATION = 0.25;
+export const MIN_SEGMENT_DURATION = 0.25;
 
 type TimelineScene = {
   index: number;
@@ -281,15 +281,15 @@ type TimelineScene = {
   sceneId?: string;
 };
 
-function sortKeyframesByTime<T extends { time: number }>(keyframes: T[]) {
+export function sortKeyframesByTime<T extends { time: number }>(keyframes: T[]) {
   return [...keyframes].sort((a, b) => a.time - b.time);
 }
 
-function snapTimelineTime(time: number) {
+export function snapTimelineTime(time: number) {
   return Math.round(time * 20) / 20;
 }
 
-function buildTimelineScenes(keyframes: CameraKeyframe[]) {
+export function buildTimelineScenes(keyframes: CameraKeyframe[]) {
   const scenes: TimelineScene[] = [];
   let sceneNumber = 1;
 
