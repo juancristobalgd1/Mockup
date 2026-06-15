@@ -1,136 +1,129 @@
-# Mockup Studio Pro
+# Mockup Creators Pro — Workspace
 
-> Plataforma de creación de **mockups 3D de alta fidelidad** directamente en el navegador. PBR, HDRI, post-processing y una timeline cinematográfica para producir imágenes y videos listos para marketing — sin salir de la web.
+Monorepo pnpm que contiene el proyecto **Mockup Studio Pro**: una plataforma web para crear mockups 3D de alta fidelidad con materiales PBR, HDRI, post-processing y una timeline cinematográfica.
 
 ![status](https://img.shields.io/badge/status-active-success)
 ![stack](https://img.shields.io/badge/stack-React%2019%20%2B%20Three.js-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
+![pnpm](https://img.shields.io/badge/package_manager-pnpm-orange)
 
 ---
 
-## 📌 ¿Qué es?
+## 📦 Paquetes
 
-**Mockup Studio Pro** es una aplicación web (PWA-ready) que permite:
+Este workspace define un único paquete (`pnpm-workspace.yaml` → `packages: [artifacts/mockup-studio]`):
 
-- Colocar capturas de pantalla reales sobre modelos 3D de dispositivos (iPhone, iPad, Mac, Watch).
-- Ajustar materiales PBR (roughness, metalness), entornos HDRI y sombras de contacto (SSAO).
-- Animar cámara y dispositivo con una *timeline* cinemática (curvas Bézier, easings, *camera actions*).
-- Exportar PNG/JPG de alta resolución y secuencias para video.
+| Paquete                  | Path                       | Descripción                                                      |
+| ------------------------ | -------------------------- | ---------------------------------------------------------------- |
+| `@workspace/mockup-studio` | `artifacts/mockup-studio/` | App Vite + React 19 + Three.js con timeline, paneles y export. Detalle en su propio [README](./artifacts/mockup-studio/README.md). |
 
-Su objetivo: democratizar el diseño 3D profesional, llevando la potencia de herramientas como **Rotato** al navegador y al móvil.
+El catálogo de versiones (`pnpm-workspace.yaml`) fija React 19, Three.js, Tailwind 4, Vite 7, Vitest y el resto de dependencias compartidas.
 
 ---
 
-## 🗂️ Estructura del repositorio
+## 🚀 Scripts del workspace
 
-Este repo es un **monorepo pnpm** con un solo paquete de aplicación:
+Ejecuta desde la raíz (`/Users/jc/.qaap/workspaces/juancristobalgd1/Mockup`):
 
-```bash
+| Script               | Qué hace                                                                   |
+| -------------------- | -------------------------------------------------------------------------- |
+| `pnpm install`       | Instala todo el workspace.                                                 |
+| `pnpm dev` / `pnpm start` | Levanta Vite en `http://localhost:5173` con HMR.                      |
+| `pnpm build`         | Compila `artifacts/mockup-studio` a `dist/public`.                         |
+| `pnpm typecheck`     | Corre `tsc --noEmit` (excluyendo `vite.config.ts`).                        |
+
+> Los comandos live con PID (`pnpm dev`, etc.) los gestiona Qaap en su terminal dedicada con *hot reload*. Las shells efímeras solo deben correr comandos de una pasada (install, build, typecheck, test).
+
+Dentro de `artifacts/mockup-studio/` también hay scripts específicos:
+
+| Script              | Qué hace                                                                  |
+| ------------------- | ------------------------------------------------------------------------- |
+| `pnpm dev`          | Vite dev server (`http://localhost:5173`).                                |
+| `pnpm build`        | Build de producción a `dist/public`.                                      |
+| `pnpm serve`        | Sirve el build localmente para validación.                                |
+| `pnpm typecheck`    | `tsc -p tsconfig.json --noEmit`.                                          |
+| `pnpm test`         | Corre Vitest (jsdom) una sola vez.                                        |
+| `pnpm test:watch`   | Vitest en modo watch.                                                     |
+
+---
+
+## 📁 Estructura
+
+```
 .
-├── README.md                  ← este archivo
-├── package.json               ← scripts del workspace
-├── pnpm-workspace.yaml        ← catálogo y paquetes
+├── README.md                       ← este archivo (overview del monorepo)
+├── package.json                    ← scripts delegan al paquete mockup-studio
+├── pnpm-workspace.yaml             ← catálogo y paquetes
 ├── tsconfig.base.json
+├── attached_assets/                ← assets globales (imágenes HDRI, modelos)
 └── artifacts/
-    └── mockup-studio/         ← la aplicación web
-        ├── README.md          ← detalle de producto y roadmap
+    └── mockup-studio/              ← la app
+        ├── README.md               ← descripción + roadmap
+        ├── PERFORMANCE_OPTIMIZATION.md ← guía de render adaptativo
         ├── index.html
         ├── vite.config.ts
-        └── src/
+        ├── components.json
+        ├── public/
+        └── src/                    ← código fuente
             ├── App.tsx
             ├── main.tsx
             ├── store.tsx
-            ├── components/
-            │   ├── canvas/        ← Three.js / R3F
-            │   ├── devices3d/     ← modelos y materiales
-            │   ├── layout/        ← header, sheets, navegación
-            │   ├── panels/        ← inspector de propiedades
-            │   ├── timeline/      ← editor dekeyframes
-            │   └── ui/            ← primitives (Radix + tailwind)
-            ├── hooks/
-            ├── data/
-            ├── lib/
-            ├── utils/
+            ├── types.ts
+            ├── components/         ← canvas, devices3d, layout, panels, timeline, ui
+            ├── hooks/              ← useGlobalShortcuts, useNavigation, etc.
+            ├── data/               ← catálogos (devices, backgrounds, …)
+            ├── utils/              ← performance + panelUtils
+            ├── lib/                ← helpers compartidos
+            ├── test/               ← setup global de tests
             └── pages/
 ```
 
 ---
 
-## 🚀 Cómo empezar
+## 🎬 ¿Qué se puede hacer?
 
-### 1. Requisitos
+Mockup Studio Pro permite:
 
-- **Node.js** ≥ 20
-- **pnpm** ≥ 9 (`npm i -g pnpm`)
+- Colocar capturas reales sobre modelos 3D (iPhone, iPad, MacBook, Watch).
+- Editar materiales PBR (roughness, metalness, color) y entornos HDRI.
+- Animar cámara y dispositivo con curvas Bézier y *camera actions*.
+- Controlar la reproducción con un *HUD* flotante y atajos globales.
+- Pintar anotaciones sobre el *canvas* y exportar a PNG/JPG.
+- Girar el dispositivo en escena, activar vista ortogonal, etc.
 
-### 2. Instalar dependencias
-
-```bash
-pnpm install
-```
-
-### 3. Levantar el servidor de desarrollo
-
-```bash
-pnpm dev
-# → http://localhost:5173
-```
-
-El script `pnpm dev` se delega al paquete `@workspace/mockup-studio` y abre Vite con HMR sobre `0.0.0.0` (útil para probarlo en tu teléfono en la misma red).
-
-### 4. Compilar para producción
-
-```bash
-pnpm build        # build optimizado a artifacts/mockup-studio/dist
-pnpm serve        # sirve el build localmente para validar
-```
-
-### 5. Verificar tipos
-
-```bash
-pnpm typecheck
-```
-
----
-
-## 💡 Ejemplo de uso: crear un mockup cinematográfico en 5 pasos
-
-> *Escenario: lanzar una landing page y necesitas un mockup hero del iPhone mostrando la app.*
-
-1. **Carga la captura** — Arrastra `landing-hero.png` al canvas. La app la proyecta automáticamente sobre la pantalla del dispositivo activo.
-2. **Elige el dispositivo** — En el panel *Inspector*, abre *Device* y selecciona **iPhone 16** (incluye PBR con roughness + metalness ajustables).
-3. **Cambia el entorno** — En *Lighting*, prueba `Softbox HDRI` para un look limpio o `Outdoor` para algo más orgánico. Verás los reflejos actualizarse en tiempo real.
-4. **Anima la cámara** — En la *Timeline*, añade un *Camera Action* `Cenital Orbit` y ajusta la duración a 4 s con easing `Expo.out`. Pulsa **Play** para previsualizar.
-5. **Exporta** — Click en el botón **Export** → elige `PNG @2x`. Obtendrás una imagen lista para hero, redes o App Store.
-
-> Tip: `⌘ Z` / `Ctrl Z` deshacen cambios; `G` alterna la cuadrícula; mantén `Space` para orbitar manualmente la cámara.
+Ver el detalle completo en [`artifacts/mockup-studio/README.md`](./artifacts/mockup-studio/README.md).
 
 ---
 
 ## 🧰 Stack técnico
 
-| Capa            | Tecnología                                              |
-| --------------- | ------------------------------------------------------- |
-| UI              | React 19 + TypeScript, Radix UI, Tailwind 4             |
-| 3D              | Three.js · `@react-three/fiber` · `@react-three/drei`  |
-| Post-processing | `@react-three/postprocessing` (SSAO, Bloom, ToneMap)   |
-| Animación       | Framer Motion + timeline propia con curvas Bézier       |
-| Estado / datos  | Context + Reducer, `@tanstack/react-query`              |
-| Tooling         | Vite 7, pnpm workspaces, `tsx`, `zod`                   |
+| Capa            | Tecnología                                                         |
+| --------------- | ------------------------------------------------------------------ |
+| UI              | React 19 + TypeScript, Radix UI, Tailwind 4 (`@tailwindcss/vite`) |
+| 3D              | Three.js · `@react-three/fiber` · `@react-three/drei`             |
+| Post-processing | `@react-three/postprocessing` (SSAO, Bloom, DoF, ToneMap)          |
+| Animación       | Framer Motion + timeline propia con curvas Bézier                  |
+| Estado          | Context + Reducer, `@tanstack/react-query`                         |
+| Validación      | `zod` · `react-hook-form`                                          |
+| Tooling         | Vite 7, pnpm workspaces, Vitest, jsdom                             |
+| Iconos          | `lucide-react`                                                     |
+
+Versiones exactas en [`pnpm-workspace.yaml`](./pnpm-workspace.yaml).
 
 ---
 
-## 🛣️ Roadmap (resumen)
+## 🛣️ Roadmap resumido
+
+Resumen ejecutivo (detalle en el README del paquete):
 
 - ✅ Materiales PBR y biblioteca HDRI
+- ✅ Sombras de contacto (SSAO) + Bloom + DoF adaptativo
 - ✅ Curvas Bézier y *Camera Actions* profesionales
-- ✅ Sombras de contacto (SSAO)
-- ⏳ Live Figma / Prototyping Sync
+- ✅ *HUD* flotante de reproducción de video
+- ✅ Detección robusta de WebGL en mobile con fallback
+- ⏳ Live Figma / Prototyping sync
 - ⏳ IA Scene Architect (generación por prompt)
 - ⏳ Exportación de video con canal alfa
-- ⏳ Captura 4K y orquestación multi-dispositivo
-
-> Detalle completo en [`artifacts/mockup-studio/README.md`](./artifacts/mockup-studio/README.md).
 
 ---
 
@@ -140,12 +133,15 @@ pnpm typecheck
    ```bash
    git checkout -b feature/mi-cambio
    ```
-2. Asegúrate de pasar `pnpm typecheck` antes de pedir review.
-3. Abre un PR describiendo **qué** cambia y **por qué**. Incluye capturas si tocas UI o el render 3D.
-4. No commitees `dist/`, `node_modules/` ni archivos temporales.
+2. Antes del PR, verifica:
+   ```bash
+   pnpm typecheck
+   cd artifacts/mockup-studio && pnpm test
+   ```
+3. Abre PR con descripción clara de **qué** cambia y **por qué**. Adjunta capturas si la UI o el render 3D cambiaron.
 
 ---
 
 ## 📄 Licencia
 
-MIT © Mockup Studio Pro contributors.
+MIT.
