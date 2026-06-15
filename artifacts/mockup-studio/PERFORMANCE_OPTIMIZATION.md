@@ -1,310 +1,146 @@
 # 3D Performance Optimization Guide
 
-## Overview
+Esta guía describe cómo **Mockup Studio Pro** mantiene 60 fps estables en desktop, tablet y móvil. Implementación: `src/utils/performance.ts` + `src/components/devices3d/viewer/`.
 
-Mockup Studio Pro includes comprehensive 3D rendering optimizations to ensure smooth performance across desktop, tablet, and mobile devices. The optimization system automatically detects device capabilities and adjusts rendering quality accordingly.
+---
 
-## Architecture
+## 🎯 Objetivo
 
-### 1. Device Profile Detection (`utils/performance.ts`)
+Que toda la magia cinematográfica (SSAO, Bloom, depth of field, sombras, materiales PBR, post-FX) se vea bien en una pantalla Retina y, al mismo tiempo, **no derrita** un gama media-android.
 
-The system detects device capabilities including:
-- **Device Type**: Mobile vs Desktop
-- **GPU Capabilities**: WebGL 2 support, GPU memory estimation
-- **Performance Tier**: `low` (mobile/budget), `medium` (standard), `high` (gaming/professional)
+Para eso se usa un sistema en dos capas:
 
-```typescript
-const profile = detectDeviceProfile();
-// Returns: { isMobile, hasGPU, gpuMemory, tier }
-```
+1. **Perfilado del dispositivo** al cargar la app.
+2. **Configuración adaptativa** que se inyecta al render pipeline y al pipeline de post-processing.
 
-### 2. Adaptive Configuration
+---
 
-Based on device profile, the system automatically configures:
+## 🧭 Cómo se detecta el dispositivo
 
-| Tier | SSAO | Bloom | DoF | Shadow Map | Texture Res | Post-FX |
-|------|------|-------|-----|------------|-------------|---------|
-| Low | ❌ | ❌ | ❌ | 512px | Low | None |
-| Medium | ✅ | ✅ | ❌ | 1024px | Medium | Reduced |
-| High | ✅ | ✅ | ✅ | 2048px | High | Full |
+Función `detectDeviceProfile()` en `src/utils/performance.ts:28`. Retorna:
 
-### 3. Rendering Pipeline Optimization
-
-#### Post-Processing Effects
-
-**ViewerPostFX.tsx**: Conditionally enables expensive effects:
-- **SSAO** (Screen Space Ambient Occlusion) — Skip on low-end devices
-- **Bloom** — Reduced intensity on medium devices
-- **Depth of Field** — Only on high-end devices
-- **Film Grain** — Skip on low-end devices
-- **Multisampling** — 4x on high, 2x on medium, 0 on low
-
-#### Texture Optimization
-
-**useScreenTexture.ts**: 
-- Optimizes image textures based on device tier
-- Reduces filter quality on low-end devices
-- Properly manages texture memory with disposal
-- Handles CORS issues with blob URL conversion
-
-#### Canvas Renderer
-
-- **Pixel Ratio**: Limited to 1-2x based on device
-- **Shadow Maps**: Disabled on low-end, optimized on others
-- **Antialias**: Disabled on mobile to save bandwidth
-- **Tone Mapping**: Optimized for target platform
-
-## Performance Monitoring
-
-### PerformanceMonitor Class
-
-Real-time FPS and frame time tracking:
-
-```typescript
-const monitor = new PerformanceMonitor();
-useFrame(() => {
-  monitor.update();
-  const fps = monitor.getAverageFPS();
-  const frameTime = monitor.getFrameTime();
-});
-```
-
-## Memory Management
-
-### Resource Disposal
-
-Proper cleanup prevents memory leaks:
-
-```typescript
-disposeResources(mesh);      // Dispose geometry + materials
-disposeResources(material);  // Dispose material
-disposeResources(texture);   // Dispose texture
-```
-
-Key areas:
-- Screen textures disposed when changed
-- Video elements properly paused and cleared
-- Materials disposed in cleanup functions
-- Geometries released on model unload
-
-## Optimization Strategies
-
-### 1. Device-Aware Rendering
-
-```typescript
-const config = getOptimizedConfig(profile);
-if (config.enableSSAO) {
-  // Render with SSAO
-} else {
-  // Skip expensive ambient occlusion
-}
-```
-
-### 2. Deferred Processing
-
-Heavy tasks are queued and processed gradually:
-
-```typescript
-const renderQueue = new RenderQueue();
-renderQueue.enqueue(() => loadHeavyModel());
-renderQueue.enqueue(() => generateComplexShader());
-```
-
-### 3. Frustum Culling
-
-Invisible objects are skipped during rendering:
-
-```typescript
-enableFrustumCulling(scene);
-```
-
-## Mobile Optimization Tips
-
-### Best Practices for Mobile Devices
-
-1. **Reduce Viewport Size**: Lower resolution on mobile
-2. **Disable Effects**: Skip bloom, DoF, SSAO on phones
-3. **Lower Pixel Ratio**: Use 1x on mobile
-4. **Optimize Models**: Lower polygon count on mobile
-5. **Lazy Load Assets**: Load heavy textures on demand
-
-### Monitoring Mobile Performance
-
-```typescript
-const profile = detectDeviceProfile();
-if (profile.isMobile) {
-  console.log(`Mobile device (GPU: ${profile.gpuMemory}MB)`);
-  // Apply aggressive optimizations
-}
-```
-
-## Profiling Tools
-
-### Chrome DevTools
-
-1. **Performance Tab**: Record frame times
-2. **WebGL Inspector**: Debug shader compilation
-3. **Memory Tab**: Track texture memory usage
-
-### Firefox DevTools
-
-1. **Performance Tab**: Frame rate analysis
-2. **Memory Tab**: Detect leaks
-3. **Shader Editor**: Monitor WebGL compilation
-
-## Common Issues & Solutions
-
-### Issue: Low FPS on Mobile
-
-**Solution**: 
-```typescript
-const config = getOptimizedConfig(profile);
-// Automatically disables SSAO, Bloom, DoF on low-end devices
-```
-
-### Issue: Memory Leaks
-
-**Solution**: Always dispose resources
-```typescript
-useEffect(() => {
-  return () => {
-    disposeResources(texture);
-    disposeResources(material);
-  };
-}, []);
-```
-
-### Issue: Texture Flashing
-
-**Solution**: Proper CORS handling
-```typescript
-// Canvas-based blob conversion prevents re-fetching
-const offscreen = document.createElement('canvas');
-offscreen.toBlob((blob) => {
-  const blobUrl = URL.createObjectURL(blob);
-  updateState({ screenshotUrl: blobUrl });
-});
-```
-
-## Configuration
-
-### Tuning Performance Tier
-
-Adjust thresholds in `performance.ts`:
-
-```typescript
-// Detect high-end GPU
-if (gpuMemory > 2000) tier = 'high';
-
-// Detect mobile
-if (/mobile|android/i.test(ua)) tier = 'low';
-```
-
-### FPS Targets
-
-Adjust in `ViewerPerformance.tsx`:
-
-```typescript
-const TARGET_FPS = 55;
-const FPS_THRESHOLD_HIGH = 58;
-const FPS_THRESHOLD_LOW = 45;
-```
-
-## Benchmarks
-
-### Typical Performance (60 FPS Target)
-
-| Device | Resolution | Effect | FPS |
-|--------|------------|--------|-----|
-| iPhone 13 | 390×844 | No Effects | 58 |
-| iPhone 13 | 390×844 | Bloom | 45 |
-| MacBook M1 | 1440×900 | Full Effects | 60 |
-| MacBook M1 | 1440×900 | Ultra (4K) | 50 |
-
-## Future Improvements
-
-- [ ] Implement WebGL 3.0 for better performance
-- [ ] Add GPU-accelerated video decoding
-- [ ] Implement model LOD (Level of Detail)
-- [ ] Add streaming for large models
-- [ ] Implement virtual texturing
-- [ ] Add WebWorker-based model loading
-
-## API Reference
-
-### `detectDeviceProfile()`
-
-Detects device capabilities.
-
-```typescript
+```ts
 interface DeviceProfile {
   isMobile: boolean;
   hasGPU: boolean;
-  gpuMemory: number | null;
+  gpuMemory: number | null;     // MB estimados (cuando se puede leer del renderer)
   tier: 'low' | 'medium' | 'high';
 }
 ```
 
-### `getOptimizedConfig(profile)`
+Algoritmo:
 
-Returns rendering configuration for device.
+1. **UA sniff**: `/mobile|android|iphone|ipad|tablet/.test(navigator.userAgent)` → `isMobile`.
+2. **GPU probe**: crea un `<canvas>` off-screen y pregunta por `webgl2 || webgl`. `hasGPU = !!gl`.
+3. **Memoria GPU**: lee `UNMASKED_RENDERER_WEBGL` y la parsea con `estimateGPUMemory(renderer)` (regex `/(\d+)\s*(?:GB|MB)/i`, convertido a MB).
+4. **Tier**:
+   - `isMobile` → `low`.
+   - `gpuMemory > 2000` MB → `high`.
+   - `isMobile` o `gpuMemory < 512` MB → `low`.
+   - resto → `medium`.
 
-```typescript
-interface PerformanceConfig {
-  maxPixelRatio: number;
-  enableSSAO: boolean;
-  enableBloom: boolean;
-  enableDOF: boolean;
-  shadowMapSize: 512 | 1024 | 2048;
-  textureResolution: 'low' | 'medium' | 'high';
-  enablePostFX: boolean;
-}
-```
+> El canvas temporal se elimina tras la prueba para no contaminar el DOM.
 
-### `PerformanceMonitor`
+---
 
-Track real-time performance metrics.
+## ⚙️ Configuración adaptativa por tier
 
-```typescript
-const monitor = new PerformanceMonitor();
-monitor.update();
-console.log(monitor.getAverageFPS()); // 60
-console.log(monitor.getFrameTime()); // 16.67ms
-```
+Función `getOptimizedConfig(profile)` en `src/utils/performance.ts:70`. El consumidor es `components/devices3d/viewer/` (post-FX adapter).
 
-### `optimizeTexture(texture, resolution)`
+| Tier   | pixelRatio       | SSAO | Bloom | DoF | Shadow Map | Texturas | Post-FX Passes |
+| ------ | ---------------- | :--: | :---: | :-: | ---------- | -------- | -------------- |
+| low    | `1`              |  ❌  |  ❌   |  ❌  | 512px      | low      | desactivados   |
+| medium | `min(devicePixelRatio, 2)` | ✅ | ✅  |  ❌  | 1024px     | medium   | reducidos      |
+| high   | `devicePixelRatio`| ✅  |  ✅   |  ✅  | 2048px     | high     | full           |
 
-Optimize texture quality for device.
+Para `medium` se aplican sombras activas; para `high` se monta el pipeline completo con DoF y multisampling.
 
-```typescript
-optimizeTexture(texture, 'low');    // Best performance
-optimizeTexture(texture, 'medium'); // Balanced
-optimizeTexture(texture, 'high');   // Best quality
-```
+---
 
-### `enableFrustumCulling(scene)`
+## 🎬 Pipeline de render
 
-Enable automatic frustum culling for objects outside camera view.
+### Post-Processing (`viewer/ViewerPostFX.tsx`)
 
-```typescript
-enableFrustumCulling(scene);
-```
+Aplicación condicional de los efectos según `getOptimizedConfig`:
 
-### `disposeResources(obj)`
+- **SSAO**: saltado en `low`, presente en `medium`/`high`.
+- **Bloom**: presente en `medium`/`high`, intensidad reducida en `medium`.
+- **DoF**: solo en `high`.
+- **Multisampling (MSAA)**: 4× en `high`, 2× en `medium`, 0 en `low`.
+- **Film Grain / Tone Mapping**: desactivados en `low`.
 
-Properly clean up THREE.js resources.
+### Sombras (`setupOptimizedShadows`)
 
-```typescript
-disposeResources(mesh);      // Disposes geometry + materials
-disposeResources(texture);   // Disposes texture
-```
+- Solo se trabaja sobre `DirectionalLight` y `PointLight`.
+- Tamaño del `shadowMap` viene del tier (512 / 1024 / 2048).
+- `near/far` fijados a `0.1 / 100`, frustum ortográfico de ±10 unidades (DirectionalLight).
 
-## Contributing
+### Culling
 
-When adding new 3D features:
+`enableFrustumCulling(scene)` recorre la escena y setea `frustumCulled = true` en cada `Mesh`. Esto es especialmente útil para escenas con varios modelos a la vez.
 
-1. Check device capabilities before adding expensive features
-2. Use `getOptimizedConfig()` to determine available effects
-3. Always dispose resources in cleanup functions
-4. Profile on mobile devices
-5. Update this documentation
+### Pixel Ratio
+
+Bajamos `maxPixelRatio` capando según el tier. En `low` se fuerza a `1`; en `high` se respeta el `devicePixelRatio` nativo (generalmente `2` en Retina).
+
+---
+
+## 🧵 Texturas
+
+Función `optimizeTexture(texture, resolution)`:
+
+- Usa `THREE.LinearFilter` para `minFilter` y `magFilter`.
+- En `low` se mantiene el filtro lineal básico.
+- El conversor `useScreenTexture` (`components/devices3d/useScreenTexture.ts`) reduce tamaño de textura y maneja la conversión a `blob:` URL para evitar *CORS* con `thum.io`.
+
+---
+
+## 📈 Monitoreo en runtime
+
+Clase `PerformanceMonitor` (`src/utils/performance.ts:126`) para diagnóstico:
+
+| Método            | Qué retorna                                                 |
+| ----------------- | ----------------------------------------------------------- |
+| `update()`        | Llamar cada frame; muestrea deltas en una ventana de 60.   |
+| `getFPS()`        | FPS instantáneo (calculado cada ≥1000 ms).                  |
+| `getFrameTime()`  | Promedio de frame time (ms) en la ventana de muestreo.      |
+| `getAverageFPS()` | `1000 / frameTime` redondeado.                             |
+
+Útil para:
+
+- Overlay de FPS en *dev*.
+- Disparar качество re-adaptation en caliente (futuro).
+
+---
+
+## 🧹 Disposal y fugas de memoria
+
+`disposeResources(obj)` libera geometrías, materiales y texturas:
+
+- `Object3D` → recorre meshes y dispone `geometry` + `material` (soporta arrays de materiales).
+- `Material` / `Texture` / `BufferGeometry` → llama a `dispose()` directamente.
+
+Se usa en `useScreenTexture` para evitar fuga de *blob URLs* y geometrías al re-cargar capturas.
+
+---
+
+## 🛟 Fallbacks
+
+- **`WebGLFallback`**: si `hasGPU === false` (o el contexto se pierde), se renderiza UI estática con instrucciones de “navegador no compatible”.
+- **Captura CORS**: `useScreenTexture` convierte imágenes de `thum.io` a `blob:` URL antes de pasarlas al material, evitando *cross-origin* y *tainted canvas*.
+- **Pixel ratio seguro**: capear `maxPixelRatio` previene cuelgues en pantallas 3× o multi-monitor.
+
+---
+
+## ✅ Cómo agregar una nueva optimización
+
+1. Si es un parámetro nuevo, añádelo a `PerformanceConfig` y a la rama correspondiente en `getOptimizedConfig`.
+2. En el pipeline consumidor (`viewer/` o el componente que aplique), lee el campo de `config.profile.tier` antes de activar el efecto.
+3. Si la optimización tiene recursos que deben liberarse, expón un wrapper que llame a `disposeResources` en el `useEffect` cleanup.
+4. Suma un test en `src/utils/__tests__/` para regresiones (umbral de tier, formato de salida, etc.).
+
+---
+
+## 🧪 Pruebas relacionadas
+
+En `src/utils/__tests__/` y `src/data/__tests__/panelConstants.integrity.test.ts` se cubren los contratos del módulo. La performance real requiere Playwright en device farm (futuro).
