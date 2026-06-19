@@ -1,4 +1,4 @@
-import { forwardRef, useState, useEffect, useRef } from 'react';
+import { forwardRef, useState, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '../../store';
 import type { TextOverlay } from '../../store';
 import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS, ANIMATED_BACKGROUNDS, ANIMATED_BG_KEYFRAMES } from '../../data/backgrounds';
@@ -7,7 +7,8 @@ import { LIGHT_OVERLAYS } from '../../data/lightOverlays';
 import { AnnotateCanvas } from './AnnotateCanvas';
 import { Device3DViewer } from '../devices3d/Device3DViewer';
 import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
-import { CSSDeviceFallback, checkWebGLThorough, WebGLErrorBoundary } from '../devices3d/WebGLFallback';
+import { CSSDeviceFallback, WebGLErrorBoundary } from '../devices3d/WebGLFallback';
+import { probeWebGLSupport } from '../../utils/webgl';
 
 interface CanvasProps {
   textOverlays: TextOverlay[];
@@ -70,120 +71,36 @@ function CanvasBgRenderer({ bg, opacity, borderRadius }: { bg: AnimatedBackgroun
   );
 }
 
-/**
- * Attempts to create a WebGL canvas element and verify it works.
- * Returns { supported: boolean, error?: string }
- */
-function testWebGLSupport(): { supported: boolean; error?: string } {
-  try {
-    // First check if WebGLRenderingContext exists
-    if (!window.WebGLRenderingContext) {
-      return { supported: false, error: 'WebGLRenderingContext not available' };
-    }
-
-    // Try to create a canvas and get WebGL context with the same options as R3FCanvas
-    const canvas = document.createElement('canvas');
-    const contexts = ['webgl', 'experimental-webgl', 'webgl2'] as const;
-
-    for (const contextName of contexts) {
-      try {
-        const gl = canvas.getContext(contextName, {
-          alpha: true,
-          antialias: true,
-          depth: true,
-          preserveDrawingBuffer: true,
-          failIfMajorPerformanceCaveat: false,
-        }) as WebGLRenderingContext | null;
-        if (gl) {
-          // Verify the context is functional by trying basic operations
-          // (This catches cases where getContext returns something but it's not a real WebGL context)
-          (gl as WebGLRenderingContext).enable((gl as WebGLRenderingContext).DEPTH_TEST);
-          (gl as WebGLRenderingContext).clearColor(0, 0, 0, 1);
-          (gl as WebGLRenderingContext).clear((gl as WebGLRenderingContext).COLOR_BUFFER_BIT | (gl as WebGLRenderingContext).DEPTH_BUFFER_BIT);
-
-          // Check getError to verify context is functional
-          if (typeof (gl as WebGLRenderingContext).getError !== 'function') {
-            return { supported: false, error: 'WebGL context is not functional' };
-          }
-
-          // Basic shader test - only check if context is functional
-          // Some browsers (especially on mobile) may restrict shader compilation
-          // but WebGL still works for rendering
-          try {
-            const vertexShader = (gl as WebGLRenderingContext).createShader((gl as WebGLRenderingContext).VERTEX_SHADER);
-            const fragmentShader = (gl as WebGLRenderingContext).createShader((gl as WebGLRenderingContext).FRAGMENT_SHADER);
-
-            if (vertexShader && fragmentShader) {
-              // Simple shader source for basic verification
-              const vertexSource = `void main() { gl_Position = vec4(0, 0, 0, 1); }`;
-              const fragmentSource = `void main() { gl_FragColor = vec4(1, 0, 0, 1); }`;
-
-              (gl as WebGLRenderingContext).shaderSource(vertexShader, vertexSource);
-              (gl as WebGLRenderingContext).shaderSource(fragmentShader, fragmentSource);
-              (gl as WebGLRenderingContext).compileShader(vertexShader);
-              (gl as WebGLRenderingContext).compileShader(fragmentShader);
-
-              if (!(gl as WebGLRenderingContext).getShaderParameter(vertexShader, (gl as WebGLRenderingContext).COMPILE_STATUS)) {
-                // Shader compilation failed - this is common on iOS with privacy restrictions
-                // Return supported: false to show CSS fallback
-                (gl as WebGLRenderingContext).deleteShader(vertexShader);
-                (gl as WebGLRenderingContext).deleteShader(fragmentShader);
-                return { supported: false, error: 'Shader compilation failed - WebGL not fully supported on this device' };
-              }
-              if (!(gl as WebGLRenderingContext).getShaderParameter(fragmentShader, (gl as WebGLRenderingContext).COMPILE_STATUS)) {
-                // Shader compilation failed
-                (gl as WebGLRenderingContext).deleteShader(vertexShader);
-                (gl as WebGLRenderingContext).deleteShader(fragmentShader);
-                return { supported: false, error: 'Shader compilation failed - WebGL not fully supported on this device' };
-              }
-
-              // Clean up
-              (gl as WebGLRenderingContext).deleteShader(vertexShader);
-              (gl as WebGLRenderingContext).deleteShader(fragmentShader);
-            }
-          } catch {
-            // Shader creation failed - show fallback
-            return { supported: false, error: 'Shader creation failed - WebGL not fully supported on this device' };
-          }
-
-          return { supported: true };
-        }
-      } catch (e) {
-        continue;
-      }
-    }
-
-    return { supported: false, error: 'Failed to create WebGL context' };
-  } catch (e) {
-    return { supported: false, error: e instanceof Error ? e.message : 'Unknown error' };
-  }
-}
-
 export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, onUpdateText, viewerRef, moviePlaying, movieTimeRef }, ref) => {
   const { state } = useApp();
   const [webglAvailable, setWebglAvailable] = useState<boolean | null>(null);
   const [webglError, setWebglError] = useState<string | null>(null);
-  const [userAttemptedWebgl, setUserAttemptedWebgl] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
+  const userAttemptedWebglRef = useRef(false);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
-  useEffect(() => {
-    const result = testWebGLSupport();
+  const evaluateWebGL = useCallback(() => {
+    const result = probeWebGLSupport('basic');
     setWebglAvailable(result.supported);
-    if (!result.supported && result.error) {
-      setWebglError(result.error);
-    }
+    setWebglError(result.supported ? null : result.error ?? 'WebGL not available');
+    return result;
   }, []);
 
-  // Auto-detect WebGL availability for the first render
   useEffect(() => {
-    if (userAttemptedWebgl) return;
-
-    // On mobile, default to showing the CSS fallback to avoid WebGL errors
-    // Users can click "Try 3D View" to attempt WebGL
-    if (isMobile && webglAvailable === null) {
+    if (isMobile && !userAttemptedWebglRef.current) {
       setWebglAvailable(false);
+      return;
     }
-  }, [isMobile, webglAvailable, userAttemptedWebgl]);
+    if (!userAttemptedWebglRef.current) {
+      evaluateWebGL();
+    }
+  }, [isMobile, evaluateWebGL]);
+
+  const handleTry3D = useCallback(() => {
+    userAttemptedWebglRef.current = true;
+    setRetryKey(k => k + 1);
+    evaluateWebGL();
+  }, [evaluateWebGL]);
 
   const getBackground = (): React.CSSProperties => {
     if (state.bgType === 'animated') return {};
@@ -438,9 +355,12 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
 
         {/* 3D Device Viewer or CSS fallback */}
         {webglAvailable === false ? (
-          <CSSDeviceFallback error={webglError} />
+          <CSSDeviceFallback
+            error={webglError}
+            onTry3D={handleTry3D}
+          />
         ) : webglAvailable === true ? (
-          <WebGLErrorBoundary fallback={<CSSDeviceFallback />}>
+          <WebGLErrorBoundary key={retryKey} fallback={<CSSDeviceFallback onTry3D={handleTry3D} />}>
             <Device3DViewer
               ref={viewerRef}
               style={{ position: 'absolute', inset: 0, zIndex: 2 }}

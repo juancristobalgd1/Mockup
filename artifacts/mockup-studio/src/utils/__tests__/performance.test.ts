@@ -3,6 +3,7 @@ import {
   getOptimizedConfig,
   PerformanceMonitor,
   detectDeviceProfile,
+  resetProfileCache,
   optimizeTexture,
   setupOptimizedShadows,
   enableFrustumCulling,
@@ -75,6 +76,10 @@ describe('PerformanceMonitor', () => {
 })
 
 describe('detectDeviceProfile', () => {
+  beforeEach(() => {
+    resetProfileCache()
+  })
+
   afterEach(() => {
     vi.restoreAllMocks()
   })
@@ -127,7 +132,11 @@ describe('detectDeviceProfile', () => {
   })
 
   it('detects high tier when GPU memory exceeds 2GB', () => {
-    const mockGetExt = vi.fn().mockReturnValue({ UNMASKED_RENDERER_WEBGL: 0x1f })
+    const mockGetExt = vi.fn().mockImplementation((name: string) =>
+      name === 'webgl-debug-renderer-info'
+        ? { UNMASKED_RENDERER_WEBGL: 0x1f }
+        : { loseContext: vi.fn() }
+    )
     const mockGetParam = vi.fn().mockReturnValue('AMD Radeon Pro 8GB')
     const mockContext = {
       getExtension: mockGetExt,
@@ -149,7 +158,11 @@ describe('detectDeviceProfile', () => {
   })
 
   it('sets low tier for desktop with GPU memory under 512MB', () => {
-    const mockGetExt = vi.fn().mockReturnValue({ UNMASKED_RENDERER_WEBGL: 0x1f })
+    const mockGetExt = vi.fn().mockImplementation((name: string) =>
+      name === 'webgl-debug-renderer-info'
+        ? { UNMASKED_RENDERER_WEBGL: 0x1f }
+        : { loseContext: vi.fn() }
+    )
     const mockGetParam = vi.fn().mockReturnValue('Intel HD Graphics 256MB')
     const mockContext = {
       getExtension: mockGetExt,
@@ -171,7 +184,11 @@ describe('detectDeviceProfile', () => {
   })
 
   it('parses GPU memory in GB correctly', () => {
-    const mockGetExt = vi.fn().mockReturnValue({ UNMASKED_RENDERER_WEBGL: 0x1f })
+    const mockGetExt = vi.fn().mockImplementation((name: string) =>
+      name === 'webgl-debug-renderer-info'
+        ? { UNMASKED_RENDERER_WEBGL: 0x1f }
+        : { loseContext: vi.fn() }
+    )
     const mockGetParam = vi.fn().mockReturnValue('NVIDIA GeForce RTX 12GB')
     const mockContext = {
       getExtension: mockGetExt,
@@ -190,7 +207,11 @@ describe('detectDeviceProfile', () => {
   })
 
   it('parses GPU memory in MB correctly', () => {
-    const mockGetExt = vi.fn().mockReturnValue({ UNMASKED_RENDERER_WEBGL: 0x1f })
+    const mockGetExt = vi.fn().mockImplementation((name: string) =>
+      name === 'webgl-debug-renderer-info'
+        ? { UNMASKED_RENDERER_WEBGL: 0x1f }
+        : { loseContext: vi.fn() }
+    )
     const mockGetParam = vi.fn().mockReturnValue('Intel UHD Graphics 1536MB')
     const mockContext = {
       getExtension: mockGetExt,
@@ -209,7 +230,11 @@ describe('detectDeviceProfile', () => {
   })
 
   it('returns null gpuMemory when renderer string has no memory info', () => {
-    const mockGetExt = vi.fn().mockReturnValue({ UNMASKED_RENDERER_WEBGL: 0x1f })
+    const mockGetExt = vi.fn().mockImplementation((name: string) =>
+      name === 'webgl-debug-renderer-info'
+        ? { UNMASKED_RENDERER_WEBGL: 0x1f }
+        : { loseContext: vi.fn() }
+    )
     const mockGetParam = vi.fn().mockReturnValue('Apple M1')
     const mockContext = {
       getExtension: mockGetExt,

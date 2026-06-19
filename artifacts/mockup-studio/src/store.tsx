@@ -329,9 +329,11 @@ export const defaultState: AppState = {
   canvasPanY: 0,
 };
 
+type StateUpdater = Partial<AppState> | ((prev: AppState) => Partial<AppState>);
+
 interface AppContextType {
   state: AppState;
-  updateState: (updates: Partial<AppState>, skipHistory?: boolean) => void;
+  updateState: (updates: StateUpdater, skipHistory?: boolean) => void;
   addText: () => void;
   addLabel: (anchor: LabelAnchorPosition) => void;
   updateText: (id: string, updates: Partial<TextOverlay>) => void;
@@ -351,14 +353,14 @@ const AppContext = createContext<AppContextType | null>(null);
 
 const MAX_HISTORY = 50;
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AppState>(defaultState);
+export function AppProvider({ children, initialState }: { children: React.ReactNode; initialState?: Partial<AppState> }) {
+  const [state, setState] = useState<AppState>({ ...defaultState, ...initialState });
   const historyRef = useRef<AppState[]>([]);
   const futureRef = useRef<AppState[]>([]);
   const [historyLen, setHistoryLen] = useState(0);
   const [futureLen, setFutureLen] = useState(0);
 
-  const updateState = useCallback((updates: Partial<AppState>, skipHistory = false) => {
+  const updateState = useCallback((updates: StateUpdater, skipHistory = false) => {
     setState(prev => {
       if (!skipHistory) {
         historyRef.current = [...historyRef.current.slice(-MAX_HISTORY + 1), prev];
@@ -366,7 +368,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setHistoryLen(historyRef.current.length);
         setFutureLen(0);
       }
-      return { ...prev, ...updates };
+      const resolved = typeof updates === 'function' ? updates(prev) : updates;
+      return { ...prev, ...resolved };
     });
   }, []);
 
@@ -374,25 +377,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (historyRef.current.length === 0) return;
     const prev = historyRef.current[historyRef.current.length - 1];
     historyRef.current = historyRef.current.slice(0, -1);
-    setState(current => {
-      futureRef.current = [current, ...futureRef.current.slice(0, MAX_HISTORY - 1)];
-      setHistoryLen(historyRef.current.length);
-      setFutureLen(futureRef.current.length);
-      return prev;
-    });
-  }, []);
+    futureRef.current = [...futureRef.current.slice(0, MAX_HISTORY - 1), state];
+    setHistoryLen(historyRef.current.length);
+    setFutureLen(futureRef.current.length);
+    setState(prev);
+  }, [state]);
 
   const redo = useCallback(() => {
     if (futureRef.current.length === 0) return;
-    const next = futureRef.current[0];
-    futureRef.current = futureRef.current.slice(1);
-    setState(current => {
-      historyRef.current = [...historyRef.current.slice(-MAX_HISTORY + 1), current];
-      setHistoryLen(historyRef.current.length);
-      setFutureLen(futureRef.current.length);
-      return next;
-    });
-  }, []);
+    const [next, ...rest] = futureRef.current;
+    futureRef.current = rest;
+    historyRef.current = [...historyRef.current.slice(-MAX_HISTORY + 1), state];
+    setHistoryLen(historyRef.current.length);
+    setFutureLen(futureRef.current.length);
+    setState(next);
+  }, [state]);
 
   const addText = useCallback(() => {
     const newText: TextOverlay = {

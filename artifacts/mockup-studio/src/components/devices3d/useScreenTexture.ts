@@ -16,6 +16,7 @@ export function useScreenTexture(
   const textureRef = useRef<THREE.Texture | null>(null);
   const videoElRef = useRef<HTMLVideoElement | null>(null);
   const loaderRef = useRef<THREE.TextureLoader>(new THREE.TextureLoader());
+  const loadGenerationRef = useRef(0);
 
   // Get performance config for texture optimization
   const perfConfig = useRef(getOptimizedConfig(detectDeviceProfile())).current;
@@ -57,9 +58,14 @@ export function useScreenTexture(
       setGlobalScreenTexture(tex);
     } else if (contentType === 'image' && screenshotUrl) {
       loaderRef.current.crossOrigin = 'anonymous';
+      const generation = ++loadGenerationRef.current;
       loaderRef.current.load(
         screenshotUrl,
         (tex) => {
+          if (generation !== loadGenerationRef.current) {
+            tex.dispose();
+            return;
+          }
           tex.colorSpace = THREE.SRGBColorSpace;
 
           // Optimize loaded texture based on device performance tier

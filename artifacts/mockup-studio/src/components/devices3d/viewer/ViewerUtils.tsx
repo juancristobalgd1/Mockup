@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { Html, useProgress } from "@react-three/drei";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
@@ -83,7 +83,12 @@ export function SceneCapturer({
   ) => void;
 }) {
   const { gl, camera, scene } = useThree();
-  onReady(gl, camera, scene);
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
+
+  useEffect(() => {
+    onReadyRef.current(gl, camera, scene);
+  }, [gl, camera, scene]);
   return null;
 }
 
