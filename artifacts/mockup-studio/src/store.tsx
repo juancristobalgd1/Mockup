@@ -264,6 +264,7 @@ export function useApp(): AppContextType {
     pushBounded(globalFuture, current);
     globalHistoryLen = globalHistory.length;
     globalFutureLen = globalFuture.length;
+
     notifyListeners();
     useAppStore.setState(prev);
   }, []);
@@ -276,6 +277,7 @@ export function useApp(): AppContextType {
     pushBounded(globalHistory, current);
     globalHistoryLen = globalHistory.length;
     globalFutureLen = globalFuture.length;
+
     notifyListeners();
     useAppStore.setState(next);
   }, []);
