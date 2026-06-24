@@ -31,7 +31,7 @@ const MODEL_SCALE = 0.04977;
 const MODEL_POS: [number, number, number] = [-0.629, -1.261, 0.057];
 const MODEL_ROT: [number, number, number] = [-Math.PI / 2, 0, 0];
 
-export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }: Props) {
+export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType, isLandscape }: Props) {
   const gltf = useGLTF(MODEL_URL) as any;
   const groupRef = useRef<THREE.Group>(null);
   const screenMeshes = useRef<THREE.Mesh[]>([]);
@@ -165,8 +165,10 @@ export function IPhone13ProGLBModel({ deviceColor, screenTexture, contentType }:
   if (!sceneObj) return null;
 
   return (
-    <group ref={groupRef} position={MODEL_POS} rotation={MODEL_ROT} scale={MODEL_SCALE}>
-      <primitive object={sceneObj} />
+    <group rotation={isLandscape ? [0, 0, -Math.PI / 2] : [0, 0, 0]}>
+      <group ref={groupRef} position={MODEL_POS} rotation={MODEL_ROT} scale={MODEL_SCALE}>
+        <primitive object={sceneObj} />
+      </group>
     </group>
   );
 }

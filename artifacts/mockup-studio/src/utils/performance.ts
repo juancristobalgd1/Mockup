@@ -22,10 +22,24 @@ export interface DeviceProfile {
   tier: 'low' | 'medium' | 'high';
 }
 
+let cachedProfile: DeviceProfile | null = null;
+
 /**
- * Detect device capabilities and determine performance tier
+ * Clear the cached device profile so the next call to
+ * `detectDeviceProfile` re-detects from scratch.
+ */
+export function resetProfileCache(): void {
+  cachedProfile = null;
+}
+
+/**
+ * Detect device capabilities and determine performance tier.
+ * Result is cached — repeated calls return the same object without
+ * creating additional WebGL contexts.
  */
 export function detectDeviceProfile(): DeviceProfile {
+  if (cachedProfile) return cachedProfile;
+
   const ua = navigator.userAgent.toLowerCase();
   const isMobile = /mobile|android|iphone|ipad|tablet/.test(ua);
 
@@ -40,9 +54,11 @@ export function detectDeviceProfile(): DeviceProfile {
     const ext = gl.getExtension('webgl-debug-renderer-info');
     if (ext) {
       const renderer = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL);
-      // Basic GPU memory detection
       gpuMemory = estimateGPUMemory(renderer);
     }
+    // Release the WebGL context explicitly
+    const loseCtx = gl.getExtension('WEBGL_lose_context');
+    if (loseCtx) loseCtx.loseContext();
   }
 
   // Determine tier based on device capabilities
@@ -50,18 +66,14 @@ export function detectDeviceProfile(): DeviceProfile {
     tier = 'low';
   } else if (gpuMemory && gpuMemory > 2000) {
     tier = 'high';
-  } else if (isMobile || gpuMemory && gpuMemory < 512) {
+  } else if (gpuMemory && gpuMemory < 512) {
     tier = 'low';
   }
 
   canvas.remove();
 
-  return {
-    isMobile,
-    hasGPU,
-    gpuMemory,
-    tier,
-  };
+  cachedProfile = { isMobile, hasGPU, gpuMemory, tier };
+  return cachedProfile;
 }
 
 /**

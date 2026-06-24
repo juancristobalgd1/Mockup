@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -25,16 +26,26 @@ export default defineConfig({
   },
   server: {
     port,
-    host: "0.0.0.0",
+    host: "localhost",
     allowedHosts: true,
     fs: {
       strict: true,
       deny: ["**/.*"],
     },
+    hmr: {
+      protocol: "ws",
+      clientPort: 443,
+    },
   },
   preview: {
     port,
-    host: "0.0.0.0",
+    host: "localhost",
     allowedHosts: true,
+  },
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/test/setup.ts"],
+    css: true,
   },
 });

@@ -16,14 +16,16 @@ export function useScreenTexture(
   const textureRef = useRef<THREE.Texture | null>(null);
   const videoElRef = useRef<HTMLVideoElement | null>(null);
   const loaderRef = useRef<THREE.TextureLoader>(new THREE.TextureLoader());
+  const loadGenerationRef = useRef(0);
 
   // Get performance config for texture optimization
   const perfConfig = useRef(getOptimizedConfig(detectDeviceProfile())).current;
 
   useEffect(() => {
-    // Dispose previous image texture (VideoTexture is managed by the video element)
-    if (textureRef.current && !(textureRef.current instanceof THREE.VideoTexture)) {
+    // Dispose previous texture (including VideoTexture)
+    if (textureRef.current) {
       textureRef.current.dispose();
+      textureRef.current = null;
     }
     if (videoElRef.current) {
       videoElRef.current.pause();
@@ -56,9 +58,14 @@ export function useScreenTexture(
       setGlobalScreenTexture(tex);
     } else if (contentType === 'image' && screenshotUrl) {
       loaderRef.current.crossOrigin = 'anonymous';
+      const generation = ++loadGenerationRef.current;
       loaderRef.current.load(
         screenshotUrl,
         (tex) => {
+          if (generation !== loadGenerationRef.current) {
+            tex.dispose();
+            return;
+          }
           tex.colorSpace = THREE.SRGBColorSpace;
 
           // Optimize loaded texture based on device performance tier

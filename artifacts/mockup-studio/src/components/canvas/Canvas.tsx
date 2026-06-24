@@ -1,4 +1,4 @@
-import { forwardRef, useState, useEffect, useRef } from 'react';
+import { forwardRef, useState, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '../../store';
 import type { TextOverlay } from '../../store';
 import { GRADIENTS, MESH_GRADIENTS, PATTERNS, WALLPAPERS, ANIMATED_BACKGROUNDS, ANIMATED_BG_KEYFRAMES } from '../../data/backgrounds';
@@ -7,7 +7,8 @@ import { LIGHT_OVERLAYS } from '../../data/lightOverlays';
 import { AnnotateCanvas } from './AnnotateCanvas';
 import { Device3DViewer } from '../devices3d/Device3DViewer';
 import type { Device3DViewerHandle } from '../devices3d/Device3DViewer';
-import { CSSDeviceFallback, checkWebGL, WebGLErrorBoundary } from '../devices3d/WebGLFallback';
+import { CSSDeviceFallback, WebGLErrorBoundary } from '../devices3d/WebGLFallback';
+import { probeWebGLSupport } from '../../utils/webgl';
 
 interface CanvasProps {
   textOverlays: TextOverlay[];
@@ -73,11 +74,33 @@ function CanvasBgRenderer({ bg, opacity, borderRadius }: { bg: AnimatedBackgroun
 export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, onUpdateText, viewerRef, moviePlaying, movieTimeRef }, ref) => {
   const { state } = useApp();
   const [webglAvailable, setWebglAvailable] = useState<boolean | null>(null);
+  const [webglError, setWebglError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
+  const userAttemptedWebglRef = useRef(false);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
-  useEffect(() => {
-    setWebglAvailable(checkWebGL());
+  const evaluateWebGL = useCallback(() => {
+    const result = probeWebGLSupport('basic');
+    setWebglAvailable(result.supported);
+    setWebglError(result.supported ? null : result.error ?? 'WebGL not available');
+    return result;
   }, []);
+
+  useEffect(() => {
+    if (isMobile && !userAttemptedWebglRef.current) {
+      setWebglAvailable(false);
+      return;
+    }
+    if (!userAttemptedWebglRef.current) {
+      evaluateWebGL();
+    }
+  }, [isMobile, evaluateWebGL]);
+
+  const handleTry3D = useCallback(() => {
+    userAttemptedWebglRef.current = true;
+    setRetryKey(k => k + 1);
+    evaluateWebGL();
+  }, [evaluateWebGL]);
 
   const getBackground = (): React.CSSProperties => {
     if (state.bgType === 'animated') return {};
@@ -332,9 +355,12 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ textOverlays, o
 
         {/* 3D Device Viewer or CSS fallback */}
         {webglAvailable === false ? (
-          <CSSDeviceFallback />
+          <CSSDeviceFallback
+            error={webglError}
+            onTry3D={handleTry3D}
+          />
         ) : webglAvailable === true ? (
-          <WebGLErrorBoundary fallback={<CSSDeviceFallback />}>
+          <WebGLErrorBoundary key={retryKey} fallback={<CSSDeviceFallback onTry3D={handleTry3D} />}>
             <Device3DViewer
               ref={viewerRef}
               style={{ position: 'absolute', inset: 0, zIndex: 2 }}

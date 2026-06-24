@@ -36,9 +36,9 @@ export function extractColorsFromImage(imgSrc: string): Promise<string[]> {
       const data = ctx.getImageData(0, 0, 20, 20).data;
       const buckets: Record<string, number> = {};
       for (let i = 0; i < data.length; i += 4) {
-        const r = Math.round(data[i] / 32) * 32;
-        const g = Math.round(data[i + 1] / 32) * 32;
-        const b = Math.round(data[i + 2] / 32) * 32;
+        const r = Math.min(255, Math.round(data[i] / 32) * 32);
+        const g = Math.min(255, Math.round(data[i + 1] / 32) * 32);
+        const b = Math.min(255, Math.round(data[i + 2] / 32) * 32);
         if (data[i + 3] < 128) continue;
         const key = `${r},${g},${b}`;
         buckets[key] = (buckets[key] || 0) + 1;
