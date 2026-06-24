@@ -158,7 +158,7 @@ function extractState(store: AppStore): AppState {
 
 type StateUpdater = Partial<AppState> | ((prev: AppState) => Partial<AppState>);
 
-interface AppContextType {
+interface AppContextType extends AppStore {
   state: AppState;
   updateState: (updates: StateUpdater, skipHistory?: boolean) => void;
   addText: () => void;
@@ -247,11 +247,11 @@ export function useApp(): AppContextType {
         globalFuture.length = 0;
         globalHistoryLen = globalHistory.length;
         globalFutureLen = 0;
-        notifyListeners();
       }
       const resolved =
         typeof updates === "function" ? updates(current) : updates;
       useAppStore.setState(resolved);
+      notifyListeners();
     },
     []
   );
@@ -261,12 +261,12 @@ export function useApp(): AppContextType {
     const prev = globalHistory[globalHistory.length - 1];
     globalHistory.pop();
     const current = extractState(useAppStore.getState());
+    useAppStore.setState(prev);
     pushBounded(globalFuture, current);
     globalHistoryLen = globalHistory.length;
     globalFutureLen = globalFuture.length;
 
     notifyListeners();
-    useAppStore.setState(prev);
   }, []);
 
   const redo = useCallback(() => {
@@ -274,12 +274,12 @@ export function useApp(): AppContextType {
     const next = globalFuture[globalFuture.length - 1];
     globalFuture.pop();
     const current = extractState(useAppStore.getState());
+    useAppStore.setState(next);
     pushBounded(globalHistory, current);
     globalHistoryLen = globalHistory.length;
     globalFutureLen = globalFuture.length;
 
     notifyListeners();
-    useAppStore.setState(next);
   }, []);
 
   return {
