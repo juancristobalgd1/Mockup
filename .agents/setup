@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Prepares a fresh Amp orb: toolchain check and workspace dependencies.
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+step() {
+  local name="$1"; shift
+  local start=$SECONDS
+  echo "==> $name"
+  "$@"
+  echo "    $name took $((SECONDS - start))s"
+}
+
+# The orb base image ships Node and pnpm; fall back to corepack if pnpm is missing.
+if ! command -v pnpm >/dev/null 2>&1; then
+  step "Enable pnpm via corepack" corepack enable pnpm
+fi
+echo "node $(node -v), pnpm $(pnpm -v)"
+
+step "Install workspace dependencies" pnpm install --frozen-lockfile

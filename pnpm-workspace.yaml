@@ -30,3 +30,8 @@ onlyBuiltDependencies:
 
 overrides:
   esbuild: "0.27.3"
+
+# Newer pnpm (12 in Amp orbs) reads allowBuilds instead of onlyBuiltDependencies
+# and fails the install on unapproved build scripts.
+allowBuilds:
+  esbuild: true

@@ -52,3 +52,6 @@ Thumbs.db
 .antigravitycli/
 cache/
 Untitled.txt
+
+# Amp orb portal state
+.amp/portals/

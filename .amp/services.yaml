@@ -1,0 +1,6 @@
+services:
+  mockup-studio:
+    # vite.config.ts reads $PORT and already binds to 0.0.0.0.
+    command: pnpm dev
+    portal:
+      title: Mockup Studio
