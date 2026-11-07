@@ -101,7 +101,7 @@ export function PostFX({
   const multisampling = tier === 'low' ? 0 : tier === 'medium' ? 2 : 4;
 
   return (
-    <EffectComposer multisampling={multisampling}>
+    <EffectComposer multisampling={multisampling} enableNormalPass={perfConfig.enableSSAO}>
       {effects}
     </EffectComposer>
   );
