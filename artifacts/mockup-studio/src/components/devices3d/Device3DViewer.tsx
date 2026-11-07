@@ -16,8 +16,9 @@ import {
 import * as THREE from "three";
 import {
   useApp,
+  defaultState,
 } from "../../store";
-import { getModelById, DEVICE_MODELS } from "../../data/devices";
+import { getModelById } from "../../data/devices";
 import { useScreenTexture } from "./useScreenTexture";
 import { Phone3DModel } from "./Phone3DModel";
 import { GLBDeviceModel } from "./GLBDeviceModel";
@@ -44,10 +45,10 @@ import { VideoControls } from "./viewer/VideoControls";
 
 import { useGLTF, Html } from "@react-three/drei";
 
-// Auto-preload every GLB model declared in devices.ts.
-DEVICE_MODELS.forEach((m) => {
-  if (m.glbUrl) useGLTF.preload(m.glbUrl);
-});
+// Preload only the default device; other models load when selected
+// instead of downloading every GLB (~33 MB) on startup.
+const defaultGlbUrl = getModelById(defaultState.deviceModel).glbUrl;
+if (defaultGlbUrl) useGLTF.preload(defaultGlbUrl);
 
 export interface Device3DViewerHandle {
   getGLElement: () => HTMLCanvasElement | null;

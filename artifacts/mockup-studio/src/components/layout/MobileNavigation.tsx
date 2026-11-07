@@ -46,7 +46,10 @@ import { PRESENT_POSES, CANVAS_RATIOS, ENV_PRESETS, IPHONE_COLORS } from "../../
 import { ENV_ICON } from "../../data/envIcons";
 import { Section, Chip, Slider, MiniSlider, Toggle } from "../ui/PanelUI";
 import { DeviceThumbnail, PoseThumbnail } from "../ui/DeviceThumbnails";
-import { MovieTimeline } from "../timeline/MovieTimeline";
+// The timeline only renders in movie mode, so load it on demand.
+const MovieTimeline = React.lazy(() =>
+  import("../timeline/MovieTimeline").then((m) => ({ default: m.MovieTimeline })),
+);
 import { LeftPanel } from "../panels/LeftPanel";
 
 interface MobileNavigationProps {
@@ -624,17 +627,19 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                 </AnimatePresence>
               </div>
             </div>
-            <MovieTimeline
-              ref={movieTimelineRef}
-              viewerRef={viewerRef}
-              movieTimeRef={movieTimeRef}
-              canvasRef={canvasRef}
-              onPlayingChange={setMoviePlaying}
-              onClose={() => {
-                updateState({ movieMode: false });
-                setMoviePlaying(false);
-              }}
-            />
+            <React.Suspense fallback={null}>
+              <MovieTimeline
+                ref={movieTimelineRef}
+                viewerRef={viewerRef}
+                movieTimeRef={movieTimeRef}
+                canvasRef={canvasRef}
+                onPlayingChange={setMoviePlaying}
+                onClose={() => {
+                  updateState({ movieMode: false });
+                  setMoviePlaying(false);
+                }}
+              />
+            </React.Suspense>
           </motion.div>
         ) : (
           <motion.div

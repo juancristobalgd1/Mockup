@@ -21,6 +21,16 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    // The 3D engine is most of the JS; a separate chunk stays cached across app deploys.
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (/node_modules\/.*\/(three|three-stdlib|@react-three|postprocessing|n8ao|maath|troika-|camera-controls|meshline)/.test(id)) return "three";
+          if (/node_modules\/.*\/(react|react-dom|scheduler)\//.test(id)) return "react";
+        },
+      },
+    },
   },
   server: {
     port,
