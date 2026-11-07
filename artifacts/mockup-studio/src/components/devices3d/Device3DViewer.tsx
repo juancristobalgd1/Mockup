@@ -29,6 +29,7 @@ import { Watch3DModel } from "./Watch3DModel";
 // Extracted sub-components from the viewer/ subdirectory
 import { 
   Loader, 
+  ModelLoadBoundary,
   RotatoHint, 
   SceneCapturer, 
   ExposureControl, 
@@ -781,15 +782,17 @@ export const Device3DViewer = forwardRef<
         )}
         <group scale={state.deviceScale / 100}>
           <FloorReflector isLaptop={isLaptop} />
-          <Suspense fallback={<Loader />}>
-            <DeviceScene
-              floatEnabled={floatEnabled}
-              pencilVisible={pencilVisible}
-              onShowPencil={() => setPencilVisible(true)}
-              onHidePencil={() => setPencilVisible(false)}
-              screenTexture={screenTexture}
-            />
-          </Suspense>
+          <ModelLoadBoundary glbUrl={getModelById(state.deviceModel).glbUrl} resetKey={state.deviceModel}>
+            <Suspense fallback={<Loader />}>
+              <DeviceScene
+                floatEnabled={floatEnabled}
+                pencilVisible={pencilVisible}
+                onShowPencil={() => setPencilVisible(true)}
+                onHidePencil={() => setPencilVisible(false)}
+                screenTexture={screenTexture}
+              />
+            </Suspense>
+          </ModelLoadBoundary>
         </group>
         <ClayOverride enabled={state.clayMode ?? false} color={state.clayColor ?? "#e8ddd3"} />
         <LensShift px={state.canvasPanX ?? 0} py={state.canvasPanY ?? 0} />

@@ -1,5 +1,5 @@
-import React, { useRef } from "react";
-import { Html, useProgress } from "@react-three/drei";
+import React, { Component, useRef, type ReactNode } from "react";
+import { Html, useGLTF, useProgress } from "@react-three/drei";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -38,10 +38,72 @@ export function Loader() {
             }}
           />
         </div>
-        Loading
+        Cargando
       </div>
     </Html>
   );
+}
+
+// ── Model load failure ───────────────────────────────────────────
+// A model that fails to load (e.g. a dropped network request) shows a retry
+// message in the scene instead of taking down the whole 3D viewer. The failed
+// request is evicted from the GLTF cache so a retry or a device switch refetches it.
+export class ModelLoadBoundary extends Component<
+  { glbUrl?: string; resetKey: string; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch() {
+    if (this.props.glbUrl) useGLTF.clear(this.props.glbUrl);
+  }
+
+  componentDidUpdate(prev: { resetKey: string }) {
+    if (prev.resetKey !== this.props.resetKey && this.state.failed) this.setState({ failed: false });
+  }
+
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <Html center>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 10,
+            padding: "14px 18px",
+            borderRadius: 14,
+            background: "rgba(0,0,0,0.7)",
+            color: "#fff",
+            fontFamily: "system-ui",
+            fontSize: 13,
+            whiteSpace: "nowrap",
+          }}
+        >
+          No se pudo cargar el modelo
+          <button
+            onClick={() => this.setState({ failed: false })}
+            style={{
+              padding: "6px 14px",
+              borderRadius: 999,
+              border: "none",
+              background: "#fff",
+              color: "#000",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Reintentar
+          </button>
+        </div>
+      </Html>
+    );
+  }
 }
 
 // ── Hint overlay ─────────────────────────────────────────────────

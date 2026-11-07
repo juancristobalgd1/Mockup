@@ -16,8 +16,8 @@ function CSSDeviceFallback() {
       padding: '2rem'
     }}>
       <div>
-        <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>WebGL Not Supported</h2>
-        <p style={{ opacity: 0.8 }}>This tool requires WebGL to render 3D mockups. Please try a different browser or enable hardware acceleration.</p>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>WebGL no disponible</h2>
+        <p style={{ opacity: 0.8 }}>Esta herramienta necesita WebGL para renderizar mockups 3D. Prueba con otro navegador o activa la aceleración por hardware.</p>
         <div style={{ 
           marginTop: '2rem', 
           width: '200px', 
