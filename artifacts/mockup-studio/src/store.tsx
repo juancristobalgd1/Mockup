@@ -350,48 +350,69 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 const MAX_HISTORY = 50;
+// Changes to the same thing within this window (slider drags, typing) share one undo step.
+const HISTORY_MERGE_MS = 500;
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(defaultState);
+  const stateRef = useRef<AppState>(defaultState);
   const historyRef = useRef<AppState[]>([]);
   const futureRef = useRef<AppState[]>([]);
+  const lastChangeRef = useRef<{ key: string; at: number } | null>(null);
   const [historyLen, setHistoryLen] = useState(0);
   const [futureLen, setFutureLen] = useState(0);
 
-  const updateState = useCallback((updates: Partial<AppState>, skipHistory = false) => {
-    setState(prev => {
-      if (!skipHistory) {
+  const syncHistoryLengths = () => {
+    setHistoryLen(historyRef.current.length);
+    setFutureLen(futureRef.current.length);
+  };
+
+  // Applies a change. historyKey names what changed so repeated changes merge into
+  // one undo step; null leaves history untouched (camera pan/zoom, playback).
+  const commit = useCallback((recipe: (prev: AppState) => AppState, historyKey: string | null) => {
+    const prev = stateRef.current;
+    const next = recipe(prev);
+    if (historyKey !== null) {
+      const now = performance.now();
+      const last = lastChangeRef.current;
+      if (!last || last.key !== historyKey || now - last.at > HISTORY_MERGE_MS) {
         historyRef.current = [...historyRef.current.slice(-MAX_HISTORY + 1), prev];
-        futureRef.current = [];
-        setHistoryLen(historyRef.current.length);
-        setFutureLen(0);
       }
-      return { ...prev, ...updates };
-    });
+      lastChangeRef.current = { key: historyKey, at: now };
+      futureRef.current = [];
+      syncHistoryLengths();
+    }
+    stateRef.current = next;
+    setState(next);
   }, []);
 
+  const updateState = useCallback((updates: Partial<AppState>, skipHistory = false) => {
+    commit(
+      prev => ({ ...prev, ...updates }),
+      skipHistory ? null : `state:${Object.keys(updates).sort().join(',')}`,
+    );
+  }, [commit]);
+
   const undo = useCallback(() => {
-    if (historyRef.current.length === 0) return;
     const prev = historyRef.current[historyRef.current.length - 1];
+    if (!prev) return;
     historyRef.current = historyRef.current.slice(0, -1);
-    setState(current => {
-      futureRef.current = [current, ...futureRef.current.slice(0, MAX_HISTORY - 1)];
-      setHistoryLen(historyRef.current.length);
-      setFutureLen(futureRef.current.length);
-      return prev;
-    });
+    futureRef.current = [stateRef.current, ...futureRef.current.slice(0, MAX_HISTORY - 1)];
+    lastChangeRef.current = null;
+    stateRef.current = prev;
+    setState(prev);
+    syncHistoryLengths();
   }, []);
 
   const redo = useCallback(() => {
-    if (futureRef.current.length === 0) return;
     const next = futureRef.current[0];
+    if (!next) return;
     futureRef.current = futureRef.current.slice(1);
-    setState(current => {
-      historyRef.current = [...historyRef.current.slice(-MAX_HISTORY + 1), current];
-      setHistoryLen(historyRef.current.length);
-      setFutureLen(futureRef.current.length);
-      return next;
-    });
+    historyRef.current = [...historyRef.current.slice(-MAX_HISTORY + 1), stateRef.current];
+    lastChangeRef.current = null;
+    stateRef.current = next;
+    setState(next);
+    syncHistoryLengths();
   }, []);
 
   const addText = useCallback(() => {
@@ -406,11 +427,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       isItalic: false,
       kind: 'text',
     };
-    setState(prev => ({ ...prev, texts: [...prev.texts, newText] }));
-  }, []);
+    commit(prev => ({ ...prev, texts: [...prev.texts, newText] }), `add-text:${newText.id}`);
+  }, [commit]);
 
   const addLabel = useCallback((anchor: LabelAnchorPosition) => {
-    setState(prev => {
+    const id = Math.random().toString(36).substr(2, 9);
+    commit(prev => {
       const fixedPositions: Record<LabelAnchorPosition, { x: number; y: number }> = {
         'top': { x: 50, y: 16 },
         'top-right': { x: 78, y: 20 },
@@ -423,7 +445,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       };
       const fixedPosition = fixedPositions[anchor];
       const newLabel: TextOverlay = {
-        id: Math.random().toString(36).substr(2, 9),
+        id,
         text: 'New label',
         x: prev.labelDraftMode === 'fixed' ? fixedPosition.x : 50,
         y: prev.labelDraftMode === 'fixed' ? fixedPosition.y : 50,
@@ -442,58 +464,58 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         texts: [...prev.texts, newLabel],
         activeLabelId: newLabel.id
       };
-    });
-  }, []);
+    }, `add-label:${id}`);
+  }, [commit]);
 
   const updateText = useCallback((id: string, updates: Partial<TextOverlay>) => {
-    setState(prev => ({
+    commit(prev => ({
       ...prev,
       texts: prev.texts.map(t => t.id === id ? { ...t, ...updates } : t)
-    }));
-  }, []);
+    }), `text:${id}:${Object.keys(updates).sort().join(',')}`);
+  }, [commit]);
 
   const removeText = useCallback((id: string) => {
-    setState(prev => ({
+    commit(prev => ({
       ...prev,
       texts: prev.texts.filter(t => t.id !== id)
-    }));
-  }, []);
+    }), `remove-text:${id}`);
+  }, [commit]);
 
   const clearLabels = useCallback(() => {
-    setState(prev => ({
+    commit(prev => ({
       ...prev,
       texts: prev.texts.filter(t => t.kind !== 'label')
-    }));
-  }, []);
+    }), 'clear-labels');
+  }, [commit]);
 
   const addCameraKeyframe = useCallback((kf: Omit<CameraKeyframe, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
-    setState(prev => {
+    commit(prev => {
       const existing = prev.cameraKeyframes.filter(k => Math.abs(k.time - kf.time) > 0.1);
       const updated = [...existing, { ...kf, id }].sort((a, b) => a.time - b.time);
       return { ...prev, cameraKeyframes: updated };
-    });
-  }, []);
+    }, `add-keyframe:${id}`);
+  }, [commit]);
 
   const removeCameraKeyframe = useCallback((id: string) => {
-    setState(prev => ({
+    commit(prev => ({
       ...prev,
       cameraKeyframes: prev.cameraKeyframes.filter(k => k.id !== id)
-    }));
-  }, []);
+    }), `remove-keyframe:${id}`);
+  }, [commit]);
 
   const updateCameraKeyframe = useCallback((id: string, updates: Partial<Omit<CameraKeyframe, 'id'>>) => {
-    setState(prev => ({
+    commit(prev => ({
       ...prev,
       cameraKeyframes: prev.cameraKeyframes
         .map(k => k.id === id ? { ...k, ...updates } : k)
         .sort((a, b) => a.time - b.time),
-    }));
-  }, []);
+    }), `keyframe:${id}:${Object.keys(updates).sort().join(',')}`);
+  }, [commit]);
 
   const clearCameraKeyframes = useCallback(() => {
-    setState(prev => ({ ...prev, cameraKeyframes: [] }));
-  }, []);
+    commit(prev => ({ ...prev, cameraKeyframes: [] }), 'clear-keyframes');
+  }, [commit]);
 
   return (
     <AppContext.Provider value={{
