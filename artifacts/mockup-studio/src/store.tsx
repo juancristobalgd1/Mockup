@@ -418,7 +418,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addText = useCallback(() => {
     const newText: TextOverlay = {
       id: Math.random().toString(36).substr(2, 9),
-      text: "Double-click to edit",
+      text: "Doble clic para editar",
       x: 50,
       y: 50,
       fontSize: 24,
@@ -446,7 +446,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const fixedPosition = fixedPositions[anchor];
       const newLabel: TextOverlay = {
         id,
-        text: 'New label',
+        text: 'Nueva etiqueta',
         x: prev.labelDraftMode === 'fixed' ? fixedPosition.x : 50,
         y: prev.labelDraftMode === 'fixed' ? fixedPosition.y : 50,
         fontSize: prev.labelDraftSize,

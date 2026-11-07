@@ -198,7 +198,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   size={22}
                   strokeWidth={activeTab === "annotate" ? 2.5 : 1.8}
                 />
-                <span>ANNOTATE</span>
+                <span>Anotar</span>
               </button>
             </nav>
 
@@ -1368,7 +1368,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                 </div>
               ) : (
                 <span className="ps-context-title" style={{ flex: 1, textAlign: 'center', marginRight: 40 }}>
-                  {mobileTab === "annotate" ? "Annotate" : mobileTab === "presets" ? "Preajustes" : mobileTab === "template" ? "Plantillas" : mobileTab === "device" ? (devicePanelView === 'content' ? "Modelo" : "Dispositivo") : mobileTab === "background" ? (backgroundPanelView === 'content' ? "Fondo" : "Fondo") : mobileTab === "overlay" ? "Overlay" : mobileTab === "labels" ? (labelsPanelView === 'content' ? (state.labelsSubTab === 'view' ? "Gestionar Etiquetas" : state.labelsSubTab === 'add' ? "Anclar Nueva" : state.labelsSubTab === 'subtract' ? "Limpiar Todo" : "Etiquetas") : "Etiquetas") : ""}
+                  {mobileTab === "annotate" ? "Anotar" : mobileTab === "presets" ? "Preajustes" : mobileTab === "template" ? "Plantillas" : mobileTab === "device" ? (devicePanelView === 'content' ? "Modelo" : "Dispositivo") : mobileTab === "background" ? (backgroundPanelView === 'content' ? "Fondo" : "Fondo") : mobileTab === "overlay" ? "Overlay" : mobileTab === "labels" ? (labelsPanelView === 'content' ? (state.labelsSubTab === 'view' ? "Gestionar Etiquetas" : state.labelsSubTab === 'add' ? "Anclar Nueva" : state.labelsSubTab === 'subtract' ? "Limpiar Todo" : "Etiquetas") : "Etiquetas") : ""}
                 </span>
               )}
             </div>

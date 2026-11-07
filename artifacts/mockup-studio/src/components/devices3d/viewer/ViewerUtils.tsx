@@ -67,7 +67,7 @@ export function RotatoHint({ visible }: { visible: boolean }) {
         transition: "opacity 0.8s ease",
       }}
     >
-      ⌖ Move para desplazar · Zoom para abrir el slider
+      ⌖ Mover para desplazar · Zoom para ajustar el tamaño
     </div>
   );
 }

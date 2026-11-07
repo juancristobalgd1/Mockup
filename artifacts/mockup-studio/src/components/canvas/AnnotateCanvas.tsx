@@ -952,12 +952,12 @@ export function AnnotateCanvas() {
           onPointerDown={e => e.stopPropagation()}
         >
           {/* Delete */}
-          <button onClick={deleteSelected} title="Delete" style={{ ...TOOLBAR_BTN_STYLE, color: 'rgba(239,100,100,0.9)' }}>
+          <button onClick={deleteSelected} title="Eliminar" style={{ ...TOOLBAR_BTN_STYLE, color: 'rgba(239,100,100,0.9)' }}>
             <TrashIcon />
           </button>
 
           {/* Duplicate */}
-          <button onClick={() => duplicateSelected(16)} title="Duplicate" style={TOOLBAR_BTN_STYLE}>
+          <button onClick={() => duplicateSelected(16)} title="Duplicar" style={TOOLBAR_BTN_STYLE}>
             <DuplicateIcon />
           </button>
 
@@ -973,13 +973,13 @@ export function AnnotateCanvas() {
                 <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.15)' }} />
 
                 {/* Font size − / value / + */}
-                <button onClick={() => changeTextFontSize(-2)} title="Decrease size" style={TOOLBAR_BTN_STYLE}>
+                <button onClick={() => changeTextFontSize(-2)} title="Reducir tamaño" style={TOOLBAR_BTN_STYLE}>
                   <MinusIcon />
                 </button>
                 <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.85)', minWidth: 22, textAlign: 'center', userSelect: 'none' }}>
                   {ts.fontSize}
                 </span>
-                <button onClick={() => changeTextFontSize(2)} title="Increase size" style={TOOLBAR_BTN_STYLE}>
+                <button onClick={() => changeTextFontSize(2)} title="Aumentar tamaño" style={TOOLBAR_BTN_STYLE}>
                   <PlusIcon />
                 </button>
 
@@ -1041,7 +1041,7 @@ export function AnnotateCanvas() {
             <button
               onPointerDown={e => e.stopPropagation()}
               onClick={() => setShowColorMenu(v => !v)}
-              title="Change color"
+              title="Cambiar color"
               style={{
                 width: 30, height: 30, borderRadius: 8,
                 background: showColorMenu ? 'rgba(255,255,255,0.15)' : 'transparent',
@@ -1197,7 +1197,7 @@ export function AnnotateCanvas() {
             <button
               onPointerDown={e => e.stopPropagation()}
               onClick={() => setShowContextMenu(v => !v)}
-              title="More"
+              title="Más"
               style={{ ...TOOLBAR_BTN_STYLE, letterSpacing: 1 }}
             >
               ···
@@ -1221,12 +1221,12 @@ export function AnnotateCanvas() {
                   zIndex: 50,
                 }}
               >
-                <ContextMenuItem icon={<CopyIcon />} label="Copy" onClick={copyToClipboard} />
-                <ContextMenuItem icon={<DuplicateIcon />} label="Duplicate" onClick={() => duplicateSelected(16)} />
-                <ContextMenuItem icon={<TrashIcon />} label="Delete" onClick={deleteSelected} danger />
+                <ContextMenuItem icon={<CopyIcon />} label="Copiar" onClick={copyToClipboard} />
+                <ContextMenuItem icon={<DuplicateIcon />} label="Duplicar" onClick={() => duplicateSelected(16)} />
+                <ContextMenuItem icon={<TrashIcon />} label="Eliminar" onClick={deleteSelected} danger />
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', margin: '4px 0' }} />
-                <ContextMenuItem icon={<BackIcon />} label="Send to back" onClick={sendToBack} />
-                <ContextMenuItem icon={<FrontIcon />} label="Bring to front" onClick={bringToFront} />
+                <ContextMenuItem icon={<BackIcon />} label="Enviar al fondo" onClick={sendToBack} />
+                <ContextMenuItem icon={<FrontIcon />} label="Traer al frente" onClick={bringToFront} />
               </div>
             )}
           </div>
@@ -1256,7 +1256,7 @@ export function AnnotateCanvas() {
               if (e.key === 'Enter') commitText();
               if (e.key === 'Escape') dismissText();
             }}
-            placeholder="Type here…"
+            placeholder="Escribe aquí…"
             style={{
               width: 240,
               background: 'rgba(18,18,22,0.92)',

@@ -1655,7 +1655,7 @@ export const MovieTimeline = forwardRef<MovieTimelineHandle, MovieTimelineProps>
               position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)',
               fontSize: 9, color: 'rgba(255,255,255,0.3)', fontWeight: 700,
               textTransform: 'uppercase', letterSpacing: '0.08em', pointerEvents: 'none',
-            }}>Camera</span>
+            }}>Cámara</span>
 
             {cameraScenes.map(scene => {
               const leftPx = scene.start.time * effectivePxPerSec;

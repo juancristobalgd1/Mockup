@@ -367,7 +367,7 @@ function DeviceScene({
                   fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
                 }}
               >
-                {pencilVisible ? "Edit media" : "Add media"}
+                {pencilVisible ? "Editar contenido" : "Añadir contenido"}
               </span>
             </div>
           )}
