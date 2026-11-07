@@ -7,7 +7,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Canvas } from "./components/canvas/Canvas";
 import type { MovieTimelineHandle } from "./components/timeline/MovieTimeline";
 import { GridOverlay } from "./components/ui/GridOverlay";
-import { FloatingToolbar } from "./components/ui/FloatingToolbar";
 import type { Device3DViewerHandle } from "./components/devices3d/Device3DViewer";
 
 // Hooks & UI Layout Components

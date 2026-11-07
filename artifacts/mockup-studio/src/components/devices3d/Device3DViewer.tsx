@@ -18,7 +18,6 @@ import {
   useApp,
 } from "../../store";
 import { getModelById, DEVICE_MODELS } from "../../data/devices";
-import { useIsMobile } from "../../hooks/use-mobile";
 import { useScreenTexture } from "./useScreenTexture";
 import { Phone3DModel } from "./Phone3DModel";
 import { GLBDeviceModel } from "./GLBDeviceModel";
@@ -39,7 +38,6 @@ import {
 import { StudioLights, ENV_LIGHTS } from "./viewer/ViewerLights";
 import { PostFX } from "./viewer/ViewerPostFX";
 import { FloorReflector, ClayOverride } from "./viewer/ViewerEffects";
-import { ScreenDropZoneContent } from "./viewer/ViewerOverlay";
 import { OrientationGimbal } from "./viewer/ViewerGimbal";
 import { HeroOrbitControls, interpolateKeyframes, ENV_INTENSITY } from "./viewer/ViewerControls";
 import { VideoControls } from "./viewer/VideoControls";

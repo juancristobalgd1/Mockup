@@ -200,16 +200,6 @@ if (gpuMemory > 2000) tier = 'high';
 if (/mobile|android/i.test(ua)) tier = 'low';
 ```
 
-### FPS Targets
-
-Adjust in `ViewerPerformance.tsx`:
-
-```typescript
-const TARGET_FPS = 55;
-const FPS_THRESHOLD_HIGH = 58;
-const FPS_THRESHOLD_LOW = 45;
-```
-
 ## Benchmarks
 
 ### Typical Performance (60 FPS Target)

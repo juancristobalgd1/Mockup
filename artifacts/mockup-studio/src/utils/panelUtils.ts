@@ -1,4 +1,4 @@
-import { Tab } from '../components/panels/tabs';
+import type { Tab } from '../components/panels/tabs';
 
 /** Return a clamped width that never exceeds viewport minus padding */
 export const safeW = (w: number) => `min(${w}px, calc(100vw - 16px))` as const;
