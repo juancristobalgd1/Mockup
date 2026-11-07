@@ -46,7 +46,7 @@ Este repo es un **monorepo pnpm** con un solo paquete de aplicación:
             │   ├── layout/        ← header, sheets, navegación
             │   ├── panels/        ← inspector de propiedades
             │   ├── timeline/      ← editor dekeyframes
-            │   └── ui/            ← primitives (Radix + tailwind)
+            │   └── ui/            ← primitives de UI (tooltip Radix + utilidades)
             ├── hooks/
             ├── data/
             ├── lib/
@@ -61,7 +61,7 @@ Este repo es un **monorepo pnpm** con un solo paquete de aplicación:
 ### 1. Requisitos
 
 - **Node.js** ≥ 20
-- **pnpm** ≥ 9 (`npm i -g pnpm`)
+- **pnpm** 12, fijado en `packageManager` (`corepack enable` lo activa)
 
 ### 2. Instalar dependencias
 
@@ -85,11 +85,14 @@ pnpm build        # build optimizado a artifacts/mockup-studio/dist
 pnpm serve        # sirve el build localmente para validar
 ```
 
-### 5. Verificar tipos
+### 5. Verificar tipos y tests
 
 ```bash
 pnpm typecheck
+pnpm test
 ```
+
+CI (`.github/workflows/ci.yml`) ejecuta `typecheck`, `test` y `build` en cada push a `main` y en cada PR.
 
 ---
 
@@ -111,12 +114,12 @@ pnpm typecheck
 
 | Capa            | Tecnología                                              |
 | --------------- | ------------------------------------------------------- |
-| UI              | React 19 + TypeScript, Radix UI, Tailwind 4             |
+| UI              | React 19 + TypeScript, Radix Tooltip, Tailwind 4        |
 | 3D              | Three.js · `@react-three/fiber` · `@react-three/drei`  |
 | Post-processing | `@react-three/postprocessing` (SSAO, Bloom, ToneMap)   |
 | Animación       | Framer Motion + timeline propia con curvas Bézier       |
-| Estado / datos  | Context + Reducer, `@tanstack/react-query`              |
-| Tooling         | Vite 7, pnpm workspaces, `tsx`, `zod`                   |
+| Estado          | React Context con historial de deshacer/rehacer         |
+| Tooling         | Vite 7, pnpm workspaces, Vitest                         |
 
 ---
 
@@ -140,7 +143,7 @@ pnpm typecheck
    ```bash
    git checkout -b feature/mi-cambio
    ```
-2. Asegúrate de pasar `pnpm typecheck` antes de pedir review.
+2. Asegúrate de pasar `pnpm typecheck` y `pnpm test` antes de pedir review.
 3. Abre un PR describiendo **qué** cambia y **por qué**. Incluye capturas si tocas UI o el render 3D.
 4. No commitees `dist/`, `node_modules/` ni archivos temporales.
 

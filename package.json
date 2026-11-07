@@ -6,11 +6,16 @@
     "dev": "pnpm --filter @workspace/mockup-studio dev",
     "start": "pnpm run dev",
     "build": "pnpm --filter @workspace/mockup-studio build",
-    "typecheck": "pnpm --filter @workspace/mockup-studio typecheck"
+    "typecheck": "pnpm --filter @workspace/mockup-studio typecheck",
+    "test": "pnpm --filter @workspace/mockup-studio test"
   },
   "private": true,
   "devDependencies": {
     "prettier": "^3.8.1",
     "typescript": "~5.9.2"
+  },
+  "packageManager": "pnpm@12.0.0",
+  "engines": {
+    "node": ">=20"
   }
 }
